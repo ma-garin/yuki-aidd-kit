@@ -13,12 +13,12 @@ check "CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
 check "settings.json" "$CLAUDE_DIR/settings.json"
 
 echo "[スキル]"
-for s in single-html-tool sdd-ecc-workflow qa-review-standards personal-pwa streamlit-rag-app code-doc-search design-system nfr-standards done-gate test-automation agent-eval retro ecc-daily-router; do
+for s in single-html-tool sdd-ecc-workflow qa-review-standards personal-pwa streamlit-rag-app code-doc-search design-system nfr-standards done-gate test-automation agent-eval retro ecc-daily-router context-compression; do
   check "$s" "$CLAUDE_DIR/skills/$s/SKILL.md"
 done
 
 echo "[コマンド]"
-for c in new-pwa qa-review sdd-start token-check doc-search retro eval ecc-daily app-scan; do
+for c in new-pwa qa-review sdd-start token-check doc-search retro eval ecc-daily app-scan compact-work; do
   check "/$c" "$CLAUDE_DIR/commands/$c.md"
 done
 
