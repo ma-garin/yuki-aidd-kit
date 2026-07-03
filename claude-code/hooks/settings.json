@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/pre-write-check.sh \"$CLAUDE_TOOL_INPUT_PATH\""
+            "command": "bash ~/.claude/hooks/pre-write-check.sh"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/post-write-html.sh \"$CLAUDE_TOOL_INPUT_PATH\""
+            "command": "bash ~/.claude/hooks/post-write-html.sh"
           }
         ]
       }

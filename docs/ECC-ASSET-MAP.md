@@ -27,6 +27,7 @@
 | `skills/python-patterns` | skill | Pythonファイルが多い | Flask / CLI / ロジック整理 |
 | `skills/python-testing` | skill | pytest / pyproject / ruff / mypy | テスト、型、lint |
 | `skills/django-patterns` | skill | QA portal portal が Django | Django app / view / tests |
+| `skills/backend-patterns` | skill | QA portal / API系のサーバサイド実装 | API設計、バックエンド規約 |
 | `skills/tdd-workflow` | skill | 既存AGENTSでテスト重視 | 実装前のRED/GREEN/REFACTOR |
 | `skills/verification-loop` | skill | UI変更で検証漏れを避けたい | 完了前の検証ストーリー |
 | `skills/security-review` | skill | APIキー、localStorage、Web取得が多い | 秘密情報、XSS、入力検証 |
