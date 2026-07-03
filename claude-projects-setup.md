@@ -29,7 +29,7 @@ claude.ai サイドバー → 「Projects」→「New Project」→ 名前: `AID
 ## 常に守ること
 - 単一HTMLツールはCSS/JS外部分割禁止
 - APIキー・秘密情報のハードコード禁止（localStorage保存を使う）
-- トークン節約: 指定外ファイルを読まない。500行超HTMLはstr_replaceで編集
+- トークン節約: 指定外ファイルを読まない。500行超HTMLは全体再生成せず部分編集
 - 成果物はISO/IEC 25010の観点で自己レビューしてから提示
 
 ## 継続中プロジェクト
@@ -39,7 +39,8 @@ claude.ai サイドバー → 「Projects」→「New Project」→ 名前: `AID
 
 ### 3. ナレッジファイルのアップロード
 「Add content」→ 以下のファイルをアップロード:
-- `CLAUDE.md.template`（今日生成したもの）
+- `INDEX.md`（キットの索引。どの資産があるかを会話横断で参照できる）
+- `CLAUDE.md.template`
 - `skills/sdd-ecc-workflow/SKILL.md`
 - `skills/qa-review-standards/SKILL.md`
 - SDD+ECCガイドライン HTML（手元にある場合）
