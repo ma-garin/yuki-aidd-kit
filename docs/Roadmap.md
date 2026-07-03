@@ -66,6 +66,15 @@
 - [x] OPERATING-MODE.md に INDEX.md と context-compression の参照を追加
 - [x] INDEX.md の参照コスト（行数）を実測値に更新
 
+## M8: プロジェクト配布機構（完了 2026-07）
+
+グローバル運用（install.sh）に加え、Codex・リモート/エフェメラルなClaude Code環境・teammateへの配布を両立させる（保守者確認済み: 対象範囲=キット一式フルコピー、CLAUDE.md生成=する、Vision Non-Goals=意味を限定）。
+
+- [x] `scripts/export-project.sh <target>` を新設。対象プロジェクト直下に `.claude/skills,commands,hooks,settings.json,INDEX.md` を全コピーし、`AGENTS.md`・`CLAUDE.md` を生成する（INDEX.md 参照は `.claude/INDEX.md` の相対パスに変換）
+  - 検証: スクラッチディレクトリへの初回エクスポート・再実行時の `.bak` 退避・hooks の相対パス動作（cwd=プロジェクトルート想定）を確認済み
+- [x] `docs/Vision.md` に「配置の2層」節を追加し、Non-Goals を「不特定多数へのOSS公開はしない」に意味を限定
+- [x] `docs/PRD.md` に FR-04a（プロジェクト配布）を追加し、互換性NFRに「グローバル導入とプロジェクト配布のどちらでも同一の振る舞い」を追記
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み。

@@ -13,7 +13,9 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - `INDEX.md` を2層＋タグ＋参照コストで再構成。ECC 対応表の真実源を `docs/ECC-ASSET-MAP.md` に一本化
 - `verify.sh` のチェックリストをリポジトリ実体からの自動導出に変更（資産追加時の更新不要）
 
-## 導入
+## 導入（2つの方式。併用が前提）
+
+**① グローバル導入** — 自分のPC1台で複数プロジェクトを横断する日常運用向け。
 
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
@@ -22,7 +24,14 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/test-hooks.sh  # hooks の回帰テスト（8ケース）
 ```
 
-Codex 等の他エージェントで使う場合は `AGENTS.md.template` を各エージェントのグローバル設定にコピーします。claude.ai の Projects で使う場合は `claude-projects-setup.md` を参照。
+**② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md` を書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
+
+```bash
+./scripts/export-project.sh <対象プロジェクトのパス>
+cd <対象プロジェクトのパス> && git add .claude AGENTS.md CLAUDE.md && git commit -m "chore: add AIDD Kit"
+```
+
+Codex ローカル利用のみで済む場合は `AGENTS.md.template` を `~/.codex/AGENTS.md` にコピーする方法もあります。claude.ai の Projects で使う場合は `claude-projects-setup.md` を参照。
 
 ## 取り扱い説明書
 
@@ -76,7 +85,8 @@ yuki-aidd-kit/
 │   ├── commands/             # 10スラッシュコマンド
 │   └── hooks/                # 3 hooks + settings.json
 ├── scripts/
-│   ├── install.sh / verify.sh / test-hooks.sh
+│   ├── install.sh / verify.sh / test-hooks.sh   # グローバル導入
+│   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit
 ├── templates/
 │   ├── design-system.md      # 視覚的指示書

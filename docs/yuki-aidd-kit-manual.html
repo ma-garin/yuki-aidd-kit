@@ -400,6 +400,7 @@
           <li><a href="#start">はじめに</a></li>
           <li><a href="#what">何をする道具か</a></li>
           <li><a href="#first">最初にやること</a></li>
+          <li><a href="#deploy">導入方式（2種類）</a></li>
           <li><a href="#daily">毎日の使い方</a></li>
           <li><a href="#skills">スキルの選び方</a></li>
           <li><a href="#commands">コマンド一覧</a></li>
@@ -419,6 +420,7 @@
           <li><a href="#start">はじめに</a></li>
           <li><a href="#what">何をする道具か</a></li>
           <li><a href="#first">最初にやること</a></li>
+          <li><a href="#deploy">導入方式（2種類）</a></li>
           <li><a href="#daily">毎日の使い方</a></li>
           <li><a href="#skills">スキルの選び方</a></li>
           <li><a href="#commands">コマンド一覧</a></li>
@@ -550,6 +552,63 @@
             <p>
               `npm ci`、ブラウザE2E、Playwrightのインストール、GitHub Pagesの配信確認は重くなりがちです。
               必要な時だけ、理由を確認してから実行します。
+            </p>
+          </div>
+        </section>
+
+        <section id="deploy">
+          <h2>導入方式（2種類）</h2>
+          <p>
+            このキットには2つの導入方式があります。どちらか一方を選ぶのではなく、目的に応じて両方使います。
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>方式</th>
+                <th>向いている場面</th>
+                <th>コマンド</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>① グローバル導入</td>
+                <td>自分のPC1台で、複数の個人プロジェクトを日常的に横断する</td>
+                <td>`./scripts/install.sh`（`~/.claude/` に配置）</td>
+              </tr>
+              <tr>
+                <td>② プロジェクト配布</td>
+                <td>Codex、リモート/使い捨てのClaude Code環境、チームメイトへ渡す等、`~/.claude`が効かない・望ましくない場面</td>
+                <td>`./scripts/export-project.sh &lt;対象プロジェクト&gt;`</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout info">
+            <div class="callout-title">なぜ2つ必要か</div>
+            <p>
+              グローバル導入は「自分のPCさえ整えれば、どのプロジェクトを開いても効く」形です。
+              一方でCodexは基本的にプロジェクト直下の`AGENTS.md`を読みますし、
+              使い捨てのクラウド環境やチームメイトのPCには自分の`~/.claude`は存在しません。
+              そのため、配布したい対象プロジェクトには②で `.claude/` と `AGENTS.md` / `CLAUDE.md` を
+              直接書き出し、そのプロジェクトのgitにコミットして持ち運びます。
+            </p>
+          </div>
+          <div class="step-card">
+            <h3>プロジェクト配布の手順</h3>
+            <pre><code>./scripts/export-project.sh /path/to/target-project
+cd /path/to/target-project
+git add .claude AGENTS.md CLAUDE.md
+git commit -m "chore: add AIDD Kit"</code></pre>
+            <p>
+              これで、対象プロジェクトをCodexで開いても、リモートのClaude Codeで開いても、
+              チームメイトがcloneしても、install不要でそのままキットが効きます。
+            </p>
+          </div>
+          <div class="callout warn">
+            <div class="callout-title">注意</div>
+            <p>
+              プロジェクト配布は「書き出した時点のコピー」です。キット本体を後から更新しても、
+              配布済みのプロジェクトには自動反映されません。更新を反映したい時は
+              `export-project.sh` をもう一度実行します（既存ファイルは`.bak`に退避されます）。
             </p>
           </div>
         </section>
