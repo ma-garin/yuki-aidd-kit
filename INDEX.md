@@ -15,6 +15,7 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # 導入と確認
+./scripts/test-hooks.sh                       # hooks の回帰テスト（8ケース）
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
 open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
