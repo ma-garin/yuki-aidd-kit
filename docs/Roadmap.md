@@ -25,9 +25,9 @@
 
 - [x] `docs/Vision.md` / `docs/PRD.md` / `docs/Roadmap.md`（本ファイル）を新設
 
-## M4: デザインシステム指示書
+## M4: デザインシステム指示書（完了 2026-07）
 
-- [ ] `templates/design-system.md` を新設する
+- [x] `templates/design-system.md` を新設する
   - 対象: `templates/design-system.md`（新規）。参照してよいもの: `skills/design-system/SKILL.md`（トークンの真実源）、`docs/yuki-aidd-kit-manual.html`（既存スタイルの実例）
   - 内容: 基準トークン（primary `#1976D2`、Noto Sans JP + JetBrains Mono、MD3 light）を前提に、①Web アプリ ②HTML スライド ③管理画面 の3パターンを、コード無しでも他モデルが再現できる「視覚的指示書」（配置・比率・余白・階層・状態の言葉による指定）で記述する
   - 制約: `skills/design-system/SKILL.md` の CSS 変数値と矛盾させない（値の再定義はせず参照する。AUDIT の D-02 を悪化させない）。`docs/yuki-aidd-kit-manual.html` の見た目とも矛盾しないこと
