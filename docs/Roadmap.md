@@ -57,6 +57,15 @@
 - [x] streamlit-rag-app スキルの前提明記（完了 2026-07）
   - 対象: `skills/streamlit-rag-app/SKILL.md`。冒頭に特定プロジェクト前提である旨と、一般 Streamlit アプリへは「実装規律」節のみ流用可である旨を明記した（AUDIT 監査表の備考対応）
 
+## M7: ドキュメント全体整備（完了 2026-07）
+
+- [x] README.md を Ver.5.0 反映で刷新（INDEX.md 導線、構成ツリー更新、ECC 表の複製を ECC-ASSET-MAP 参照に置換）
+- [x] manual.html を更新（context-compression／`/compact-work`／test-hooks.sh を追記、ECC 節に真実源の注記、生プレースホルダ `<...>` が未知タグ扱いで非表示になるバグをエスケープ修正）
+- [x] AGENTS.md.template に INDEX.md 導線を追加（CLAUDE.md.template と同等。PRD の互換性 NFR 対応）
+- [x] claude-projects-setup.md のツール固有名を汎用化、ナレッジ一覧に INDEX.md を追加
+- [x] OPERATING-MODE.md に INDEX.md と context-compression の参照を追加
+- [x] INDEX.md の参照コスト（行数）を実測値に更新
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み。

@@ -43,7 +43,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 | `code-doc-search` | 技術ドキュメント検索のクエリ最適化 | #search #docs | 55行 |
 | `single-html-tool` | 単一HTMLツール（社内配布・PoC）の開発規約 | #html #tool | 36行 |
 | `personal-pwa` | GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約 | #pwa #mobile | 30行 |
-| `streamlit-rag-app` | Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約 | #streamlit #rag | 30行 |
+| `streamlit-rag-app` | Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約 | #streamlit #rag | 32行 |
 
 ## スラッシュコマンド（呼んだ時だけコストが発生）
 
@@ -68,14 +68,14 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 65行 |
-| `docs/Vision.md` | キットの目的・到達点・Non-Goals | 45行 |
-| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 65行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 62行 |
+| `docs/Vision.md` | キットの目的・到達点・Non-Goals | 36行 |
+| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 58行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
-| `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 120行 |
+| `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 75行 |
-| `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート | — |
-| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 923行 |
+| `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
+| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 960行 |
 
 templates/: `design-system.md`（視覚的指示書）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md`
 

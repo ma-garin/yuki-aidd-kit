@@ -520,7 +520,7 @@
           </p>
           <div class="step-card">
             <h3>1. キットの場所へ移動する</h3>
-            <pre><code>cd <YOUR_WORKSPACE>/yuki-aidd-kit</code></pre>
+            <pre><code>cd &lt;YOUR_WORKSPACE&gt;/yuki-aidd-kit</code></pre>
           </div>
           <div class="step-card">
             <h3>2. 中身を見る</h3>
@@ -535,6 +535,14 @@
             <p>
               これは「必要なファイルがあるか」を見るための確認です。
               もし失敗したら、エラー文をそのままAIに渡して「原因だけ教えて」と聞きます。
+            </p>
+          </div>
+          <div class="step-card">
+            <h3>4. hooksの動作を確認する</h3>
+            <pre><code>./scripts/test-hooks.sh</code></pre>
+            <p>
+              保存時の自動チェック（hooks）が正しく動くかを8ケースでテストします。
+              「PASS=8 / FAIL=0」なら合格です。
             </p>
           </div>
           <div class="callout warn">
@@ -621,8 +629,16 @@
                 <td>`retro`</td>
                 <td>次回のために改善点を残す</td>
               </tr>
+              <tr>
+                <td>トークンを節約して進めたい</td>
+                <td>`context-compression`</td>
+                <td>要約は3層、探索より検索、集計はスクリプト</td>
+              </tr>
             </tbody>
           </table>
+          <p>
+            スキル全体の一覧は、リポジトリの `INDEX.md` にタグと参照コスト付きで載っています。
+          </p>
           <div class="callout">
             <div class="callout-title">初心者向けの考え方</div>
             <p>
@@ -652,7 +668,7 @@
               </tr>
               <tr>
                 <td>`/app-scan`</td>
-                <td>`<APP_WORKSPACE>` 全体の棚卸しを軽く更新したい時</td>
+                <td>`&lt;APP_WORKSPACE&gt;` 全体の棚卸しを軽く更新したい時</td>
               </tr>
               <tr>
                 <td>`/sdd-start`</td>
@@ -682,6 +698,10 @@
                 <td>`/token-check`</td>
                 <td>読み込み過ぎやトークン消費を見直したい時</td>
               </tr>
+              <tr>
+                <td>`/compact-work`</td>
+                <td>長い調査・集計をトークン節約モードで進めたい時</td>
+              </tr>
             </tbody>
           </table>
         </section>
@@ -692,7 +712,14 @@
             ECCは、たくさんのスキル、ルール、エージェントを持つ大きな開発支援セットです。
             AIDD Kitは、その中から利用者のプロジェクトでよく使うものを選びやすくするための薄い案内役です。
           </p>
-          <h3>DAILYにするECC</h3>
+          <div class="callout info">
+            <div class="callout-title">正確な対応表の場所</div>
+            <p>
+              プロジェクト別にどのECCを使うかの正式な対応表は `docs/ECC-ASSET-MAP.md` にあります。
+              このページのリストは雰囲気をつかむための例なので、実際の分類はそちらを見てください。
+            </p>
+          </div>
+          <h3>DAILYにするECC（例）</h3>
           <ul>
             <li>`skills/e2e-testing`: PlaywrightやE2E確認</li>
             <li>`skills/browser-qa`: ブラウザでの表示・操作確認</li>
@@ -844,6 +871,16 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
           <h3>次回に同じ失敗をしたくない</h3>
           <pre><code>/retro
 今回のKeep / Problem / Tryを整理し、lessons.mdに残す内容を出してください。</code></pre>
+
+          <h3>調査結果が長すぎて読みにくい</h3>
+          <pre><code>/compact-work
+結論と根拠だけ会話に出して、詳細はファイルに書き出してください。</code></pre>
+
+          <h3>キット自体を直したい・育てたい</h3>
+          <p>
+            キット本体の開発は `docs/Roadmap.md` が作業台帳です。
+            未完了のチェックボックスに、対象ファイル・完了条件・検証手順が書いてあるので、その通りに進めます。
+          </p>
         </section>
 
         <section id="words">

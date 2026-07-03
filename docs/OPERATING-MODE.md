@@ -15,7 +15,7 @@ AIDD Kit を使う時の標準作業モードです。
 
 ## 2. 読む範囲を絞る
 
-最初に読むのは原則この順です。
+キット資産は `INDEX.md` の DAILY／LIBRARY 分類とタグで選ぶ。対象プロジェクト側で最初に読むのは原則この順。
 
 1. `AGENTS.md` / `CLAUDE.md`
 2. `README.md`
@@ -71,4 +71,5 @@ UI変更では、ブラウザまたはスクリーンショット確認を省略
 - 2分を超えそうなら方針確認
 - `npm ci`, Playwright, ブラウザ実行、外部配信確認は必要性を説明してから
 - full ECC ではなく `ecc-daily-router` で選ぶ
+- 長い調査・集計は `context-compression`（3層要約・スクリプト化）で出力を絞る
 
