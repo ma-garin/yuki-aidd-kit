@@ -34,16 +34,16 @@
   - 完了条件: 3パターンそれぞれに「レイアウト構造」「タイポグラフィ階層」「色の役割」「余白・密度」「状態表現（hover/選択/エラー）」の指定があり、具体値は design-system スキルへの参照で解決できる
   - 検証: `./scripts/verify.sh` NG=0（このファイル自体は verify 対象外なので、目視で完了条件を確認して記録する）
 
-## M5: 検索構造の再設計
+## M5: 検索構造の再設計（完了 2026-07）
 
-- [ ] `INDEX.md` を DAILY／LIBRARY の2層＋タグで再構成する
+- [x] `INDEX.md` を DAILY／LIBRARY の2層＋タグで再構成する
   - 対象: `INDEX.md`。参照: 全 `skills/*/SKILL.md` の frontmatter と `claude-code/commands/*.md` の1行目、各ファイルの行数（`wc -l`）
   - 内容: 各スキル・コマンドに「1行要約」「タグ（例: #qa #pwa #token #eval）」「参照コスト（読むべき行数目安）」を付与。ECC 連携表は `docs/ECC-ASSET-MAP.md` への参照1行に置換する（AUDIT の A-04 解消）
   - 完了条件: 全14スキル・10コマンドが掲載され、DAILY/LIBRARY の判定基準が冒頭に明記されている
-- [ ] `CLAUDE.md.template` に導線を追記する
+- [x] `CLAUDE.md.template` に導線を追記する
   - 対象: `CLAUDE.md.template`。内容: 「まず `INDEX.md` を読み、必要ファイルのみ開く」動線をトークン規律セクションに追加
   - 完了条件: install 後の `~/.claude/CLAUDE.md` を読んだエージェントが、最初に INDEX.md へ誘導される記述になっている
-- [ ] 両変更後に `./scripts/install.sh` → `./scripts/verify.sh` NG=0 → コミット
+- [x] 両変更後に `./scripts/install.sh` → `./scripts/verify.sh` NG=0 → コミット
 
 ## M6: バックログ（優先度順・未着手）
 
