@@ -50,8 +50,8 @@
 - [x] hooks の回帰テストをスクリプト化する（完了 2026-07）
   - 対象: `scripts/test-hooks.sh`（新規）。stdin JSON を3 hook に流し、期待出力（秘密ファイル警告／CSS・JS 警告／HTML レポート）を assert する。M2 A-01 の再発防止を自動化する
   - 完了確認: 8ケース PASS=8/FAIL=0 で exit 0。INDEX.md クイックスタートから辿れる
-- [ ] `verify.sh` のリスト自動生成化を検討する
-  - 課題: スキル追加のたびに verify.sh のハードコードリストを手で更新している。`skills/` 実体からリストを導出する案と、意図的な台帳として現状維持する案がある — **保守者に選択肢を提示して確認**
+- [x] `verify.sh` のリスト自動生成化（完了 2026-07。保守者が「自動導出化」を選択）
+  - 適用: verify.sh がリポジトリ実体（skills/ commands/ hooks/）からチェックリストを導出して `~/.claude` と突合する方式に変更。資産追加時の verify.sh 更新が不要になった。欠落検知（NG カウント）の動作確認済み
 - [ ] retro 運用の実績を反映する
   - 対象: `templates/lessons.md` の運用実績を見て、`skills/retro/SKILL.md` の「キットへのフィードバック」手順を実測に合わせて更新する。lessons.md にエントリが溜まってから着手（前提条件）
 - [x] streamlit-rag-app スキルの前提明記（完了 2026-07）
