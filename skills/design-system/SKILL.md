@@ -283,6 +283,68 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
 ```
 - 2値のON/OFFはトグル、3値以上の相互排他選択（テーマ: ライト/ダーク/システム 等）はセグメントコントロールを使う。ラジオボタンの素朴な並びは使わない
 
+### モーダル / ダイアログ（2026-07 追加）
+Harness ToDo モックで「新規作成フォーム」「破壊的操作の確認」の2種を実装・実クリックで検証済み。
+```html
+<div class="modal-backdrop" id="xModal">
+  <div class="modal"> <!-- 確認ダイアログは <div class="modal sm"> -->
+    <div class="modal-head"><h3>見出し</h3><button class="modal-close" data-close="xModal">×</button></div>
+    <div class="modal-body">…</div>
+    <div class="modal-foot">
+      <button class="btn btn--ghost" data-close="xModal">キャンセル</button>
+      <button class="btn btn--primary" data-close="xModal">実行する</button> <!-- 破壊的操作は背景色を --color-critical に -->
+    </div>
+  </div>
+</div>
+```
+```css
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(8,12,18,.46); display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-backdrop.open { display: flex; }
+.modal { width: 480px; max-width: 100%; background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; }
+.modal.sm { width: 380px; } /* 確認ダイアログはモーダルより小さく */
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--color-border); }
+.modal-body { padding: 20px 22px; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--color-border); background: var(--color-surface-2); }
+```
+- **開閉トリガー**: 開くボタンのクリック／`.modal-close`／backdrop 自身のクリック（`e.target===backdrop` で判定し、中身のクリックまで拾わない）の3経路を必ず用意する
+- **破壊的操作の確認ダイアログ**は Critical 色のアイコン（円形背景 `--color-critical-bg` + アイコン `--color-critical`）と実行ボタンを Critical 色にし、対象名を本文に**動的に**埋め込む（「〇〇を削除しますか」と一般化しない）
+- 同時に開くモーダルは1つまで。ページ内に複数の `.modal-backdrop` を用意してもよいが、開閉関数は共通化する
+
+### 通知/リッチポップオーバー（2026-07 追加）
+ツールチップ・列フィルタ（テキストのみの軽量ポップオーバー）と違い、リストや複数行の内容を持つ場合はこちらを使う。
+```css
+.notif-pop { display: none; position: absolute; top: 46px; right: 0; z-index: 60; width: 328px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+.notif-pop.open { display: block; }
+.notif-item.unread { background: var(--color-primary-light); } /* 未読/既読は背景の濃淡だけで区別。バッジを乱用しない */
+```
+- **画面右上のヘッダーアイコンから開くポップオーバーは右揃え**（`right:0`）にする。中央揃えは画面外にはみ出す（情報ツールチップの節を参照）
+- 開閉は「トリガー要素クリックでトグル」＋「ドキュメント全体のクリックで閉じる」の組み合わせ。ポップオーバー内部のクリックは `stopPropagation()` で外側クリック判定に伝播させない
+
+### 空状態（0件表示）（2026-07 追加）
+```html
+<div class="empty-state">
+  <span class="empty-ic"><svg><!-- 検索や+のような文脈アイコン --></svg></span>
+  <h4>条件に一致するタスクがありません</h4>
+  <p>フィルタや検索条件を変更するか、新しいタスクを作成してください。</p>
+  <button class="btn">フィルタを解除</button>
+</div>
+```
+```css
+.empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 64px 24px; color: var(--color-text-secondary); }
+.empty-ic { width: 56px; height: 56px; border-radius: 50%; background: var(--color-surface-2); display: grid; place-items: center; color: var(--color-text-disabled); margin-bottom: 18px; }
+```
+- 用途は2種: ①フィルタ・検索の結果0件（解決アクションは「フィルタを解除」）②新規ユーザーでデータが未作成（解決アクションは「最初の〇〇を作成」）。**文言とボタンを用途に応じて変える**。どちらも同じ空のグレーアイコンで済ませない
+
+### フォームのバリデーション/エラー（2026-07 追加）
+```css
+.input.err { border-color: var(--color-critical); box-shadow: 0 0 0 3px var(--color-critical-bg); }
+.field-err-text { display: flex; align-items: center; gap: 6px; color: var(--color-critical); font-size: 12px; margin-top: 7px; }
+.banner-err { display: flex; gap: 10px; background: var(--color-critical-bg); border: 1px solid var(--color-critical); border-radius: var(--radius-md); padding: 12px 14px; font-size: 13px; color: var(--color-critical); }
+```
+- **2段構え**にする: フォーム全体のエラーは上部の `.banner-err`（「ログインできませんでした」等、原因の要約）、個別項目のエラーは該当フィールド直下の `.field-err-text`（「パスワードが正しくありません」等、具体的な指摘）。バナーだけ・フィールドだけの片方に頼らない
+- エラー色は Critical のみ。警告と混同して High（橙）を使わない
+- alert() やブラウザ標準のバリデーションポップアップは使わない（既存の「モーダル」「バナー」「フィールド直下」いずれかで表現する）
+
 ## 折りたたみ端末対応レスポンシブ
 
 ```css
