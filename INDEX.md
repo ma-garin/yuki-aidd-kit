@@ -14,12 +14,17 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
-./scripts/install.sh && ./scripts/verify.sh   # 導入と確認
+./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
 ./scripts/test-hooks.sh                       # hooks の回帰テスト（8ケース）
+./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
 open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 ```
+
+**導入方式は2つ**（併用が前提。`docs/Vision.md` の「配置の2層」参照）:
+- **グローバル導入**（`install.sh`）: 自分のPC1台で複数プロジェクトを横断する日常運用
+- **プロジェクト配布**（`export-project.sh`）: 対象プロジェクト直下に `.claude/` と `AGENTS.md`/`CLAUDE.md` を書き出し、そのプロジェクトの git にコミット。Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先でも install 不要でそのまま効く
 
 ## DAILY スキル（進め方の制御）
 
