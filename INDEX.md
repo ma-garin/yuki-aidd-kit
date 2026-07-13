@@ -38,6 +38,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 | `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 57行 |
 | `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 53行 |
 | `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only | #qa #review | 43行 |
+| `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 71行 |
 | `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 49行 |
 | `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 43行 |
 | `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 38行 |
