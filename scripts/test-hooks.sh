@@ -9,6 +9,7 @@ trap 'rm -rf "$TMP"' EXIT
 PASS=0; FAIL=0
 
 json() { printf '{"tool_name":"Write","tool_input":{"file_path":"%s"}}' "$1"; }
+json_tool() { printf '{"tool_name":"%s","tool_input":{}}' "$1"; }
 
 expect_contains() { # 名前, 期待部分文字列, 実出力
   if printf '%s' "$3" | grep -qF "$2"; then
@@ -61,6 +62,25 @@ if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -qF "session-end"; then
 else
   echo "  ❌ セッション終了サマリ（exit=$RC）"; FAIL=$((FAIL+1))
 fi
+
+echo "[block-explore.sh]"
+# 実装モード OFF（.claude/mode なし）→ 探索は素通り
+PROJ_OFF="$TMP/proj-off"; mkdir -p "$PROJ_OFF"
+OUT=$(json_tool "Read" | CLAUDE_PROJECT_DIR="$PROJ_OFF" bash "$HOOKS/block-explore.sh" 2>&1); RC=$?
+expect_empty "モードOFFではReadを許可（無言 exit 0）" "$OUT" "$RC"
+
+# 実装モード ON（.claude/mode あり）→ 探索をブロック（exit 2 ＋ 警告）
+PROJ_ON="$TMP/proj-on"; mkdir -p "$PROJ_ON/.claude"; echo "implement" > "$PROJ_ON/.claude/mode"
+OUT=$(json_tool "Read" | CLAUDE_PROJECT_DIR="$PROJ_ON" bash "$HOOKS/block-explore.sh" 2>&1); RC=$?
+if [ "$RC" -eq 2 ] && printf '%s' "$OUT" | grep -qF "実装モード"; then
+  echo "  ✅ モードONでReadをブロック（exit 2 ＋ 警告）"; PASS=$((PASS+1))
+else
+  echo "  ❌ モードONでReadをブロック（exit=$RC / 出力: $(printf '%s' "$OUT" | head -1)）"; FAIL=$((FAIL+1))
+fi
+
+# 実装モード ON でも Write 系（非探索）は素通り（matcher 想定外の tool_name）
+OUT=$(json_tool "Write" | CLAUDE_PROJECT_DIR="$PROJ_ON" bash "$HOOKS/block-explore.sh" 2>&1); RC=$?
+expect_empty "モードONでもWriteは素通り（無言 exit 0）" "$OUT" "$RC"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

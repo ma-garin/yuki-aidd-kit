@@ -30,7 +30,7 @@ if [ -f "$CLAUDE_DIR/settings.json" ]; then
 else
   cp "$KIT_DIR/claude-code/hooks/settings.json" "$CLAUDE_DIR/settings.json"
 fi
-echo "✅ Hooks: 3個"
+echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh | wc -l | tr -d ' ')個"
 
 # Codex用
 echo ""

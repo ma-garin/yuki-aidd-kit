@@ -18,6 +18,13 @@
 - MCPは必要なものだけ有効化（1MCP≈数千トークン）
 - 設計・実装・テストはセッション分割を提案する
 
+## 実装モード（探索ブロック）
+- `.claude/mode` ファイルの有無で探索ブロックを切り替える（**存在＝実装モード＝ Read/Grep/Glob をブロック**）
+- `/plan` で方針を確定（`.claude/mode` を削除して探索を許可）→ `/implement` で実装モードに入る（plan の存在を確認してから `.claude/mode` を作成）
+- 実装モード中は再探索しない。plan で確定した方針・対象ファイルの実装に集中する。再調査が必要になったら `/plan` で解除してから行う
+- hook: `claude-code/hooks/block-explore.sh`（PreToolUse / Read・Grep・Glob 対象。plan 未確定で /implement は中断）
+- 詳細な行動規範は `templates/implement-profile.md`
+
 ## 禁止事項
 - 指示なしの大規模リファクタ・依存追加
 - 単一HTMLツールのCSS/JS外部分割（プロジェクト指示がない限り）
