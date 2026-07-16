@@ -9,6 +9,15 @@
             "command": "bash ~/.claude/hooks/pre-write-check.sh"
           }
         ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/block-explore.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
