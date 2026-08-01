@@ -16,6 +16,12 @@ description: タスクや機能を「完了」と判定する前の最終チェ�
 - [ ] implement.md に作業記録を追記した
 - [ ] コミット済み（Conventional Commits形式）
 
+## 工程ライフサイクル（dev-lifecycle）を使っている場合の追加項目
+- [ ] 対象工程の**出口基準**を満たす（`skills/dev-lifecycle/references/phase-gates.md`。未達は次工程で埋めず差し戻す）
+- [ ] `./scripts/trace-check.sh docs/lifecycle` が NG=0（要件が設計・実装・テストへ紐づいている）
+- [ ] 成果物に未確定の `TBD` が残っていない
+- [ ] 人間の承認が必要な3点（RFD の決定 / 要件定義の確定 / UAT 合格）を取得済み
+
 ## AI/LLMを含む場合の追加項目
 - [ ] **agent-evalのスコアがベースライン以上**（プロンプト/モデル/ロジックを変更した場合は必須）
 - [ ] Faithfulness等の必須ゲートを満たす（RAGの場合）

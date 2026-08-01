@@ -4,6 +4,27 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。キット自体の目的・要求・開発継続手順は `docs/Vision.md`・`docs/PRD.md`・`docs/Roadmap.md` にあります。
 
+## Ver.6.0 での主な更新（2026-08）— 開発工程ライフサイクル
+
+RFD から保守運用までの10工程を AI に実行させる層を追加しました。既存の軽量 SDD（spec/plan/tasks）はそのまま残り、**工程分割が必要な案件だけ**がこの層を使います（使い分けの判断表は `skills/dev-lifecycle/SKILL.md` の冒頭）。
+
+```text
+RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テスト → 結合テスト → システムテスト → 受け入れテスト → 保守運用
+      └── V字の対応: 要件↔受け入れ / 基本設計↔システム・結合 / 詳細設計↔単体 ──┘
+```
+
+- `skills/dev-lifecycle`: 10工程の成果物・ID 体系・工程ゲート（入口/出口基準）・役割・他スキルへの委譲を規定。詳細は references（`phase-gates.md` / `traceability.md` / `test-levels.md`）
+- `templates/lifecycle/`: 工程成果物の雛形11本。`./scripts/init-lifecycle.sh <対象>` で配置（既存ファイルは上書きしない）
+- **`scripts/trace-check.sh`**: 要件が設計・実装・テストへ紐づいているかを目視でなく機械検証する。重複定義／未定義参照／所有ファイル違反／追跡表未記載／カバー漏れ／孤立テストの6種別を検出し、NG>0 で exit 1（CI でそのまま落とせる）
+- コマンド `/rfd`・`/lifecycle <工程名>`・`/trace` を追加
+- GitHub 連携: Issue テンプレート（RFD・要件・欠陥）、関係 ID 欄付き PR テンプレート、PR で trace-check を回す `lifecycle-check.yml`
+- 回帰テスト `scripts/test-trace-check.sh`（15ケース）。**配布する雛形が最初から NG=0 で始まること**もテスト対象
+
+```bash
+./scripts/init-lifecycle.sh <対象プロジェクト> --github   # 工程文書＋GitHub テンプレート一式
+./scripts/trace-check.sh docs/lifecycle                   # 追跡の機械検証（NG=0 で合格）
+```
+
 ## Ver.5.0 での主な更新（2026-07）
 
 - `context-compression` スキルと `/compact-work` コマンドを追加（3層要約・grep/glob優先・決定論的作業のスクリプト化）
@@ -21,7 +42,7 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/verify.sh      # 配置確認（リストは自動導出）
-./scripts/test-hooks.sh  # hooks の回帰テスト（8ケース）
+./scripts/test-hooks.sh  # hooks の回帰テスト（11ケース）
 ```
 
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md` を書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
@@ -47,7 +68,7 @@ open docs/yuki-aidd-kit-manual.html
 
 1. `INDEX.md` を読み、今の作業タグに合う DAILY／LIBRARY だけ開く
 2. `ecc-daily-router` で対象プロジェクトに合う ECC 資産を選ぶ
-3. 仕様や大きめの変更は `sdd-ecc-workflow` で spec / plan / tasks に分ける
+3. 進め方を決める: 工程分割が要る案件（納品・引き継ぎ・要件合意・保守運用）は `dev-lifecycle`、個人PWA/単一HTML/PoC は軽量な `sdd-ecc-workflow` で spec / plan / tasks に分ける
 4. 長い調査・集計は `context-compression`（または `/compact-work`）で3層要約＋スクリプト化する
 5. 実装後は `test-automation` と ECC の `verification-loop` を使う
 6. UI / UX / QA 観点は `qa-review-standards` と ECC の `browser-qa` / `accessibility` を併用する
@@ -80,23 +101,29 @@ yuki-aidd-kit/
 │   ├── OPERATING-MODE.md                 # 標準作業モード
 │   ├── PROJECT-FIT-REPORT.md             # 実プロジェクト適合レポート
 │   └── yuki-aidd-kit-manual.html         # HTML 取説
-├── skills/                   # 14スキル（各 SKILL.md、一部 references/ 付き）
+├── skills/                   # 15スキル（各 SKILL.md、一部 references/ 付き）
+│   └── dev-lifecycle/        # 工程ライフサイクル（+ phase-gates / traceability / test-levels）
 ├── claude-code/
-│   ├── commands/             # 10スラッシュコマンド
-│   └── hooks/                # 3 hooks + settings.json
+│   ├── commands/             # 15スラッシュコマンド
+│   └── hooks/                # 4 hooks + settings.json
 ├── scripts/
 │   ├── install.sh / verify.sh / test-hooks.sh   # グローバル導入
 │   ├── export-project.sh                        # プロジェクト配布
+│   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit
 ├── templates/
 │   ├── design-system.md      # 視覚的指示書
-│   └── CURRENT_STATE.md / ADR-template.md / lessons.md
-└── github-actions/           # 配布用サンプル（deploy / secret-scan）
+│   ├── lifecycle/            # 工程成果物の雛形11本（RFD〜保守運用＋追跡表）
+│   ├── github/               # Issue（RFD/要件/欠陥）・PR テンプレート
+│   └── CURRENT_STATE.md / ADR-template.md / lessons.md / implement-profile.md
+└── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check）
 ```
 
 ## 今後の開発時の合言葉
 
 - 「このプロジェクトに合うECCだけ選んで」 → `ecc-daily-router`
+- 「要件定義から順番に、工程を分けて進めたい」 → `dev-lifecycle`（`/rfd` → `/lifecycle <工程名>`）
+- 「要件がテストまで漏れなく落ちているか確認して」 → `/trace`（`scripts/trace-check.sh`）
 - 「仕様から進めたい」 → `sdd-ecc-workflow`
 - 「トークンを節約して進めて」 → `/compact-work`（`context-compression`）
 - 「UI/UXを見て」 → `qa-review-standards` + ECC `browser-qa`

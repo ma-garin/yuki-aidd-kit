@@ -7,6 +7,8 @@ description: 仕様駆動開発（SDD: Spec-Driven Development）でプロジェ
 
 仕様ファイルを単一の真実とし、実装・検証を分離して進める。詳細テンプレートは references/templates.md を参照。
 
+**工程分割が要る案件（他者へ納品・引き継ぐ／要件の合意が要る／テストレベルを分ける／保守運用が続く）は `dev-lifecycle` スキルを使う。** 本スキルの spec/plan/tasks は工程ライフサイクルの中に入れ子で収まる（対応表は `skills/dev-lifecycle/SKILL.md`。ここには複製しない）。
+
 ## 10ステップフロー
 1. spec.md（要求・制約・検証基準）→ 2. plan.md（アーキテクチャ・技術選定）→ 3. tasks.md（依存関係付きタスク分解）→ 4. 実装ループ → 5. 検証 → 6. implement.md（実装記録）→ 7. documentation.md → 8. AGENTS.md/CLAUDE.md更新 → 9. レビュー → 10. 次イテレーション
 

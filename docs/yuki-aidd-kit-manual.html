@@ -580,6 +580,7 @@
           <li><a href="#first">最初にやること</a></li>
           <li><a href="#deploy">導入方式（2種類）</a></li>
           <li><a href="#daily">毎日の使い方</a></li>
+          <li><a href="#lifecycle">開発工程（RFD〜運用）</a></li>
           <li><a href="#skills">スキルの選び方</a></li>
           <li><a href="#commands">コマンド一覧</a></li>
           <li><a href="#ecc">ECCとの関係</a></li>
@@ -600,6 +601,7 @@
           <li><a href="#first">最初にやること</a></li>
           <li><a href="#deploy">導入方式（2種類）</a></li>
           <li><a href="#daily">毎日の使い方</a></li>
+          <li><a href="#lifecycle">開発工程（RFD〜運用）</a></li>
           <li><a href="#skills">スキルの選び方</a></li>
           <li><a href="#commands">コマンド一覧</a></li>
           <li><a href="#ecc">ECCとの関係</a></li>
@@ -880,6 +882,62 @@ git commit -m "chore: add AIDD Kit"</code></pre>
           </p>
         </section>
 
+        <section id="lifecycle">
+          <h2><span class="h2-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>開発工程（RFD〜保守運用）</h2>
+          <p>
+            前の章の流れは、個人用アプリや小さな道具にはちょうどよい進め方です。
+            ですが「他の人に納品する」「後で誰かが引き継ぐ」「要件を関係者と合意する必要がある」場合は、
+            工程を分けて、ひとつずつ承認しながら進めたほうが安全です。そのための道具が `dev-lifecycle` です。
+          </p>
+          <p>
+            工程は次の10段階です。左側（要件・設計）と右側（テスト）が対になっているのが特徴で、
+            この形は<span class="term">V字モデル<span class="term-tip">要件はいちばん最後の受け入れテストで、詳細設計は単体テストで検証する、という対応づけ。左右が対になるのでV字と呼ぶ。</span></span>と呼ばれます。
+          </p>
+          <pre><code>RFD → 要件定義 → 基本設計 → 詳細設計 → 実装
+                 ↓          ↓          ↓
+             受け入れ ← システム ← 結合 ← 単体テスト → 保守運用</code></pre>
+          <p>
+            `RFD` は「まず何を解くかを決める話し合いの文書」です。いきなり作り始めず、
+            選択肢を並べて、どれを選ぶかを人間が決めます。
+          </p>
+          <p>
+            始め方は次の1行です。工程ごとの書式（ひな形）が `docs/lifecycle/` に置かれます。
+          </p>
+          <pre><code>./scripts/init-lifecycle.sh 対象プロジェクトのパス --github</code></pre>
+          <p>
+            そのあとはAIに次のように頼みます。
+          </p>
+          <pre><code>/rfd 家計簿アプリにCSV出力を追加したい
+（決めたら）
+/lifecycle 要件定義
+/lifecycle 基本設計
+...
+/trace</code></pre>
+          <h3>この仕組みのいちばん大事なところ</h3>
+          <p>
+            工程を分けると「要件に書いたのに、テストされていない」という抜けが起きます。
+            人間が目で追うと必ず見落とすので、これを機械に判定させます。
+          </p>
+          <pre><code>./scripts/trace-check.sh docs/lifecycle</code></pre>
+          <p>
+            要件・設計・実装・テストにそれぞれ `REQ-F-001` のような<span class="term">ID<span class="term-tip">文書どうしを結びつけるための短い番号。これがないと「どの要件のテストか」が追えなくなる。</span></span>を振っておくと、
+            このコマンドが「テストされていない要件」「どの要件のものか分からないテスト」などを見つけて教えてくれます。
+            問題がなければ `NG=0` と表示されます。
+          </p>
+          <div class="callout">
+            <p>
+              <strong>AIに承認させない3か所。</strong>
+              RFDの決定、要件定義の確定、受け入れテストの合格判定は、必ず人間が判断します。
+              AIは資料を作り、証拠を集め、食い違いを報告するところまでを担当します。
+            </p>
+          </div>
+          <p>
+            工程ごとの「始めてよい条件・終わってよい条件」は
+            `skills/dev-lifecycle/references/phase-gates.md` にまとまっています。
+            前の工程の条件を満たしていないのに次へ進まないでください。足りない分を次の工程で埋めると、後で必ず戻ることになります。
+          </p>
+        </section>
+
         <section id="skills">
           <h2><span class="h2-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>スキルの選び方</h2>
           <p>
@@ -979,6 +1037,18 @@ git commit -m "chore: add AIDD Kit"</code></pre>
               <tr>
                 <td>`/sdd-start`</td>
                 <td>新機能を仕様から作りたい時</td>
+              </tr>
+              <tr>
+                <td>`/rfd`</td>
+                <td>作り始める前に「何をどう解くか」の選択肢を出して決めたい時</td>
+              </tr>
+              <tr>
+                <td>`/lifecycle`</td>
+                <td>要件定義・基本設計・単体テストなど、工程ごとの資料を作りたい時（`/lifecycle status` で進み具合の確認）</td>
+              </tr>
+              <tr>
+                <td>`/trace`</td>
+                <td>要件がテストまで漏れなく落ちているかを機械に確認させたい時</td>
               </tr>
               <tr>
                 <td>`/new-pwa`</td>

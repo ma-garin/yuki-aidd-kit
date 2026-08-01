@@ -1,0 +1,48 @@
+# 工程トレーサビリティ検査
+# .github/workflows/lifecycle-check.yml に配置
+# （./scripts/init-lifecycle.sh <target> --github で scripts/trace-check.sh と一緒に自動配置される）
+#
+# docs/lifecycle/ の工程文書について、要件が設計・実装・テストへ紐づいているかを
+# レビュー前に機械検証する。NG があれば PR を落とす。
+# 検査内容: skills/dev-lifecycle/references/traceability.md
+
+name: Lifecycle Trace Check
+
+on:
+  pull_request:
+    paths:
+      - 'docs/lifecycle/**'
+      - 'scripts/trace-check.sh'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/lifecycle/**'
+  workflow_dispatch:
+
+jobs:
+  trace-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run trace-check
+        id: trace
+        run: |
+          chmod +x scripts/trace-check.sh
+          ./scripts/trace-check.sh docs/lifecycle -o trace-check-report.md
+
+      # 失敗時も詳細レポートを残す（会話・ログには結論だけ、全件はここ）
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trace-check-report
+          path: trace-check-report.md
+          if-no-files-found: ignore
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f trace-check-report.md ]; then
+            cat trace-check-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi

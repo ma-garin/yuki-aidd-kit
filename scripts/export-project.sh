@@ -79,6 +79,21 @@ echo "✅ Hooks: 3個（プロジェクトスコープ・相対パス参照）"
 cp "$KIT_DIR/INDEX.md" "$TARGET/.claude/INDEX.md"
 echo "✅ INDEX.md 同梱"
 
+# テンプレート（dev-lifecycle の工程雛形など。スキル本文から参照されるため同梱する）
+mkdir -p "$TARGET/.claude/templates"
+cp -r "$KIT_DIR/templates/"* "$TARGET/.claude/templates/"
+echo "✅ templates 同梱（lifecycle 工程雛形・design-system・ADR ほか）"
+
+# トレーサビリティ検査スクリプト（工程文書を使う場合に CI/ローカル双方から実行する）
+mkdir -p "$TARGET/scripts"
+if [ -e "$TARGET/scripts/trace-check.sh" ]; then
+  echo "↷ scripts/trace-check.sh は既存のためスキップ"
+else
+  cp "$KIT_DIR/scripts/trace-check.sh" "$TARGET/scripts/trace-check.sh"
+  chmod +x "$TARGET/scripts/trace-check.sh"
+  echo "✅ scripts/trace-check.sh 同梱"
+fi
+
 # Codex用 AGENTS.md（INDEX.md参照をプロジェクト相対パスに変換）
 backup_if_exists "$TARGET/AGENTS.md"
 sed 's#<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md#.claude/INDEX.md#' \
@@ -94,5 +109,6 @@ echo ""
 echo "=== 完了 ==="
 echo "次にやること:"
 echo "1. $TARGET/AGENTS.md と $TARGET/CLAUDE.md 内の残りの <...> プレースホルダ（GITHUB_OWNER等）を埋める"
-echo "2. $TARGET で: git add .claude AGENTS.md CLAUDE.md && git commit"
+echo "2. $TARGET で: git add .claude AGENTS.md CLAUDE.md scripts/trace-check.sh && git commit"
 echo "3. これでCodex・リモート/エフェメラルなClaude Code・teammateのclone先でも自動的に効く"
+echo "4. 工程（RFD〜保守運用）で進める場合: $KIT_DIR/scripts/init-lifecycle.sh $TARGET --github"
