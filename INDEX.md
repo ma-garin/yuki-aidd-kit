@@ -15,9 +15,12 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
-./scripts/test-hooks.sh                       # hooks の回帰テスト（8ケース）
+./scripts/test-hooks.sh                       # hooks の回帰テスト（11ケース）
+./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
 ./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
+./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
+./scripts/trace-check.sh docs/lifecycle       # 要件→設計→実装→テストの追跡を機械検証（NG=0 で合格）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
 open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 ```
@@ -30,6 +33,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
+| `dev-lifecycle` | RFD→要件定義→基本/詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用。工程ゲートとトレーサビリティ | #lifecycle #process | 105行 |
 | `context-compression` | 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存 | #token #process | 56行 |
 | `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 57行 |
 | `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 53行 |
@@ -54,6 +58,11 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 | コマンド | 1行要約 | タグ | コスト |
 |---|---|---|---|
+| `/rfd` | RFD（提案・論点出し）を起票し、決定を人間に求める | #lifecycle | 24行 |
+| `/lifecycle` | 指定工程の成果物を生成し入口/出口基準で判定（`status` で進捗確認） | #lifecycle | 28行 |
+| `/trace` | トレーサビリティの更新と `trace-check.sh` による機械検証 | #lifecycle #qa | 22行 |
+| `/plan` | 方針を確定し実装モードを解除（探索を許可）。PLAN.md を生成 | #process | 18行 |
+| `/implement` | 実装モード開始（plan 必須。Read/Grep/Glob を hook で物理ブロック） | #process | 19行 |
 | `/compact-work` | context-compression 規約で作業（3層要約・スクリプト化） | #token | 13行 |
 | `/ecc-daily` | プロジェクトに合うECC資産の分類を実行 | #ecc | 26行 |
 | `/app-scan` | アプリワークスペースの軽量棚卸し | #ecc #scan | 20行 |
@@ -73,19 +82,34 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 62行 |
-| `docs/Vision.md` | キットの目的・到達点・Non-Goals | 36行 |
-| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 58行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 115行 |
+| `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
+| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 64行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
 | `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 75行 |
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
-| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 960行 |
+| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1337行 |
 
-templates/: `design-system.md`（視覚的指示書）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md`
+templates/: `design-system.md`（視覚的指示書）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
+
+## templates/lifecycle/ — 工程成果物の雛形（`dev-lifecycle` 用）
+
+`00-rfd` / `01-requirements` / `02-basic-design` / `03-detailed-design` / `04-implementation` /
+`05-unit-test` / `06-integration-test` / `07-system-test` / `08-acceptance-test` / `09-operations` / `traceability-matrix`
+
+配置は `./scripts/init-lifecycle.sh <対象>`（既存ファイルは上書きしない）。工程の入口/出口基準は
+`skills/dev-lifecycle/references/phase-gates.md`、ID 体系は `references/traceability.md`、
+テストレベル別の観点は `references/test-levels.md`。
+
+## templates/github/ — GitHub 連携（`--github` で配置）
+
+`ISSUE_TEMPLATE/`（RFD / 要件 / 欠陥）と `pull_request_template.md`（関係 ID とゲートのチェック欄）。
+CI は `github-actions/lifecycle-check.yml`（PR で `trace-check.sh` を実行し、追跡漏れを落とす）。
 
 ## 運用原則
 
+- 工程分割が要る案件（他者へ納品/引き継ぐ・要件合意が要る・保守が続く）は `dev-lifecycle`、個人PWA/単一HTML/PoC は軽量な `sdd-ecc-workflow`。判断表は `skills/dev-lifecycle/SKILL.md` 冒頭
 - 全量導入より、対象プロジェクトに合う DAILY だけを読む。LIBRARY は削除せず必要時に検索・参照
 - ファイルを読む前に grep/glob で絞る（`context-compression` 参照）
 - UI変更はスクリーンショットかE2Eで確認する

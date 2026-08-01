@@ -38,6 +38,10 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: プリセット情報が MAP 以外に重複して存在しない
 - **FR-07 自己文書化**: キット自体の開発が `docs/Vision.md`・`docs/PRD.md`・`docs/Roadmap.md` で継続可能である
   - 検証基準: Roadmap の未完了項目に対象ファイル・完了条件・検証手順が明記されている
+- **FR-08 開発工程ライフサイクル**: RFD →要件定義→基本設計→詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用の10工程を、成果物雛形（`templates/lifecycle/`）・入口出口基準（`skills/dev-lifecycle/references/phase-gates.md`）・ID 体系の3点で提供する
+  - 検証基準: `./scripts/init-lifecycle.sh <対象>` が11ファイルを配置し、`./scripts/trace-check.sh` が NG=0 を返す（`./scripts/test-trace-check.sh` で回帰テスト）
+- **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する
+  - 検証基準: 重複定義・未定義参照・所有ファイル違反・追跡表未記載・カバー漏れ・孤立テストの6種別を検出し、NG>0 で exit 1 する（CI から `github-actions/lifecycle-check.yml` で実行できる）
 
 ## 非機能要求（ISO/IEC 25010）
 

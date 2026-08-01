@@ -95,6 +95,21 @@ Harness ToDo モックに実クリックで動くインタラクティブなモ�
 - [x] フォームのバリデーション/エラー（バナー＋フィールド直下エラーの2段構え）
 - [x] 実装中に発見した不具合を修正: 常時表示の情報ツールチップが下の行のクリックを妨げていた問題（ホバー時のみ表示に変更）
 
+## M11: 開発工程ライフサイクル（完了 2026-08）
+
+RFD から保守運用までの10工程を AI に実行させる層を追加した。既存の軽量 SDD（spec/plan/tasks）は残し、**工程分割が要る案件だけが本層を使う**という入れ子関係にして真実源の重複を避けた（対応表は `skills/dev-lifecycle/SKILL.md` の1箇所のみ）。
+
+- [x] `skills/dev-lifecycle/` を新設（SKILL.md ＋ references: `phase-gates.md` / `traceability.md` / `test-levels.md`）
+  - 適用判断（軽量 SDD との使い分け）・10工程の成果物と ID・V字の対応・工程ゲート・役割・他スキルへの委譲表を規定
+- [x] `templates/lifecycle/` に工程成果物の雛形11本を新設（RFD／要件定義／基本設計／詳細設計／実装記録／単体・結合・システム・受け入れテスト／保守運用／追跡表）
+- [x] `scripts/trace-check.sh` を新設。要件→設計→実装→テストの追跡を機械検証する（重複定義／未定義参照／所有ファイル違反／追跡表未記載／カバー漏れ／孤立テストの6種別）。出力は context-compression の3層要約に従い、全件は詳細レポートへ書き出す
+- [x] `scripts/init-lifecycle.sh` を新設（工程雛形の配置。`--github` で Issue/PR/CI テンプレートも配置。既存ファイルは上書きしない）
+- [x] `scripts/test-trace-check.sh` で回帰テスト化（15ケース PASS）。**雛形が最初から NG=0 で始まること**をテストに含めた（雛形が NG を出すと利用者が検査結果を無視するようになるため）
+- [x] `claude-code/commands/` に `/rfd`・`/lifecycle`・`/trace` を追加
+- [x] GitHub 連携: `templates/github/`（RFD・要件・欠陥の Issue テンプレート、関係 ID 欄付き PR テンプレート）と `github-actions/lifecycle-check.yml`（PR で trace-check を実行）
+- [x] 既存資産との接続: `done-gate` に工程ゲート項目、`sdd-ecc-workflow` に使い分けの導線、`CLAUDE.md.template`・`AGENTS.md.template`・`INDEX.md`・`README.md` に工程の導線を追加。`export-project.sh` が `templates/` と `trace-check.sh` を同梱するよう更新
+- 検証記録: `./scripts/install.sh` → `./scripts/verify.sh` NG=0、`./scripts/test-hooks.sh` 8/8、`./scripts/test-trace-check.sh` 15/15
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み。
