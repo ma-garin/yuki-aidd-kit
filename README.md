@@ -4,6 +4,13 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。キット自体の目的・要求・開発継続手順は `docs/Vision.md`・`docs/PRD.md`・`docs/Roadmap.md` にあります。
 
+## Ver.6.3 での主な更新（2026-08-25）— デザイン: トークン実物・画面の作り方・フレームワーク別適用
+
+- **`templates/tokens.css`**: デザイントークンの実物（ライト＋ダーク、`prefers-color-scheme` と `data-theme` 両対応、reduced-motion、タップ最小 44px）。WebSpec2Doc の `on-primary` / `surface-3` / `border-strong` / severity `-border` / `motion-*`、UX_Auto_Reviewer の本文幅 68ch を統合
+- **`design-system` に「画面の作り方」を追加**: 直値禁止のトークン運用（色 105 種・角丸 11 種・文字 21 段階を整理した実績から）、骨格（globalbar / sidebar / topbar / content）、**操作には必ず結果を返す**（成功＝消えるトースト／失敗＝消えない＋次の行動／処理中／0 件／危険操作の確認、`textContent` で入れる）、アイコン（同梱・CDN 禁止・慣用の形）、文言規約（ボタンは動作名、見出しに動詞を入れない、「（任意）」を付けない）
+- **`design-system/references/frameworks.md`**: 単一 HTML / React+Vite（Tailwind は CSS 変数参照で登録）/ Streamlit（`config.toml` + `ui/theme.py` 集約）/ Flask・Django 別の当て方と、ECC `frontend-patterns`・`frontend-design`・`ckm:design`・`uiux_review` との分担表
+- `templates/design-system.md` の再現チェックリストに直値・フィードバック・文言・アイコンの項目を追加
+
 ## Ver.6.2 での主な更新（2026-08-25）— テスト活動の設計と機械ゲート
 
 WebSpec2Doc で運用してきたテスト活動（テスト戦略・DoD・ISO/IEC/IEEE 29119 文書・機能契約ハーネス・UI 検証マーカー）を汎用化して取り込みました。
@@ -147,6 +154,7 @@ yuki-aidd-kit/
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit
 ├── templates/
 │   ├── design-system.md      # 視覚的指示書
+│   ├── tokens.css            # デザイントークンの実物（ライト＋ダーク）
 │   ├── settings.sandbox.json # sandbox / denyRead / network allowlist / permissions の雛形
 │   ├── lifecycle/            # 工程成果物の雛形11本（RFD〜保守運用＋追跡表）
 │   ├── test/                 # テスト戦略・DoD・29119 文書・テストケース CSV・機能契約の雛形8本
