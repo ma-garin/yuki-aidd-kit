@@ -82,6 +82,40 @@ fi
 OUT=$(json_tool "Write" | CLAUDE_PROJECT_DIR="$PROJ_ON" bash "$HOOKS/block-explore.sh" 2>&1); RC=$?
 expect_empty "モードONでもWriteは素通り（無言 exit 0）" "$OUT" "$RC"
 
+echo "[block-gates.py]"
+bash_json() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$1"; }
+OUT=$(bash_json "pytest tests/" | python3 "$HOOKS/block-gates.py")
+expect_contains "pytest を deny" '"permissionDecision": "deny"' "$OUT"
+
+OUT=$(bash_json "cd /tmp && make test" | python3 "$HOOKS/block-gates.py")
+expect_contains "&& 直後の make test を deny" '"permissionDecision": "deny"' "$OUT"
+
+OUT=$(bash_json "GATES_REQUESTED=1 pytest tests/" | python3 "$HOOKS/block-gates.py"); RC=$?
+expect_empty "GATES_REQUESTED=1 で素通り" "$OUT" "$RC"
+
+OUT=$(bash_json "git commit -m 'add make test target'" | python3 "$HOOKS/block-gates.py"); RC=$?
+expect_empty "引用文字列内の make test は素通り（誤検知なし）" "$OUT" "$RC"
+
+OUT=$(json_tool "Read" | python3 "$HOOKS/block-gates.py"); RC=$?
+expect_empty "Bash 以外は素通り" "$OUT" "$RC"
+
+echo "[progress.py / statusline.py]"
+PH="$TMP/proj-prog/.claude/hooks"; mkdir -p "$PH"; cp "$HOOKS/progress.py" "$HOOKS/statusline.py" "$PH/"
+python3 "$PH/progress.py" start "テスト" 120 && python3 "$PH/progress.py" step "2/3 配線"
+if [ -f "$TMP/proj-prog/.claude/progress.json" ] && grep -qF '2/3' "$TMP/proj-prog/.claude/progress.json"; then
+  echo "  ✅ start/step で progress.json を更新"; PASS=$((PASS+1))
+else
+  echo "  ❌ start/step で progress.json を更新"; FAIL=$((FAIL+1))
+fi
+OUT=$(printf '{}' | python3 "$PH/statusline.py")
+expect_contains "進行中はステータスラインに ⏱ と経過/見積を表示" "⏱ テスト [2/3 配線]" "$OUT"
+python3 "$PH/progress.py" done
+if [ ! -e "$TMP/proj-prog/.claude/progress.json" ]; then
+  echo "  ✅ done で progress.json を削除"; PASS=$((PASS+1))
+else
+  echo "  ❌ done で progress.json を削除"; FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 if [ "$FAIL" -eq 0 ]; then

@@ -28,9 +28,19 @@ for f in "$KIT_DIR/claude-code/commands/"*.md; do
 done
 
 echo "[Hooks]"
-for f in "$KIT_DIR/claude-code/hooks/"*.sh; do
-  h=$(basename "$f" .sh)
-  check "$h.sh" "$CLAUDE_DIR/hooks/$h.sh"
+for f in "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py; do
+  h=$(basename "$f")
+  check "$h" "$CLAUDE_DIR/hooks/$h"
+done
+
+echo "[Rules]"
+for f in "$KIT_DIR/rules/"*.md; do
+  n=$(basename "$f")
+  if find "$CLAUDE_DIR/rules" -name "$n" 2>/dev/null | grep -q .; then
+    echo "  ✅ rules/$n"; OK=$((OK+1))
+  else
+    echo "  ❌ rules/$n（未配置: $CLAUDE_DIR/rules/**/$n）"; NG=$((NG+1))
+  fi
 done
 
 echo ""
