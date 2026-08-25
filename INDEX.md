@@ -29,6 +29,12 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 - **グローバル導入**（`install.sh`）: 自分のPC1台で複数プロジェクトを横断する日常運用
 - **プロジェクト配布**（`export-project.sh`）: 対象プロジェクト直下に `.claude/` と `AGENTS.md`/`CLAUDE.md` を書き出し、そのプロジェクトの git にコミット。Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先でも install 不要でそのまま効く
 
+テスト活動の雛形（戦略・DoD・29119 文書・機能契約・UI 検証ゲート）:
+
+```bash
+./scripts/init-test-docs.sh <対象プロジェクト> --ci
+```
+
 ## DAILY スキル（進め方の制御）
 
 | スキル | 1行要約 | タグ | コスト |
@@ -40,6 +46,8 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 | `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only | #qa #review | 43行 |
 | `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 71行 |
 | `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 49行 |
+| `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 105行 |
+| `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 95行 |
 | `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 43行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 199行 |
 | `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 38行 |
@@ -93,6 +101,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 | `/sdd-start` | SDDのspec/plan/tasks/CLAUDE.mdを一気に生成 | #sdd | 28行 |
 | `/new-pwa` | 新規個人PWAのspec〜スキャフォールド生成 | #pwa | 27行 |
 | `/qa-review` | ISO/ISTQB準拠のレビュー実行 | #qa | 28行 |
+| `/e2e-cycle` | E2E の 1 フェーズだけ実行して停止（1〜5 / help） | #qa #e2e | 25行 |
 | `/eval` | AIシステムのeval実行（スコアラー選定〜回帰判定） | #ai #eval | 20行 |
 | `/doc-search` | 技術ドキュメント特化検索 | #search | 14行 |
 | `/retro` | レトロ実行と lessons.md 追記 | #improve | 17行 |
@@ -125,6 +134,14 @@ templates/: `design-system.md`（視覚的指示書）/ `settings.sandbox.json`�
 配置は `./scripts/init-lifecycle.sh <対象>`（既存ファイルは上書きしない）。工程の入口/出口基準は
 `skills/dev-lifecycle/references/phase-gates.md`、ID 体系は `references/traceability.md`、
 テストレベル別の観点は `references/test-levels.md`。
+
+## templates/test/ — テスト活動の雛形（`test-strategy` 用。配置: `./scripts/init-test-docs.sh <対象> [--ci]`）
+
+`TESTING_STRATEGY.md`（レベル・ゲート・実行タイミング）/ `DEFINITION_OF_DONE.md`（変更タイプ別）/
+`iso29119-test-plan.md` / `iso29119-test-design-spec.md` / `iso29119-test-completion-report.md` / `iso29119-incident-report.md` /
+`system_test_cases.csv`（ツアー観点・severity 列）/ `feature_contracts.yml`（機能契約）。
+機械ゲート: `scripts/quality_harness.py`（契約検証・NG>0 で exit 1、回帰テスト `scripts/test-quality-harness.sh`）/ `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（`.ui-verified`）/ CI `github-actions/test-gates.yml`。
+工程文書（`templates/lifecycle/05〜08`）はケースと結果、こちらは計画・完了報告・インシデント。重複させない。
 
 ## templates/github/ — GitHub 連携（`--github` で配置）
 

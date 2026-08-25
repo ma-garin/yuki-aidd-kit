@@ -42,6 +42,10 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: Roadmap の未完了項目に対象ファイル・完了条件・検証手順が明記されている
 - **FR-08 開発工程ライフサイクル**: RFD →要件定義→基本設計→詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用の10工程を、成果物雛形（`templates/lifecycle/`）・入口出口基準（`skills/dev-lifecycle/references/phase-gates.md`）・ID 体系の3点で提供する
   - 検証基準: `./scripts/init-lifecycle.sh <対象>` が11ファイルを配置し、`./scripts/trace-check.sh` が NG=0 を返す（`./scripts/test-trace-check.sh` で回帰テスト）
+- **FR-09 テスト活動の設計と機械ゲート**: テストレベル L1〜L4・ゲート基準・ゲートの実行タイミング・変更タイプ別 DoD を `skills/test-strategy` で規定し、ISO/IEC/IEEE 29119-3 文書（計画・設計仕様・完了報告・インシデント）とシステムテストケース CSV・機能契約の雛形を `templates/test/` で提供する
+  - 検証基準: `./scripts/init-test-docs.sh <対象>` が雛形とゲートスクリプトを配置し、配置直後に `python3 scripts/quality_harness.py` が PASS する（`./scripts/test-quality-harness.sh` で回帰テスト）
+- **FR-09a 機能契約ハーネス**: 機能ごとの UI/route/core・出力・永続化・failure_modes・required_tests を契約として記述し、実行経路の無い implemented・高リスク機能の失敗系テスト欠落・契約未登録モジュール・未実装マーカーをスクリプトで検出する（NG>0 で exit 1）
+- **FR-09b UI 検証マーカー**: E2E 合格時に git hash + UI hash + 時刻を `.ui-verified` に記録し、pre-commit で未検証・期限切れ・検証後変更の UI コミットを止める。刷新期間は `.rebuild-mode` で明示的に免除する
 - **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する
   - 検証基準: 重複定義・未定義参照・所有ファイル違反・追跡表未記載・カバー漏れ・孤立テストの6種別を検出し、NG>0 で exit 1 する（CI から `github-actions/lifecycle-check.yml` で実行できる）
 
