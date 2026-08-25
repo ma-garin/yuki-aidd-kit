@@ -10,6 +10,8 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - **`design-system` に「画面の作り方」を追加**: 直値禁止のトークン運用（色 105 種・角丸 11 種・文字 21 段階を整理した実績から）、骨格（globalbar / sidebar / topbar / content）、**操作には必ず結果を返す**（成功＝消えるトースト／失敗＝消えない＋次の行動／処理中／0 件／危険操作の確認、`textContent` で入れる）、アイコン（同梱・CDN 禁止・慣用の形）、文言規約（ボタンは動作名、見出しに動詞を入れない、「（任意）」を付けない）
 - **`design-system/references/frameworks.md`**: 単一 HTML / React+Vite（Tailwind は CSS 変数参照で登録）/ Streamlit（`config.toml` + `ui/theme.py` 集約）/ Flask・Django 別の当て方と、ECC `frontend-patterns`・`frontend-design`・`ckm:design`・`uiux_review` との分担表
 - `templates/design-system.md` の再現チェックリストに直値・フィードバック・文言・アイコンの項目を追加
+- **`templates/components/`**: `feedback.js`（トースト／消えない失敗＋次の行動／処理中／空状態／確認ダイアログ。自己完結）、`icons.js`（Material Symbols 同梱）、`demo.html`（ライト／ダークの実機確認ページ。Playwright で確認済み）
+- `github-actions/test-gates.yml` を Python / Node 両対応（ファイルの有無で自動判定）
 
 ## Ver.6.2 での主な更新（2026-08-25）— テスト活動の設計と機械ゲート
 

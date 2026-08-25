@@ -145,9 +145,10 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] `skills/design-system/SKILL.md` に「画面の作り方」（トークン運用の規律・骨格・操作フィードバック・アイコン・文言）を追加、description を拡張
 - [x] `skills/design-system/references/frameworks.md`（単一 HTML / React+Vite+Tailwind / Streamlit / Flask・Django、デザイン系スキルの分担）
 - [x] `templates/design-system.md` に導線とチェック項目を追加
-- [ ] `feedback.js` / `icons.js` の参照実装は同梱していない（UX_Auto_Reviewer の実装が CSS と Icons に依存するため。汎用化して `templates/components/` に置くのは次回）
-- [ ] `docs/yuki-aidd-kit-manual.html` へのデザイン節の追記は未着手
-- 検証記録: `tokens.css` は構文確認のみ（ブラウザでの表示確認は未実施）
+- [x] `templates/components/feedback.js` / `icons.js` / `demo.html`（tokens.css 前提に自己完結化。2026-08-26）
+- [x] `github-actions/test-gates.yml` を Python / Node 両対応に（2026-08-26）
+- [x] 「弱点」表記を「残課題」に変更（A-3。分かっている不足は申告で済ませず対応する）
+- 検証記録: `demo.html` を Playwright でライト／ダーク・トースト・確認ダイアログ・空状態を実機確認（2026-08-26）
 
 ## 完了の定義（全マイルストーン共通）
 

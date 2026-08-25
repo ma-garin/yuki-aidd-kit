@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIDD Design System — tokens / components demo</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  /* デモ用の最小コンポーネント。値はすべてトークン参照（直値なし） */
+  .page { max-width: 960px; margin: 0 auto; padding: var(--space-6); }
+  h1 { font-size: var(--text-xl); margin: 0 0 var(--space-4); }
+  h2 { font-size: var(--text-lg); margin: var(--space-8) 0 var(--space-3); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-6); box-shadow: var(--shadow-sm); }
+  .card h3 { margin: 0 0 var(--space-2); font-size: var(--text-lg); }
+  .meta { color: var(--color-text-secondary); font-size: var(--text-sm); }
+  .btn { display: inline-flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-4); border-radius: var(--radius-md); font: inherit; font-weight: 600; cursor: pointer;
+         border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); transition: background var(--motion-fast); }
+  .btn:hover { background: var(--color-surface-2); }
+  .btn-primary { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+  .btn-primary:hover { background: var(--color-primary-dark); }
+  .btn-danger { color: var(--color-critical); border-color: var(--color-critical-border); }
+  .badge { display: inline-flex; align-items: center; padding: 2px var(--space-3); border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 700; border: 1px solid transparent; }
+  .badge-critical { color: var(--color-critical); background: var(--color-critical-bg); border-color: var(--color-critical-border); }
+  .badge-high     { color: var(--color-high);     background: var(--color-high-bg);     border-color: var(--color-high-border); }
+  .badge-medium   { color: var(--color-medium);   background: var(--color-medium-bg);   border-color: var(--color-medium-border); }
+  .badge-low      { color: var(--color-low);      background: var(--color-low-bg);      border-color: var(--color-low-border); }
+  .badge-info     { color: var(--color-info);     background: var(--color-info-bg);     border-color: var(--color-info-border); }
+  table { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
+  th { background: var(--color-surface-3); text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border-strong); }
+  td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-divider); }
+  td.num { text-align: right; font-family: var(--font-mono); }
+  input { font: inherit; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); }
+  input:focus { outline: 2px solid var(--color-primary); border-color: var(--color-border-strong); }
+  .empty-host { border: 1px dashed var(--color-border); border-radius: var(--radius-md); }
+  .toggle { position: fixed; top: var(--space-4); right: var(--space-4); }
+</style>
+</head>
+<body>
+<button class="btn toggle" id="theme" type="button"><span data-icon="settings" data-icon-size="16"></span>テーマ切替</button>
+<div class="page">
+  <h1>AIDD Design System — トークンと部品のデモ</h1>
+  <p class="meta">tokens.css / icons.js / feedback.js の実機確認用。値はすべて <code>var(--*)</code> 参照。</p>
+
+  <h2>severity バッジ</h2>
+  <div class="row">
+    <span class="badge badge-critical">Critical</span><span class="badge badge-high">High</span><span class="badge badge-medium">Medium</span><span class="badge badge-low">Low</span><span class="badge badge-info">Info</span>
+  </div>
+
+  <h2>ボタンと操作フィードバック</h2>
+  <div class="row">
+    <button class="btn btn-primary" id="b-ok" type="button"><span data-icon="save" data-icon-size="16"></span>保存する</button>
+    <button class="btn" id="b-err" type="button">失敗させる</button>
+    <button class="btn" id="b-busy" type="button"><span data-icon="refresh-cw" data-icon-size="16"></span>読み込む</button>
+    <button class="btn btn-danger" id="b-del" type="button"><span data-icon="delete" data-icon-size="16"></span>削除する</button>
+    <input placeholder="入力欄（フォーカス色の確認）">
+  </div>
+
+  <h2>カードと表</h2>
+  <div class="card">
+    <h3>レビュー結果</h3>
+    <p class="meta">2026-08-26 ・ 12 画面 ・ 等幅数値は --font-mono</p>
+    <table>
+      <thead><tr><th>画面</th><th>指摘</th><th>severity</th><th class="num">スコア</th></tr></thead>
+      <tbody>
+        <tr><td>ダッシュボード</td><td>0 件表示で枠だけ残る</td><td><span class="badge badge-high">High</span></td><td class="num">72</td></tr>
+        <tr><td>設定</td><td>ボタンが「はい／いいえ」</td><td><span class="badge badge-medium">Medium</span></td><td class="num">85</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>空状態</h2>
+  <div class="empty-host" id="empty"></div>
+</div>
+<script src="icons.js"></script>
+<script src="feedback.js"></script>
+<script>
+  document.getElementById('theme').addEventListener('click', () => {
+    const r = document.documentElement;
+    r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+  });
+  document.getElementById('b-ok').addEventListener('click', () => Feedback.ok('保存しました'));
+  document.getElementById('b-err').addEventListener('click', () => Feedback.error('保存できませんでした', {
+    detail: 'サーバが応答しませんでした。', action: { label: 'もう一度保存する', onClick: () => Feedback.ok('保存しました') } }));
+  document.getElementById('b-busy').addEventListener('click', () => { const done = Feedback.busy('読み込んでいます'); setTimeout(() => done({ ok: '3 件を読み込みました' }), 1200); });
+  document.getElementById('b-del').addEventListener('click', async () => {
+    const yes = await Feedback.confirm({ title: 'レビュー結果を削除する', consequence: '12 画面分の指摘とスクリーンショットが消え、元に戻せません。', actionLabel: '削除する', danger: true });
+    Feedback[yes ? 'ok' : 'info'](yes ? '削除しました' : '削除をやめました');
+  });
+  document.getElementById('empty').replaceChildren(Feedback.emptyState({
+    title: 'まだレビュー結果がありません', description: 'URL を登録して最初のレビューを実行すると、ここに結果が並びます。',
+    action: { label: 'レビューを実行する', onClick: () => Feedback.info('デモなので実行しません') } }));
+</script>
+</body>
+</html>

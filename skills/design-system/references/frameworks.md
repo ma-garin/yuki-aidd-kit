@@ -19,7 +19,7 @@
 - `templates/tokens.css` の中身を `<style>` の先頭に貼る（単一 HTML は外部分割禁止）。PWA は `tokens.css` を最初に読み込む。
 - 以降の CSS は `var(--color-*)` / `var(--space-*)` だけを使う。直値が出たらトークンに足すか、既存トークンに寄せる。
 - ダーク切替トグルを持つ場合は `<html data-theme="dark">` を付ける（メディアクエリだけでは明示切替ができない）。
-- 操作フィードバック（トースト・空状態・確認）は共通の 1 モジュールに集約し、画面ごとに `alert()` や独自実装を作らない。
+- 操作フィードバック（トースト・空状態・確認）は `templates/components/feedback.js` を使う（単一 HTML では `<script>` に貼る）。画面ごとに `alert()` や独自実装を作らない。
 
 ## React + Vite
 
@@ -37,8 +37,8 @@
 ## Flask / Django（サーバーサイドテンプレート）
 
 - `static/tokens.css` に配置し、ベーステンプレートで最初に読み込む。パーシャル（`partials/topbar.html` など）は骨格（globalbar / sidebar / topbar / content）に対応させる。
-- 操作フィードバックは `static/js/feedback.js` の 1 モジュール（`Feedback.ok / error / busy`、`emptyState`）に集約し、テンプレート個別に貼らない（`atarimae-quality-audit`「系統的な欠陥は共通基盤で一括修正」）。
-- アイコンは `static/js/icons.js` に同梱（外部 CDN 禁止）。
+- 操作フィードバックは `templates/components/feedback.js` を `static/js/feedback.js` に置き、1 モジュール（`Feedback.ok / error / busy / emptyState / confirm`）に集約する。テンプレート個別に貼らない（`atarimae-quality-audit`「系統的な欠陥は共通基盤で一括修正」）。
+- アイコンは `templates/components/icons.js` を `static/js/icons.js` に置く（外部 CDN 禁止）。
 
 ## 検証（どのフレームワークでも）
 

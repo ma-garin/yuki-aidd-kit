@@ -18,3 +18,4 @@ output/
 .env.*
 !.env.example
 
+.playwright-mcp/
