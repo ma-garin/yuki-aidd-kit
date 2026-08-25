@@ -120,8 +120,9 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] `templates/settings.sandbox.json` を追加
 - [x] `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先・必須プロセス・完了条件」で改訂（両ファイル同時、X-5）。C-02「指定外は読まない」と X-4「セッション分割」を廃止
 - [x] `install.sh`（rules → `~/.claude/rules/aidd-kit/`、同名既存はスキップ）/ `export-project.sh`（rules → `.claude/rules/`、py hooks、statusLine）/ `verify.sh` / `test-hooks.sh`（+8 ケース）
-- [ ] `docs/yuki-aidd-kit-manual.html` に rules / uiux_review / 進捗表示の説明を追加（未着手）
-- [ ] `docs/OPERATING-MODE.md` §4 実装ループに H-3 バッチ検証を反映（未着手）
+- [x] `docs/yuki-aidd-kit-manual.html` に「速度と完了のルール」節・uiux_review / atarimae 行・用語 rules を追加
+- [x] `docs/OPERATING-MODE.md` §4〜6 に H-1 着手前3行・H-3 バッチ検証・functional-integrity・progress.py を反映
+- [x] `docs/PRD.md` FR-03 を 7 hook に更新し FR-03a（rules 供給）を追加。`claude-projects-setup.md` の「指定外ファイルを読まない」を速度・完了条件の記述に置換
 - 検証記録: `./scripts/test-hooks.sh`（実行結果は PR 本文に記載）。`install.sh` はグローバル環境を上書きするため本作業では未実行（`verify.sh` 未計測）
 
 ## 完了の定義（全マイルストーン共通）

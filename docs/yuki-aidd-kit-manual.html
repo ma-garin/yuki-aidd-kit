@@ -585,7 +585,8 @@
           <li><a href="#commands">コマンド一覧</a></li>
           <li><a href="#ecc">ECCとの関係</a></li>
           <li><a href="#projects">プロジェクト別</a></li>
-          <li><a href="#quality">品質チェック</a></li>
+          <li><a href="#quality">品質チェック</a>
+<a href="#rules">速度と完了のルール</a></li>
           <li><a href="#trouble">困った時</a></li>
           <li><a href="#words">用語集</a></li>
         </ol>
@@ -606,7 +607,8 @@
           <li><a href="#commands">コマンド一覧</a></li>
           <li><a href="#ecc">ECCとの関係</a></li>
           <li><a href="#projects">プロジェクト別</a></li>
-          <li><a href="#quality">品質チェック</a></li>
+          <li><a href="#quality">品質チェック</a>
+<a href="#rules">速度と完了のルール</a></li>
           <li><a href="#trouble">困った時</a></li>
           <li><a href="#words">用語集</a></li>
         </ol>
@@ -979,6 +981,16 @@ git commit -m "chore: add AIDD Kit"</code></pre>
                 <td>Playwrightやpytestで確認する</td>
               </tr>
               <tr>
+                <td>画面が本当に効いているか確かめたい</td>
+                <td>`uiux_review`</td>
+                <td>全状態を実際に開いて見る。「作った」を「効いている」と言わない</td>
+              </tr>
+              <tr>
+                <td>「まだおかしい」を根こそぎ直したい</td>
+                <td>`atarimae-quality-audit`</td>
+                <td>1つの指摘の裏にある同種の欠陥を全部洗い出す</td>
+              </tr>
+              <tr>
                 <td>完成と言ってよいか確認したい</td>
                 <td>`done-gate`</td>
                 <td>完了前の最終チェック</td>
@@ -1205,6 +1217,16 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
                 <td>根拠に基づいているか</td>
               </tr>
               <tr>
+                <td>画面が本当に効いているか</td>
+                <td>`uiux_review`</td>
+                <td>通常・実行中・失敗・0件・狭い画面・モーダルの全状態を実際に開いたか</td>
+              </tr>
+              <tr>
+                <td>当たり前の品質が抜けていないか</td>
+                <td>`atarimae-quality-audit`</td>
+                <td>指摘された1点の裏にある欠陥クラスを全部洗い出したか</td>
+              </tr>
+              <tr>
                 <td>完成と言ってよいか</td>
                 <td>`done-gate`</td>
                 <td>未確認の項目は残っていないか</td>
@@ -1223,8 +1245,57 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
             <li>UIを変えたら、ブラウザまたはスクリーンショットで確認する</li>
             <li>AI出力を変えたら、evalまたはゴールデンデータで確認する</li>
             <li>APIキーや個人情報が絡む時は、security-reviewを通す</li>
+            <li>UIを変えたら、uiux_reviewで全状態（通常・実行中・失敗・0件・狭い画面・モーダル）を開いてから報告する</li>
             <li>最後にdone-gateで「未完了項目なし」を確認する</li>
           </ul>
+        </section>
+
+        <section id="rules">
+          <h2><span class="h2-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>速度と完了のルール（rules/）</h2>
+          <p>
+            2026年8月に実際のプロジェクトで測った結果から作った、毎回読み込まれる3つのルールです。
+            <code>rules/</code> に置かれ、導入すると <code>~/.claude/rules/aidd-kit/</code>（プロジェクト配布では <code>.claude/rules/</code>）に入ります。
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>ルール</th>
+                <th>ひとことで</th>
+                <th>AIがやること</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>absolute-rules</code></td>
+                <td>必ず守る10か条</td>
+                <td>着手前に「目的」を1行書く。2分を超える作業は見込みと実績を測る。成果物には「弱点」を添える。確かめていないことを断定しない</td>
+              </tr>
+              <tr>
+                <td><code>speed-harness</code></td>
+                <td>所要時間 ≒ 往復回数 × 12秒</td>
+                <td>着手前に「目的・見積・検証」の3行を出す。環境の調べ直しをせずチートシートから使う。UIは全部直してから1回で確認する。テストの実行はあなたが頼んだ時だけ</td>
+              </tr>
+              <tr>
+                <td><code>functional-integrity</code></td>
+                <td>動く道筋を確かめるまで「完了」と言わない</td>
+                <td>画面 → API → 処理 → 保存 → エラー → 利用者に見える証拠、の順に確認する。「ボタンがある」「テストが通った」だけでは完了にしない</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout">
+            <div class="callout-title">進み具合が見える</div>
+            <p>
+              1分を超える作業では、AIが <code>progress.py</code> で開始・途中・完了を記録し、画面下のステータスラインに「⏱ タスク名 [2/5 配線] 経過 1:20/見積 4:00 残り 2:40」のように出ます。
+              待たされているのか、進んでいるのかが分かります。
+            </p>
+          </div>
+          <div class="callout danger">
+            <div class="callout-title">テストは頼んだ時だけ動く</div>
+            <p>
+              <code>block-gates.py</code> が pytest / make test / lint の勝手な実行を止めます。
+              走らせてほしい時は「テストを回して」と頼んでください。頼んでいない時は、AIは「未実行」と書いて成果物を出します。
+            </p>
+          </div>
         </section>
 
         <section id="trouble">
@@ -1277,6 +1348,10 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
               <tr>
                 <td>ECC</td>
                 <td>AI開発向けの大きな道具箱。skills、rules、agents、hooksなどを持つ。</td>
+              </tr>
+              <tr>
+                <td>rules</td>
+                <td>毎回自動で読み込まれる決まりごと。このキットでは「速度」「必ず守る10か条」「完了の条件」の3つ。</td>
               </tr>
               <tr>
                 <td>DAILY</td>
