@@ -46,6 +46,8 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: `./scripts/init-test-docs.sh <対象>` が雛形とゲートスクリプトを配置し、配置直後に `python3 scripts/quality_harness.py` が PASS する（`./scripts/test-quality-harness.sh` で回帰テスト）
 - **FR-09a 機能契約ハーネス**: 機能ごとの UI/route/core・出力・永続化・failure_modes・required_tests を契約として記述し、実行経路の無い implemented・高リスク機能の失敗系テスト欠落・契約未登録モジュール・未実装マーカーをスクリプトで検出する（NG>0 で exit 1）
 - **FR-09b UI 検証マーカー**: E2E 合格時に git hash + UI hash + 時刻を `.ui-verified` に記録し、pre-commit で未検証・期限切れ・検証後変更の UI コミットを止める。刷新期間は `.rebuild-mode` で明示的に免除する
+- **FR-10 デザイントークンの実物と画面の作り方**: `skills/design-system` の値を `templates/tokens.css` として配布し（ライト＋ダーク）、直値禁止・骨格・操作フィードバック・アイコン・文言の規律と、フレームワーク別（単一 HTML / React+Vite / Streamlit / Flask・Django）の適用手順を提供する
+  - 検証基準: `tokens.css` の変数名が SKILL.md と一致し、`templates/design-system.md` の再現チェックリストで直値・フィードバック・文言・アイコンが確認できる
 - **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する
   - 検証基準: 重複定義・未定義参照・所有ファイル違反・追跡表未記載・カバー漏れ・孤立テストの6種別を検出し、NG>0 で exit 1 する（CI から `github-actions/lifecycle-check.yml` で実行できる）
 

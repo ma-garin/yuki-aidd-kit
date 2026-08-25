@@ -56,7 +56,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `design-system` | AIDDツール群のカラー・タイポ・レイアウトの具体値（CSS変数の真実源） | #ui #design | 183行 |
+| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/frameworks.md に React/Tailwind/Streamlit/Flask 別の当て方とデザイン系スキルの分担 | #ui #design | 463行 |
 | `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値 | #nfr #spec | 89行 |
 | `agent-eval` | LLM/RAG/エージェント出力の品質をデータセット＋スコアラーで回帰評価 | #ai #eval | 67行 |
 | `code-doc-search` | 技術ドキュメント検索のクエリ最適化 | #search #docs | 55行 |
@@ -124,7 +124,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
 | `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1337行 |
 
-templates/: `design-system.md`（視覚的指示書）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
+templates/: `design-system.md`（視覚的指示書）/ `tokens.css`（デザイントークンの実物。ライト＋ダーク）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
 
 ## templates/lifecycle/ — 工程成果物の雛形（`dev-lifecycle` 用）
 

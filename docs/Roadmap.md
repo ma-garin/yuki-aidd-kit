@@ -139,6 +139,16 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [ ] `docs/yuki-aidd-kit-manual.html` の非エンジニア向け説明（テストレベルと「テストが通った≠完了」）は本 PR で最小限。図解は未着手
 - 検証記録: `test-quality-harness.sh` 11/11、`init-test-docs.sh` dry-run で 12 ファイル配置・雛形契約 PASS、`pre-commit-ui-gate.sh` 4 状態確認。AUDIT-2026-07 で指摘された「ISO 29119 が 0 件」を解消
 
+## M14: デザイン — トークン実物・画面の作り方・フレームワーク別適用（完了 2026-08-25）
+
+- [x] `templates/tokens.css`（SKILL.md の値を真実源として実物化。WebSpec2Doc / UX_Auto_Reviewer の追加トークンを統合）
+- [x] `skills/design-system/SKILL.md` に「画面の作り方」（トークン運用の規律・骨格・操作フィードバック・アイコン・文言）を追加、description を拡張
+- [x] `skills/design-system/references/frameworks.md`（単一 HTML / React+Vite+Tailwind / Streamlit / Flask・Django、デザイン系スキルの分担）
+- [x] `templates/design-system.md` に導線とチェック項目を追加
+- [ ] `feedback.js` / `icons.js` の参照実装は同梱していない（UX_Auto_Reviewer の実装が CSS と Icons に依存するため。汎用化して `templates/components/` に置くのは次回）
+- [ ] `docs/yuki-aidd-kit-manual.html` へのデザイン節の追記は未着手
+- 検証記録: `tokens.css` は構文確認のみ（ブラウザでの表示確認は未実施）
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み。
