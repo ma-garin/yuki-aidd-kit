@@ -110,6 +110,20 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] 既存資産との接続: `done-gate` に工程ゲート項目、`sdd-ecc-workflow` に使い分けの導線、`CLAUDE.md.template`・`AGENTS.md.template`・`INDEX.md`・`README.md` に工程の導線を追加。`export-project.sh` が `templates/` と `trace-check.sh` を同梱するよう更新
 - 検証記録: `./scripts/install.sh` → `./scripts/verify.sh` NG=0、`./scripts/test-hooks.sh` 8/8、`./scripts/test-trace-check.sh` 15/15
 
+## M12: 実プロジェクト運用の還流（完了 2026-08-25）
+
+2026-08 に WebSpec2Doc / UX_Auto_Reviewer / my_forward で育った運用ルール・hook・スキルをキットへ取り込んだ。合わせてローカルと GitHub で分岐していた履歴を GitHub 側に統一し、`atarimae-quality-audit` を載せ直した。
+
+- [x] `rules/` を新設: `absolute-rules.md`（A-1〜A-10）/ `speed-harness.md`（プロジェクト固有の H-2 を雛形化、実測から H-5「見積の既定」を抽出）/ `functional-integrity.md`
+- [x] `skills/uiux_review/` を追加（SKILL.md + references/viewpoints.md）
+- [x] hooks: `block-gates.py` / `progress.py` / `statusline.py` を追加し `settings.json` に配線（PreToolUse Bash・statusLine）
+- [x] `templates/settings.sandbox.json` を追加
+- [x] `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先・必須プロセス・完了条件」で改訂（両ファイル同時、X-5）。C-02「指定外は読まない」と X-4「セッション分割」を廃止
+- [x] `install.sh`（rules → `~/.claude/rules/aidd-kit/`、同名既存はスキップ）/ `export-project.sh`（rules → `.claude/rules/`、py hooks、statusLine）/ `verify.sh` / `test-hooks.sh`（+8 ケース）
+- [ ] `docs/yuki-aidd-kit-manual.html` に rules / uiux_review / 進捗表示の説明を追加（未着手）
+- [ ] `docs/OPERATING-MODE.md` §4 実装ループに H-3 バッチ検証を反映（未着手）
+- 検証記録: `./scripts/test-hooks.sh`（実行結果は PR 本文に記載）。`install.sh` はグローバル環境を上書きするため本作業では未実行（`verify.sh` 未計測）
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み。

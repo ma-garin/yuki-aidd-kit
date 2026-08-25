@@ -28,7 +28,7 @@ backup_if_exists() {
   fi
 }
 
-mkdir -p "$TARGET/.claude/skills" "$TARGET/.claude/commands" "$TARGET/.claude/hooks"
+mkdir -p "$TARGET/.claude/skills" "$TARGET/.claude/commands" "$TARGET/.claude/hooks" "$TARGET/.claude/rules"
 
 # スキル一式（フルコピー。DAILY/LIBRARYの絞り込みはINDEX.mdを見て各エージェントが行う）
 cp -r "$KIT_DIR/skills/"* "$TARGET/.claude/skills/"
@@ -41,17 +41,24 @@ echo "✅ コマンド: $(ls "$KIT_DIR/claude-code/commands" | wc -l)個"
 # Hooks（プロジェクトスコープはリポジトリ相対パスで参照する）
 # 前提: Claude Code のプロジェクトスコープ hooks はプロジェクトルートを
 # 作業ディレクトリとして実行される。環境によって異なる場合は要検証。
-cp "$KIT_DIR/claude-code/hooks/"*.sh "$TARGET/.claude/hooks/"
-chmod +x "$TARGET/.claude/hooks/"*.sh
+cp "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py "$TARGET/.claude/hooks/"
+chmod +x "$TARGET/.claude/hooks/"*.sh "$TARGET/.claude/hooks/"*.py
 backup_if_exists "$TARGET/.claude/settings.json"
 cat > "$TARGET/.claude/settings.json" << 'JSON'
 {
+  "statusLine": { "type": "command", "command": "python3 .claude/hooks/statusline.py", "padding": 2 },
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           { "type": "command", "command": "bash .claude/hooks/pre-write-check.sh" }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" }
         ]
       }
     ],
@@ -73,7 +80,11 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
   }
 }
 JSON
-echo "✅ Hooks: 3個（プロジェクトスコープ・相対パス参照）"
+echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh は /implement 利用時に settings.json へ追記）"
+
+# Rules（.claude/rules/*.md は Claude Code が常時読み込む。speed-harness.md の H-2 はプロジェクトごとに埋める）
+cp "$KIT_DIR/rules/"*.md "$TARGET/.claude/rules/"
+echo "✅ Rules: $(ls "$KIT_DIR/rules/"*.md | wc -l | tr -d ' ')個（.claude/rules/。speed-harness.md の H-2 環境チートシートを埋めること）"
 
 # INDEX.md（フルコピーなのでDAILY/LIBRARYの地図として同梱する）
 cp "$KIT_DIR/INDEX.md" "$TARGET/.claude/INDEX.md"
@@ -112,3 +123,4 @@ echo "1. $TARGET/AGENTS.md と $TARGET/CLAUDE.md 内の残りの <...> プレー
 echo "2. $TARGET で: git add .claude AGENTS.md CLAUDE.md scripts/trace-check.sh && git commit"
 echo "3. これでCodex・リモート/エフェメラルなClaude Code・teammateのclone先でも自動的に効く"
 echo "4. 工程（RFD〜保守運用）で進める場合: $KIT_DIR/scripts/init-lifecycle.sh $TARGET --github"
+echo "5. サンドボックス（denyRead / network allowlist / permissions）を使う場合: $KIT_DIR/templates/settings.sandbox.json を .claude/settings.json にマージ"

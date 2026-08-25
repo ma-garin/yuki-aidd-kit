@@ -1,0 +1,83 @@
+{
+  "//": "======================================================",
+  "// ": "Claude Code セキュリティ設定 (プロジェクトレベル)",
+  "//  ": "======================================================",
+  "// 1": "--- サンドボックス：有効化 + 脱出口封鎖 ---",
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "// filesystem": "機密ファイルのBash経由アクセスもブロック",
+    "filesystem": {
+      "denyRead": [
+        "~/.aws/credentials",
+        "~/.aws/config",
+        "~/.ssh",
+        "~/.gnupg",
+        "~/.config/gh/hosts.yml",
+        "~/.netrc"
+      ]
+    },
+    "// network": "業務に必要なドメインのみ許可（ホワイトリスト方式）",
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "api.github.com",
+        "registry.npmjs.org",
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    }
+  },
+  "// 2": "--- パーミッション：denyは最優先。Always allowでも上書き不可 ---",
+  "permissions": {
+    "// allow": "安全な定型コマンドを事前許可（プロンプト削減）",
+    "allow": [
+      "Bash(npx vite build)",
+      "Bash(npm install)",
+      "Bash(npm run *)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(git push)",
+      "Bash(git push -u origin *)",
+      "Bash(git fetch*)",
+      "Bash(git branch*)",
+      "Bash(git checkout *)",
+      "Bash(grep *)",
+      "Bash(find . *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(wc *)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push * --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(git checkout -- .)",
+      "Bash(git branch -D *)",
+      "Bash(rm -rf *)",
+      "Bash(rm -r /*)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(chmod 777 *)",
+      "Bash(chmod -R 777 *)",
+      "Bash(sudo *)",
+      "Bash(eval *)",
+      "Bash(nc *)",
+      "Bash(ncat *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*credentials*)",
+      "Read(**/*secret*)"
+    ]
+  },
+  "// 4": "--- フック: claude-code/hooks/settings.json を参照（本雛形には含めない） ---",
+  "// 0": "テンプレート出所: my-forward (2026-08)。permissions.allow の npm/vite 行はプロジェクトに合わせて差し替える"
+}

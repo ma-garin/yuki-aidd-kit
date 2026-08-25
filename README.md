@@ -4,6 +4,17 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。キット自体の目的・要求・開発継続手順は `docs/Vision.md`・`docs/PRD.md`・`docs/Roadmap.md` にあります。
 
+## Ver.6.1 での主な更新（2026-08-25）— 速度ハーネス・機能完全性・UI/UX 実機レビュー
+
+2026-08 に実プロジェクト（WebSpec2Doc / UX_Auto_Reviewer / my_forward）で育った運用を、キットへ還流しました。
+
+- **`rules/`（新設・常時読み込み）**: `absolute-rules.md`（A-1〜A-10）/ `speed-harness.md`（往復×12秒の見積・環境チートシート・バッチ検証・委譲の型・見積の既定値・進捗の逐次提示）/ `functional-integrity.md`（実行経路を検証するまで完了と言わない）
+- **`skills/uiux_review`**: 画面を実際に開いて全状態を確認し、「作った」を「効いている」と報告しない手順（観点表 `references/viewpoints.md` 付き）
+- **hooks 3本追加**: `block-gates.py`（pytest / make test / lint をユーザー要求時以外 deny）/ `progress.py` + `statusline.py`（進行中タスクの経過・見積・残りをステータスラインに表示）
+- **`templates/settings.sandbox.json`**: sandbox・denyRead・network allowlist・permissions deny の雛形
+- `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先」「必須プロセス」「完了条件」で改訂。「指定外ファイルは読まない」「セッション分割を提案」は廃止（AUDIT-2026-07 C-02 / X-4）
+- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 19 ケース）
+
 ## Ver.6.0 での主な更新（2026-08）— 開発工程ライフサイクル
 
 RFD から保守運用までの10工程を AI に実行させる層を追加しました。既存の軽量 SDD（spec/plan/tasks）はそのまま残り、**工程分割が必要な案件だけ**がこの層を使います（使い分けの判断表は `skills/dev-lifecycle/SKILL.md` の冒頭）。
@@ -101,11 +112,13 @@ yuki-aidd-kit/
 │   ├── OPERATING-MODE.md                 # 標準作業モード
 │   ├── PROJECT-FIT-REPORT.md             # 実プロジェクト適合レポート
 │   └── yuki-aidd-kit-manual.html         # HTML 取説
-├── skills/                   # 15スキル（各 SKILL.md、一部 references/ 付き）
-│   └── dev-lifecycle/        # 工程ライフサイクル（+ phase-gates / traceability / test-levels）
+├── rules/                    # 常時読み込みの規律 3本（absolute-rules / speed-harness / functional-integrity）
+├── skills/                   # 17スキル（各 SKILL.md、一部 references/ 付き）
+│   ├── dev-lifecycle/        # 工程ライフサイクル（+ phase-gates / traceability / test-levels）
+│   └── uiux_review/          # UI/UX 実機レビュー（+ references/viewpoints.md）
 ├── claude-code/
 │   ├── commands/             # 15スラッシュコマンド
-│   └── hooks/                # 4 hooks + settings.json
+│   └── hooks/                # 7 hooks（sh 4 + py 3）+ settings.json（statusLine 含む）
 ├── scripts/
 │   ├── install.sh / verify.sh / test-hooks.sh   # グローバル導入
 │   ├── export-project.sh                        # プロジェクト配布
@@ -113,6 +126,7 @@ yuki-aidd-kit/
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit
 ├── templates/
 │   ├── design-system.md      # 視覚的指示書
+│   ├── settings.sandbox.json # sandbox / denyRead / network allowlist / permissions の雛形
 │   ├── lifecycle/            # 工程成果物の雛形11本（RFD〜保守運用＋追跡表）
 │   ├── github/               # Issue（RFD/要件/欠陥）・PR テンプレート
 │   └── CURRENT_STATE.md / ADR-template.md / lessons.md / implement-profile.md

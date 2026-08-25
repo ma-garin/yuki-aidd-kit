@@ -1,4 +1,9 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "python3 ~/.claude/hooks/statusline.py",
+    "padding": 2
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -16,6 +21,17 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/block-explore.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/block-gates.py",
+            "timeout": 10,
+            "statusMessage": "ゲート実行の要否を確認中"
           }
         ]
       }

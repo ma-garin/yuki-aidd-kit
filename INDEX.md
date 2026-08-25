@@ -41,6 +41,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 | `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 71行 |
 | `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 49行 |
 | `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 43行 |
+| `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 199行 |
 | `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 38行 |
 
 ## LIBRARY スキル（種別・場面で選ぶ）
@@ -54,6 +55,28 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 | `single-html-tool` | 単一HTMLツール（社内配布・PoC）の開発規約 | #html #tool | 36行 |
 | `personal-pwa` | GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約 | #pwa #mobile | 30行 |
 | `streamlit-rag-app` | Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約 | #streamlit #rag | 32行 |
+
+## rules/（常時読み込みの規律。install で `~/.claude/rules/aidd-kit/`、export で `.claude/rules/` へ）
+
+| ルール | 1行要約 | タグ | コスト |
+|---|---|---|---|
+| `absolute-rules` | A-1〜A-10: 着手前の目的1行・予実の実測・弱点の添付・未検証を断定しない・放置しない | #process #must | 112行 |
+| `speed-harness` | 往復×12秒の見積、環境チートシート、バッチ検証、委譲の型、見積の既定、ゲートは要求時のみ、進捗の逐次提示 | #speed #process | 115行 |
+| `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない | #qa #done | 39行 |
+
+## claude-code/hooks/（settings.json で配線）
+
+| hook | 発火 | 役割 |
+|---|---|---|
+| `pre-write-check.sh` | PreToolUse Write/Edit | 秘密情報ファイル・単一HTMLの CSS/JS 分割を警告 |
+| `post-write-html.sh` | PostToolUse Write/Edit | HTML 保存後のレポート（500行超で部分編集を推奨） |
+| `block-explore.sh` | PreToolUse Read/Grep/Glob | 実装モード（`.claude/mode` あり）で探索をブロック |
+| `block-gates.py` | PreToolUse Bash | pytest / make test / lint をユーザー要求時（`GATES_REQUESTED=1`）以外は deny |
+| `progress.py` | 手動（bash に連結） | `start/step/done` で progress.json を管理 |
+| `statusline.py` | statusLine | 進行中タスクの経過/見積/残りを表示。無ければ従来表示へ素通し |
+| `session-summary.sh` | Stop | セッション終了サマリ |
+
+回帰テスト: `./scripts/test-hooks.sh`
 
 ## スラッシュコマンド（呼んだ時だけコストが発生）
 
@@ -92,7 +115,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
 | `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1337行 |
 
-templates/: `design-system.md`（視覚的指示書）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
+templates/: `design-system.md`（視覚的指示書）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
 
 ## templates/lifecycle/ — 工程成果物の雛形（`dev-lifecycle` 用）
 
@@ -113,6 +136,7 @@ CI は `github-actions/lifecycle-check.yml`（PR で `trace-check.sh` を実行�
 - 工程分割が要る案件（他者へ納品/引き継ぐ・要件合意が要る・保守が続く）は `dev-lifecycle`、個人PWA/単一HTML/PoC は軽量な `sdd-ecc-workflow`。判断表は `skills/dev-lifecycle/SKILL.md` 冒頭
 - 全量導入より、対象プロジェクトに合う DAILY だけを読む。LIBRARY は削除せず必要時に検索・参照
 - ファイルを読む前に grep/glob で絞る（`context-compression` 参照）
-- UI変更はスクリーンショットかE2Eで確認する
+- 着手前に `目的:` `見積:` `検証:` の3行を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒
+- UI変更は `uiux_review` で全状態を実機で開いて確認する。実行経路の検証なしに「完了」と言わない（`rules/functional-integrity.md`）
 - AI出力品質は `agent-eval`、コード動作は `test-automation`、完了判定は `done-gate` で分ける
 - セッション終了時は `CURRENT_STATE.md` と `lessons.md` を更新する
