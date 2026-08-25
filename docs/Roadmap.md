@@ -125,6 +125,20 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] `docs/PRD.md` FR-03 を 7 hook に更新し FR-03a（rules 供給）を追加。`claude-projects-setup.md` の「指定外ファイルを読まない」を速度・完了条件の記述に置換
 - 検証記録: `./scripts/test-hooks.sh`（実行結果は PR 本文に記載）。`install.sh` はグローバル環境を上書きするため本作業では未実行（`verify.sh` 未計測）
 
+## M13: テスト活動の設計と機械ゲート（完了 2026-08-25）
+
+WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 文書 4 本 / quality_harness / .ui-verified）を汎用化して取り込んだ。真実源の分担: レベルの設計観点は `dev-lifecycle/references/test-levels.md`、ケースと結果は `templates/lifecycle/05〜08`、計画・完了報告・インシデントは `templates/test/`。
+
+- [x] `skills/test-strategy/`（SKILL.md + references: `feature-contracts.md` / `ui-verified-gate.md`）
+- [x] `skills/e2e-cycle/` と `/e2e-cycle`（`help` 引数で使い方を表示）
+- [x] `templates/test/` 8 本（`feature_contracts.yml` は新規プロジェクトで PASS することを回帰テストで保証）
+- [x] `scripts/quality_harness.py`（設定駆動の汎用版）+ `scripts/test-quality-harness.sh`（11 ケース PASS）
+- [x] `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（マーカー不在・期限切れ・hash 不一致で BLOCKED、`.rebuild-mode` で WARN。手動 4 ケース確認）
+- [x] `scripts/init-test-docs.sh`（`--ci` で `github-actions/test-gates.yml` も配置）、`export-project.sh` がゲートスクリプトを同梱
+- [x] `done-gate` / `test-automation` / `qa-review-standards` / `rules/functional-integrity.md` / 両テンプレートに導線を追加
+- [ ] `docs/yuki-aidd-kit-manual.html` の非エンジニア向け説明（テストレベルと「テストが通った≠完了」）は本 PR で最小限。図解は未着手
+- 検証記録: `test-quality-harness.sh` 11/11、`init-test-docs.sh` dry-run で 12 ファイル配置・雛形契約 PASS、`pre-commit-ui-gate.sh` 4 状態確認。AUDIT-2026-07 で指摘された「ISO 29119 が 0 件」を解消
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み。

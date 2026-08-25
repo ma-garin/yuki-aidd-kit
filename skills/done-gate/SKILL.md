@@ -15,6 +15,13 @@ description: タスクや機能を「完了」と判定する前の最終チェ�
 - [ ] CURRENT_STATE.md を更新した
 - [ ] implement.md に作業記録を追記した
 - [ ] コミット済み（Conventional Commits形式）
+- [ ] `quality/feature_contracts.yml` があるプロジェクトでは `python3 scripts/quality_harness.py` が PASS（新機能は契約を追加済み）
+
+## 変更タイプ別（`skills/test-strategy`。詳細は `templates/test/DEFINITION_OF_DONE.md`）
+- [ ] **Type B（HTML/JS/CSS を触った）**: L3 E2E 全 PASS で `.ui-verified` が更新済み、ブラウザで実操作（1920×1080 と 1366×768）、コンソールエラーなし、`uiux_review` で全状態を確認。**pytest PASS だけで完了としない**
+- [ ] Type A（バックエンド）: L1/L2 全 PASS + 構文チェック + code-reviewer で HIGH 以上ゼロ
+- [ ] Type C（文書）: 内部リンク有効、関連文書を同時更新
+- [ ] ゲートを実行しなかった項目（日常コミットは H-7 で未実行が既定）は「未実行」と明記した。マイルストーンならフルゲートを実行し `docs/quality/evidence/` に保存した
 
 ## 工程ライフサイクル（dev-lifecycle）を使っている場合の追加項目
 - [ ] 対象工程の**出口基準**を満たす（`skills/dev-lifecycle/references/phase-gates.md`。未達は次工程で埋めず差し戻す）

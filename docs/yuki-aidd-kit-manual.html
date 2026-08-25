@@ -981,6 +981,16 @@ git commit -m "chore: add AIDD Kit"</code></pre>
                 <td>Playwrightやpytestで確認する</td>
               </tr>
               <tr>
+                <td>テストをいつ・どこまでやるか決めたい</td>
+                <td>`test-strategy`</td>
+                <td>単体→統合→画面→受け入れの4段階と、いつ全部回すかを決める</td>
+              </tr>
+              <tr>
+                <td>画面テストを設計から順に回したい</td>
+                <td>`e2e-cycle`</td>
+                <td>設計→台本→実行→修整→保存を1段ずつ止まりながら進める</td>
+              </tr>
+              <tr>
                 <td>画面が本当に効いているか確かめたい</td>
                 <td>`uiux_review`</td>
                 <td>全状態を実際に開いて見る。「作った」を「効いている」と言わない</td>
@@ -1069,6 +1079,10 @@ git commit -m "chore: add AIDD Kit"</code></pre>
               <tr>
                 <td>`/qa-review`</td>
                 <td>UI、仕様、テスト観点をレビューしたい時</td>
+              </tr>
+              <tr>
+                <td>`/e2e-cycle`</td>
+                <td>画面テストを1段だけ進めて止まる（1〜5、help で使い方）</td>
               </tr>
               <tr>
                 <td>`/doc-search`</td>
@@ -1233,6 +1247,14 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
               </tr>
             </tbody>
           </table>
+          <div class="callout">
+            <div class="callout-title">テストは4段階（test-strategy）</div>
+            <p>
+              L1 単体（関数が正しい）→ L2 統合（つないで壊れない）→ L3 画面（ブラウザで実際に通る）→ L4 受け入れ（あなたが確認する）。
+              <strong>L1/L2 が通っても「完了」ではありません。</strong>画面を変えたら L3 の合格印（<code>.ui-verified</code>）が無いとコミットできない仕組みです。
+              ふだんのコミットではテストを回さず、区切り（マイルストーン）で全部回します。
+            </p>
+          </div>
           <div class="callout danger">
             <div class="callout-title">一番大事なルール</div>
             <p>

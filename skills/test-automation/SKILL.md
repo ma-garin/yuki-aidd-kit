@@ -30,6 +30,12 @@ scaffoldは references/ を参照（playwright_smoke.py / pytest_streamlit.py）
 - LLMラッパーをモックして、UI遷移ロジックを独立検証
 - マルチテナント: テナントIDフィルタが効いている（越境データが出ない）
 
+## テストレベルと E2E の回し方（真実源は別スキル）
+- レベル L1〜L4 の定義・ゲート基準・ゲートの実行タイミング・変更タイプ別 DoD → `skills/test-strategy`
+- E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットで段階停止しながら回す → `skills/e2e-cycle`（`/e2e-cycle`）
+- L3 合格の証跡は `.ui-verified`（git hash + UI hash + 時刻）。UI 変更はこのマーカー無しにコミットしない（`scripts/pre-commit-ui-gate.sh`）
+- 機能ごとの failure_modes / required_tests は `quality/feature_contracts.yml` に契約として書き、`scripts/quality_harness.py` で機械検証する
+
 ## 実行とゲート接続
 ```bash
 # ローカル

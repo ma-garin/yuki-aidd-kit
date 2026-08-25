@@ -35,5 +35,7 @@ Critical / High リスクの機能では、次を必ず確認する:
 
 1 つでも未検証の項目があれば `未確認` と書き、完了として提示しない。
 
+実行経路の存在は人の注意力でなく機械で検証する: `quality/feature_contracts.yml`（機能ごとの UI/route/core・出力・永続化・failure_modes・required_tests）を `scripts/quality_harness.py` が検査する（`skills/test-strategy/references/feature-contracts.md`）。
+
 開発プロセス上の失敗が起きたときは、名前のある RCA 枠組みを使う（5 Whys / Fishbone / FMEA / CAPA / DoD 更新）。
 枠組み名を持たない場当たりの原因分析は禁止する。

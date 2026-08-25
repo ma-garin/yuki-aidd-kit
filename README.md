@@ -4,6 +4,23 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。キット自体の目的・要求・開発継続手順は `docs/Vision.md`・`docs/PRD.md`・`docs/Roadmap.md` にあります。
 
+## Ver.6.2 での主な更新（2026-08-25）— テスト活動の設計と機械ゲート
+
+WebSpec2Doc で運用してきたテスト活動（テスト戦略・DoD・ISO/IEC/IEEE 29119 文書・機能契約ハーネス・UI 検証マーカー）を汎用化して取り込みました。
+
+- **`skills/test-strategy`**: テストレベル L1〜L4 とゲート基準、テスト種類マトリクス、**ゲートの実行タイミング**（日常は要求時のみ／マイルストーンはフルゲート — 宣言が無かったためテスト資産 17 件が 1 週間陳腐化した実損害から）、変更タイプ別 DoD、完了基準、29119 文書との対応表。references に機能契約ハーネスと `.ui-verified` ゲートの仕様
+- **`skills/e2e-cycle`** + `/e2e-cycle`: E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで、1 起動 1 フェーズで段階停止しながら回す
+- **`templates/test/`**（8 本）: `TESTING_STRATEGY` / `DEFINITION_OF_DONE` / 29119 の計画・設計仕様・完了報告・インシデント / `system_test_cases.csv`（Whittaker ツアー観点・severity 列）/ `feature_contracts.yml`
+- **`scripts/quality_harness.py`**: 機能契約を検証（実行経路の無い implemented、critical/high の失敗系テスト欠落、契約未登録モジュール、未実装マーカーなど 9 種。NG>0 で exit 1）。回帰テスト `scripts/test-quality-harness.sh` 11 ケース。**雛形が新規プロジェクトで PASS することもテスト**
+- **`scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`**: E2E 合格時に git hash + UI hash + 時刻を `.ui-verified` に記録し、未検証・検証後変更の UI コミットを止める。刷新期間は `.rebuild-mode` で明示的に免除
+- `scripts/init-test-docs.sh <対象> [--ci]` で一式を配置、`github-actions/test-gates.yml` で CI 実行
+- `done-gate`（変更タイプ別・ゲート実行の明記）/ `test-automation` / `qa-review-standards`（29119 導線）/ `rules/functional-integrity.md`（機械検証への導線）を更新
+
+```bash
+./scripts/init-test-docs.sh <対象プロジェクト> --ci     # 文書雛形・契約・ゲートスクリプト・CI を配置
+python3 scripts/quality_harness.py                       # 機能契約の検証（PASS / FAIL）
+```
+
 ## Ver.6.1 での主な更新（2026-08-25）— 速度ハーネス・機能完全性・UI/UX 実機レビュー
 
 2026-08 に実プロジェクト（WebSpec2Doc / UX_Auto_Reviewer / my_forward）で育った運用を、キットへ還流しました。
@@ -113,24 +130,29 @@ yuki-aidd-kit/
 │   ├── PROJECT-FIT-REPORT.md             # 実プロジェクト適合レポート
 │   └── yuki-aidd-kit-manual.html         # HTML 取説
 ├── rules/                    # 常時読み込みの規律 3本（absolute-rules / speed-harness / functional-integrity）
-├── skills/                   # 17スキル（各 SKILL.md、一部 references/ 付き）
+├── skills/                   # 19スキル（各 SKILL.md、一部 references/ 付き）
 │   ├── dev-lifecycle/        # 工程ライフサイクル（+ phase-gates / traceability / test-levels）
+│   ├── test-strategy/        # テスト活動の設計（+ feature-contracts / ui-verified-gate）
+│   ├── e2e-cycle/            # 段階停止型 E2E ワークフロー
 │   └── uiux_review/          # UI/UX 実機レビュー（+ references/viewpoints.md）
 ├── claude-code/
-│   ├── commands/             # 15スラッシュコマンド
+│   ├── commands/             # 16スラッシュコマンド
 │   └── hooks/                # 7 hooks（sh 4 + py 3）+ settings.json（statusLine 含む）
 ├── scripts/
 │   ├── install.sh / verify.sh / test-hooks.sh   # グローバル導入
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
+│   ├── init-test-docs.sh / quality_harness.py / test-quality-harness.sh  # テスト活動
+│   ├── ui-hash.py / pre-commit-ui-gate.sh          # UI 検証マーカー
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit
 ├── templates/
 │   ├── design-system.md      # 視覚的指示書
 │   ├── settings.sandbox.json # sandbox / denyRead / network allowlist / permissions の雛形
 │   ├── lifecycle/            # 工程成果物の雛形11本（RFD〜保守運用＋追跡表）
+│   ├── test/                 # テスト戦略・DoD・29119 文書・テストケース CSV・機能契約の雛形8本
 │   ├── github/               # Issue（RFD/要件/欠陥）・PR テンプレート
 │   └── CURRENT_STATE.md / ADR-template.md / lessons.md / implement-profile.md
-└── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check）
+└── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates）
 ```
 
 ## 今後の開発時の合言葉

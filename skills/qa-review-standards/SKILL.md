@@ -33,6 +33,9 @@ severityとpriorityを混同しない。priorityは別軸（ビジネス判断�
 - FedEx Tour（データのライフサイクル追跡）/ Saboteur Tour(破壊的操作)
 - Back Alley Tour（使われない機能）/ All-Nighter Tour（長時間稼働）
 
+## ISO/IEC/IEEE 29119-3 のテスト文書
+テスト計画・テスト設計仕様（技法適用分析）・テスト完了報告・インシデントレポートの雛形は `templates/test/iso29119-*.md`（配置: `./scripts/init-test-docs.sh <対象>`）。レベル・ゲートの定義は `skills/test-strategy`。システムテストケースはツアー観点と severity を列に持つ `templates/test/system_test_cases.csv` の形式で書く。
+
 ## AIレビュープロンプトへの組み込み手順
 1. システムプロンプトに上記3規格の判定基準を明記
 2. 「JSONのみで出力、根拠（evidence）フィールド必須」を強制
