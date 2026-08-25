@@ -26,11 +26,13 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: 全スキルが frontmatter を持ち、`./scripts/verify.sh` の対象リストに含まれ OK になる
 - **FR-02 コマンド供給**: `claude-code/commands/<name>.md` 形式で、対応スキルを呼び出すスラッシュコマンドを提供する
   - 検証基準: 各コマンドが「引数」「実行内容」を持ち、参照先スキルが実在する
-- **FR-03 hooks 供給**: 書き込み前チェック・HTML 保存後チェック・セッション終了時リマインドの3 hook を提供する
-  - 検証基準: stdin に Claude Code hooks 形式の JSON（`tool_input.file_path`）を渡すと期待メッセージを出力する（`docs/AUDIT-2026-07.md` A-01 の再発防止）
+- **FR-03 hooks 供給**: 書き込み前チェック・HTML 保存後チェック・セッション終了時リマインド・実装モードの探索ブロック・ゲート実行の要求時限定（`block-gates.py`）・進捗表示（`progress.py` / `statusline.py`）の7 hook と、それらを配線した `settings.json` を提供する
+  - 検証基準: stdin に Claude Code hooks 形式の JSON を渡すと期待出力を返す（`./scripts/test-hooks.sh` 19 ケース。`docs/AUDIT-2026-07.md` A-01 の再発防止）
+- **FR-03a 常時読み込みルール供給**: `rules/<name>.md` 形式で、全セッションに効く規律（`absolute-rules` / `speed-harness` / `functional-integrity`）を提供する。`install.sh` は `~/.claude/rules/aidd-kit/` へ、`export-project.sh` は `.claude/rules/` へ配置する
+  - 検証基準: `verify.sh` が rules の配置を OK/NG で報告する。同名ファイルが利用者の `~/.claude/rules` 配下に既にある場合は上書きせずスキップする
 - **FR-04 導入・検証スクリプト**: `install.sh` が `~/.claude/` へ配置し、`verify.sh` が全資産の配置を OK/NG で報告する
   - 検証基準: クリーン環境で install → verify が NG=0 で完了する
-- **FR-04a プロジェクト配布**: `export-project.sh <target>` が対象プロジェクト直下に `.claude/`（skills・commands・hooks・settings.json・INDEX.md 一式）と `AGENTS.md`・`CLAUDE.md` を生成し、install なしで Codex・エフェメラルな Claude Code 環境でも動作する形にする
+- **FR-04a プロジェクト配布**: `export-project.sh <target>` が対象プロジェクト直下に `.claude/`（skills・commands・hooks・rules・settings.json・INDEX.md 一式）と `AGENTS.md`・`CLAUDE.md` を生成し、install なしで Codex・エフェメラルな Claude Code 環境でも動作する形にする
   - 検証基準: 生成物を対象プロジェクトの git にコミットするだけで、そのプロジェクトを開いた別セッションでスキル・コマンド・hooks が発火する。既存ファイルがある場合は `.bak` に退避してから上書きする
 - **FR-05 検索構造**: `INDEX.md` が DAILY／LIBRARY の2層で全資産への導線を提供する
   - 検証基準: 全スキル・コマンドが INDEX.md に1行要約＋参照コスト付きで掲載されている
