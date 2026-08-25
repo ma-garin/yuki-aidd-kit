@@ -105,6 +105,12 @@ else
   echo "✅ scripts/trace-check.sh 同梱"
 fi
 
+# テスト活動のゲートスクリプト（機能契約ハーネス・UI 検証マーカー。文書雛形は init-test-docs.sh で配置）
+for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh; do
+  if [ -e "$TARGET/scripts/$s" ]; then echo "↷ scripts/$s は既存のためスキップ"
+  else cp "$KIT_DIR/scripts/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"; echo "✅ scripts/$s 同梱"; fi
+done
+
 # Codex用 AGENTS.md（INDEX.md参照をプロジェクト相対パスに変換）
 backup_if_exists "$TARGET/AGENTS.md"
 sed 's#<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md#.claude/INDEX.md#' \
@@ -124,3 +130,4 @@ echo "2. $TARGET で: git add .claude AGENTS.md CLAUDE.md scripts/trace-check.sh
 echo "3. これでCodex・リモート/エフェメラルなClaude Code・teammateのclone先でも自動的に効く"
 echo "4. 工程（RFD〜保守運用）で進める場合: $KIT_DIR/scripts/init-lifecycle.sh $TARGET --github"
 echo "5. サンドボックス（denyRead / network allowlist / permissions）を使う場合: $KIT_DIR/templates/settings.sandbox.json を .claude/settings.json にマージ"
+echo "6. テスト戦略・DoD・29119 文書・機能契約を置く場合: $KIT_DIR/scripts/init-test-docs.sh $TARGET --ci"

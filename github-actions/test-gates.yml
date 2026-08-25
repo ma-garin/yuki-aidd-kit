@@ -1,0 +1,54 @@
+# テスト活動のゲート（機能契約ハーネス + L1/L2）
+# .github/workflows/test-gates.yml に配置（./scripts/init-test-docs.sh <target> --ci で自動配置）
+# L3（E2E）はマイルストーンで手動実行し .ui-verified を更新する運用（skills/test-strategy）。
+# CI で E2E も回す場合は `verify-ui` ジョブのコメントを外す。
+
+name: Test Gates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  contracts:
+    name: Functional Integrity Harness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: quality_harness
+        run: python3 scripts/quality_harness.py --root .
+
+  unit-integration:
+    name: L1/L2 (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pytest pytest-cov
+      - name: pytest with coverage gate
+        run: GATES_REQUESTED=1 python -m pytest tests/ --ignore=tests/e2e -q --tb=short --cov=. --cov-fail-under=80
+
+  # verify-ui:
+  #   name: L3 (Playwright E2E)
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with: { python-version: "3.12" }
+  #     - run: pip install -r requirements-dev.txt pytest-playwright && playwright install --with-deps chromium
+  #     - run: GATES_REQUESTED=1 python -m pytest tests/e2e -v --screenshot=only-on-failure
+  #     - uses: actions/upload-artifact@v4
+  #       if: failure()
+  #       with: { name: e2e-screenshots, path: test-results/ }

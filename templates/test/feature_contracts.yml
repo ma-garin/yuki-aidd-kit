@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "_doc": "機能契約。JSON 互換 YAML。検証: python3 scripts/quality_harness.py。項目の意味は skills/test-strategy/references/feature-contracts.md",
+  "harness": {
+    "required_docs": [".claude/rules/functional-integrity.md", "quality/feature_contracts.yml"],
+    "source_roots": ["src", "web/routes", "web/services"],
+    "source_suffixes": [".py"],
+    "unregistered_allowlist": {
+      "web/config.py": "設定値の集約（機能ではない）",
+      "web/auth.py": "認証基盤（各機能から利用される横断部品）"
+    },
+    "scan_roots": ["web/routes", "static/js", "templates"],
+    "suspicious_terms": ["UI only", "ui-only", "not implemented", "dummy endpoint", "stub endpoint"]
+  },
+  "features": [
+    {
+      "feature_id": "example_feature",
+      "name": "<機能名。planned のうちはファイル未指定でよい。implemented にしたら route_files/core_files 必須>",
+      "risk_level": "high",
+      "status": "planned",
+      "ui_files": [],
+      "route_files": [],
+      "core_files": [],
+      "symbols": [],
+      "outputs": ["<利用者に見える出力>"],
+      "persistence": ["<保存先>"],
+      "failure_modes": ["empty_input_rejected", "write_failure_reported_not_silently_dropped", "unauthorized_access_denied"],
+      "required_tests": ["happy_path", "error_path", "evidence"]
+    }
+  ]
+}
