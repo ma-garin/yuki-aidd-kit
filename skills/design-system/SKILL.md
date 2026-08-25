@@ -459,5 +459,7 @@ button, a, [role="button"] { min-height: 44px; min-width: 44px; }
 ## 実物
 
 - `templates/tokens.css`: 上記すべてのトークン（ライト + ダーク、`data-theme` 両対応、reduced-motion、タップ最小 44px）
-- 参照実装（同梱していない）: UX_Auto_Reviewer `web/components/feedback.js` / `icons.js`（Feedback API とアイコン置換の実例）
+- `templates/components/feedback.js`: 操作フィードバックの実装（自己完結。CSS を自分で注入。`Feedback.ok / error / info / busy / emptyState / confirm`）
+- `templates/components/icons.js`: アイコン同梱（Material Symbols, Apache-2.0。`<span data-icon="settings">` を自動置換、`Icons.svg(name, size)`）
+- `templates/components/demo.html`: 上記 3 点の実機確認ページ（ライト／ダーク切替、トースト・確認・空状態）。ブラウザで開いて `uiux_review` の観点で見る
 

@@ -68,7 +68,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `absolute-rules` | A-1〜A-10: 着手前の目的1行・予実の実測・弱点の添付・未検証を断定しない・放置しない | #process #must | 112行 |
+| `absolute-rules` | A-1〜A-10: 着手前の目的1行・予実の実測・残課題の申告・未検証を断定しない・放置しない | #process #must | 112行 |
 | `speed-harness` | 往復×12秒の見積、環境チートシート、バッチ検証、委譲の型、見積の既定、ゲートは要求時のみ、進捗の逐次提示 | #speed #process | 115行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない | #qa #done | 39行 |
 
@@ -124,7 +124,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
 | `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1337行 |
 
-templates/: `design-system.md`（視覚的指示書）/ `tokens.css`（デザイントークンの実物。ライト＋ダーク）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
+templates/: `design-system.md`（視覚的指示書）/ `tokens.css`（デザイントークンの実物。ライト＋ダーク）/ `components/`（`feedback.js` `icons.js` `demo.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
 
 ## templates/lifecycle/ — 工程成果物の雛形（`dev-lifecycle` 用）
 
