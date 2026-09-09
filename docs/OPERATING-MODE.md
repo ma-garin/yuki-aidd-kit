@@ -25,6 +25,10 @@ AIDD Kit を使う時の標準作業モードです。
 
 `node_modules`, `venv`, `.pytest_cache`, `dist`, `test-results`, `output` は通常読まない。
 
+**この順は「変更に着手するため」の読み順。**`ecc-daily-router` の「最初に見る証拠」は 4・5 が入れ替わるが、
+あちらは**技術スタックを判定して ECC 資産を選ぶため**の順であり、テスト設定ファイル（`playwright.config.*` 等）が
+スタックの手がかりになるため先に来る。用途が違うので揃えない。
+
 ## 3. ECC の使い方
 
 DAILY:

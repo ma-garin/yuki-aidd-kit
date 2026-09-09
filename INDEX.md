@@ -68,7 +68,9 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `absolute-rules` | A-1〜A-10: 着手前の目的1行・予実の実測・残課題の申告・未検証を断定しない・放置しない | #process #must | 112行 |
+| `a0-foundations` | **A-0 土台（A-1〜A-10 より先に効く）**: 指示が最優先・結果だけ返す・拒否を不可能と読み替えない・字義通りに解釈・答えられない質問をしない | #process #must | 100行 |
+| `absolute-rules` | A-1〜A-10: 着手前の目的1行・予実の実測・残課題の申告・網羅性は `grep -c` で照合・未検証を断定しない・放置しない | #process #must | 118行 |
+| `execution-safety` | 実行と停止: バックグラウンド/ポーリング禁止・1タスクの範囲とマージまでの完遂・一時プロセスの片付け・スコープは合意/実装は即決 | #process #must | 55行 |
 | `speed-harness` | 往復×12秒の見積、環境チートシート、バッチ検証、委譲の型、見積の既定、ゲートは要求時のみ、進捗の逐次提示 | #speed #process | 115行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない | #qa #done | 39行 |
 
