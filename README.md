@@ -165,6 +165,12 @@ yuki-aidd-kit/
 └── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates）
 ```
 
+## キット自体を作り込むとき
+
+`spec/` に全資産を読み切った現況仕様がある。**まず `spec/README.md` を読む**（読む順序・更新規約）。
+現況の残課題は `spec/09-findings.md`、次にやることは `spec/10-backlog.md`。
+本体を変更したら同じコミットで `spec/` を更新する。
+
 ## 今後の開発時の合言葉
 
 - 「このプロジェクトに合うECCだけ選んで」 → `ecc-daily-router`

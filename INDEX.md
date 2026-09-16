@@ -111,6 +111,23 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP.md`（147行）が唯一の真実源**。ここには複製しない。
 
+## spec/（キット現況の仕様書）— 本体を触る前にここ
+
+全 126 ファイルを読み切った記録。**キット自体を作り込むセッションは `spec/README.md` から始める**。
+設計値の再定義はせず、現況の事実・残課題・バックログだけを持つ（真実源の重複を作らない）。
+
+| ファイル | 1行要約 |
+|---|---|
+| `spec/README.md` | 読む順序・位置づけ・更新規約 |
+| `spec/00-overview.md` | 目的・思想・配置の2層・規模・版歴 |
+| `spec/01-inventory.md` | 全 126 ファイルの目録（行数・役割） |
+| `spec/02-architecture.md` | 読み込み経路・真実源マップ・発火機構・依存 |
+| `spec/03-skills.md` 〜 `08-quality-gates.md` | 資産別の詳細（スキル/コマンド・hooks/スクリプト/テンプレート/rules・docs/品質ゲート） |
+| `spec/09-findings.md` | 現況の残課題（severity・evidence つき） |
+| `spec/10-backlog.md` | 作り込みバックログ（完了条件・検証手順つき） |
+
+**本体を変更したら同じコミットで `spec/` を更新する。**
+
 ## docs/（キット自体の文書）
 
 | ファイル | 1行要約 | コスト |
