@@ -33,7 +33,7 @@
 
 **出所**: kit design-system（MD3 Light）＋ WebSpec2Doc `static/tokens.css`（on-primary / surface-3 / border-strong / severity-border / motion）＋ UX_Auto_Reviewer `style.css`（本文幅・reduced-motion）。
 
-### `design-system.md`（83行）— 視覚的指示書
+### `design-system.md`（89行）— 視覚的指示書（S14 でチェックリストに機械/目視の別を付与）
 
 コードを一切見なくても同じ見た目を再現するための言語化。**値は再定義せず `skills/design-system` を参照**（AUDIT D-02 対応）。
 

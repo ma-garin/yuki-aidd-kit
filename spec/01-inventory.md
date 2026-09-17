@@ -153,7 +153,7 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `design-system.md` | 83 | コードを見ずに見た目を再現する視覚的指示書。3パターン（Webアプリ/HTMLスライド/管理画面）＋適用除外＋再現チェックリスト10項目 |
+| `design-system.md` | 89 | コードを見ずに見た目を再現する視覚的指示書。3パターン（Webアプリ/HTMLスライド/管理画面）＋適用除外＋再現チェックリスト14項目（**機械5 / 目視9** の別付き。M17 S14） |
 | `tokens.css` | 107 | **デザイントークンの実物**。ライト＋ダーク（`prefers-color-scheme` と `data-theme` 両対応）、reduced-motion、`--tap-min: 44px` |
 | `settings.sandbox.json` | 83 | sandbox（denyRead・network allowlist）＋permissions（allow/deny）の雛形。出所 my-forward |
 | `CURRENT_STATE.md` | 41 | セッション間引き継ぎ（フェーズ・直近完了・次タスク・判断待ち・既知の問題・設計決定） |
