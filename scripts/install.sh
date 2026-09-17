@@ -3,8 +3,9 @@
 set -e
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+KIT_VERSION="$(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown) $(git -C "$KIT_DIR" rev-parse --short HEAD 2>/dev/null || echo -) $(date -I)"
 
-echo "=== AIDD Kit インストール ==="
+echo "=== AIDD Kit インストール（版: $KIT_VERSION）==="
 mkdir -p "$CLAUDE_DIR/skills" "$CLAUDE_DIR/commands" "$CLAUDE_DIR/hooks" "$CLAUDE_DIR/rules/aidd-kit"
 
 # グローバルCLAUDE.md（既存があればバックアップ）
@@ -43,6 +44,10 @@ for f in "$KIT_DIR/rules/"*.md; do
   fi
 done
 echo "✅ Rules: ${RULES_OK}個（~/.claude/rules/aidd-kit/）"
+
+# 版の刻印（verify.sh が表示。配布先と同じ書式: <VERSION> <commit> <日付>）
+printf '%s\n' "$KIT_VERSION" > "$CLAUDE_DIR/KIT_VERSION"
+echo "✅ KIT_VERSION: $KIT_VERSION"
 
 # Codex用
 echo ""

@@ -11,6 +11,8 @@ check() {
 }
 
 echo "=== AIDD Kit インストール確認 ==="
+if [ -f "$CLAUDE_DIR/KIT_VERSION" ]; then echo "導入済みの版: $(cat "$CLAUDE_DIR/KIT_VERSION")"; fi
+echo "リポジトリの版: $(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown) $(git -C "$KIT_DIR" rev-parse --short HEAD 2>/dev/null || echo -)"
 echo "[グローバル設定]"
 check "CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
 check "settings.json" "$CLAUDE_DIR/settings.json"
@@ -45,4 +47,4 @@ done
 
 echo ""
 echo "結果: OK=$OK / NG=$NG"
-[ "$NG" -eq 0 ] && echo "✅ 全て正常" || echo "⚠ 未配置あり。install.shを再実行してください"
+if [ "$NG" -eq 0 ]; then echo "✅ 全て正常"; exit 0; else echo "⚠ 未配置あり。install.shを再実行してください"; exit 1; fi
