@@ -4,7 +4,8 @@
 
 ```text
                     ┌──────────────── グローバル導入（install.sh）────────────────┐
-                    │  ~/.claude/CLAUDE.md          ← CLAUDE.md.template          │
+                    │  ~/.claude/CLAUDE.md          ← CLAUDE.md.template（@AGENTS.md）│
+                    │  ~/.claude/AGENTS.md          ← AGENTS.md.template（共通規約の本体）│
                     │  ~/.claude/rules/aidd-kit/*   ← rules/（常時読み込み）       │
                     │  ~/.claude/skills/<name>/     ← skills/                     │
                     │  ~/.claude/commands/*.md      ← claude-code/commands/       │
@@ -29,15 +30,15 @@
 ### セッション内の読み込み順（設計意図）
 
 ```text
-1. rules/*.md            常時（毎セッション自動）  — 規律。読まない選択肢が無い層
-2. CLAUDE.md / AGENTS.md 常時                     — 速度・必須プロセス・完了条件・禁止事項
-3. INDEX.md              セッション開始時          — 全資産の地図。ここで「今回読む対象」を決める
-4. DAILY スキル          作業の節目               — 進め方の制御
-5. LIBRARY スキル        タグが一致した時だけ      — 種別固有の規約
-6. references/           該当スキルの中で必要時    — 詳細層（トークンを節約するための逃がし先）
+1. rules/*.md（paths 無し）  常時（毎セッション自動）      — absolute / speed / model-routing。読まない選択肢が無い層
+2. CLAUDE.md → @AGENTS.md    常時                          — 共通規約 ＋ Claude Code 固有。「読む範囲」表がここにある
+3. rules/functional-integrity（paths 付き） コード/UI を触ったとき — 完了条件の実行経路
+4. DAILY / LIBRARY スキル     表の該当行 or description で発火 — 進め方・種別の規約
+5. references/               該当スキルの中で必要時         — 詳細層
+6. INDEX.md                  表に無い・迷ったときだけ       — 全資産の地図（M16 で毎回読むのをやめた）
 ```
 
-`INDEX.md` が**参照コスト（行数）**を併記しているのは、この4〜6の判断を数値で行わせるため。
+`INDEX.md` の**参照コスト（行数）**は、6 で開くかどうかを数値で判断させるため。M16 前は「セッション開始時に INDEX を読む」設計だったが、推定 4,456 トークンを毎回払っていたので `AGENTS.md` の表に置き換えた（`spec/11` D-1）。
 
 ---
 

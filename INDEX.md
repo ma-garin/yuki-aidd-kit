@@ -1,7 +1,7 @@
 # AIDD Kit — INDEX
 
 AI 駆動開発を高速・高品質にするための統合キット。Claude Code / Codex / claude.ai / ECC 横断。
-**このファイルが全資産の入口。まずここを読み、必要なファイルだけを開く**（参照コスト＝およその行数）。
+**全資産の地図。** エージェントは `AGENTS.md`（`CLAUDE.md` が import）の「読む範囲」表から入り、**表に無い・迷ったときだけ**ここを開く（参照コスト＝およその行数。毎セッション読むものではない）。
 
 ## 2層の読み方
 
@@ -17,7 +17,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
 ./scripts/test-hooks.sh                       # hooks の回帰テスト（19ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
-./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（66ケース）
+./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（71ケース）
 ./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./scripts/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。NG=0 が合格）
 ./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）
@@ -67,13 +67,14 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 | `personal-pwa` | GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約 | #pwa #mobile | 30行 |
 | `streamlit-rag-app` | Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約 | #streamlit #rag | 32行 |
 
-## rules/（常時読み込みの規律。install で `~/.claude/rules/aidd-kit/`、export で `.claude/rules/` へ）
+## rules/（規律。`paths` 無し＝毎セッション自動読み込み／`paths` 付き＝該当ファイルを触ったときだけ。install で `~/.claude/rules/aidd-kit/`、export で `.claude/rules/` へ。根拠と原文は `docs/rules-rationale/`）
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `absolute-rules` | A-1〜A-10: 着手前の目的1行・予実の実測・残課題の申告・未検証を断定しない・放置しない | #process #must | 112行 |
-| `speed-harness` | 往復×12秒の見積、環境チートシート、バッチ検証、委譲の型、見積の既定、ゲートは要求時のみ、進捗の逐次提示 | #speed #process | 115行 |
-| `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない | #qa #done | 41行 |
+| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 19行 |
+| `speed-harness` | H-1〜H-8: 着手前3行・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示 | #speed #process | 51行 |
+| `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 15行 |
+| `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
 
 ## claude-code/hooks/（settings.json で配線）
 
@@ -135,7 +136,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 171行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 184行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
 | `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 76行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
@@ -143,6 +144,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
 | `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1434行 |
+
+`docs/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。
 
 templates/: `design-system.md`（視覚的指示書）/ `tokens.css`（デザイントークンの実物。ライト＋ダーク）/ `components/`（`feedback.js` `icons.js` `demo.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
 

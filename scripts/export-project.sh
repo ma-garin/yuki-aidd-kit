@@ -125,7 +125,7 @@ sed 's#<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md#.claude/INDEX.md#' \
 backup_if_exists "$TARGET/CLAUDE.md"
 sed 's#<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md#.claude/INDEX.md#' \
   "$KIT_DIR/CLAUDE.md.template" > "$TARGET/CLAUDE.md"
-echo "✅ AGENTS.md / CLAUDE.md 生成済み（.claude/INDEX.md を参照する形に調整済み）"
+echo "✅ AGENTS.md（共通規約の本体）/ CLAUDE.md（@AGENTS.md + Claude Code 固有）生成済み（INDEX 参照は .claude/INDEX.md に調整済み）"
 
 echo ""
 echo "=== 完了 ==="

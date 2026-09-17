@@ -15,6 +15,7 @@ if [ -f "$CLAUDE_DIR/KIT_VERSION" ]; then echo "導入済みの版: $(cat "$CLAU
 echo "リポジトリの版: $(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown) $(git -C "$KIT_DIR" rev-parse --short HEAD 2>/dev/null || echo -)"
 echo "[グローバル設定]"
 check "CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
+check "AGENTS.md（CLAUDE.md が @AGENTS.md で import）" "$CLAUDE_DIR/AGENTS.md"
 check "settings.json" "$CLAUDE_DIR/settings.json"
 
 echo "[スキル]"

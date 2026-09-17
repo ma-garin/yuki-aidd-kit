@@ -2,10 +2,10 @@
 
 ---
 
-# 1. rules/ — 常時読み込みの規律（268行）
+# 1. rules/ — 規律（M16 後: 4本・102行。`paths` 無し 85行が毎セッション）
 
-install で `~/.claude/rules/aidd-kit/`、export で `<target>/.claude/rules/` へ。
-**読まない選択肢が無い層**なので、ここに書かれたことは全スキルの下敷きになる。
+install で `~/.claude/rules/aidd-kit/`、export で `<target>/.claude/rules/` へ。`paths` 無し（absolute / speed / model-routing）は**読まない選択肢が無い層**、`functional-integrity` は `paths` 付きでコード/UI を触ったときだけ載る。
+**以下の A-1〜A-10・H-1〜H-8 の解説は M16 で `docs/rules-rationale/` に退避した原文の要約**であり、現行 `rules/` は表形式の規範のみ。`rules/model-routing.md` は `spec/11` D-6 の実装。
 
 ## `absolute-rules.md`（112行）— A-1〜A-10
 
@@ -146,7 +146,7 @@ STACK（スキャン結果の要点7行）／**DAILY 15件**（e2e-testing, brow
 |---|---|
 | `README.md`（178行） | 人間向け入口。Ver.6.3→5.0 のリリースノート（新しい順）／導入2方式／取説の開き方／推奨フロー8段／ECC 連携／構成ツリー／**今後の開発時の合言葉9件**（「このプロジェクトに合うECCだけ選んで」→`ecc-daily-router` 等） |
 | `INDEX.md`（159行） | **全資産の入口**。2層の読み方／クイックスタート（9コマンド）／導入方式2種／DAILY スキル表12／LIBRARY スキル表7／rules 表3／hooks 表7／コマンド表16／ECC 連携（MAP 参照1行）／docs 表8／templates 一覧／lifecycle・test・github の説明／**運用原則7項目**。各行に**1行要約・タグ・参照コスト（行数）** |
-| `CLAUDE.md.template`（68行） | 9節: 最優先=速度／必須プロセス（A-1,2,3,5）／応答スタイル／環境／読む範囲／完了条件／開発工程／実装モード／禁止事項／コミット規約／QA 観点。**「指定外ファイルは読まない」「セッション分割を提案」は AUDIT C-02・X-4 で廃止済み**（代わりに「変更対象の依存先・呼び出し元は読む」「指示された範囲はマージまで完遂する」） |
-| `AGENTS.md.template`（61行） | 上の Codex 版。**CLAUDE.md.template と同時に更新する**（X-5）。末尾にプロジェクト別追記欄のコメント雛形 |
+| `CLAUDE.md.template`（21行） | `@AGENTS.md` ＋ Claude Code 固有のみ（M16）: 実装モード／hooks で強制されるもの／トークン・モデル（`/clear` `/usage` `/context` `rules/model-routing.md`） |
+| `AGENTS.md.template`（74行） | **共通規約の本体**（M16）。Codex は直接、Claude Code は `CLAUDE.md` の `@AGENTS.md` で読む。「読む範囲」はタスク種別→スキル/コマンドのルーティング表。X-5「両ファイル同時更新」は不要になった |
 | `claude-projects-setup.md`（58行） | claude.ai Projects「AIDD Lab」。Project Instructions の全文／ナレッジ5ファイル（INDEX.md・CLAUDE.md.template・sdd-ecc-workflow・qa-review-standards・SDD+ECC ガイド）／Tips（**ナレッジは5ファイル以内・頻繁に変わる情報は入れない**） |
 | `.gitignore`（21行） | OS/依存/ビルド/カバレッジ/キャッシュ/テスト出力/ログ/`.env*`（`!.env.example` は例外）/`.playwright-mcp/` |
