@@ -50,7 +50,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: `tokens.css` の変数名が SKILL.md と一致し、`templates/design-system.md` の再現チェックリストで直値・フィードバック・文言・アイコンが確認できる
 - **FR-11 版の刻印**: `VERSION` を真実源とし、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。配布先がどの版のキットから出たかを判別できる
   - 検証基準: `./scripts/test-install.sh` が KIT_VERSION の3フィールドと VERSION との一致を assert する
-- **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` で PR ごとに実行する
+- **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` から**保守者が手動起動したときだけ**実行する（自動実行はしない。ゲートは要求時のみ、の規律と同じ）
   - 検証基準: `./scripts/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec/01 同期）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
 - **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する
   - 検証基準: 重複定義・未定義参照・所有ファイル違反・追跡表未記載・カバー漏れ・孤立テストの6種別を検出し、NG>0 で exit 1 する（CI から `github-actions/lifecycle-check.yml` で実行できる）
