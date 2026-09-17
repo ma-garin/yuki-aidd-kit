@@ -63,7 +63,7 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `design-system/SKILL.md` | 465 | **デザイン値の真実源**。MD3 Light パレット・ダーク・タイポ・余白・レイアウト・コンポーネント11種＋「画面の作り方」（直値禁止・骨格・操作フィードバック・アイコン・文言） |
+| `design-system/SKILL.md` | 473 | **デザイン値の真実源**。MD3 Light パレット・ダーク・タイポ・余白・レイアウト・コンポーネント11種＋「画面の作り方」（直値禁止・骨格・操作フィードバック・アイコン・文言） |
 | `design-system/references/frameworks.md` | 47 | 単一HTML / React+Vite+Tailwind / Streamlit / Flask・Django 別の当て方と、デザイン系スキルの分担表 |
 | `nfr-standards/SKILL.md` | 89 | PWA / 単一HTMLツール / Streamlit の非機能既定値（性能・デバイス・オフライン・a11y・セキュリティ・データ保全） |
 | `agent-eval/SKILL.md` | 67 | LLM/RAG/エージェントの eval。DeepEval + Langfuse、システム別スコアラー、閾値の決め方、出力形式 |
@@ -149,7 +149,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `design-system.md` | 83 | コードを見ずに見た目を再現する視覚的指示書。3パターン（Webアプリ/HTMLスライド/管理画面）＋適用除外＋再現チェックリスト10項目 |
-| `tokens.css` | 97 | **デザイントークンの実物**。ライト＋ダーク（`prefers-color-scheme` と `data-theme` 両対応）、reduced-motion、`--tap-min: 44px` |
+| `tokens.css` | 107 | **デザイントークンの実物**。ライト＋ダーク（`prefers-color-scheme` と `data-theme` 両対応）、reduced-motion、`--tap-min: 44px` |
 | `settings.sandbox.json` | 83 | sandbox（denyRead・network allowlist）＋permissions（allow/deny）の雛形。出所 my-forward |
 | `CURRENT_STATE.md` | 41 | セッション間引き継ぎ（フェーズ・直近完了・次タスク・判断待ち・既知の問題・設計決定） |
 | `ADR-template.md` | 28 | 設計判断の記録（背景・選択肢比較・決定・影響・関連） |
@@ -194,13 +194,21 @@
 | `ISSUE_TEMPLATE/03-defect.md` | 51 | 欠陥 Issue。検出工程・対象 ID・ISTQB severity・再現手順・**evidence（空なら起票しない）** |
 | `pull_request_template.md` | 48 | PR。関係 ID 表・工程・検証結果 evidence・チェック6項目・影響範囲 |
 
-### components/（3件・529行）
+### components/（4件・618行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `feedback.js` | 282 | 操作フィードバックの実装（自己完結・CSS 自己注入）。`ok/error/info/busy/emptyState/confirm`。`textContent` 固定、`javascript:` URL 遮断、押した位置の近くに出す |
 | `icons.js` | 152 | Material Symbols（Apache-2.0）同梱。`data-icon` 自動置換、Lucide 名のエイリアス、MutationObserver で描画前に差し込む |
-| `demo.html` | 95 | 上記3点の実機確認ページ（ライト/ダーク切替・トースト・確認・空状態）。Playwright 確認済み |
+| `demo.html` | 113 | 部品の実機確認ページ。`../ui/components.css` を読み込み、デモ固有 CSS だけ持つ（バッジ／ボタン／入力／KPI／表＋ページャ／トグル／ツールチップ／モーダル／コールアウト／空状態／テーマ切替）。Playwright 確認済み（2026-09-17） |
+| `demo-shell.html` | 71 | 骨格の実機確認ページ。`../ui/layout.css` の app 骨格（globalbar / sidebar 折りたたみ・off-canvas / topbar / content）。1366・1920・360px と ダークで確認済み |
+
+### ui/（2件・274行）— デザインシステムの実物（M17 で追加）
+
+| ファイル | 行 | 役割 |
+|---|---|---|
+| `components.css` | 175 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
+| `layout.css` | 99 | **骨格 CSS の実物**。`.app`（globalbar 44px / sidebar 240→200→off-canvas、`.collapsed` 72px / topbar / content）と `.layout-2pane`、KPI 列・フィルタ行・チップ、ブレークポイント 1366 / 768 / 360 |
 
 ---
 

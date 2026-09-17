@@ -43,6 +43,13 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
   --color-medium-bg:     #FFFDE7;
   --color-low-bg:        #E8F5E9;
   --color-info-bg:       #E1F5FE;
+  --color-medium-text:   #856404;  /* 黄バッジの文字（--color-medium は淡色背景でコントラスト不足） */
+
+  /* 重ね・浮かせるもの（2026-09 追加。部品 CSS の実体化で直値を無くすため） */
+  --color-scrim:         rgba(8,12,18,.46);  /* モーダル背景 */
+  --color-tooltip-bg:    #20242B;            /* 情報ツールチップ。両テーマで固定 */
+  --color-tooltip-text:  #F2F4F7;
+  --color-knob:          #FFFFFF;            /* トグルのつまみ */
 }
 ```
 
@@ -73,6 +80,7 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
     --color-medium:        #F0C24D;  --color-medium-bg:   rgba(201,134,10,.20);
     --color-low:           #6FCB7F;  --color-low-bg:      rgba(56,142,60,.20);
     --color-info:          #6FB1EC; --color-info-bg:      rgba(2,119,189,.20);
+    --color-medium-text:   #F0C24D; --color-scrim: rgba(0,0,0,.6); --color-knob: #E7EAEE;  /* tooltip-bg/text は固定 */
 
     --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
     --shadow-md: 0 2px 8px rgba(0,0,0,.4);
@@ -211,7 +219,7 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
 }
 .badge-critical { background: var(--color-critical-bg); color: var(--color-critical); }
 .badge-high     { background: var(--color-high-bg);     color: var(--color-high); }
-.badge-medium   { background: var(--color-medium-bg);   color: #856404; }
+.badge-medium   { background: var(--color-medium-bg);   color: var(--color-medium-text); }
 .badge-low      { background: var(--color-low-bg);      color: var(--color-low); }
 .badge-new      { background: var(--color-primary-light); color: var(--color-primary); }
 ```
@@ -241,7 +249,7 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
 .info-ic .tooltip {
   display: none; position: absolute; z-index: 30; top: 130%; left: 50%;
   transform: translateX(-50%); width: 220px;
-  background: #20242B; color: #F2F4F7;  /* テーマに関わらず固定の濃色チップ（両テーマで可読性を保証） */
+  background: var(--color-tooltip-bg); color: var(--color-tooltip-text);  /* 両テーマで固定の濃色チップ */
   font-size: 11.5px; line-height: 1.55; padding: 9px 11px;
   border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); text-align: left;
 }
@@ -266,7 +274,7 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
 
 .pagebar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 18px; border-top: 1px solid var(--color-border); }
 .pagesize .seg span.active { background: var(--color-surface); color: var(--color-primary-dark); box-shadow: var(--shadow-sm); } /* 表示件数: 5/10/30/50/100/すべて */
-.pager .page.active { background: var(--color-primary); color: #fff; font-weight: 700; }
+.pager .page.active { background: var(--color-primary); color: var(--color-on-primary); font-weight: 700; }
 ```
 - 一覧画面の絞り込みは「全体トップの検索・並び替え」と「列ごとのフィルタ（列見出しのアイコン）」を分けて共存させる。両方を1つのUIに混在させない
 - 表示件数変更でページは1に戻す。件数表示は `1–10 / 48 件` のように現在範囲/総数を併記する
@@ -275,7 +283,7 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
 ```css
 .toggle { width: 44px; height: 26px; border-radius: var(--radius-full); background: var(--color-border); position: relative; }
 .toggle.on { background: var(--color-primary); }
-.toggle > i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); }
+.toggle > i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--color-knob); box-shadow: var(--shadow-sm); }
 .toggle.on > i { left: 21px; }
 
 .seg { display: inline-flex; background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 3px; gap: 3px; }
@@ -298,7 +306,7 @@ Harness ToDo モックで「新規作成フォーム」「破壊的操作の確�
 </div>
 ```
 ```css
-.modal-backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(8,12,18,.46); display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; background: var(--color-scrim); display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal-backdrop.open { display: flex; }
 .modal { width: 480px; max-width: 100%; background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; }
 .modal.sm { width: 380px; } /* 確認ダイアログはモーダルより小さく */
@@ -330,8 +338,8 @@ Harness ToDo モックで「新規作成フォーム」「破壊的操作の確�
 </div>
 ```
 ```css
-.empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 64px 24px; color: var(--color-text-secondary); }
-.empty-ic { width: 56px; height: 56px; border-radius: 50%; background: var(--color-surface-2); display: grid; place-items: center; color: var(--color-text-disabled); margin-bottom: 18px; }
+.empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-3); padding: var(--space-12) var(--space-6); color: var(--color-text-secondary); }
+.empty-ic { width: 56px; height: 56px; border-radius: 50%; background: var(--color-surface-2); display: grid; place-items: center; color: var(--color-text-disabled); }
 ```
 - 用途は2種: ①フィルタ・検索の結果0件（解決アクションは「フィルタを解除」）②新規ユーザーでデータが未作成（解決アクションは「最初の〇〇を作成」）。**文言とボタンを用途に応じて変える**。どちらも同じ空のグレーアイコンで済ませない
 

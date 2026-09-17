@@ -1,4 +1,4 @@
-# 06 — templates（33件）と github-actions（4件）
+# 06 — templates（36件）と github-actions（4件）
 
 配置スクリプトとの対応:
 `init-lifecycle.sh` → `lifecycle/` + `github/`／`init-test-docs.sh` → `test/` + ゲートスクリプト／
@@ -8,7 +8,7 @@
 
 ## 1. 単体テンプレート（7件）
 
-### `tokens.css`（97行）— デザイントークンの実物
+### `tokens.css`（107行）— デザイントークンの実物
 
 `skills/design-system/SKILL.md` を真実源として実体化したもの。**値を変えるときはスキル側を先に直す。**
 
@@ -113,7 +113,7 @@
 
 ---
 
-## 5. `components/`（3件・529行）
+## 5. `components/`（4件・618行）
 
 ### `feedback.js`（282行）
 
@@ -147,13 +147,36 @@
 - viewBox は Material の `0 -960 960 960`・`fill="currentColor"`（線画の Lucide とは前提が違う）
 - `document.readyState === 'loading'` の間は **MutationObserver で組み立てられた端から差し込む**（DOMContentLoaded まで待つと字だけの画面が一瞬映ってちらつく）
 
-### `demo.html`（95行）
+### `demo.html`（113行）
 
-`tokens.css` + `icons.js` + `feedback.js` の実機確認ページ。severity バッジ5種 / ボタン4種＋入力欄 /
-カードと表（等幅数値）/ 空状態 / テーマ切替（`data-theme` をトグル）。
-**デモ用 CSS も含めて値はすべて `var(--*)` 参照で直値なし**。Playwright でライト・ダーク・トースト・確認ダイアログ・空状態を確認済み（2026-08-26）。
+部品の実機確認ページ。`../tokens.css` → `../ui/components.css` の順に読み込み、**デモ固有の体裁（`.page` `.row` `.grid-3` `.theme-btn`）だけ**を `<style>` に持つ。
+severity バッジ6種 / ボタン（primary・ghost・danger・disabled）/ 入力（`.field` `.input.err` `.select`）/ KPI・スコアカード /
+カードと表（`.table-wrap` 横スクロール・列フィルタ・チップ・セグメント・トグル・情報ツールチップ・ページャ・スケルトン）/ コールアウト / モーダル（3経路で閉じる）/ 空状態 / テーマ切替。
+Playwright でライト・ダーク・360px・モーダル・トーストを確認済み（2026-09-17）。
+
+### `demo-shell.html`（71行）
+
+骨格の実機確認ページ。`layout.css` の `.app`（globalbar / sidebar / topbar / content）に KPI 列・フィルタ行・表を載せる。
+サイドバーの折りたたみ（72px）と 768px 以下の off-canvas 開閉（`.open`）を JS 4行で動かす。1366×768 / 1920×1080 / 360×820 とダークで横スクロールなしを確認済み。
 
 ---
+
+## 5b. `ui/`（2件・274行）— デザインシステムの実物（M17）
+
+### `components.css`（175行）
+
+`skills/design-system/SKILL.md` の CSS ブロックを **`var(--*)` だけで**1ファイルに実体化。直値は `token-exempt` コメント付きのヘアライン（2〜3px）と部品固有の幅・高さのみ。
+
+- 群: ボタン `.btn .btn--primary .btn--ghost .btn--danger`（`aria-busy` で二重送信対策）/ 入力 `.input .select .textarea .field .field-err-text .banner-err` / バッジ `.badge-*`（medium の文字色は `--color-medium-text`）/ カード `.card .card-grid` / `.score-card` / `.kpi` / 表 `.table .table-wrap .col-filter-btn .col-pop .pagebar .pager` / `.toggle` `.seg` / `.info-ic .tooltip`（`.edge-left/.edge-right`）/ `.modal-backdrop .modal .modal-{head,body,foot}`（`.modal-head .modal-close` に限定して footer のボタンを壊さない）/ `.notif-pop .notif-item.unread` / `.empty-state`（`feedback.js` と同じクラス名。静的マークアップ用）/ `.callout--*` / `.skeleton` / ユーティリティ
+- 含まない: トースト・確認ダイアログ（`feedback.js` が自己注入）
+- SKILL.md 側の直値（`#856404` / `#20242B` / `#F2F4F7` / `rgba(8,12,18,.46)` / `#fff`）は `tokens.css` に `--color-medium-text` `--color-tooltip-bg/-text` `--color-scrim` `--color-knob` を追加して解消（真実源も同時更新）
+
+### `layout.css`（99行）
+
+- A) `.app` = `.app-globalbar`（44px 固定・折り返さない）+ `.app-body`（`.sidebar` 240px sticky・本文と別スクロール・`.collapsed` 72px + `.maincol`（`.app-topbar` min 56px sticky + `.app-content` がスクロール））
+- B) `.layout-2pane` + `.sidenav`（軽量ツール）
+- `.kpi-row` `.filter-row` `.chip`、`.app.is-settings` で裏側の地色を変える、`.measure` で本文幅
+- ブレークポイント: ≦1366 sidebar 200px / ≦768 off-canvas（`.open`）・globalbar のラベル非表示 / ≦360 見出し縮小・KPI 1列
 
 ## 6. `github-actions/`（4件・177行）— 配布用サンプル
 

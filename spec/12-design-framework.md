@@ -11,10 +11,13 @@
 
 | ファイル | 行 | 中身 |
 |---|---|---|
-| `templates/tokens.css` | 97 | **トークン定義54行 ＋ 基本適用5ルール**（body / code / tap-min / reduced-motion / color-scheme）。ライト＋ダーク両対応 |
+| `templates/tokens.css` | 107 | **トークン定義54行 ＋ 基本適用5ルール**（body / code / tap-min / reduced-motion / color-scheme）。ライト＋ダーク両対応 |
 | `templates/components/feedback.js` | 282 | トースト・失敗（消えない）・処理中・空状態・確認ダイアログ。CSS を自己注入。自己完結 |
 | `templates/components/icons.js` | 152 | Material Symbols 48種を同梱。`data-icon` 自動置換。旧名エイリアス15件 |
-| `templates/components/demo.html` | 95 | 上記の実機確認ページ（バッジ／ボタン／カード／表／空状態／テーマ切替） |
+| `templates/components/demo.html` | 113 | 部品の実機確認ページ。`ui/components.css` を読み込む形（DS-1 で置換） |
+| `templates/components/demo-shell.html` | 71 | 骨格の実機確認ページ（DS-2 で追加） |
+| `templates/ui/components.css` | 175 | **部品 CSS の実物**（DS-1。2026-09-17 出荷） |
+| `templates/ui/layout.css` | 99 | **骨格 CSS の実物**（DS-2。2026-09-17 出荷） |
 
 ### 散文としてしか存在しないもの
 
@@ -68,7 +71,7 @@ Opus ＋ Max なら成立する。**Sonnet ＋ Pro では二重に損**:
 
 ## 3. 作るもの
 
-### DS-1. `templates/ui/components.css`（新規）
+### DS-1. `templates/ui/components.css`（新規）— **実装済み 2026-09-17**
 
 SKILL.md の CSS コードブロック17個を、**トークン参照だけで書かれた1ファイル**に起こす。
 
@@ -90,7 +93,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 - 直値を書かない（`tokens.css` の `var(--*)` のみ）。例外はコメントで理由を書く
 - **完了条件**: `demo.html` が `components.css` を読み込む形に変わり、`check-design.sh` の直値検査が 0
 
-### DS-2. `templates/ui/layout.css`（新規）
+### DS-2. `templates/ui/layout.css`（新規）— **実装済み 2026-09-17**（クラス名は `.shell` でなく `.app`。`demo-shell.html` で確認）
 
 骨格（`spec/03-skills.md` と SKILL.md が言う globalbar / sidebar / topbar / content）を実体化。
 

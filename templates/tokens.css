@@ -1,6 +1,7 @@
 /* tokens.css — AIDD Design System のデザイントークン（実物）
  * 真実源: skills/design-system/SKILL.md（値を変えるときはスキル側を先に直す）
  * 使い方: <link rel="stylesheet" href="tokens.css"> を最初に読み、以降の CSS は直値を書かず var(--*) だけを使う。
+ * 部品の CSS は templates/ui/components.css、骨格は templates/ui/layout.css（どちらもこのトークンだけで書かれている）。
  * 出所: kit design-system（MD3 Light 基準）+ WebSpec2Doc static/tokens.css（on-primary / surface-3 / border-strong / severity-border / motion）
  *      + UX_Auto_Reviewer style.css（本文幅・reduced-motion）。
  */
@@ -30,6 +31,13 @@
   --color-medium:   #FBC02D; --color-medium-bg:   #FFFDE7; --color-medium-border:   #F4E48E;
   --color-low:      #388E3C; --color-low-bg:      #E8F5E9; --color-low-border:      #A5D6A7;
   --color-info:     #0288D1; --color-info-bg:     #E1F5FE; --color-info-border:     #A9DDF5;
+  --color-medium-text:    #856404;   /* 黄バッジの文字。--color-medium は淡色背景に対してコントラスト不足 */
+
+  /* ── 色: 重ね・浮かせるもの ── */
+  --color-scrim:          rgba(8,12,18,.46);   /* モーダル背景 */
+  --color-tooltip-bg:     #20242B;             /* 情報ツールチップ。両テーマで固定の濃色（可読性を保証） */
+  --color-tooltip-text:   #F2F4F7;
+  --color-knob:           #FFFFFF;             /* トグルのつまみ */
 
   /* ── 書体（既定はシステムフォントスタック。CDN は任意強化） ── */
   --font-main: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -73,6 +81,8 @@
     --color-medium:   #F0C24D; --color-medium-bg:   rgba(201,134,10,.20); --color-medium-border:  rgba(240,194,77,.45);
     --color-low:      #6FCB7F; --color-low-bg:      rgba(56,142,60,.20); --color-low-border:      rgba(111,203,127,.45);
     --color-info:     #6FB1EC; --color-info-bg:     rgba(2,119,189,.20); --color-info-border:     rgba(111,177,236,.45);
+  --color-medium-text: #F0C24D; --color-scrim: rgba(0,0,0,.6); --color-tooltip-bg: #20242B; --color-tooltip-text: #F2F4F7; --color-knob: #E7EAEE;
+    --color-medium-text: #F0C24D; --color-scrim: rgba(0,0,0,.6); --color-tooltip-bg: #20242B; --color-tooltip-text: #F2F4F7; --color-knob: #E7EAEE;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 2px 8px rgba(0,0,0,.4); --shadow-lg: 0 8px 28px rgba(0,0,0,.5); --shadow-pop: 0 12px 32px rgba(0,0,0,.55);
   }
 }
