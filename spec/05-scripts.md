@@ -250,19 +250,19 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 ### `check-design.sh` → `check_design.py`
 
 ```bash
-./scripts/check-design.sh [--root DIR] [--tokens templates/tokens.css] [-o REPORT] [PATH ...]   # PATH 省略時 templates/ui templates/components
+./scripts/check-design.sh [--root DIR] [--tokens FILE] [-o REPORT] [PATH ...]   # PATH 省略時 templates/ui templates/components。--tokens 省略時は templates/tokens.css → .claude/templates/tokens.css
 ```
 
 | # | 検査 | 内容 | 既定 |
 |---|---|---|---|
-| 1 | 直値 | 色（`#hex` / `rgb(` / `hsl(`）はどこでも。px は padding / margin / gap / border-radius / font-size / line-height に限る（幅・高さ・ブレークポイントは対象外）。除外: 3px 以下のヘアライン、`var(--x, フォールバック)` の中、行内 `token-exempt` コメント、`tokens.css` 自身 | NG |
+| 1 | 直値 | 色（`#hex` / `rgb(` / `hsl(`）はどこでも。px は padding / margin / gap / border-radius / font-size / line-height に限る（幅・高さ・ブレークポイントは対象外）。除外: 3px 以下のヘアライン、`var(--x, フォールバック)` の中、行内 `token-exempt` コメント、`tokens.css` 自身、**カスタムプロパティの定義 `--x: 値`**（単一 HTML に貼った tokens.css がこれ） | NG |
 | 2 | 未定義トークン | `var(--x)` が `tokens.css` にも自ファイルにも無い | NG |
 | 3 | 未使用トークン | `tokens.css` で定義されているが対象のどこからも参照されない | WARN |
 | 4 | 外部 CDN | `<link>` / `<script src>` / `@import` / `url()` が `http(s)://` を読む | NG |
 | 5 | alert() | `alert(` `confirm(` `prompt(`（`window.` 付き含む）の直接使用。`Feedback.confirm(` と関数定義は対象外 | NG |
 | 6 | tokens.css 読込 | `.html` に `tokens.css` の `<link>` も `<style>` 内の `--color-primary:` 定義も無い | NG |
 
-- `.html` は `<style>` / `<script>` ブロックだけを見る。`.js` は自己注入 CSS（テンプレート文字列）を含めて全文
+- `.html` は `<style>` / `<script>` ブロックだけを見る。`.js` は自己注入 CSS（テンプレート文字列）を含めて全文。ディレクトリ走査では `.claude` `.git` `node_modules` `dist` `build` を除外（配布先で `.` を渡してもキット雛形を検査しない。F-14）
 - 出力は3層、全件は `check-design-report.md`（`.gitignore` 済み）。対象なしは exit 0
 - 配布先では `./scripts/check-design.sh static src` のように対象を渡す（`templates/design-system.md` 再現チェックリストの機械判定分）
 
@@ -276,7 +276,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | `test-install.sh` | 130 | **73** | PASS=73 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
 | `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
 | `test-check-docs.sh` | 105 | **25** | PASS=25 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
-| `test-check-design.sh` | 126 | **36** | PASS=36 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス |
+| `test-check-design.sh` | 143 | **43** | PASS=43 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス ／ **配布先の形（.claude/templates/tokens.css 自動検出・.claude/ 不走査・貼り込んだ定義行）** |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。
 雛形が NG を出すと利用者が検査結果そのものを無視するようになる、という理由が明記されている。

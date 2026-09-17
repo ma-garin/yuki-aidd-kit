@@ -7,7 +7,8 @@ templates/design-system.md の再現チェックリストは「CSS に直値が�
 
   1. 直値        色（#hex / rgb() / hsl()）はどこでも NG。px は padding / margin / gap / border-radius /
                  font-size / line-height に限り NG（幅・高さ・ブレークポイントは対象外）。
-                 除外: 3px 以下のヘアライン、var(--x, フォールバック) の中、行内に token-exempt コメント、tokens.css 自身
+                 除外: 3px 以下のヘアライン、var(--x, フォールバック) の中、行内に token-exempt コメント、tokens.css 自身、
+                 カスタムプロパティの定義（`--x: 値;`。単一 HTML に tokens.css を貼った箇所や自ファイルの変数定義）
   2. 未定義トークン var(--x) が tokens.css にも自ファイルにも定義されていない
   3. 未使用トークン tokens.css で定義されているが対象ファイルのどこからも参照されない（WARN）
   4. 外部 CDN    <link>/<script>/@import/url() が http(s):// を読む（閉じたネットワークで欠ける。icons.js 同梱の理由）
@@ -16,8 +17,10 @@ templates/design-system.md の再現チェックリストは「CSS に直値が�
 
 出力は3層（結論 → 種別ごと → 全件は check-design-report.md）。
 
-使い方: python3 scripts/check_design.py [--root DIR] [--tokens templates/tokens.css] [-o REPORT] [PATH ...]
-  PATH 省略時は templates/ui templates/components。ディレクトリは .css / .html / .js を再帰的に集める。
+使い方: python3 scripts/check_design.py [--root DIR] [--tokens FILE] [-o REPORT] [PATH ...]
+  PATH 省略時は templates/ui templates/components。ディレクトリは .css / .html / .js を再帰的に集める
+  （.claude/ .git/ node_modules/ は除外。配布先で `.` を渡してもキットの雛形を検査対象にしない）。
+  --tokens 省略時は templates/tokens.css → .claude/templates/tokens.css の順に探す（キット本体と配布先の両方で動く）。
 """
 from __future__ import annotations
 
@@ -27,6 +30,8 @@ import sys
 from pathlib import Path
 
 DEFAULT_TARGETS = ("templates/ui", "templates/components")
+TOKENS_CANDIDATES = ("templates/tokens.css", ".claude/templates/tokens.css")
+SKIP_DIRS = {".claude", ".git", "node_modules", "dist", "build", ".venv", "__pycache__"}
 EXTS = (".css", ".html", ".js")
 HAIRLINE_MAX_PX = 3
 PX_PROPS = ("padding", "margin", "gap", "border-radius", "font-size", "line-height")
@@ -38,6 +43,7 @@ PX_VAL_RE = re.compile(r"(?<![\w.-])(\d+(?:\.\d+)?)px\b")
 VAR_REF_RE = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)")
 VAR_DEF_RE = re.compile(r"(--[A-Za-z0-9_-]+)\s*:")
 VAR_FALLBACK_RE = re.compile(r"var\(\s*--[A-Za-z0-9_-]+\s*,[^()]*(?:\([^()]*\)[^()]*)*\)")
+CUSTOM_PROP_DECL_RE = re.compile(r"(?<![\w-])--[A-Za-z0-9_-]+\s*:[^;{}]*")   # --x: 値（定義。値の置き場所なので直値検査から外す）
 CDN_RE = re.compile(r"""(?:<link[^>]+href|<script[^>]+src|@import\s+(?:url\()?|url\()\s*=?\s*["']?\s*(https?://[^"'\s)>]+)""", re.I)
 DIALOG_RE = re.compile(r"(?<![\w.$])(?:window\.)?(alert|confirm|prompt)\s*\(")
 STYLE_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
@@ -60,7 +66,8 @@ def collect(root: Path, targets: list[str]) -> list[Path]:
     for t in targets:
         p = (root / t) if not Path(t).is_absolute() else Path(t)
         if p.is_dir():
-            out += sorted(f for f in p.rglob("*") if f.is_file() and f.suffix in EXTS)
+            out += sorted(f for f in p.rglob("*") if f.is_file() and f.suffix in EXTS
+                          and not (set(f.relative_to(p).parts[:-1]) & SKIP_DIRS))
         elif p.is_file():
             out.append(p)
     return out
@@ -84,7 +91,8 @@ def blank_comments(text: str, css: bool) -> str:
 
 
 def blank_fallbacks(text: str) -> str:
-    return VAR_FALLBACK_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+    text = VAR_FALLBACK_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+    return CUSTOM_PROP_DECL_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
 
 
 def css_segments(f: Path, text: str) -> list[tuple[str, int]]:
@@ -184,11 +192,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="デザイン出荷物の直値・トークン・CDN・alert() 検査")
     ap.add_argument("paths", nargs="*", help="検査対象（ファイルまたはディレクトリ）。省略時は templates/ui templates/components")
     ap.add_argument("--root", default=".")
-    ap.add_argument("--tokens", default="templates/tokens.css", help="トークン定義ファイル（root 相対）")
+    ap.add_argument("--tokens", default=None, help="トークン定義ファイル（root 相対）。省略時は templates/tokens.css → .claude/templates/tokens.css")
     ap.add_argument("-o", "--report", default="check-design-report.md")
     a = ap.parse_args()
     root = Path(a.root).resolve()
-    tokens_file = Path(a.tokens) if Path(a.tokens).is_absolute() else root / a.tokens
+    if a.tokens:
+        tokens_file = Path(a.tokens) if Path(a.tokens).is_absolute() else root / a.tokens
+    else:
+        tokens_file = next((root / c for c in TOKENS_CANDIDATES if (root / c).is_file()), root / TOKENS_CANDIDATES[0])
     files = collect(root, a.paths or list(DEFAULT_TARGETS))
     if tokens_file.is_file() and tokens_file not in files:
         files.append(tokens_file)   # 未使用トークン検査のため常に読む（直値検査からは除外）

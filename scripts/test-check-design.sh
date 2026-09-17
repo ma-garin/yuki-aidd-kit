@@ -121,6 +121,23 @@ OUT=$(run templates/ui static); RC=$?
 expect_exit "配布先向けに任意のパスを渡せる" 1 "$RC"
 expect_out  "static/app.css を検査" "static/app.css:1" "$OUT"
 
+echo "[ケース10: 配布先プロジェクトの形（export-project.sh 後の単一 HTML）]"
+# tokens.css は .claude/templates/ にある。単一 HTML には tokens.css を <style> に貼る。.claude/ 配下の雛形は検査対象にしない
+D="$TMP/dist"; rm -rf "$D"; mkdir -p "$D/.claude/templates" "$D/.claude/hooks"
+cp "$KIT_DIR/templates/tokens.css" "$D/.claude/templates/tokens.css"
+printf '.x { padding: 99px; color: #123456; }\n' > "$D/.claude/hooks/should-be-ignored.css"
+{ printf '<style>\n'; cat "$KIT_DIR/templates/tokens.css"; printf '.app { padding: var(--space-4); color: var(--color-text); }\n</style>\n'; } > "$D/tool.html"
+OUT=$(python3 "$KIT_DIR/scripts/check_design.py" --root "$D" -o "$TMP/report.md" . 2>&1); RC=$?
+expect_exit "--tokens 省略で .claude/templates/tokens.css を自動検出し exit 0" 0 "$RC"
+expect_out  "対象は tool.html の 1 ファイルだけ（.claude/ は走査しない）" "対象: 1 ファイル" "$OUT"
+expect_nrgrep "貼り込んだ tokens.css の定義行（--x: #hex）を直値にしない" "色の直値"
+expect_nrgrep ".claude/ 配下の直値は報告しない" "should-be-ignored"
+printf '.y { --local-gap: 12px; gap: var(--local-gap); margin: 24px; }\n' > "$D/extra.css"
+OUT=$(python3 "$KIT_DIR/scripts/check_design.py" --root "$D" -o "$TMP/report.md" . 2>&1); RC=$?
+expect_exit "定義行以外の直値（margin: 24px）は引き続き検出" 1 "$RC"
+expect_nrgrep "自ファイルの --local-gap: 12px 定義は直値にしない" '`12px`'
+expect_rgrep  "margin: 24px は検出" '`24px`'
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }
