@@ -81,7 +81,6 @@
     --color-medium:   #F0C24D; --color-medium-bg:   rgba(201,134,10,.20); --color-medium-border:  rgba(240,194,77,.45);
     --color-low:      #6FCB7F; --color-low-bg:      rgba(56,142,60,.20); --color-low-border:      rgba(111,203,127,.45);
     --color-info:     #6FB1EC; --color-info-bg:     rgba(2,119,189,.20); --color-info-border:     rgba(111,177,236,.45);
-  --color-medium-text: #F0C24D; --color-scrim: rgba(0,0,0,.6); --color-tooltip-bg: #20242B; --color-tooltip-text: #F2F4F7; --color-knob: #E7EAEE;
     --color-medium-text: #F0C24D; --color-scrim: rgba(0,0,0,.6); --color-tooltip-bg: #20242B; --color-tooltip-text: #F2F4F7; --color-knob: #E7EAEE;
     --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 2px 8px rgba(0,0,0,.4); --shadow-lg: 0 8px 28px rgba(0,0,0,.5); --shadow-pop: 0 12px 32px rgba(0,0,0,.55);
   }
@@ -96,6 +95,7 @@
   --color-medium:   #F0C24D; --color-medium-bg:   rgba(201,134,10,.20); --color-medium-border:  rgba(240,194,77,.45);
   --color-low:      #6FCB7F; --color-low-bg:      rgba(56,142,60,.20); --color-low-border:      rgba(111,203,127,.45);
   --color-info:     #6FB1EC; --color-info-bg:     rgba(2,119,189,.20); --color-info-border:     rgba(111,177,236,.45);
+  --color-medium-text: #F0C24D; --color-scrim: rgba(0,0,0,.6); --color-tooltip-bg: #20242B; --color-tooltip-text: #F2F4F7; --color-knob: #E7EAEE;
   --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 2px 8px rgba(0,0,0,.4); --shadow-lg: 0 8px 28px rgba(0,0,0,.5); --shadow-pop: 0 12px 32px rgba(0,0,0,.55);
 }
 

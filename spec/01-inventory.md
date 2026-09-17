@@ -64,7 +64,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `design-system/SKILL.md` | 473 | **デザイン値の真実源**。MD3 Light パレット・ダーク・タイポ・余白・レイアウト・コンポーネント11種＋「画面の作り方」（直値禁止・骨格・操作フィードバック・アイコン・文言） |
-| `design-system/references/frameworks.md` | 47 | 単一HTML / React+Vite+Tailwind / Streamlit / Flask・Django 別の当て方と、デザイン系スキルの分担表 |
+| `design-system/references/frameworks.md` | 36 | 出荷物（`templates/ui/`）への導線表＋デザイン系スキルの分担表＋共通の落とし穴。FW 別の置き場所は `templates/ui/README.md` が正 |
 | `nfr-standards/SKILL.md` | 89 | PWA / 単一HTMLツール / Streamlit の非機能既定値（性能・デバイス・オフライン・a11y・セキュリティ・データ保全） |
 | `agent-eval/SKILL.md` | 67 | LLM/RAG/エージェントの eval。DeepEval + Langfuse、システム別スコアラー、閾値の決め方、出力形式 |
 | `agent-eval/references/eval_dataset_schema.md` | 38 | ゴールデンデータセットの JSONL スキーマと規模の目安・バージョン管理 |
@@ -206,11 +206,15 @@
 | `demo.html` | 113 | 部品の実機確認ページ。`../ui/components.css` を読み込み、デモ固有 CSS だけ持つ（バッジ／ボタン／入力／KPI／表＋ページャ／トグル／ツールチップ／モーダル／コールアウト／空状態／テーマ切替）。Playwright 確認済み（2026-09-17） |
 | `demo-shell.html` | 71 | 骨格の実機確認ページ。`../ui/layout.css` の app 骨格（globalbar / sidebar 折りたたみ・off-canvas / topbar / content）。1366・1920・360px と ダークで確認済み |
 
-### ui/（2件・274行）— デザインシステムの実物（M17 で追加）
+### ui/（6件・452行）— デザインシステムの実物（M17 で追加）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 175 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
+| `README.md` | 213 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
+| `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
+| `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
 | `layout.css` | 99 | **骨格 CSS の実物**。`.app`（globalbar 44px / sidebar 240→200→off-canvas、`.collapsed` 72px / topbar / content）と `.layout-2pane`、KPI 列・フィルタ行・チップ、ブレークポイント 1366 / 768 / 360 |
 
 ---

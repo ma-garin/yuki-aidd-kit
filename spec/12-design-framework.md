@@ -103,7 +103,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 - 360px / 1366×768 のブレークポイント
 - **完了条件**: 管理画面パターンの骨格が `layout.css` ＋ `components.css` だけで組めること（`demo.html` に shell の例を追加して確認）
 
-### DS-3. フレームワーク別の出荷物
+### DS-3. フレームワーク別の出荷物 — **実装済み 2026-09-17**（`streamlit_theme.py` は `badge` `empty_state` に加え `kpi` `callout` も持つ）
 
 `frameworks.md` が文章で説明しているものを、**コピーして置くだけのファイル**にする。
 

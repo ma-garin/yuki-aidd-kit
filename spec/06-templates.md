@@ -161,7 +161,7 @@ Playwright でライト・ダーク・360px・モーダル・トーストを確�
 
 ---
 
-## 5b. `ui/`（2件・274行）— デザインシステムの実物（M17）
+## 5b. `ui/`（6件・452行）— デザインシステムの実物（M17）
 
 ### `components.css`（175行）
 
@@ -177,6 +177,17 @@ Playwright でライト・ダーク・360px・モーダル・トーストを確�
 - B) `.layout-2pane` + `.sidenav`（軽量ツール）
 - `.kpi-row` `.filter-row` `.chip`、`.app.is-settings` で裏側の地色を変える、`.measure` で本文幅
 - ブレークポイント: ≦1366 sidebar 200px / ≦768 off-canvas（`.open`）・globalbar のラベル非表示 / ≦360 見出し縮小・KPI 1列
+
+### フレームワーク別（S12）
+
+| ファイル | 行 | 内容 |
+|---|---|---|
+| `README.md` | 36 | ファイル一覧＋**FW 別1枚表**（置く場所・読み込み順・部品の使い方）＋検証（`check-design.sh` / `uiux_review` / token-exempt の書き方） |
+| `tailwind.config.js` | 48 | `theme.extend` を全て `var(--*)` 参照で登録（colors は severity 名で。`bg-primary/50` の透明度修飾子は効かない旨を明記） |
+| `streamlit-config.toml` | 12 | `[theme] base="light"` + primary / background / secondaryBackground / text / font。tokens.css の写し |
+| `streamlit_theme.py` | 82 | `apply_theme(extra_css)`（tokens.css + components.css を `<style>` 注入。Streamlit の button / input にも最小適用）、`badge(severity, text)` `kpi(label, value, delta, trend)` `empty_state(title, description)` `callout(severity, text)`。severity は列挙で検証、文字列は `html.escape` |
+
+`skills/design-system/references/frameworks.md` は 47行 → 36行に縮小し、散文の手順を上記への導線と分担表に置き換えた。
 
 ## 6. `github-actions/`（4件・177行）— 配布用サンプル
 
