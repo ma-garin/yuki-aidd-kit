@@ -158,6 +158,48 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 ---
 
+
+---
+
+## 3b. 土台（拡張に耐えるか）の観点で追加した finding（2026-09-17）
+
+### F-11 — 入口スクリプト2本と git ゲート4本に回帰テストが無い ★★
+
+**severity: High**（キットの「導入」と「止める仕組み」そのものが未検証。Sonnet が触ると壊れても気づけない）
+
+- evidence: `scripts/test-*.sh` が参照しているのは `hooks/*`・`trace-check.sh`・`init-lifecycle.sh`・`quality_harness.py`・`templates/test/feature_contracts.yml` のみ
+- 未テスト（9/15）: **`install.sh`・`export-project.sh`**（キットの入口2本）／**`pre-commit`・`pre-commit-ui-gate.sh`・`ui-hash.py`**（git ゲート。README は「手動4ケース確認」とだけ記載）／`init-project.sh`・`init-test-docs.sh`・`audit-app-workspace.sh`・`verify.sh`
+- `export-project.sh` は Roadmap M8 で「スクラッチへの初回エクスポート・`.bak` 退避・相対パス動作を確認済み」とあるが**手動確認であり再実行できない**
+
+**是正案**: B-16（入口）・B-17（git ゲート）。`HOME` を一時ディレクトリに差し替えれば `install.sh` も安全にテストできる。
+
+### F-12 — バージョンが刻印されていない
+
+**severity: Medium**（配布先の `.claude/` がどの版のキットから出たか判別できない。Vision が許容した「スナップショットは追従しない」トレードオフを、追跡不能にしてしまっている）
+
+- evidence: `git tag` が 0 件。`README.md` に Ver.5.0〜6.3 の記述はあるが tag と対応していない
+- evidence: `scripts/export-project.sh` / `install.sh` に version を書き出す処理が無い（grep `VERSION|version|Ver.` が 0 件）
+
+**是正案**: B-18。`git tag v6.3.0` から始め、`export-project.sh` が `.claude/KIT_VERSION`（tag ＋ commit hash ＋ 日付）を書き、`verify.sh` がそれを表示する。
+
+### F-13 — スキルが意図どおり発火するかを検証する手段が無い
+
+**severity: Medium**（Sonnet 基盤では発火の取りこぼしが増える可能性があるが、測れない。`retro` の「発火しなかったスキル→description に言い回し追加」は観測に依存している）
+
+- evidence: `skills/*/evals` が存在しない。19スキルの description は手書きのまま一度も評価されていない
+- 関連: `spec/11` U-4
+
+**是正案**: 移行後に `/usage` のスキル別内訳で観測する（B-10）。恒久策は `skill-creator` の eval を使った発火テストだが、コストが高いので**移行後の実測で問題が出たスキルだけ**に限定する。
+
+### severity 別サマリ（更新）
+
+| severity | 件数 | ID |
+|---|---|---|
+| Critical | 0 | — |
+| **High** | **2** | F-07（CI 不在）／**F-11（入口とゲートが未テスト）** |
+| Medium | 6 | F-01／F-04／F-05／F-09／**F-12（版の刻印なし）**／**F-13（発火の検証手段なし）** |
+| Low | 5 | F-02／F-03／F-06／F-08／F-10 |
+
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 
 | # | 内容 | 根拠 |
