@@ -1,5 +1,5 @@
 /** tailwind.config.js — AIDD Design System を Tailwind に当てる（React + Vite 向け）
- * 真実源: skills/design-system/SKILL.md ／ 実物: templates/tokens.css
+ * 値の真実源: templates/tokens.css ／ 規律: skills/design-system/SKILL.md
  * 値はここに書かない。tokens.css の CSS 変数を参照する形で登録し、Tailwind 既定パレット（blue-500 等）は使わない。
  * 使い方: src/styles/tokens.css を main.tsx で最初に import し、このファイルをプロジェクト直下に置く。
  *   <button class="bg-primary text-on-primary rounded-md px-4 min-h-tap">保存する</button>

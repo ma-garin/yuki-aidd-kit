@@ -1,5 +1,5 @@
 /* layout.css — AIDD Design System の骨格（実物）
- * 真実源: skills/design-system/SKILL.md「レイアウトパターン」「画面の作り方 › 骨格」
+ * 規律: skills/design-system/SKILL.md「骨格」／ 値: templates/tokens.css
  * 前提: templates/tokens.css を先に読み込む。直値は幅・高さ・ブレークポイントのみ（token-exempt）。
  *
  *   ┌─────────────────────────────┐

@@ -30,7 +30,7 @@
 
 ---
 
-## skills/（19スキル・SKILL.md 1,712行 + references 13件 1,601行 + scan.sh 77行）
+## skills/（19スキル・SKILL.md 1,354行 + references 15件 1,754行 + scan.sh 77行）
 
 ### DAILY 層（進め方を制御する12スキル）
 
@@ -63,7 +63,9 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `design-system/SKILL.md` | 473 | **デザイン値の真実源**。MD3 Light パレット・ダーク・タイポ・余白・レイアウト・コンポーネント11種＋「画面の作り方」（直値禁止・骨格・操作フィードバック・アイコン・文言） |
+| `design-system/SKILL.md` | 115 | **使い方の規律**（M17 S13 で 473 → 115 行）。何をどこで読むかの索引・トークン運用の規律・骨格・操作には必ず結果を返す・アイコン・文言・画面を作る手順・実物へのポインタ。**値の真実源は `templates/tokens.css` へ移した** |
+| `design-system/references/tokens.md` | 73 | トークンの役割と決めの理由（色の役割表・ダークの作り方・文字7段・余白角丸影動き・フォント読み込み方針・出所）。hex は複製しない |
+| `design-system/references/components.md` | 91 | 部品ごとの使い分けと落とし穴（実不具合由来7件を含む: ツールチップ画面端 `.edge-left`・ホバー時のみ表示・確認は対象名を動的に・空状態2用途・フォームエラー2段構え・ダーク rgba・`aria-busy`）。CSS は複製しない |
 | `design-system/references/frameworks.md` | 36 | 出荷物（`templates/ui/`）への導線表＋デザイン系スキルの分担表＋共通の落とし穴。FW 別の置き場所は `templates/ui/README.md` が正 |
 | `nfr-standards/SKILL.md` | 89 | PWA / 単一HTMLツール / Streamlit の非機能既定値（性能・デバイス・オフライン・a11y・セキュリティ・データ保全） |
 | `agent-eval/SKILL.md` | 67 | LLM/RAG/エージェントの eval。DeepEval + Langfuse、システム別スコアラー、閾値の決め方、出力形式 |
@@ -138,7 +140,7 @@
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
 | `check_docs.py` | 371 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
-| `test-check-docs.sh` | 104 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
+| `test-check-docs.sh` | 105 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
 | `check_design.py` | 236 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |
 | `check-design.sh` | 7 | `check_design.py` の薄いラッパ |
 | `test-check-design.sh` | 126 | **check-design の回帰テスト 36ケース**（出荷物が NG=0 で通ること＋各検査の検出＋除外規則） |

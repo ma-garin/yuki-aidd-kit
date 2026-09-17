@@ -133,7 +133,9 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 - NG>0 で exit 1
 - **回帰テスト `scripts/test-check-design.sh`** を付ける。**出荷している `demo.html` と `components.css` 自身が NG=0 で通ること**を必ずテストに入れる（雛形が NG を出すと利用者が検査を無視する、という既存2スクリプトと同じ理由）
 
-### DS-5. `skills/design-system/SKILL.md` の縮小（≦200行）
+### DS-5. `skills/design-system/SKILL.md` の縮小（≦200行）— **実装済み 2026-09-17: 473 → 115 行**
+
+実装時の決定（計画からの変更）: `references/tokens.md` に hex を**複製しない**。値の唯一の真実源は `templates/tokens.css`（`check-design.sh` が読む実ファイル）とし、tokens.md は役割と理由だけを持つ。SKILL.md と tokens.css の二重管理（乖離の温床）を廃止した。`templates/design-system.md` / `templates/ui/*` / `frameworks.md` / `templates/lifecycle/02-basic-design.md` のポインタも tokens.css に向け直した。7項目は grep で references に残っていることを確認済み。
 
 `spec/09-findings.md` F-04（PRD の「1スキル ≦ 200行」違反）と同時に解決する。
 

@@ -89,9 +89,10 @@ echo "[ケース8: 行数目安]"
 C=$(fresh); seq 1 250 | sed 's/^/- 行 /' >> "$C/skills/retro/SKILL.md"
 sed -i 's/^\(| `retro` |.*| \)[0-9]*\(行 |\)$/\1288\2/' "$C/INDEX.md"   # 参照コストは合わせておく
 OUT=$(run "$C"); RC=$?
-expect_out  "既定では WARN" "⚠ 行数目安" "$OUT"
+expect_exit "SKILL.md が 200 行を超えると exit 1（M17 で NG に昇格）" 1 "$RC"
+expect_out  "種別「行数目安」で検出" "行数目安" "$OUT"
 OUT=$(run "$C" --strict); RC=$?
-expect_exit "--strict では exit 1" 1 "$RC"
+expect_exit "--strict でも exit 1" 1 "$RC"
 
 echo "[ケース9: spec 同期]"
 C=$(fresh); sed -i 's/^| `verify.sh` | [0-9]* |/| `verify.sh` | 1 |/' "$C/spec/01-inventory.md"

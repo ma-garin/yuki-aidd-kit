@@ -1,5 +1,5 @@
 /* components.css — AIDD Design System の部品（実物）
- * 真実源: skills/design-system/SKILL.md（部品の使い分けと落とし穴は references/components.md）
+ * 規律: skills/design-system/SKILL.md ／ 部品の使い分けと落とし穴: skills/design-system/references/components.md ／ 値: templates/tokens.css
  * 前提: templates/tokens.css を先に読み込む。ここに直値は書かない（var(--*) のみ。例外は token-exempt コメント付き）。
  * 含まない: トースト・確認ダイアログ（templates/components/feedback.js が自己注入する）
  * 空状態は静的マークアップ用に持つ。クラス名は feedback.js の Feedback.emptyState() と同じにしてあり、併用しても競合しない

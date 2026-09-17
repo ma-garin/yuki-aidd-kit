@@ -14,7 +14,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（docs/PRD.md 使用性）
   8. spec 同期    spec/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
 
-6 は NG（M16 で昇格済み）。7 は SIZE_STRICT が False の間は WARN（M17 で昇格）。--strict で両方 NG。
+6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
 
 使い方: python3 scripts/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
@@ -31,12 +31,12 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-# ---- しきい値（RULES_STRICT は M16 で昇格済み。SIZE_STRICT は M17 で昇格させる） -------------
+# ---- しきい値（RULES_STRICT は M16、SIZE_STRICT は M17 で NG に昇格済み） -------------
 RULES_ALWAYS_MAX = 100
 SKILL_MAX = 200
 COMMAND_MAX = 40
 RULES_STRICT = True     # 検査6: S7（M16）で NG に昇格
-SIZE_STRICT = False     # 検査7: S13（M17）で NG に昇格
+SIZE_STRICT = True      # 検査7: S13（M17）で NG に昇格済み
 
 # ---- 参照切れ検査の除外 ----------------------------------------------------------------
 # ECC（外部キット）のスキル名。実在はこのリポジトリから検証不能（docs/PRD.md 制約・AUDIT A-08）

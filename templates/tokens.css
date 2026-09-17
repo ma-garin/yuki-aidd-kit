@@ -1,5 +1,5 @@
 /* tokens.css — AIDD Design System のデザイントークン（実物）
- * 真実源: skills/design-system/SKILL.md（値を変えるときはスキル側を先に直す）
+ * 値の唯一の真実源（変えるときはここを先に直す）。役割と決めの理由は skills/design-system/references/tokens.md、運用の規律は skills/design-system/SKILL.md
  * 使い方: <link rel="stylesheet" href="tokens.css"> を最初に読み、以降の CSS は直値を書かず var(--*) だけを使う。
  * 部品の CSS は templates/ui/components.css、骨格は templates/ui/layout.css（どちらもこのトークンだけで書かれている）。
  * 出所: kit design-system（MD3 Light 基準）+ WebSpec2Doc static/tokens.css（on-primary / surface-3 / border-strong / severity-border / motion）

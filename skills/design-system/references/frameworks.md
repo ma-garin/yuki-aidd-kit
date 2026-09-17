@@ -1,6 +1,6 @@
 # UI フレームワーク別の当て方と、デザイン系スキルの分担
 
-値は `skills/design-system/SKILL.md`（真実源）、実物は `templates/tokens.css` と `templates/ui/`。**ここでは値もCSSも再定義しない。**
+値の真実源は `templates/tokens.css`、規律は `skills/design-system/SKILL.md`、部品と骨格は `templates/ui/`。**ここでは値もCSSも再定義しない。**
 どのファイルをどこに置き、どの順に読み込むかは `templates/ui/README.md` の1枚表が正（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）。
 
 ## 出荷物への導線
@@ -20,7 +20,7 @@
 
 | 目的 | 使うもの | 注意 |
 |---|---|---|
-| 値の真実源 | `skills/design-system/SKILL.md` + `templates/tokens.css` | 他のスキルが提案した値で上書きしない |
+| 値の真実源 | `templates/tokens.css`（理由は `references/tokens.md`） | 他のスキルが提案した値で上書きしない |
 | 画面の骨格・文言・操作フィードバック・アイコンの規律 | `skills/design-system/SKILL.md`「画面の作り方」 | UX_Auto_Reviewer の実運用から抽出 |
 | 見た目の再現（コードを見ずに指示） | `templates/design-system.md` | 3 パターン（Web アプリ / スライド / 管理画面）＋機械/目視の別 |
 | HTML/JS/CSS・React の実装規約 | ECC `frontend-patterns` / `react-patterns` / `vite-patterns` | 規約。デザイン値は持たない |

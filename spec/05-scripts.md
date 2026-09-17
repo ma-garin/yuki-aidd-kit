@@ -238,7 +238,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | 4 | 参照切れ | `` `skills/…` `` 等のキット内パス参照が実在するか。ECC スキル名 15 件と配布先の生成パスは除外。`spec/` は対象外 | NG |
 | 5 | frontmatter | `SKILL.md` の `name` ↔ ディレクトリ名、`description` の有無 | NG |
 | 6 | 常時読込 | `rules/*.md` で `paths:` frontmatter の無いものの合計 ≦ 100 行 | **WARN**（S7 で NG） |
-| 7 | 行数目安 | SKILL ≦ 200 / コマンド ≦ 40 | **WARN**（S13 で NG） |
+| 7 | 行数目安 | SKILL ≦ 200 / コマンド ≦ 40 | NG（S13 で昇格） |
 | 8 | spec 同期 | `spec/01-inventory.md` の行数 ↔ 実測、実ファイルが目録に載っているか | NG |
 
 - 環境変数 `CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,…"` でテスト実行を代替（回帰テスト用）

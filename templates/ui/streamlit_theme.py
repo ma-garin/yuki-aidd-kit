@@ -1,6 +1,6 @@
 """streamlit_theme.py — AIDD Design System を Streamlit に当てる（見た目の追加は必ずここ1箇所に集約する）。
 
-真実源: skills/design-system/SKILL.md ／ 実物: templates/tokens.css + templates/ui/components.css
+値の真実源: templates/tokens.css ／ 部品: templates/ui/components.css ／ 規律: skills/design-system/SKILL.md
 
 配置:
     <project>/ui/streamlit_theme.py   ← このファイル

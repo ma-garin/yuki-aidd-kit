@@ -83,7 +83,9 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 ## 2. 自己規約への違反
 
-### F-04 — `design-system/SKILL.md` が PRD の「1スキル ≦ 200行」を大きく超過 ★
+### F-04 — `design-system/SKILL.md` が PRD の「1スキル ≦ 200行」を大きく超過 ★ — **是正済み（M17 S13、2026-09-17）**
+
+是正内容: SKILL.md 473 → **115 行**。値は `templates/tokens.css` を唯一の真実源にし（hex の複製を廃止）、決めの理由を `references/tokens.md`、部品の使い分けと落とし穴を `references/components.md` に移設。`check_docs.py` の `SIZE_STRICT` を True にし、以後 200 行超過は CI で NG。
 
 **severity: Medium**（DAILY ではなく LIBRARY なので常時コストではないが、発火すると465行を読ませる）
 

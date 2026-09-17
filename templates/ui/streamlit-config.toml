@@ -1,5 +1,5 @@
 # .streamlit/config.toml — AIDD Design System の Streamlit テーマ（ライト）
-# 真実源: skills/design-system/SKILL.md ／ 実物: templates/tokens.css
+# 値の真実源: templates/tokens.css ／ 規律: skills/design-system/SKILL.md
 # Streamlit はテーマ変数を CSS 変数として公開しないため、ここは tokens.css の「写し」。値を変えるときは tokens.css を先に直す。
 # 配置: <project>/.streamlit/config.toml。追加の見た目は streamlit_theme.py の apply_theme() に集約する。
 
