@@ -62,7 +62,8 @@ C=$(fresh); printf '\n参照: `skills/does-not-exist/SKILL.md` を見る\n' >> "
 OUT=$(run "$C"); RC=$?
 expect_exit "存在しないキット内パスで exit 1" 1 "$RC"
 expect_out  "種別「参照切れ」で検出" "参照切れ" "$OUT"
-C=$(fresh); printf '\nECC: `skills/e2e-testing` と `docs/lifecycle/00-rfd.md` は除外\n' >> "$C/README.md"
+# 行数を変えない（spec/01 の同期検査に引っかからない）よう 1 行目の末尾に追記する
+C=$(fresh); sed -i '1s/$/ ECC: `skills\/e2e-testing` と `docs\/lifecycle\/00-rfd.md` は除外/' "$C/README.md"
 OUT=$(run "$C"); RC=$?
 expect_exit "ECC スキル名と配布先の生成パスは参照切れにしない" 0 "$RC"
 
@@ -83,7 +84,8 @@ C=$(fresh); { printf -- '---\npaths:\n  - "src/**/*.py"\n---\n'; seq 1 300 | sed
 # INDEX 掲載漏れにならないよう表へ1行足す
 printf '| `zz-scoped` | テスト用 | #test | 304行 |\n' >> "$C/INDEX.md"
 OUT=$(run "$C" --strict); RC=$?
-expect_noout "paths 付きの rules は常時読込に数えない" "zz-scoped" "$OUT"
+if grep "| 常時読込 |" "$TMP/report.md" | grep -q "zz-scoped"; then ng "paths 付きの rules は常時読込に数えない" "常時読込の内訳に zz-scoped が出た"; else ok "paths 付きの rules は常時読込に数えない"; fi
+grep -q "rules/zz-scoped.md.*目録に無い" "$TMP/report.md" && ok "新規ファイルが spec/01 に無いことを検出（網羅性）" || ng "新規ファイルが spec/01 に無いことを検出（網羅性）" "検出されない"
 
 echo "[ケース8: 行数目安]"
 C=$(fresh); seq 1 250 | sed 's/^/- 行 /' >> "$C/skills/retro/SKILL.md"

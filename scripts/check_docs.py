@@ -17,7 +17,8 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
 6・7 は STRICT が False の間は WARN（移行作業の途中で CI を止めないため）。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
 
-使い方: python3 scripts/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests]
+使い方: python3 scripts/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
+  --fix-inventory: spec/01-inventory.md の行数を実測で書き換えてから検査する（網羅性の不足は手で足す）
   環境変数 CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,test-trace-check.sh=15" でテスト実行を代替できる（回帰テスト用）。
 """
 from __future__ import annotations
@@ -254,6 +255,27 @@ def check_size_targets(root: Path, r: Result, strict: bool) -> None:
             r.add(strict, "行数目安", f"claude-code/commands/{f.name}", f"{n}行 > {COMMAND_MAX}")
 
 
+INVENTORY_ROW_RE = re.compile(r"^(\|\s*`([^`]+)`\s*\|\s*)(\d+)(\s*\|.*)$")
+
+
+def fix_spec_inventory(root: Path) -> int:
+    """spec/01-inventory.md の行数セルを実測で書き換える。書き換えた行数を返す。"""
+    p = root / "spec" / "01-inventory.md"
+    if not p.is_file():
+        return 0
+    out, changed = [], 0
+    for line in read(p).splitlines():
+        m = INVENTORY_ROW_RE.match(line)
+        if m:
+            f = resolve_inventory_name(root, m.group(2))
+            if f is not None and wc_l(f) != int(m.group(3)):
+                line = f"{m.group(1)}{wc_l(f)}{m.group(4)}"
+                changed += 1
+        out.append(line)
+    p.write_text("\n".join(out) + "\n", encoding="utf-8")
+    return changed
+
+
 def check_spec_inventory(root: Path, r: Result) -> None:
     p = root / "spec" / "01-inventory.md"
     if not p.is_file():
@@ -307,9 +329,12 @@ def main() -> int:
     ap.add_argument("-o", "--report", default="check-docs-report.md")
     ap.add_argument("--strict", action="store_true", default=STRICT_DEFAULT, help="検査 6・7 を WARN でなく NG にする")
     ap.add_argument("--skip-tests", action="store_true", help="検査 3 のテスト実行を省く")
+    ap.add_argument("--fix-inventory", action="store_true", help="spec/01-inventory.md の行数を実測で書き換えてから検査する")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     r = Result()
+    if a.fix_inventory:
+        print(f"spec/01-inventory.md: {fix_spec_inventory(root)} 行の行数を実測に更新")
 
     check_costs(root, r)
     check_index_coverage(root, r)

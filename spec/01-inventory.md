@@ -1,20 +1,21 @@
-# 01 — 全ファイル目録（126件・10,827行）
+# 01 — 全ファイル目録（133件・11,645行）
 
 行数はすべて 2026-09-16 の実測（`wc -l`）。`spec/` 自身は対象外。
 「役割」は1行要約。詳細は各章（`03`〜`07`）を参照。
 
 ---
 
-## ルート（6件・568行）
+## ルート（7件・594行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 184 | 人間向けの入口。版歴（Ver.5.0〜6.3）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 176 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `README.md` | 202 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `INDEX.md` | 179 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 68 | Claude Code 用グローバル設定の雛形（`~/.claude/CLAUDE.md`）。速度最優先・必須プロセス・完了条件・実装モード・禁止事項 |
 | `AGENTS.md.template` | 61 | Codex 等他エージェント用の同等雛形。CLAUDE.md.template と対で更新する（AUDIT X-5） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
-| `.gitignore` | 21 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/` を除外 |
+| `.gitignore` | 25 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
+| `VERSION` | 1 | 版の真実源（`6.3.0`）。git tag と対応。`install.sh` / `export-project.sh` が導入先の `KIT_VERSION` に刻印 |
 
 ---
 
@@ -113,13 +114,13 @@
 
 ---
 
-## scripts/（15件・1,501行）
+## scripts/（20件・2,214行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `install.sh` | 52 | `~/.claude` へ配置（CLAUDE.md・skills・commands・hooks・rules）。既存は `.bak` 退避、rules は同名既存をスキップ |
-| `verify.sh` | 48 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要） |
-| `export-project.sh` | 133 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
+| `install.sh` | 57 | `~/.claude` へ配置（CLAUDE.md・skills・commands・hooks・rules）。既存は `.bak` 退避、rules は同名既存をスキップ |
+| `verify.sh` | 50 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
+| `export-project.sh` | 138 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
 | `init-lifecycle.sh` | 78 | 工程文書11本を `docs/lifecycle/` へ。`--github` で Issue/PR/CI も。既存は上書きしない |
 | `init-test-docs.sh` | 37 | テスト文書6本＋CSV＋機能契約＋ゲートスクリプト3本を配置。`--ci` で `test-gates.yml` |
@@ -132,6 +133,11 @@
 | `test-hooks.sh` | 127 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
+| `test-install.sh` | 123 | **入口スクリプト回帰テスト 66ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
+| `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
+| `check_docs.py` | 370 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
+| `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
+| `test-check-docs.sh` | 106 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
 
 ---
 
@@ -202,11 +208,11 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `yuki-aidd-kit-manual.html` | 1434 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。**デザイン適用除外ジャンル** |
-| `Roadmap.md` | 155 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
+| `Roadmap.md` | 171 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |
 | `AUDIT-2026-07.md` | 114 | 資産監査の記録。判定軸・監査表3種・指摘 A-01〜A-09（ISTQB severity）・重複マップ D-01〜D-04・適用記録 |
 | `OPERATING-MODE.md` | 78 | 日常の標準作業モード（種別判定・読む範囲・ECC 使い分け・実装ループ・完了判定・クレジット節約） |
-| `PRD.md` | 72 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
+| `PRD.md` | 76 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
 | `PROJECT-FIT-REPORT.md` | 48 | 実プロジェクト群への適合レポート（2026-06 時点）。Summary/Evidence/Recommendation |
 | `Vision.md` | 47 | 目的・解決する問題6件・到達点3つ・Non-Goals・配置の2層・価値の判定基準 |
 
@@ -221,4 +227,12 @@
 | `deploy.yml` | 34 | GitHub Pages 自動デプロイ（`docs/` 配下を公開） |
 | `secret-scan.yml` | 22 | gitleaks による秘密情報スキャン（全履歴） |
 
-**注**: これらは配布先プロジェクトへ置くサンプルであり、**キット自身の `.github/workflows/` は存在しない**（`spec/09-findings.md` F-07）。
+**注**: これらは配布先プロジェクトへ置くサンプル。キット自身の CI は下記。
+
+---
+
+## .github/workflows/（1件・59行）— キット自身の CI
+
+| ファイル | 行 | 役割 |
+|---|---|---|
+| `.github/workflows/kit-ci.yml` | 59 | PR / push(main) / dispatch で 6 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs）と `check-docs.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |

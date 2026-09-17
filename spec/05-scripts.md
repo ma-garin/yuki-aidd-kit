@@ -1,4 +1,4 @@
-# 05 — スクリプト仕様（15件・1,501行）
+# 05 — スクリプト仕様（20件）
 
 すべて引数・出力・終了コードを明記する。**CI からそのまま呼べるもの**は終了コードで判定できる。
 
@@ -6,7 +6,7 @@
 
 ## 導入・配布（4件）
 
-### `install.sh`（52行）— グローバル導入
+### `install.sh`（57行）— グローバル導入
 
 ```bash
 ./scripts/install.sh
@@ -20,11 +20,12 @@
 | `claude-code/hooks/*.sh,*.py` | `~/.claude/hooks/`（chmod +x） | 上書き |
 | `claude-code/hooks/settings.json` | `~/.claude/settings.json` | **上書きせず警告**（手動マージを促す） |
 | `rules/*.md` | `~/.claude/rules/aidd-kit/` | **`~/.claude/rules` 配下に同名があればスキップ**（aidd-kit ディレクトリ自身は prune） |
+| `VERSION` + commit + 日付 | `~/.claude/KIT_VERSION` | 上書き（S2） |
 
 - `set -e`。Codex 利用者向けに `AGENTS.md.template` → `~/.codex/AGENTS.md` の案内を出力
 - 終了コード: 0（失敗時は `set -e` で中断）
 
-### `verify.sh`（48行）— 配置確認
+### `verify.sh`（50行）— 配置確認
 
 ```bash
 ./scripts/verify.sh
@@ -33,9 +34,9 @@
 - **チェックリストをリポジトリ実体から自動導出**（Roadmap M6 の決定）。資産を追加してもこのファイルの更新は不要
 - 確認対象: `~/.claude/CLAUDE.md` / `settings.json` / 各 `skills/<name>/SKILL.md` / 各 `commands/<name>.md` / 各 hook / 各 rule（`~/.claude/rules` 配下を `find -name` で探索）
 - 出力: 項目ごとに `✅`/`❌` ＋ 末尾に `結果: OK=n / NG=n`
-- **終了コードは常に 0**（NG があってもメッセージのみ）← CI から使うには要改修（`spec/10-backlog.md` B-02）
+- **終了コード**: NG=0 → 0 ／ NG>0 → 1（S1 で修正。`test-install.sh` が assert）。導入済み版（`KIT_VERSION`）とリポジトリ版を表示
 
-### `export-project.sh`（133行）— プロジェクト配布
+### `export-project.sh`（138行）— プロジェクト配布
 
 ```bash
 ./scripts/export-project.sh <対象プロジェクトのパス>
@@ -49,6 +50,7 @@
 | `.claude/rules/` | 3本（**`speed-harness.md` の H-2 環境チートシートを埋めること**を出力で促す） |
 | `.claude/templates/` | templates 全体（スキル本文から参照されるため同梱） |
 | `.claude/INDEX.md` | フルコピーなので地図として同梱 |
+| `.claude/KIT_VERSION` | `<VERSION> <commit> <日付>`。配布先がどの版から出たかを判別（S2） |
 | `.claude/settings.json` | 相対パス版をヒアドキュメントで生成。**block-explore の配線は含まない** |
 | `AGENTS.md` / `CLAUDE.md` | template から生成。`sed` で `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md` → `.claude/INDEX.md` に変換 |
 | `scripts/trace-check.sh` | 既存があればスキップ |
@@ -220,13 +222,39 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 
 ---
 
-## 回帰テスト（3件・全 green）
+## 文書整合検査（2026-09-17 追加・S5）
+
+### `check-docs.sh` → `check_docs.py`
+
+```bash
+./scripts/check-docs.sh [--root DIR] [-o REPORT] [--strict] [--skip-tests]
+```
+
+| # | 検査 | 内容 | 既定 |
+|---|---|---|---|
+| 1 | 参照コスト | `INDEX.md` / `README.md` の「`name` … N行」（表・散文）↔ `wc -l` | NG |
+| 2 | 掲載漏れ | skills / commands / rules / hooks が INDEX に `` `name` `` で載っているか | NG |
+| 3 | ケース数 | `test-*.sh` を実際に実行した PASS+FAIL ↔ README / INDEX / manual の「Nケース」「PASS=N」（言及行から 5 行の窓） | NG |
+| 4 | 参照切れ | `` `skills/…` `` 等のキット内パス参照が実在するか。ECC スキル名 15 件と配布先の生成パスは除外。`spec/` は対象外 | NG |
+| 5 | frontmatter | `SKILL.md` の `name` ↔ ディレクトリ名、`description` の有無 | NG |
+| 6 | 常時読込 | `rules/*.md` で `paths:` frontmatter の無いものの合計 ≦ 100 行 | **WARN**（S7 で NG） |
+| 7 | 行数目安 | SKILL ≦ 200 / コマンド ≦ 40 | **WARN**（S13 で NG） |
+| 8 | spec 同期 | `spec/01-inventory.md` の行数 ↔ 実測、実ファイルが目録に載っているか | NG |
+
+- 環境変数 `CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,…"` でテスト実行を代替（回帰テスト用）
+- 出力は3層、全件は `check-docs-report.md`（`.gitignore` 済み）。NG>0 で exit 1
+- 履歴文書（`docs/Roadmap.md` / `docs/AUDIT-2026-07.md`）は「当時の事実」なので数値の突合対象にしない
+
+## 回帰テスト（6件・全 green）
 
 | スクリプト | 行 | ケース数 | 2026-09-16 実測 | 特筆 |
 |---|---|---|---|---|
 | `test-hooks.sh` | 127 | **19** | PASS=19 / FAIL=0 | AUDIT A-01 の再発防止。stdin JSON を実際に流して期待出力を assert |
 | `test-trace-check.sh` | 179 | **15** | PASS=15 / FAIL=0 | ケース1 整合／ケース2 NG を仕込む／ケース3 対象なしでスキップ／**ケース4 `init-lifecycle.sh` 直後の雛形が NG=0** |
 | `test-quality-harness.sh` | 89 | **11** | PASS=11 / FAIL=0 | 検出9種＋allowlist 動作＋**配布雛形が新規プロジェクトで PASS** |
+| `test-install.sh` | 123 | **66** | PASS=66 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
+| `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
+| `test-check-docs.sh` | 104 | 9 ケース群 | 全 PASS | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。
 雛形が NG を出すと利用者が検査結果そのものを無視するようになる、という理由が明記されている。

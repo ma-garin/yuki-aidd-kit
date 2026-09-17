@@ -63,7 +63,7 @@
 
 ---
 
-## 規模（2026-09-16 実測）
+## 規模（2026-09-17 実測・M15 後）
 
 | 区分 | 件数 | 行数 |
 |---|---|---|
@@ -73,12 +73,13 @@
 | claude-code/commands | 16 | 352 |
 | claude-code/hooks（sh 4 + py 3 + settings.json） | 8 | 356 |
 | rules | 3 | 268 |
-| scripts（sh 11 + py 3 + pre-commit） | 15 | 1,501 |
+| scripts（sh 15 + py 4 + pre-commit） | 20 | 2,214 |
 | templates（lifecycle11 / test8 / github4 / components3 / 単体7） | 33 | 2,119 |
 | docs | 8 | 2,096 |
-| github-actions | 4 | 177 |
-| ルート（README / INDEX / 2 template / claude-projects-setup / .gitignore） | 6 | 568 |
-| **合計** | **126** | **10,827** |
+| github-actions（配布用サンプル） | 4 | 177 |
+| .github/workflows/kit-ci.yml（キット自身の CI） | 1 | 59 |
+| ルート（README / INDEX / 2 template / claude-projects-setup / .gitignore / VERSION） | 7 | 594 |
+| **合計** | **133** | **11,645** |
 
 うち最大は `docs/yuki-aidd-kit-manual.html`（1,434行）、`skills/uiux_review/references/viewpoints.md`（849行）、
 `skills/design-system/SKILL.md`（465行）。

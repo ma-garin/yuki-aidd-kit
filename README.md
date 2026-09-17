@@ -6,6 +6,16 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
+## Ver.6.4 での主な更新（2026-09-17）— 土台: 回帰テスト・CI・版の刻印・文書整合
+
+2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
+
+- **`scripts/test-install.sh`**（66 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
+- **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
+- **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
+- **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを PR ごとに実行（`github-actions/` の配布用サンプルとは別物）
+- `verify.sh` が NG>0 で exit 1 を返す。`VERSION` と `KIT_VERSION`（導入先への刻印）で版を追跡できる
+
 ## Ver.6.3 での主な更新（2026-08-25）— デザイン: トークン実物・画面の作り方・フレームワーク別適用
 
 - **`templates/tokens.css`**: デザイントークンの実物（ライト＋ダーク、`prefers-color-scheme` と `data-theme` 両対応、reduced-motion、タップ最小 44px）。WebSpec2Doc の `on-primary` / `surface-3` / `border-strong` / severity `-border` / `motion-*`、UX_Auto_Reviewer の本文幅 68ch を統合
@@ -152,7 +162,8 @@ yuki-aidd-kit/
 │   ├── commands/             # 16スラッシュコマンド
 │   └── hooks/                # 7 hooks（sh 4 + py 3）+ settings.json（statusLine 含む）
 ├── scripts/
-│   ├── install.sh / verify.sh / test-hooks.sh   # グローバル導入
+│   ├── install.sh / verify.sh / test-hooks.sh / test-install.sh   # グローバル導入と回帰テスト
+│   ├── check-docs.sh (check_docs.py) / test-check-docs.sh / test-git-gates.sh  # 文書整合・git ゲートの検査
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
 │   ├── init-test-docs.sh / quality_harness.py / test-quality-harness.sh  # テスト活動
@@ -166,7 +177,10 @@ yuki-aidd-kit/
 │   ├── test/                 # テスト戦略・DoD・29119 文書・テストケース CSV・機能契約の雛形8本
 │   ├── github/               # Issue（RFD/要件/欠陥）・PR テンプレート
 │   └── CURRENT_STATE.md / ADR-template.md / lessons.md / implement-profile.md
-└── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates）
+├── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates）
+├── .github/workflows/kit-ci.yml  # キット自身の CI
+├── VERSION                   # 版（git tag と対応）
+└── spec/                     # 現況仕様・運用条件・作り込み計画（キット自体を触るならまずここ）
 ```
 
 ## キット自体を作り込むとき

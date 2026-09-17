@@ -28,6 +28,8 @@ Roadmap M12 でも同じ理由で未計測と記録されている。→ F-06。
 
 ### F-01 — hooks 回帰テストのケース数が3種類に分裂 ★
 
+> **是正済み（2026-09-17）**: S4 / S6 で是正。`check-docs.sh` 検査3が再発を止める。
+
 **severity: Medium**（利用者が「PASS=8 なら合格」と読むと、11件の失敗を見逃す）
 
 | 箇所 | 記載 | 実測 |
@@ -42,6 +44,8 @@ Roadmap M12 でも同じ理由で未計測と記録されている。→ F-06。
 **是正案**: README:82 / INDEX:18 / manual.html:792-793 を 19 に統一。Roadmap は履歴なので触らない。
 
 ### F-02 — INDEX.md の参照コストが実体とズレている
+
+> **是正済み（2026-09-17）**: S6 で是正。`check-docs.sh` 検査1が再発を止める。
 
 **severity: Low**（読む/読まないの判断材料が狂う。DAILY 層なので影響は小さくない）
 
@@ -67,6 +71,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 **是正案**: 機械導出に置き換える（`spec/10-backlog.md` B-01）。手で直すだけでは必ず再発する。
 
 ### F-03 — ECC-ASSET-MAP の行数が INDEX 内で二重記載
+
+> **是正済み（2026-09-17）**: S6 で 148 に統一。検査1が散文の「（N行）」も見る。
 
 **severity: Low**
 
@@ -103,6 +109,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 ### F-06 — `verify.sh` が終了コードで合否を返さない
 
+> **是正済み（2026-09-17）**: S1 で修正。`test-install.sh` が assert。
+
 **severity: Low**（CI から使えない。現状は人間が目で見る前提）
 
 - evidence: `scripts/verify.sh:47-48` — `結果: OK=$OK / NG=$NG` を出力し、最終行が `[ "$NG" -eq 0 ] && echo "✅ 全て正常" || echo "⚠ 未配置あり…"`。**NG>0 でも `||` 側の echo が成功するため終了コードは 0** になる
@@ -116,6 +124,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 ## 3. 構造的な穴
 
 ### F-07 — キット自身の CI が存在しない ★★ 最優先
+
+> **是正済み（2026-09-17）**: S5 で `.github/workflows/kit-ci.yml` を追加。
 
 **severity: High**（回帰テストが3本あるのに、PR で自動実行されない。F-01/F-02 の陳腐化もこれが原因）
 
@@ -138,6 +148,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 ③現状維持で `spec/` にだけ記録、のいずれか。**保守者の選択が必要**（Roadmap 作業ルール⑤）。
 
 ### F-09 — 文書の整合を検査する仕組みが無い
+
+> **是正済み（2026-09-17）**: S5 で `check-docs.sh` を追加（8 検査）。
 
 **severity: Medium**（F-01・F-02・F-03 の根本原因）
 
@@ -165,6 +177,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 ### F-11 — 入口スクリプト2本と git ゲート4本に回帰テストが無い ★★
 
+> **是正済み（2026-09-17）**: S3 `test-install.sh`（66）/ S4 `test-git-gates.sh`（27）で解消。未テストは `audit-app-workspace.sh` のみ。
+
 **severity: High**（キットの「導入」と「止める仕組み」そのものが未検証。Sonnet が触ると壊れても気づけない）
 
 - evidence: `scripts/test-*.sh` が参照しているのは `hooks/*`・`trace-check.sh`・`init-lifecycle.sh`・`quality_harness.py`・`templates/test/feature_contracts.yml` のみ
@@ -174,6 +188,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 **是正案**: B-16（入口）・B-17（git ゲート）。`HOME` を一時ディレクトリに差し替えれば `install.sh` も安全にテストできる。
 
 ### F-12 — バージョンが刻印されていない
+
+> **是正済み（2026-09-17）**: S2 で `VERSION` / `KIT_VERSION`。tag は main マージ時に保守者。
 
 **severity: Medium**（配布先の `.claude/` がどの版のキットから出たか判別できない。Vision が許容した「スナップショットは追従しない」トレードオフを、追跡不能にしてしまっている）
 
@@ -196,9 +212,10 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 | severity | 件数 | ID |
 |---|---|---|
 | Critical | 0 | — |
-| **High** | **2** | F-07（CI 不在）／**F-11（入口とゲートが未テスト）** |
-| Medium | 6 | F-01／F-04／F-05／F-09／**F-12（版の刻印なし）**／**F-13（発火の検証手段なし）** |
-| Low | 5 | F-02／F-03／F-06／F-08／F-10 |
+| High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
+| Medium | 3 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測） |
+| Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
+| 是正済み | 8 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（2026-09-17 M15） |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 
