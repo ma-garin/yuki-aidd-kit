@@ -1,0 +1,59 @@
+# キット自身の CI
+# ※ github-actions/ 配下の yml は「配布先プロジェクトへ置くサンプル」であり、これとは別物。
+#
+# 回帰テスト（hooks / trace-check / quality_harness / 入口スクリプト / git ゲート / check-docs）と
+# 文書整合検査を PR ごとに実行する。Sonnet 基盤で作業しても壊れたら機械が気づける状態を保つ
+# （spec/09-findings.md F-07 / F-09、spec/11 D-2）。
+# ゲート実行はキットの規約どおり GATES_REQUESTED=1 を明示する（rules/speed-harness.md H-7）。
+
+name: Kit CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  regression:
+    name: 回帰テストと文書整合
+    runs-on: ubuntu-latest
+    env:
+      GATES_REQUESTED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: hooks（stdin JSON）
+        run: bash scripts/test-hooks.sh
+      - name: trace-check（トレーサビリティ）
+        run: bash scripts/test-trace-check.sh
+      - name: quality_harness（機能契約）
+        run: bash scripts/test-quality-harness.sh
+      - name: 入口スクリプト（install / export / init）
+        run: bash scripts/test-install.sh
+      - name: git ゲート（pre-commit / .ui-verified / ui-hash）
+        run: bash scripts/test-git-gates.sh
+      - name: check-docs の回帰テスト
+        run: bash scripts/test-check-docs.sh
+
+      - name: 文書整合検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec 同期）
+        id: docs
+        run: bash scripts/check-docs.sh -o check-docs-report.md
+
+      # 失敗時も詳細レポートを残す（会話・ログには結論だけ、全件はここ）
+      - name: レポートを保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-docs-report
+          path: check-docs-report.md
+          if-no-files-found: ignore
+      - name: サマリ
+        if: always()
+        run: |
+          if [ -f check-docs-report.md ]; then
+            cat check-docs-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi

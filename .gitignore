@@ -19,3 +19,7 @@ output/
 !.env.example
 
 .playwright-mcp/
+
+# 検査スクリプトの生成レポート（会話には結論だけ、全件はここ。コミットしない）
+trace-check-report.md
+check-docs-report.md
