@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AIDD Kit ユーザーガイド — 概要と導入（Ver.6.4）</title>
+  <meta name="description" content="yuki-aidd-kit の概要と、初めての人向けの導入手順。何が入っていて、どう始めて、毎日どう使うかを 1 ページで。">
+  <style>
+    /* 読み物ページ（templates/design-system.md「適用除外: ドキュメント・マニュアル類」）。
+       docs/yuki-aidd-kit-manual.html と同じ Qiita 風の骨格に揃える。外部 CDN は読まない。 */
+    :root {
+      --accent: #55c500;
+      --accent-dark: #3f9b00;
+      --bg: #f6f7f8;
+      --surface: #ffffff;
+      --surface-soft: #f9fafb;
+      --text: #24292f;
+      --muted: #687076;
+      --border: #d8dee4;
+      --code-bg: #f3f6f8;
+      --note-bg: #eff8e8;
+      --warn-bg: #fff7e6;
+      --danger-bg: #fff0f0;
+      --blue-bg: #eef6ff;
+      --shadow: 0 8px 24px rgba(27, 31, 36, 0.08);
+      --radius: 8px;
+      --content-width: 920px;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", Meiryo, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--text); background: var(--bg); line-height: 1.8; }
+    a { color: var(--accent-dark); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre, kbd { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace; }
+    code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+    pre { background: #1f2328; color: #e6edf3; padding: 14px 16px; border-radius: var(--radius); overflow: auto; line-height: 1.6; font-size: 13px; }
+    pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+    .topbar { position: sticky; top: 0; z-index: 20; height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 800; }
+    .topbar-note { color: var(--muted); font-size: 13px; }
+    .layout { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; padding: 28px 20px 56px; }
+    .sidebar { align-self: start; position: sticky; top: 80px; max-height: calc(100vh - 96px); overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+    .sidebar h2 { margin: 0 0 12px; font-size: 14px; color: var(--muted); font-weight: 700; }
+    .nav-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; counter-reset: nav; }
+    .nav-list a { display: block; padding: 7px 10px; border-radius: 6px; color: var(--text); font-size: 14px; line-height: 1.5; }
+    .nav-list a::before { counter-increment: nav; content: counter(nav) ". "; color: var(--muted); }
+    .nav-list a:hover, .nav-list a.active { background: var(--note-bg); color: var(--accent-dark); text-decoration: none; }
+    .main { min-width: 0; }
+    .hero { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px 28px 22px; margin-bottom: 20px; }
+    .hero h1 { margin: 0 0 8px; font-size: 26px; line-height: 1.4; }
+    .hero .lead { margin: 0 0 12px; color: var(--muted); }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--surface-soft); border: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+    section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 26px 28px; margin-bottom: 20px; scroll-margin-top: 76px; }
+    section h2 { margin: 0 0 14px; font-size: 21px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 10px; }
+    section h3 { margin: 22px 0 8px; font-size: 16.5px; }
+    .h2-ic { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--note-bg); color: var(--accent-dark); }
+    p { margin: 0 0 12px; }
+    ul, ol { margin: 0 0 12px; padding-left: 1.4em; }
+    li { margin: 3px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 14px; }
+    th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--surface-soft); font-weight: 700; }
+    .callout { border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--note-bg); padding: 12px 16px; margin: 12px 0 16px; }
+    .callout-title { font-weight: 700; margin-bottom: 4px; }
+    .callout.warn { border-left-color: #e9a13b; background: var(--warn-bg); }
+    .callout.danger { border-left-color: #d9534f; background: var(--danger-bg); }
+    .callout.info { border-left-color: #3b82f6; background: var(--blue-bg); }
+    .steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 12px; }
+    .steps li { position: relative; padding: 10px 12px 10px 48px; border: 1px solid var(--border); border-radius: var(--radius); margin: 8px 0; background: var(--surface-soft); }
+    .steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 12px; top: 10px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 13px; }
+    .steps li strong { display: block; margin-bottom: 2px; }
+    .term { border-bottom: 1px dotted var(--accent-dark); cursor: help; position: relative; }
+    .term .term-tip { display: none; position: absolute; left: 0; top: 130%; z-index: 30; width: 280px; background: #20242b; color: #f2f4f7; font-size: 12.5px; line-height: 1.55; padding: 9px 11px; border-radius: 6px; box-shadow: var(--shadow); }
+    .term:hover .term-tip, .term:focus .term-tip { display: block; }
+    .diagram { background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; overflow: auto; margin: 8px 0 16px; }
+    .diagram pre { background: transparent; color: var(--text); padding: 0; margin: 0; font-size: 13px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 8px 0 16px; }
+    .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; background: var(--surface-soft); }
+    .card h4 { margin: 0 0 6px; font-size: 15px; }
+    .card p { margin: 0; font-size: 14px; color: var(--muted); }
+    .kbd { display: inline-block; padding: 0 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; background: var(--surface); font-size: 12.5px; }
+    .mobile-toc { display: none; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
+    .mobile-toc summary { cursor: pointer; font-weight: 700; }
+    .mobile-toc ol { margin: 8px 0 0; }
+    footer { color: var(--muted); font-size: 13px; text-align: center; padding: 8px 0 24px; }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; padding: 16px 12px 40px; }
+      .sidebar { display: none; }
+      .mobile-toc { display: block; }
+      section, .hero { padding: 18px 16px; }
+      .topbar-note { display: none; }
+      table { display: block; overflow-x: auto; }   /* 狭幅は表だけ横スクロール。ページ全体を広げない */
+      pre { font-size: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">Y</span><span>AIDD Kit ユーザーガイド</span></div>
+    <div class="topbar-note">Ver.6.4（2026-09-17）— 概要と導入。詳しい使い方は取り扱い説明書へ</div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="目次">
+      <h2>目次</h2>
+      <nav>
+        <ol class="nav-list">
+          <li><a href="#intro">このガイドについて</a></li>
+          <li><a href="#what">AIDD Kit とは</a></li>
+          <li><a href="#overview">全体像（何が入っているか）</a></li>
+          <li><a href="#prereq">導入前の準備</a></li>
+          <li><a href="#install">導入 A: 自分の PC に入れる</a></li>
+          <li><a href="#export">導入 B: プロジェクトに配る</a></li>
+          <li><a href="#first">最初のセッション</a></li>
+          <li><a href="#daily">毎日の流れ</a></li>
+          <li><a href="#parts">部品ごとの説明</a></li>
+          <li><a href="#gates">品質チェック（手動で回す）</a></li>
+          <li><a href="#pro">Pro / Sonnet で使うコツ</a></li>
+          <li><a href="#design">画面の見た目を揃える</a></li>
+          <li><a href="#faq">よくある質問</a></li>
+          <li><a href="#glossary">用語集</a></li>
+          <li><a href="#next">次に読むもの</a></li>
+        </ol>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <details class="mobile-toc">
+        <summary>目次を開く</summary>
+        <ol>
+          <li><a href="#intro">このガイドについて</a></li>
+          <li><a href="#what">AIDD Kit とは</a></li>
+          <li><a href="#overview">全体像</a></li>
+          <li><a href="#prereq">導入前の準備</a></li>
+          <li><a href="#install">導入 A: 自分の PC</a></li>
+          <li><a href="#export">導入 B: プロジェクトに配る</a></li>
+          <li><a href="#first">最初のセッション</a></li>
+          <li><a href="#daily">毎日の流れ</a></li>
+          <li><a href="#parts">部品ごとの説明</a></li>
+          <li><a href="#gates">品質チェック</a></li>
+          <li><a href="#pro">Pro / Sonnet で使うコツ</a></li>
+          <li><a href="#design">画面の見た目を揃える</a></li>
+          <li><a href="#faq">よくある質問</a></li>
+          <li><a href="#glossary">用語集</a></li>
+          <li><a href="#next">次に読むもの</a></li>
+        </ol>
+      </details>
+
+      <div class="hero">
+        <h1>AIDD Kit を初めて使う人のためのガイド</h1>
+        <p class="lead">AI（Claude Code / Codex）に開発を頼むときの「進め方・品質チェック・見た目」を、毎回ゼロから考えなくて済むようにする個人用キットです。このページは「何が入っていて、どう始めるか」だけに絞っています。</p>
+        <div class="tags">
+          <span class="tag">対象: これから導入する人</span>
+          <span class="tag">所要: 読む 15 分 ＋ 導入 5 分</span>
+          <span class="tag">前提知識: ターミナルで cd と ls ができる</span>
+          <span class="tag">版: 6.3.0 → Ver.6.4 相当</span>
+        </div>
+      </div>
+
+      <section id="intro">
+        <h2><span class="h2-ic">i</span>このガイドについて</h2>
+        <p>キットには説明文書が 3 種類あります。用途で使い分けてください。</p>
+        <table>
+          <thead><tr><th>文書</th><th>読む人</th><th>中身</th></tr></thead>
+          <tbody>
+            <tr><td><strong>このユーザーガイド</strong>（<code>docs/userguide.html</code>）</td><td>初めて導入する人</td><td>概要・導入手順・最初のセッション・毎日の流れ。まずここ</td></tr>
+            <tr><td>取り扱い説明書（<code>docs/yuki-aidd-kit-manual.html</code>）</td><td>使い始めた人</td><td>スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時（13 章）</td></tr>
+            <tr><td><code>README.md</code> / <code>INDEX.md</code></td><td>中身を把握したい人</td><td>版歴と全資産の地図（参照コスト付き）。AI もここを読む</td></tr>
+            <tr><td><code>spec/</code></td><td>キット自体を改造する人</td><td>全ファイルの読解記録・残課題・バックログ。<code>spec/README.md</code> から</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <div class="callout-title">このキットの基本姿勢</div>
+          <p>AI に丸投げする道具ではありません。<strong>仕様を決める → 実装する → テストする → 振り返る</strong> という流れを崩さず、「動いた」ではなく「確認した」で完了と言わせるための道具です。</p>
+        </div>
+      </section>
+
+      <section id="what">
+        <h2><span class="h2-ic">?</span>AIDD Kit とは</h2>
+        <p>一言でいうと、<strong>AI 駆動開発（AIDD）の作業台</strong>です。次の 3 つを AI に渡します。</p>
+        <div class="grid-2">
+          <div class="card"><h4>1. 進め方の規律</h4><p>速度を最優先しつつ、目的の宣言・見積の実測・残課題の申告・未検証を「完了」と言わない、といった約束事。<code>rules/</code> と <code>AGENTS.md</code> が担当。</p></div>
+          <div class="card"><h4>2. 場面ごとの手順（スキル）</h4><p>「テストをいつ回すか」「UI を作ったら何を確認するか」「振り返りをどう残すか」など、場面に応じて AI が自動で読む手順書。19 個。</p></div>
+          <div class="card"><h4>3. 機械で止める仕組み</h4><p>散文の約束は破られるので、秘密情報の混入・未検証 UI のコミット・要件と設計のズレ・CSS の直値などをスクリプトで検出します。</p></div>
+        </div>
+        <h3>どんな開発で力を出すか</h3>
+        <table>
+          <thead><tr><th>よくある開発</th><th>キットが用意しているもの</th></tr></thead>
+          <tbody>
+            <tr><td>社内配布の単一 HTML ツール・PoC</td><td><code>single-html-tool</code> スキル、デザイントークン、操作フィードバック部品（トースト・確認ダイアログ）</td></tr>
+            <tr><td>GitHub Pages で公開する個人 PWA</td><td><code>personal-pwa</code> スキル、<code>/new-pwa</code>、<code>init-project.sh</code></td></tr>
+            <tr><td>Streamlit の業務アプリ（RAG など）</td><td><code>streamlit-rag-app</code> スキル、Streamlit 用テーマ</td></tr>
+            <tr><td>納品・引き継ぎがある案件</td><td>RFD〜保守運用の 10 工程（<code>dev-lifecycle</code>）、追跡表の機械検証、Issue / PR テンプレート</td></tr>
+            <tr><td>QA・テスト自動化・E2E</td><td><code>test-strategy</code> / <code>test-automation</code> / <code>e2e-cycle</code>、ISO/IEC/IEEE 29119 文書の雛形、機能契約ハーネス</td></tr>
+          </tbody>
+        </table>
+        <div class="callout info">
+          <div class="callout-title">Ver.6.4 で何が変わったか（2026-09）</div>
+          <p>2026-10 の <strong>Claude Pro（Sonnet 基盤・Codex 併用）</strong>への移行に備えて、①入口スクリプトと git ゲートに回帰テストを付け、②毎回 AI が読む量を半分に減らし、③デザインを「散文」から「読み込むだけの CSS ファイル」に変えました。CI や定時実行のような<strong>自動処理は使わず、検査はすべて人が起動する</strong>方針です。</p>
+        </div>
+      </section>
+
+      <section id="overview">
+        <h2><span class="h2-ic">▦</span>全体像（何が入っているか）</h2>
+        <p>あなたが Claude Code や Codex に話しかけると、次の層が順に効きます。</p>
+        <div class="diagram"><pre>あなた ──▶ Claude Code / Codex
+                │
+                ▼
+  ┌───────────────────────────────────────────────────────────┐
+  │ AGENTS.md（共通規約の本体）   CLAUDE.md = @AGENTS.md + Claude Code 固有 │ ← 毎回読まれる
+  │ rules/  absolute-rules / speed-harness / model-routing（常時）    │
+  │         functional-integrity（コードや UI を触ったときだけ）        │
+  ├───────────────────────────────────────────────────────────┤
+  │ skills/ 19 個   「UI を作る」「テスト」「完了判定」などの言葉で発火 │ ← 必要な時だけ
+  │ commands/ 16 個 /plan /implement /qa-review /retro ...            │
+  ├───────────────────────────────────────────────────────────┤
+  │ hooks/ 7 個     探索ブロック・ゲート無断実行の拒否・進捗表示       │ ← 機械で強制
+  │ scripts/        verify / export / check-docs / check-design ...   │ ← 人が起動
+  │ templates/      工程文書・テスト文書・デザイン（tokens/components）│ ← 配って使う
+  └───────────────────────────────────────────────────────────┘</pre></div>
+        <table>
+          <thead><tr><th>ディレクトリ</th><th>数</th><th>役割（1 行）</th></tr></thead>
+          <tbody>
+            <tr><td><code>AGENTS.md.template</code> / <code>CLAUDE.md.template</code></td><td>2</td><td>AI が毎回読む共通規約。導入時に <code>~/.claude/</code> かプロジェクト直下へコピーされる</td></tr>
+            <tr><td><code>rules/</code></td><td>4</td><td>速度・必須プロセス・モデルの使い分け・機能完全性の規律。合計 100 行以下に抑えてある</td></tr>
+            <tr><td><code>skills/</code></td><td>19</td><td>場面別の手順書。DAILY（毎日の進め方）12 個と LIBRARY（種別で選ぶ）7 個</td></tr>
+            <tr><td><code>claude-code/commands/</code></td><td>16</td><td>スラッシュコマンド。<code>/plan</code> <code>/implement</code> <code>/qa-review</code> <code>/retro</code> など</td></tr>
+            <tr><td><code>claude-code/hooks/</code></td><td>7</td><td>Claude Code が特定の操作の前後に自動で走らせる小さなスクリプト</td></tr>
+            <tr><td><code>scripts/</code></td><td>23</td><td>導入・配布・検査・回帰テスト。すべて人が手で起動する</td></tr>
+            <tr><td><code>templates/</code></td><td>36</td><td>工程文書 11・テスト文書 8・GitHub テンプレート 4・デザイン（<code>tokens.css</code> <code>ui/</code> <code>components/</code>）ほか</td></tr>
+            <tr><td><code>docs/</code></td><td>—</td><td>Vision / PRD / Roadmap、この 2 冊、ルールの根拠、改善ログ <code>lessons.md</code></td></tr>
+            <tr><td><code>spec/</code></td><td>14</td><td>キット自体の現況仕様。改造するときだけ</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="prereq">
+        <h2><span class="h2-ic">✓</span>導入前の準備</h2>
+        <ul>
+          <li><strong>Claude Code</strong>（CLI またはデスクトップ）か <strong>Codex</strong> のどちらか、または両方</li>
+          <li><strong>git</strong>、<strong>bash</strong>、<strong>python3</strong>（3.10 以上。検査スクリプトが使う）</li>
+          <li>ターミナルで <code>cd</code> と <code>ls</code> ができること。それ以外は手順どおりコピーすれば動きます</li>
+        </ul>
+        <div class="callout warn">
+          <div class="callout-title">先に決めておくこと</div>
+          <p>導入方式は 2 つあり、<strong>併用が前提</strong>です。自分の PC で複数プロジェクトを横断するなら <a href="#install">A</a>、Codex やクラウド環境・チームメイトの clone 先など <code>~/.claude</code> が効かない場所には <a href="#export">B</a>。迷ったら A から始めてください。</p>
+        </div>
+      </section>
+
+      <section id="install">
+        <h2><span class="h2-ic">A</span>導入 A: 自分の PC に入れる（グローバル導入）</h2>
+        <p><code>~/.claude/</code> にスキル・コマンド・hooks・rules・共通規約をコピーします。どのプロジェクトを開いても同じ規律が効きます。</p>
+        <ol class="steps">
+          <li><strong>キットを取得する</strong><pre><code>cd &lt;作業フォルダ&gt;
+git clone https://github.com/ma-garin/yuki-aidd-kit.git
+cd yuki-aidd-kit</code></pre></li>
+          <li><strong>導入スクリプトを実行する</strong><pre><code>./scripts/install.sh</code></pre>既存の <code>~/.claude/CLAUDE.md</code> があれば <code>.bak</code> に退避し、既存の <code>settings.json</code> は上書きしません（hooks の設定は表示される内容を手でマージ）。同名の rules が別フォルダにある場合はスキップします。</li>
+          <li><strong>配置を確認する</strong><pre><code>./scripts/verify.sh</code></pre>配置されたファイルの一覧と「導入済みの版」が出ます。<code>✅ 全て正常</code> なら完了。1 つでも欠けていると exit 1 で止まります。</li>
+          <li><strong>（Codex も使う場合）AGENTS.md を共有する</strong><pre><code>ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md</code></pre>Claude Code は <code>CLAUDE.md</code> 経由で、Codex は直接、同じ本体を読みます。</li>
+          <li><strong>（任意）壊れていないことを回帰テストで確かめる</strong><pre><code>./scripts/test-hooks.sh          # hooks が入力を受け取れるか（19 ケース）
+./scripts/test-install.sh        # 導入・配布・初期化（73 ケース。実 ~/.claude には触らない）</code></pre></li>
+        </ol>
+        <div class="callout">
+          <div class="callout-title">何が <code>~/.claude/</code> に入るか</div>
+          <p><code>AGENTS.md</code>（共通規約の本体）、<code>CLAUDE.md</code>（<code>@AGENTS.md</code> を import ＋ Claude Code 固有）、<code>rules/aidd-kit/*.md</code>、<code>skills/*/SKILL.md</code>、<code>commands/*.md</code>、<code>hooks/*</code>、<code>KIT_VERSION</code>（版・commit・日付の刻印）。</p>
+        </div>
+      </section>
+
+      <section id="export">
+        <h2><span class="h2-ic">B</span>導入 B: プロジェクトに配る（プロジェクト配布）</h2>
+        <p>対象プロジェクトの直下に <code>.claude/</code> と <code>AGENTS.md</code> / <code>CLAUDE.md</code> を生成し、git に含めます。クラウドの Claude Code、Codex、チームメイトの環境でも同じ振る舞いになります。</p>
+        <ol class="steps">
+          <li><strong>配布する</strong><pre><code>./scripts/export-project.sh &lt;対象プロジェクトのパス&gt;</code></pre>生成物: <code>.claude/</code>（skills / commands / hooks / rules / settings.json / INDEX.md / templates）、<code>AGENTS.md</code>、<code>CLAUDE.md</code>、ゲート用スクリプト（<code>scripts/quality_harness.py</code> など）、<code>.claude/KIT_VERSION</code>。既存ファイルは <code>.bak</code> に退避します。</li>
+          <li><strong>コミットする</strong><pre><code>cd &lt;対象プロジェクトのパス&gt;
+git add .claude AGENTS.md CLAUDE.md scripts
+git commit -m "chore: add AIDD Kit"</code></pre></li>
+          <li><strong>プロジェクト固有の追記をする</strong><br>生成された <code>AGENTS.md</code> 末尾の「プロジェクト別追記欄」に、環境・起動コマンド・禁止事項を書きます。<code>.claude/rules/speed-harness.md</code> の H-2「環境チートシート」も埋めてください。</li>
+        </ol>
+        <div class="callout info">
+          <div class="callout-title">A と B の違い</div>
+          <p>中身は同じです。違いは置き場所だけで、B はリポジトリに同梱されるので環境を選びません。両方入れた場合、プロジェクト側（B）の設定が優先されます。</p>
+        </div>
+        <h3>新規プロジェクトをゼロから作るとき</h3>
+        <pre><code>./scripts/init-project.sh my-app pwa        # pwa | html | streamlit
+./scripts/init-lifecycle.sh &lt;対象&gt; --github  # 工程文書 11 本＋Issue/PR テンプレート（納品案件のみ）
+./scripts/init-test-docs.sh &lt;対象&gt; --ci     # テスト戦略・DoD・29119 文書・機能契約・ゲート（QA 案件のみ）</code></pre>
+      </section>
+
+      <section id="first">
+        <h2><span class="h2-ic">1</span>最初のセッション</h2>
+        <p>導入が済んだら、プロジェクトのフォルダで Claude Code（または Codex）を起動します。<strong>何も指示しなくても</strong>、共通規約と rules は自動で読み込まれています。</p>
+        <h3>AI が最初に見ているもの</h3>
+        <ul>
+          <li><code>AGENTS.md</code> の「読む範囲」表 — やりたいこと（UI を作る・テスト・完了判定…）から、最初に使うスキルを引く</li>
+          <li><code>rules/absolute-rules.md</code> — 着手前に <code>目的:</code> を 1 行、提出時に <code>残課題:</code>、未検証を「完了」と言わない</li>
+          <li><code>rules/speed-harness.md</code> — 往復を減らす見積と手順設計。ゲート（テスト・lint）は<strong>あなたが頼んだ時だけ</strong>実行</li>
+          <li><code>rules/model-routing.md</code> — 既定は Sonnet。Opus に上げる条件、<code>/clear</code> の目安</li>
+        </ul>
+        <h3>最初の一言の例</h3>
+        <pre><code>このプロジェクトに合う ECC だけ選んで        # 何を毎回読み、何を必要時だけ読むかを分けてもらう
+このプロジェクトの spec / plan / tasks を作って   # /sdd-start 相当。仕様駆動で始める
+管理画面のダッシュボードを作って              # design-system が発火し、tokens/components/layout を読み込む形で作る</code></pre>
+        <h3>実装モードという考え方（Claude Code のみ）</h3>
+        <ol class="steps">
+          <li><strong><code>/plan</code> で方針を固める</strong><br>調査（Read / Grep / Glob）が許可された状態。方針・対象ファイル・検証手順を <code>PLAN.md</code> に書き出す。</li>
+          <li><strong><code>/implement</code> で実装に入る</strong><br><code>.claude/mode</code> が作られ、hook が再探索を物理的にブロックする。決めたとおりに小さく作り、軽くテストする。<code>PLAN.md</code> が無いと入れない。</li>
+          <li><strong>完了前に <code>done-gate</code></strong><br>実行経路（UI → API → 保存 → エラー処理 → 利用者に見える証跡）を確認し、未検証は「未検証」と書く。UI を触ったら <code>uiux_review</code> で実機を開く。</li>
+        </ol>
+        <div class="callout warn">
+          <div class="callout-title">よくあるつまずき</div>
+          <p>「hook にブロックされた」と出たら実装モードです。調べ直したいときは <code>/plan</code> で解除してください。テストを回してほしいときは「テストを実行して」と<strong>明示</strong>します（黙って走らせない設計です）。</p>
+        </div>
+      </section>
+
+      <section id="daily">
+        <h2><span class="h2-ic">↻</span>毎日の流れ</h2>
+        <p>やりたいことを言えば該当スキルが発火します。名前を覚える必要はありませんが、表を知っていると狙って使えます。</p>
+        <table>
+          <thead><tr><th>やりたいこと</th><th>言い方の例</th><th>裏で効くもの</th></tr></thead>
+          <tbody>
+            <tr><td>進め方を決める</td><td>「この案件は工程を分けるべき？」</td><td><code>dev-lifecycle</code> の判断表。分けるなら <code>/rfd</code> → <code>/lifecycle</code> → <code>/trace</code>、軽い案件は <code>/sdd-start</code></td></tr>
+            <tr><td>UI を作る・直す</td><td>「設定画面を作って」「ボタンの見た目を揃えて」</td><td><code>design-system</code>（tokens / components.css / layout.css を読み込む）→ 完了前に <code>uiux_review</code></td></tr>
+            <tr><td>テストをいつ・どう回すか</td><td>「このプロジェクトのテスト戦略を決めて」</td><td><code>test-strategy</code> → コードは <code>test-automation</code> → E2E は <code>/e2e-cycle</code></td></tr>
+            <tr><td>レビュー・品質判定</td><td>「ISO 25010 でレビューして」</td><td><code>qa-review-standards</code>（<code>/qa-review</code>）。「まだおかしい」の根こそぎは <code>atarimae-quality-audit</code></td></tr>
+            <tr><td>完了と言う前</td><td>「完了判定して」</td><td><code>done-gate</code></td></tr>
+            <tr><td>長い調査・集計</td><td>「ログを全部見て傾向を出して」</td><td><code>context-compression</code>（<code>/compact-work</code>）。3 層要約・スクリプト化</td></tr>
+            <tr><td>振り返り</td><td>「今日のレトロをやろう」</td><td><code>retro</code>（<code>/retro</code>）→ <code>lessons.md</code> に Keep / Problem / Try</td></tr>
+            <tr><td>AI 出力の評価</td><td>「RAG の回答品質を回帰評価したい」</td><td><code>agent-eval</code>（<code>/eval</code>）</td></tr>
+            <tr><td>表に無い・迷った</td><td>「INDEX を見て」</td><td><code>INDEX.md</code>（全資産の地図。毎回は読まない）</td></tr>
+          </tbody>
+        </table>
+        <h3>セッションの終わり方</h3>
+        <ul>
+          <li><code>CURRENT_STATE.md</code>（フェーズ・直近完了・次タスク・判断待ち）を更新してもらう</li>
+          <li>無関係なタスクへ移るときは <code>/clear</code>。1 時間以上空けて再開するときは要約から始める（キャッシュが切れて全履歴を読み直すため）</li>
+        </ul>
+      </section>
+
+      <section id="parts">
+        <h2><span class="h2-ic">⚙</span>部品ごとの説明</h2>
+        <h3>rules/（規律。毎回読まれるのは 3 本）</h3>
+        <table>
+          <thead><tr><th>ファイル</th><th>いつ読まれる</th><th>要点</th></tr></thead>
+          <tbody>
+            <tr><td><code>absolute-rules.md</code></td><td>常時</td><td>A-1〜A-10。目的 1 行・見積と実績の実測・残課題の申告・未検証を断定しない・上流の承認を自分で飛ばさない</td></tr>
+            <tr><td><code>speed-harness.md</code></td><td>常時</td><td>H-1〜H-8。所要 ≒ 往復 × 12 秒、環境チートシート、バッチ検証、ゲートは要求時のみ、1 分超の作業は進捗を出す</td></tr>
+            <tr><td><code>model-routing.md</code></td><td>常時</td><td>既定 Sonnet／Opus に上げる 3 条件／effort を下げる場面／<code>/clear</code>／委譲は隔離目的のみ／上限に当たった時の手順</td></tr>
+            <tr><td><code>functional-integrity.md</code></td><td>コードや UI を触った時だけ</td><td>UI だけあって裏の経路が無い「見せかけの完成」を完了と言わない</td></tr>
+          </tbody>
+        </table>
+        <p>根拠・失敗事例・原文は <code>docs/rules-rationale/</code> にあります（AI は毎回読みません）。</p>
+        <h3>skills/（19 個）</h3>
+        <div class="grid-2">
+          <div class="card"><h4>DAILY（12）— 進め方を制御する</h4><p>dev-lifecycle / context-compression / ecc-daily-router / sdd-ecc-workflow / qa-review-standards / atarimae-quality-audit / test-automation / test-strategy / e2e-cycle / done-gate / uiux_review / retro</p></div>
+          <div class="card"><h4>LIBRARY（7）— 種別・場面で選ぶ</h4><p>design-system / nfr-standards / agent-eval / code-doc-search / single-html-tool / personal-pwa / streamlit-rag-app</p></div>
+        </div>
+        <p>各スキルは 200 行以下（<code>check-docs.sh</code> が超過を止める）。詳しい内容は <code>references/</code> に逃がしてあり、必要な時だけ読まれます。</p>
+        <h3>commands/（16 個）</h3>
+        <p>工程: <code>/rfd</code> <code>/lifecycle</code> <code>/trace</code>／実装モード: <code>/plan</code> <code>/implement</code>／SDD: <code>/sdd-start</code> <code>/new-pwa</code>／品質: <code>/qa-review</code> <code>/e2e-cycle</code> <code>/eval</code>／運用: <code>/ecc-daily</code> <code>/app-scan</code> <code>/compact-work</code> <code>/doc-search</code> <code>/retro</code> <code>/token-check</code></p>
+        <h3>hooks/（7 個。Claude Code が自動で走らせる）</h3>
+        <table>
+          <thead><tr><th>hook</th><th>何をするか</th><th>止めるか</th></tr></thead>
+          <tbody>
+            <tr><td><code>block-explore.sh</code></td><td>実装モード中の Read / Grep / Glob をブロック</td><td>止める（exit 2）</td></tr>
+            <tr><td><code>block-gates.py</code></td><td>頼んでいない pytest / make test / lint を拒否。要求時は <code>GATES_REQUESTED=1</code></td><td>止める（deny）</td></tr>
+            <tr><td><code>pre-write-check.sh</code> / <code>post-write-html.sh</code></td><td>書き込み前後の警告（秘密情報・HTML の基本チェック）</td><td>警告のみ</td></tr>
+            <tr><td><code>progress.py</code> / <code>statusline.py</code></td><td>1 分超の作業の経過・見積・残りをステータス行に表示</td><td>表示のみ</td></tr>
+            <tr><td><code>session-summary.sh</code></td><td>セッション終了時の要約</td><td>通知のみ</td></tr>
+          </tbody>
+        </table>
+        <h3>templates/（36 個）</h3>
+        <ul>
+          <li><strong>工程文書</strong> <code>lifecycle/</code> 11 本（RFD → 要件 → 基本設計 → 詳細設計 → 実装 → 単体 / 結合 / システム / 受け入れ → 保守運用 ＋ 追跡表）</li>
+          <li><strong>テスト文書</strong> <code>test/</code> 8 本（テスト戦略・DoD・29119 の計画 / 設計仕様 / 完了報告 / インシデント・テストケース CSV・機能契約）</li>
+          <li><strong>デザイン</strong> <code>tokens.css</code>（値）・<code>ui/components.css</code>（部品）・<code>ui/layout.css</code>（骨格）・<code>components/feedback.js</code> <code>icons.js</code>・<code>ui/README.md</code>（置き場所の 1 枚表）</li>
+          <li><strong>その他</strong> <code>CURRENT_STATE.md</code> <code>ADR-template.md</code> <code>lessons.md</code> <code>implement-profile.md</code> <code>settings.sandbox.json</code>、GitHub の Issue / PR テンプレート</li>
+        </ul>
+      </section>
+
+      <section id="gates">
+        <h2><span class="h2-ic">⛨</span>品質チェック（手動で回す）</h2>
+        <div class="callout danger">
+          <div class="callout-title">方針: 自動処理は使わない</div>
+          <p>検査はすべて<strong>人が起動</strong>します。GitHub Actions のワークフロー（<code>.github/workflows/kit-ci.yml</code> と <code>github-actions/</code> の配布サンプル 4 本）は <code>workflow_dispatch</code>（Actions 画面の「Run workflow」）だけで動き、PR や push では走りません。AI にも「テストを実行して」と明示したときだけ回させます。</p>
+        </div>
+        <h3>キット自身を確かめる（改造したとき・更新を取り込んだとき）</h3>
+        <pre><code>./scripts/verify.sh                 # 配置確認。NG>0 で exit 1
+./scripts/test-hooks.sh             # 19 ケース
+./scripts/test-trace-check.sh       # 15 ケース
+./scripts/test-quality-harness.sh   # 11 ケース
+./scripts/test-install.sh           # 73 ケース
+./scripts/test-git-gates.sh         # 27 ケース
+./scripts/test-check-docs.sh        # 25 ケース
+./scripts/test-check-design.sh      # 36 ケース
+./scripts/check-docs.sh             # 文書と実体のズレ（INDEX の行数・ケース数・参照切れ・spec 同期）。NG=0 が合格
+./scripts/check-design.sh           # デザインの直値・未定義トークン・外部 CDN・alert()。NG=0 が合格</code></pre>
+        <h3>配布先プロジェクトで使うゲート</h3>
+        <table>
+          <thead><tr><th>ゲート</th><th>何を止めるか</th><th>起動方法</th></tr></thead>
+          <tbody>
+            <tr><td>秘密情報スキャン</td><td>API キー等の混入</td><td><code>scripts/pre-commit</code>（git hook。gitleaks があれば使用）</td></tr>
+            <tr><td>UI 検証マーカー</td><td>E2E 未実行・検証後に変えた UI のコミット</td><td><code>scripts/pre-commit-ui-gate.sh</code>（<code>.ui-verified</code> と UI hash を照合）</td></tr>
+            <tr><td>機能契約ハーネス</td><td>UI だけあって実行経路が無い機能、失敗系テストの欠落</td><td><code>python3 scripts/quality_harness.py</code></td></tr>
+            <tr><td>トレーサビリティ</td><td>要件が設計・テストへ落ちていない</td><td><code>./scripts/trace-check.sh docs/lifecycle</code></td></tr>
+            <tr><td>デザイン直値</td><td>CSS / JS の直値、未定義トークン、外部 CDN、<code>alert()</code></td><td><code>./scripts/check-design.sh static src</code></td></tr>
+          </tbody>
+        </table>
+        <p>どのゲートも「NG が 0 なら合格、1 つでもあれば exit 1」で統一されています。出力は結論 → 種別ごと → 全件はレポートファイル、の 3 層です。</p>
+      </section>
+
+      <section id="pro">
+        <h2><span class="h2-ic">$</span>Pro / Sonnet で使うコツ</h2>
+        <p>キットは Claude Pro（Sonnet 基盤）でも快適に回るように作り直してあります。押さえるのは 4 点です。</p>
+        <ol>
+          <li><strong>毎回読まれる量は小さい</strong> — 共通規約 ＋ rules 3 本で済むよう圧縮済み（推定で従来の半分）。<code>/context</code> で何が載っているか確認できます</li>
+          <li><strong>既定は Sonnet、上げるのは 3 条件だけ</strong> — 複数モジュールにまたがる設計判断／多段の推論が要る不具合の切り分け／Sonnet が 2 周しても収束しない。上げる前に「何を判断させるか」を 1 行書き、終わったら戻す（<code>rules/model-routing.md</code>）</li>
+          <li><strong>定型作業は effort を下げる</strong> — 文書の整形・調査結果の要約・既知手順の反復は <code>/effort</code> で下げる</li>
+          <li><strong>上限に当たったら</strong> — 「セッション上限」「週次上限」は全モデル共有で <code>/model</code> では回復しない。「Opus 上限」「Sonnet 上限」は系列別なので切り替えて続行。まず <code>/usage</code> で内訳を見る</li>
+        </ol>
+        <div class="callout">
+          <div class="callout-title">読ませて、書かせない</div>
+          <p>デザインの CSS や工程文書の雛形は<strong>実ファイル</strong>として同梱してあります。Sonnet に書き起こさせるのではなく、読み込む指示を出す形にすると、ブレず安く済みます。</p>
+        </div>
+        <p>Codex には <code>/model</code> <code>/effort</code> <code>/usage</code> がありません。モデル選択の設定で同じ判断をし、委譲の規律と「新しい会話で始める」だけ守ります。</p>
+      </section>
+
+      <section id="design">
+        <h2><span class="h2-ic">◐</span>画面の見た目を揃える</h2>
+        <p>キットのデザインシステムは「散文の指示」ではなく<strong>読み込むだけの CSS</strong>です。値の唯一の真実源は <code>templates/tokens.css</code>。</p>
+        <table>
+          <thead><tr><th>ファイル</th><th>役割</th></tr></thead>
+          <tbody>
+            <tr><td><code>templates/tokens.css</code></td><td>色・余白・書体・角丸・影・動きの値（ライト＋ダーク）。<strong>最初に読む</strong></td></tr>
+            <tr><td><code>templates/ui/components.css</code></td><td>ボタン・入力・バッジ・カード・KPI・表・トグル・ツールチップ・モーダル・空状態など</td></tr>
+            <tr><td><code>templates/ui/layout.css</code></td><td>管理画面の骨格（グローバルバー / サイドバー / トップバー / 本文）とブレークポイント</td></tr>
+            <tr><td><code>templates/components/feedback.js</code></td><td>トースト・消えない失敗・処理中・空状態・確認ダイアログ（<code>alert()</code> の代わり）</td></tr>
+            <tr><td><code>templates/components/icons.js</code></td><td>アイコン同梱（外部 CDN 不要）</td></tr>
+            <tr><td><code>templates/ui/README.md</code></td><td>単一 HTML / PWA / React+Tailwind / Streamlit / Flask・Django ごとの置き場所と読み込み順の 1 枚表</td></tr>
+          </tbody>
+        </table>
+        <p>単一 HTML ツールなら <code>&lt;style&gt;</code> の先頭に tokens → components →（必要なら）layout の順で貼るだけです。実物は <code>templates/components/demo.html</code> と <code>demo-shell.html</code> をブラウザで開くと確認できます。作った画面は <code>./scripts/check-design.sh &lt;対象パス&gt;</code> で直値を検査し、<code>uiux_review</code> でライト／ダーク・360px 幅・全状態を実機で見ます。</p>
+      </section>
+
+      <section id="faq">
+        <h2><span class="h2-ic">Q</span>よくある質問</h2>
+        <h3>Q. 導入したのに AI がスキルを使ってくれない</h3>
+        <p><code>./scripts/verify.sh</code> で配置を確認してください。スキルは「UI を作る」「テスト戦略」など<strong>説明文に書かれた言葉</strong>で発火します。狙って使うなら「<code>design-system</code> スキルで」と名前を言うか、対応するスラッシュコマンドを使います。</p>
+        <h3>Q. テストを勝手に回してほしいのに拒否される</h3>
+        <p>仕様です（<code>block-gates.py</code>）。「テストを実行して」と明示してください。AI は <code>GATES_REQUESTED=1</code> を付けて実行します。</p>
+        <h3>Q. 「hook にブロックされました」と出た</h3>
+        <p>実装モード中（<code>.claude/mode</code> がある）に調査系ツールを使おうとしています。<code>/plan</code> で解除するか、方針が固まっているなら実装を続けてください。</p>
+        <h3>Q. 既存の <code>~/.claude/settings.json</code> があった</h3>
+        <p><code>install.sh</code> は上書きしません。表示される hooks 設定を手でマージしてください。プロジェクト配布（B）なら <code>.claude/settings.json</code> を生成するので手作業は不要です。</p>
+        <h3>Q. キットを更新したい</h3>
+        <p><code>git pull</code> のあと <code>./scripts/install.sh &amp;&amp; ./scripts/verify.sh</code>。配布先は <code>./scripts/export-project.sh &lt;対象&gt;</code> を再実行（既存は <code>.bak</code> に退避）。どの版から出たかは <code>~/.claude/KIT_VERSION</code> または <code>.claude/KIT_VERSION</code> に刻印されています。</p>
+        <h3>Q. 完了報告に「未検証」と書かれている</h3>
+        <p>正常です。確認していないことを「完了」と言わない規律（A-6 / functional-integrity）です。必要なら「テストを実行して検証して」と頼んでください。</p>
+        <h3>Q. 自分のプロジェクトに CI を入れたい</h3>
+        <p><code>github-actions/</code> の 4 本を <code>.github/workflows/</code> にコピーします。いずれも手動起動（Run workflow）のみで、PR や push では走りません。自動化したい場合は自分の判断で <code>on:</code> を書き換えてください。</p>
+      </section>
+
+      <section id="glossary">
+        <h2><span class="h2-ic">語</span>用語集</h2>
+        <table>
+          <thead><tr><th>用語</th><th>意味</th></tr></thead>
+          <tbody>
+            <tr><td>AIDD</td><td>AI 駆動開発（AI-Driven Development）。AI に実装を頼み、人が仕様・判断・承認を持つ進め方</td></tr>
+            <tr><td>AGENTS.md / CLAUDE.md</td><td>AI が毎回読む共通規約。本体は AGENTS.md 一本で、CLAUDE.md は <code>@AGENTS.md</code> で取り込む ＋ Claude Code 固有の記述</td></tr>
+            <tr><td>rules</td><td><code>.claude/rules/</code> に置く規律。<code>paths:</code> が無いものは毎回、有るものは該当ファイルを触ったときだけ読まれる</td></tr>
+            <tr><td>スキル（SKILL.md）</td><td>場面別の手順書。先頭の説明文に含まれる言葉で自動的に発火する</td></tr>
+            <tr><td>hook</td><td>Claude Code がツール実行の前後に自動で走らせるスクリプト。散文の約束を機械で強制する</td></tr>
+            <tr><td>ゲート</td><td>テスト・lint・検査など「通らないと先に進めない」チェック。キットでは人が要求したときだけ実行</td></tr>
+            <tr><td>実装モード</td><td><code>.claude/mode</code> がある状態。再探索をブロックし、決めた方針どおり実装する</td></tr>
+            <tr><td>SDD</td><td>仕様駆動開発。spec → plan → tasks の順に文書を作ってから実装する</td></tr>
+            <tr><td>RFD</td><td>Request for Decision。論点と選択肢を出し、人が決める文書。工程の最初</td></tr>
+            <tr><td>ECC</td><td>他の人が作った AI 向け手順書の大きな集まり。キットはプロジェクトに合う分だけ選ぶ（<code>docs/ECC-ASSET-MAP.md</code>）</td></tr>
+            <tr><td>トークン</td><td>AI が読む・書く量の単位。毎回読まれる量が多いほど遅く高くなる</td></tr>
+            <tr><td>デザイントークン</td><td>色・余白・書体などの値に名前を付けた CSS 変数（<code>--color-primary</code> など）。直値を書かずこれを参照する</td></tr>
+            <tr><td>severity</td><td>不具合の重大度（ISTQB）。critical / high / medium / low / info。バッジの色もこれに対応</td></tr>
+            <tr><td>.ui-verified</td><td>E2E 合格時に作るマーカー。これが無い／古い／UI が変わった後の UI コミットを止める</td></tr>
+            <tr><td>KIT_VERSION</td><td>導入先に書かれる「版・commit・日付」の刻印。どの版のキットから出たかを判別する</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2><span class="h2-ic">→</span>次に読むもの</h2>
+        <ol>
+          <li><a href="yuki-aidd-kit-manual.html">取り扱い説明書</a> — スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時</li>
+          <li><code>README.md</code> — 版歴（何がいつ増えたか）と構成ツリー</li>
+          <li><code>INDEX.md</code> — 全資産の地図。各スキル・コマンドの 1 行要約と参照コスト</li>
+          <li><code>docs/OPERATING-MODE.md</code> — 日常の標準作業モード（種別判定・読む範囲・実装ループ・完了判定）</li>
+          <li><code>templates/ui/README.md</code> — 画面を作るときのファイルの置き場所</li>
+          <li><code>docs/lessons.md</code> — キット自身の改善ログ。何がうまくいき、何で詰まったか</li>
+          <li><code>spec/README.md</code> — キット自体を改造するときの入口</li>
+        </ol>
+      </section>
+
+      <footer>AIDD Kit ユーザーガイド — 2026-09-17。このページは読み物なのでデザインシステムの適用除外（<code>templates/design-system.md</code>）。</footer>
+    </main>
+  </div>
+
+  <script>
+    // 目次の現在位置ハイライトだけ。外部ライブラリは読まない
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('.nav-list a'));
+      var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+      if (!('IntersectionObserver' in window) || !targets.length) return;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id); });
+        });
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      targets.forEach(function (t) { io.observe(t); });
+    })();
+  </script>
+</body>
+</html>

@@ -26,7 +26,8 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
 ./scripts/trace-check.sh docs/lifecycle       # 要件→設計→実装→テストの追跡を機械検証（NG=0 で合格）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
-open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
+open docs/userguide.html                      # ユーザーガイド（概要・導入手順。初学者向け）
+open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書（13 章）
 ```
 
 **導入方式は2つ**（併用が前提。`docs/Vision.md` の「配置の2層」参照）:
@@ -144,6 +145,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 | `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
+| `docs/userguide.html` | ユーザーガイド。概要・導入 A/B・最初のセッション・毎日の流れ・部品・品質チェック（手動）・Pro/Sonnet のコツ・用語集（読み物。デザイン適用除外ジャンル） | 523行 |
 | `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1434行 |
 
 `docs/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。

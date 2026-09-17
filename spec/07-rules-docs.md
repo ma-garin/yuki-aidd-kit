@@ -131,6 +131,10 @@ STACK（スキャン結果の要点7行）／**DAILY 15件**（e2e-testing, brow
 ## `PROJECT-FIT-REPORT.md`（48行）
 2026-06-23 時点の適合レポート。Summary（親和性の高い7領域）／Evidence（拡張子傾向・代表7プロジェクト）／Recommendation 5項目。**現況の参考資料であり規約ではない**。
 
+## `userguide.html`（523行・2026-09-17 新設）
+
+初学者向けの入口。manual.html が「使い方の百科」なのに対し、こちらは「概要と導入」に絞る（15 章・読む 15 分）。Ver.6.4 の状態（AGENTS.md 一本化・rules 4 本・デザイン出荷物・CI と定時実行を使わない方針）を反映。Playwright で 1366 / 360px を確認（表は狭幅で横スクロール）。README / INDEX から manual.html と並べて導線を置いた。
+
 ## `yuki-aidd-kit-manual.html`（1,434行）
 非エンジニア向け HTML 取説。単一 HTML（外部 CSS/JS 依存なし）・Qiita 風（緑 `#55c500` 系）・
 サイドメニュー追従（`IntersectionObserver` でなく scroll + `getBoundingClientRect` で `is-active` を切替）・

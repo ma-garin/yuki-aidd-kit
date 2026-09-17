@@ -9,8 +9,8 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 229 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 183 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `README.md` | 231 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `INDEX.md` | 185 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 21 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 74 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
@@ -213,7 +213,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 175 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 229 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 231 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
@@ -221,10 +221,11 @@
 
 ---
 
-## docs/（8件・2,096行）
+## docs/（10件・2,700行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
+| `userguide.html` | 523 | **ユーザーガイド**（2026-09-17 新設）。概要・全体像の図・導入 A（install.sh）/ B（export-project.sh）・最初のセッション（/plan → /implement → done-gate）・毎日の流れ（やりたいこと→言い方→効くもの）・部品ごとの説明・品質チェック（**全て手動起動**）・Pro/Sonnet のコツ・デザイン出荷物・FAQ・用語集。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
 | `yuki-aidd-kit-manual.html` | 1434 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。**デザイン適用除外ジャンル** |
 | `Roadmap.md` | 198 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |

@@ -128,10 +128,11 @@ Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claud
 
 ## 取り扱い説明書
 
-初心者向けの HTML 版ガイドを同梱しています。ブラウザで開くと、サイドメニュー付きでキットの使い方、ECC との関係、プロジェクト別の使い分けを確認できます。
+HTML 版のガイドを 2 冊同梱しています。**初めて導入するなら `userguide.html`**（概要・導入手順・最初のセッション・毎日の流れ・品質チェック・Pro/Sonnet のコツ）、使い始めてからは `yuki-aidd-kit-manual.html`（スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時）。
 
 ```bash
-open docs/yuki-aidd-kit-manual.html
+open docs/userguide.html             # 概要と導入（初学者向け・Ver.6.4）
+open docs/yuki-aidd-kit-manual.html  # 取り扱い説明書（13 章）
 ```
 
 ## 推奨する使い方
@@ -174,7 +175,8 @@ yuki-aidd-kit/
 │   ├── PROJECT-FIT-REPORT.md             # 実プロジェクト適合レポート
 │   ├── rules-rationale/                  # rules の根拠・原文・実測記録（毎回は読まない）
 │   ├── lessons.md                        # キット自身の改善ログ（Keep / Problem / Try、週次 /usage）
-│   └── yuki-aidd-kit-manual.html         # HTML 取説
+│   ├── userguide.html                    # ユーザーガイド（概要・導入。初学者向け）
+│   └── yuki-aidd-kit-manual.html         # HTML 取説（13 章）
 ├── rules/                    # 規律 4本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
 ├── skills/                   # 19スキル（各 SKILL.md、一部 references/ 付き）
 │   ├── dev-lifecycle/        # 工程ライフサイクル（+ phase-gates / traceability / test-levels）
