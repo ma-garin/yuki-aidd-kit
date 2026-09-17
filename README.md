@@ -13,7 +13,7 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - **`scripts/test-install.sh`**（73 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
-- **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを PR ごとに実行（`github-actions/` の配布用サンプルとは別物）
+- **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
 - `verify.sh` が NG>0 で exit 1 を返す。`VERSION` と `KIT_VERSION`（導入先への刻印）で版を追跡できる
 
 **Pro 移行準備（M16）— 常時読み込み層のダイエットとモデル規律**
@@ -205,7 +205,7 @@ yuki-aidd-kit/
 │   ├── github/               # Issue（RFD/要件/欠陥）・PR テンプレート
 │   └── CURRENT_STATE.md / ADR-template.md / lessons.md / implement-profile.md
 ├── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates）
-├── .github/workflows/kit-ci.yml  # キット自身の CI
+├── .github/workflows/kit-ci.yml  # キット自身の CI（手動起動のみ）
 ├── VERSION                   # 版（git tag と対応）
 └── spec/                     # 現況仕様・運用条件・作り込み計画（キット自体を触るならまずここ）
 ```

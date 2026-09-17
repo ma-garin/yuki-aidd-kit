@@ -256,4 +256,4 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `.github/workflows/kit-ci.yml` | 66 | PR / push(main) / dispatch で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |
+| `.github/workflows/kit-ci.yml` | 64 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |

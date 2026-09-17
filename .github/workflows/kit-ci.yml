@@ -2,16 +2,14 @@
 # ※ github-actions/ 配下の yml は「配布先プロジェクトへ置くサンプル」であり、これとは別物。
 #
 # 回帰テスト（hooks / trace-check / quality_harness / 入口スクリプト / git ゲート / check-docs / check-design）と
-# 文書整合検査・デザイン検査を PR ごとに実行する。Sonnet 基盤で作業しても壊れたら機械が気づける状態を保つ
-# （spec/09-findings.md F-07 / F-09、spec/11 D-2）。
-# ゲート実行はキットの規約どおり GATES_REQUESTED=1 を明示する（rules/speed-harness.md H-7）。
+# 文書整合検査・デザイン検査を、保守者が Actions 画面から手動で起動したときだけ実行する（workflow_dispatch のみ）。
+# PR や push で自動実行しない: ゲートは要求した時だけ動かす（rules/speed-harness.md H-7）という
+# キットの規律を CI にも適用する（保守者決定 2026-09-17「自動処理は認めない」）。
+# 何を検査するかは spec/09-findings.md F-07 / F-09、spec/11 D-2。GATES_REQUESTED=1 を明示する。
 
 name: Kit CI
 
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
