@@ -1,12 +1,12 @@
 # GitHub Pages 自動デプロイ
 # .github/workflows/deploy.yml に配置
 # docs/ 配下を GitHub Pages に公開する（PWA向け）
+# 起動は手動のみ（workflow_dispatch）。PR や push で自動実行しない: ゲートは要求した時だけ動かす（rules/speed-harness.md H-7）。
+# Actions 画面の「Run workflow」から起動する。
 
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

@@ -239,14 +239,14 @@
 
 ---
 
-## github-actions/（4件・177行）— 配布用サンプル
+## github-actions/（4件・171行）— 配布用サンプル（全て手動起動のみ。2026-09-17 決定 Q-10）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `test-gates.yml` | 73 | 機能契約ハーネス＋L1/L2。**Python/Node をファイルの有無で自動判定**、カバレッジ80%ゲート、L3 はコメントアウト |
-| `lifecycle-check.yml` | 48 | PR で `trace-check.sh` を実行。レポートを artifact とジョブサマリへ |
-| `deploy.yml` | 34 | GitHub Pages 自動デプロイ（`docs/` 配下を公開） |
-| `secret-scan.yml` | 22 | gitleaks による秘密情報スキャン（全履歴） |
+| `test-gates.yml` | 72 | 機能契約ハーネス＋L1/L2。**Python/Node をファイルの有無で自動判定**、カバレッジ80%ゲート、L3 はコメントアウト |
+| `lifecycle-check.yml` | 42 | 手動起動で `trace-check.sh` を実行。レポートを artifact とジョブサマリへ |
+| `deploy.yml` | 34 | GitHub Pages デプロイ（`docs/` 配下を公開。手動起動） |
+| `secret-scan.yml` | 23 | gitleaks による秘密情報スキャン（全履歴） |
 
 **注**: これらは配布先プロジェクトへ置くサンプル。キット自身の CI は下記。
 

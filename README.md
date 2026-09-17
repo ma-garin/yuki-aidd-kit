@@ -54,7 +54,7 @@ WebSpec2Doc で運用してきたテスト活動（テスト戦略・DoD・ISO/I
 - **`templates/test/`**（8 本）: `TESTING_STRATEGY` / `DEFINITION_OF_DONE` / 29119 の計画・設計仕様・完了報告・インシデント / `system_test_cases.csv`（Whittaker ツアー観点・severity 列）/ `feature_contracts.yml`
 - **`scripts/quality_harness.py`**: 機能契約を検証（実行経路の無い implemented、critical/high の失敗系テスト欠落、契約未登録モジュール、未実装マーカーなど 9 種。NG>0 で exit 1）。回帰テスト `scripts/test-quality-harness.sh` 11 ケース。**雛形が新規プロジェクトで PASS することもテスト**
 - **`scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`**: E2E 合格時に git hash + UI hash + 時刻を `.ui-verified` に記録し、未検証・検証後変更の UI コミットを止める。刷新期間は `.rebuild-mode` で明示的に免除
-- `scripts/init-test-docs.sh <対象> [--ci]` で一式を配置、`github-actions/test-gates.yml` で CI 実行
+- `scripts/init-test-docs.sh <対象> [--ci]` で一式を配置、`github-actions/test-gates.yml` で CI 実行（手動起動のみ）
 - `done-gate`（変更タイプ別・ゲート実行の明記）/ `test-automation` / `qa-review-standards`（29119 導線）/ `rules/functional-integrity.md`（機械検証への導線）を更新
 
 ```bash
@@ -86,7 +86,7 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 - `templates/lifecycle/`: 工程成果物の雛形11本。`./scripts/init-lifecycle.sh <対象>` で配置（既存ファイルは上書きしない）
 - **`scripts/trace-check.sh`**: 要件が設計・実装・テストへ紐づいているかを目視でなく機械検証する。重複定義／未定義参照／所有ファイル違反／追跡表未記載／カバー漏れ／孤立テストの6種別を検出し、NG>0 で exit 1（CI でそのまま落とせる）
 - コマンド `/rfd`・`/lifecycle <工程名>`・`/trace` を追加
-- GitHub 連携: Issue テンプレート（RFD・要件・欠陥）、関係 ID 欄付き PR テンプレート、PR で trace-check を回す `lifecycle-check.yml`
+- GitHub 連携: Issue テンプレート（RFD・要件・欠陥）、関係 ID 欄付き PR テンプレート、手動起動で trace-check を回す `lifecycle-check.yml`
 - 回帰テスト `scripts/test-trace-check.sh`（15ケース）。**配布する雛形が最初から NG=0 で始まること**もテスト対象
 
 ```bash
@@ -204,7 +204,7 @@ yuki-aidd-kit/
 │   ├── test/                 # テスト戦略・DoD・29119 文書・テストケース CSV・機能契約の雛形8本
 │   ├── github/               # Issue（RFD/要件/欠陥）・PR テンプレート
 │   └── CURRENT_STATE.md / ADR-template.md / lessons.md / implement-profile.md
-├── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates）
+├── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates。いずれも手動起動のみ）
 ├── .github/workflows/kit-ci.yml  # キット自身の CI（手動起動のみ）
 ├── VERSION                   # 版（git tag と対応）
 └── spec/                     # 現況仕様・運用条件・作り込み計画（キット自体を触るならまずここ）

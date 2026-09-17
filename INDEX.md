@@ -170,7 +170,7 @@ templates/: `design-system.md`（視覚的指示書。チェックリストは�
 ## templates/github/ — GitHub 連携（`--github` で配置）
 
 `ISSUE_TEMPLATE/`（RFD / 要件 / 欠陥）と `pull_request_template.md`（関係 ID とゲートのチェック欄）。
-CI は `github-actions/lifecycle-check.yml`（PR で `trace-check.sh` を実行し、追跡漏れを落とす）。
+CI は `github-actions/lifecycle-check.yml`（手動起動で `trace-check.sh` を実行し、追跡漏れを落とす。自動実行はしない）。
 
 ## 運用原則
 
