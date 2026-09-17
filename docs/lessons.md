@@ -31,6 +31,26 @@
 
 ---
 
+## 2026-09-17 ユースケース検証 — 「社内図書館の貸出管理を Excel から Web へ。HTML でモック」
+
+保守者から実際の依頼文をもらい、キットの手順どおりに作って「キットが本当に使えるか」を確かめた（`init-project.sh library-loan html` → `export-project.sh` → design-system + single-html-tool でモック → `check-design.sh` → `uiux_review`（Playwright で 14 状態）→ `done-gate`）。
+
+**Keep**
+- 依頼文 1 行から、規律（目的 1 行・残課題・未検証）と手順書（design-system / single-html-tool / uiux_review / done-gate）が意図どおり効いた。モックは tokens / components / layout / feedback / icons を**貼るだけ**で 5 画面が揃い、CSS を書き足したのは配置の 20 行だけ
+- `uiux_review` の「全状態を実機で開く」を Playwright で機械化したことで、目視だけでは出ない不具合（360px の横スクロール、hidden が効かないエラー印、KPI カードのズレ）が 3 件出た
+- 「作ったら check-design を叩く」を最初にやったおかげで、**キット側の欠陥（F-14）を配布先の最初の 1 回で踏めた**。出荷物のセルフテストだけでは配布先の形（`.claude/templates/`・貼り込み）は検証できていなかった
+
+**Problem**
+- `check-design.sh` は配布先で NG=426 を出した（tokens.css の場所・`.claude/` 走査・貼り込んだ定義行）。キット内の 7 ファイルに対しては NG=0 だったので気づけなかった。**「出荷物が自分で通る」と「配布先で使える」は別のテスト**
+- `layout.css` の globalbar は demo-shell.html の短い文言では崩れず、実案件の文言（「社内図書館 貸出管理」＋「総務部 図書係」＋テーマ）で初めて 360px を超えた。デモは**現実的な長さの文言**で作る
+- 自分の app.css の `.card + .card` が KPI 列の中にも効いた。部品のクラス（`.card`）に対する隣接セレクタは骨格の中で誤爆する
+
+**Try**
+- [x] `test-check-design.sh` に「配布先の形」のケースを追加（ケース10）→ 43 ケース
+- [ ] 他の検査スクリプト（check-docs は対象外、trace-check / quality_harness）にも「配布先で `.` を渡した形」のテストがあるか確認する
+- [ ] demo-shell.html の文言を実案件相当の長さにする（globalbar / topbar）
+- [ ] `references/components.md` に「`.card` への隣接セレクタは `.app-content >` で限定する」を足す
+
 ## /usage 週次記録（移行後に追記）
 
 | 週 | 基盤 | スキル | MCP | サブエージェント | 長コンテキスト | キャッシュミス | 上限に当たった回数 | 備考 |

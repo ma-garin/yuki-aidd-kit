@@ -213,6 +213,32 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 **是正案**: 移行後に `/usage` のスキル別内訳で観測する（B-10）。恒久策は `skill-creator` の eval を使った発火テストだが、コストが高いので**移行後の実測で問題が出たスキルだけ**に限定する。
 
+## 3c. ユースケース検証で見つかった finding（2026-09-17「社内図書館の貸出管理を Excel から Web へ。HTML でモック」）
+
+保守者から実際の依頼文を受け取り、キットの手順どおり（`init-project.sh html` → `export-project.sh` → design-system / single-html-tool → `check-design.sh` → `uiux_review` → `done-gate`）に作って検証した。**キット自身の欠陥が 3 件出て、その場で是正した。**
+
+### F-14 — `check-design.sh` が配布先プロジェクトで使い物にならなかった — **是正済み**
+
+**severity: High**（配布先で最初に叩いた瞬間に NG=426 を出し、利用者は検査そのものを無視するようになる）
+
+- evidence: `--tokens` の既定が `templates/tokens.css` 固定。配布先では `.claude/templates/tokens.css` にあるため「未定義トークン 426 件」
+- evidence: `.` を渡すと `.claude/` 配下のキット雛形（tokens.css の hex 定義）まで走査し「直値」として大量報告
+- evidence: 単一 HTML の規約どおり `<style>` に tokens.css を貼ると、その定義行（`--color-primary: #1976D2;`）115 件が直値扱い
+- 是正: `--tokens` 省略時は `templates/tokens.css` → `.claude/templates/tokens.css` の順に探す／`.claude` `.git` `node_modules` 等を走査から除外／カスタムプロパティの定義（`--x: 値`）を直値検査から除外。`test-check-design.sh` ケース10（7 assert）を追加し 43 ケースに
+
+### F-15 — `layout.css` の `.app-globalbar` が狭幅で画面幅を押し広げる — **是正済み**
+
+**severity: Medium**（360px で横スクロールが出る。demo-shell.html は文言が短くて再現しなかった）
+
+- evidence: `.app` が grid で、grid 項目の `min-width:auto` により nowrap のグローバルバーが最小幅を主張し、`document.scrollWidth` 715 > 360
+- 是正: `.app { grid-template-columns: minmax(0, 1fr) }` ＋ `.app > * { min-width: 0 }`、globalbar の子を `flex: 0 1 auto; min-width: 0`。あわせて ≦480px でパンくずを非表示（見出しと主操作を優先）
+
+### F-16 — `components.css` の部品に `hidden` 属性が効かない — **是正済み**
+
+**severity: Low**（`.field-err-text { display:flex }` が `hidden` の `display:none` に勝ち、エラー印が常時表示された）
+
+- 是正: ユーティリティに `[hidden] { display: none !important; }` を追加
+
 ### severity 別サマリ（更新）
 
 | severity | 件数 | ID |
@@ -221,7 +247,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
 | Medium | 3 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測） |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 8 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（2026-09-17 M15） |
+| 是正済み | 14 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／**F-14 F-15 F-16（ユースケース検証）** |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 
