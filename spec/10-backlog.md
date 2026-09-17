@@ -181,7 +181,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
     6. **常時読み込み層の行数上限**（B-11 で決めた値）の超過検出 ← 新規。ダイエットの逆戻りを防ぐ
     7. PRD の「1スキル ≦ 200行 / 1コマンド ≦ 40行」超過の検出（B-13 DS-5 完了までは WARN）
   - 出力は3層（結論 → 種別ごと → 全件は `check-docs-report.md`）
-  - `kit-ci.yml` は PR / push(main) / dispatch で `test-hooks.sh` `test-trace-check.sh` `test-quality-harness.sh` `check-docs.sh` `check-design.sh` を実行。**`GATES_REQUESTED=1` を付ける**
+  - `kit-ci.yml` は workflow_dispatch（手動起動のみ。2026-09-17 決定）で `test-hooks.sh` `test-trace-check.sh` `test-quality-harness.sh` `check-docs.sh` `check-design.sh` を実行。**`GATES_REQUESTED=1` を付ける**
 - **完了条件**: 現状のリポジトリに対して F-01・F-02・F-03 を**先に検出できる**（赤→緑）。`scripts/test-check-docs.sh` が正常ケースと各 NG ケースを両方通す。PR で全ジョブ green
 - **検証**: `bash scripts/check-docs.sh`（NG=0）／`bash scripts/test-check-docs.sh`／PR の Actions
 - **見積**: 自分 8〜12 往復（≒25分）
@@ -252,6 +252,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
 | Q-6 | テスト出力の絞り込み hook | **入れる。既定 OFF、`FILTER_TEST_OUTPUT=1` で有効化** | 効果は大きいが失敗の全文が見えなくなる。`GATES_REQUESTED=1` と同じ「明示して使う」型に揃える |
 | Q-7 | Opus へ上げる条件 | **暫定3条件（複雑な設計判断／多段推論／Sonnet が2周しても収束しない）。移行後1週間の `/usage` 実測で見直す** | 公式指針に沿う。数値の根拠が無い段階で細かく決めない（A-5） |
 | Q-8 | 作業単位 | **バックログ1項目 ＝ 1 PR** | Roadmap 作業ルール③「1項目完了ごとに個別コミット」。レビューと revert の単位を小さく保つ |
+| Q-10 | キット自身の CI の起動方法 | **`workflow_dispatch` のみ（手動起動）。PR / push での自動実行はしない** | 保守者決定 2026-09-17「自動処理は認めない」。ゲートは要求した時だけ動かす（H-7）という規律を CI にも適用する。セッションを起こす定時確認・PR イベント購読も同様に使わない |
 
 ### 実行順（決定）
 
