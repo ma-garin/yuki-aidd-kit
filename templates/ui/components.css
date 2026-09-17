@@ -169,6 +169,7 @@
 @keyframes skeleton-pulse { 50% { opacity: .5; } }
 
 /* ── ユーティリティ ── */
+[hidden] { display: none !important; }   /* display:flex/grid の部品でも hidden 属性を効かせる（.field-err-text 等が消えなかった実不具合） */
 .mono { font-family: var(--font-mono); }
 .muted { color: var(--color-text-secondary); }
 .measure { max-width: var(--text-measure); }

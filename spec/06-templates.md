@@ -169,6 +169,7 @@ Playwright でライト・ダーク・360px・モーダル・トーストを確�
 
 - 群: ボタン `.btn .btn--primary .btn--ghost .btn--danger`（`aria-busy` で二重送信対策）/ 入力 `.input .select .textarea .field .field-err-text .banner-err` / バッジ `.badge-*`（medium の文字色は `--color-medium-text`）/ カード `.card .card-grid` / `.score-card` / `.kpi` / 表 `.table .table-wrap .col-filter-btn .col-pop .pagebar .pager` / `.toggle` `.seg` / `.info-ic .tooltip`（`.edge-left/.edge-right`）/ `.modal-backdrop .modal .modal-{head,body,foot}`（`.modal-head .modal-close` に限定して footer のボタンを壊さない）/ `.notif-pop .notif-item.unread` / `.empty-state`（`feedback.js` と同じクラス名。静的マークアップ用）/ `.callout--*` / `.skeleton` / ユーティリティ
 - 含まない: トースト・確認ダイアログ（`feedback.js` が自己注入）
+- ユーティリティに `[hidden] { display:none !important }`（display:flex の部品でも `hidden` 属性が効く。F-16）
 - SKILL.md 側の直値（`#856404` / `#20242B` / `#F2F4F7` / `rgba(8,12,18,.46)` / `#fff`）は `tokens.css` に `--color-medium-text` `--color-tooltip-bg/-text` `--color-scrim` `--color-knob` を追加して解消（真実源も同時更新）
 
 ### `layout.css`（99行）
@@ -176,7 +177,8 @@ Playwright でライト・ダーク・360px・モーダル・トーストを確�
 - A) `.app` = `.app-globalbar`（44px 固定・折り返さない）+ `.app-body`（`.sidebar` 240px sticky・本文と別スクロール・`.collapsed` 72px + `.maincol`（`.app-topbar` min 56px sticky + `.app-content` がスクロール））
 - B) `.layout-2pane` + `.sidenav`（軽量ツール）
 - `.kpi-row` `.filter-row` `.chip`、`.app.is-settings` で裏側の地色を変える、`.measure` で本文幅
-- ブレークポイント: ≦1366 sidebar 200px / ≦768 off-canvas（`.open`）・globalbar のラベル非表示 / ≦360 見出し縮小・KPI 1列
+- ブレークポイント: ≦1366 sidebar 200px / ≦768 off-canvas（`.open`）・globalbar のラベル非表示 / ≦480 パンくず非表示 / ≦360 見出し縮小・KPI 1列
+- `.app` は `grid-template-columns: minmax(0,1fr)` ＋ `.app > * { min-width:0 }`（globalbar の nowrap な中身が画面幅を押し広げない。F-15）
 
 ### フレームワーク別（S12）
 
