@@ -136,6 +136,7 @@
           <li><a href="#export">導入 B：プロジェクトに同梱する</a></li>
           <li><a href="#first">はじめての会話</a></li>
           <li><a href="#promises">AI との 3 つの約束</a></li>
+          <li><a href="#handson">ハンズオン：事例を通しでやる</a></li>
           <li><a href="#daily">1 日の流れ</a></li>
           <li><a href="#phrases">こんな時はこう言う</a></li>
           <li><a href="#gates">品質チェックの回し方（手動）</a></li>
@@ -160,6 +161,7 @@
           <li><a href="#export">導入 B：プロジェクトに同梱する</a></li>
           <li><a href="#first">はじめての会話</a></li>
           <li><a href="#promises">AI との 3 つの約束</a></li>
+          <li><a href="#handson">ハンズオン：事例を通しでやる</a></li>
           <li><a href="#daily">1 日の流れ</a></li>
           <li><a href="#phrases">こんな時はこう言う</a></li>
           <li><a href="#gates">品質チェックの回し方</a></li>
@@ -480,6 +482,99 @@ uiux_review で通常・0 件・狭い画面の 3 状態を実機で開いて確
         <div class="callout warn">
           <div class="callout-title">「hook にブロックされました」と出たら</div>
           <p>いま <code>/implement</code> の最中です。調べ直したくなったら <code>/plan</code> と打てば解除されます。</p>
+        </div>
+      </section>
+
+      <section id="handson">
+        <h2><span class="h2-ic">★</span>ハンズオン：事例を通しでやる（30〜40 分）</h2>
+        <p>ここまでの説明を、実際の依頼 1 つで通しで体験します。教材は同梱の事例 <code>docs/examples/library-loan/</code>（完成品・ソース・仕様・引き継ぎメモ）。<strong>依頼文はこの 1 行だけ</strong>です。</p>
+        <div class="chat">
+          <div class="you"><span class="who">依頼</span>社内図書館の貸出管理を Excel から Web システムにする。HTML でモックを作ってください</div>
+        </div>
+        <p>この 1 行で、AI は「単一 HTML の規約」「画面の作り方」「実機で全状態を見る」「完了判定」の 4 つの手順書を自分で開き、5 画面のモックを作りました。書き足した CSS は配置の 20 行だけで、色・余白・部品・骨格はキットの CSS を貼っただけです。</p>
+
+        <h3>まず完成品を見る（5 分）</h3>
+        <ol class="steps">
+          <li><strong>ブラウザで開く</strong>
+            <pre><code>open docs/examples/library-loan/library-loan.html   <span class="c"># Windows は start、Linux は xdg-open</span></code></pre>
+            <p class="why">「キットで作るとこういう見た目・こういう振る舞いになる」を先に知っておくと、後の手順で何を確認すればいいかが分かります。</p>
+          </li>
+          <li><strong>操作して「結果が返る」を体感する</strong>
+            <p>蔵書で「貸出する」→ モーダルで利用者を選ぶ → 「貸し出す」→ 処理中 → 「貸し出しました」のトースト。貸出中で「返却する」→ 確認ダイアログ（ボタンは「返却済みにする」であって「はい」ではない）。検索欄に「存在しない本」→ 0 件の空状態と「絞り込みを解除する」ボタン。</p>
+          </li>
+          <li><strong>失敗の見え方を体感する</strong>
+            <p>設定 → 「保存系の操作を失敗させる」を ON → 貸出中で返却 → <strong>消えない</strong>赤いメッセージと「もう一度返却する」が出ます。これが「エラーが発生しました」で止まらせない、というキットの約束です。ブラウザの幅を 360px まで縮めて、メニューがハンバーガーになるのも見てください。</p>
+          </li>
+        </ol>
+
+        <h3>自分の手で同じものを作る（25 分）</h3>
+        <p>参加者が Claude Code を使って、事例と同じ依頼を出します。AI の返事に「目的:」「残課題:」「未検証」が出ること、hook が動くことを見るのが目的です。</p>
+        <ol class="steps">
+          <li><strong>空のプロジェクトを作り、キットを同梱する</strong>
+            <pre><code>cd ~/work/yuki-aidd-kit
+./scripts/init-project.sh library-loan html          <span class="c"># 種別 html = 単一 HTML ツール</span>
+./scripts/export-project.sh ~/work/library-loan      <span class="c"># .claude/ と AGENTS.md / CLAUDE.md が入る</span>
+cd ~/work/library-loan &amp;&amp; claude</code></pre>
+            <p class="expect"></p>
+            <pre><code>✅ 単一HTMLツール スキャフォールド作成
+=== AIDD Kit プロジェクト配布（版: 6.3.0 ...）===
+✅ スキル: 19個 ... ✅ .claude/KIT_VERSION: ...</code></pre>
+          </li>
+          <li><strong>依頼を 1 行で出す</strong>
+            <div class="chat">
+              <div class="you"><span class="who">あなた</span>社内図書館の貸出管理を Excel から Web システムにする。HTML でモックを作ってください</div>
+              <div class="ai"><span class="who">AI（実際の要約）</span>目的: 単一 HTML で貸出管理のモックを作る
+（single-html-tool と design-system の手順書を開き、tokens.css / components.css / layout.css / feedback.js / icons.js を貼り込む形で作成）
+library-loan.html を作りました。5 画面（ダッシュボード / 蔵書 / 貸出中 / 利用者 / 設定）。
+判断が要る点: ①延滞の通知手段（メール / Teams / 一覧だけ）②貸出期間と冊数上限の既定値（仮に 14 日・3 冊）
+残課題: Excel の取り込みは UI のみ／利用者の追加・認証・サーバ保存は未実装／本物の通信失敗は未検証</div>
+            </div>
+            <p class="why">「判断が要る点」を AI が勝手に決めず聞いてくること、「未検証」を隠さず書くことを、参加者に見せます。ここで答えを返して続けます。</p>
+          </li>
+          <li><strong>機械で検査する（人が起動する）</strong>
+            <pre><code>./scripts/check-design.sh .</code></pre>
+            <p class="expect"></p>
+            <pre><code>=== デザイン検査: /Users/you/work/library-loan ===
+対象: 1 ファイル
+✅ NG=0</code></pre>
+            <p class="why">「色や余白を数字でベタ書きしていないか」「外部サイトからフォントを読んでいないか」「alert() を使っていないか」を機械が見ます。人がコードを読む前に、機械で落とせるものを落とす、がこのキットの考え方です。</p>
+          </li>
+          <li><strong>実機で全状態を見させる</strong>
+            <div class="chat">
+              <div class="you"><span class="who">あなた</span>uiux_review で、通常・0 件・失敗・処理中・モーダル・360px 幅を実際に開いて確認して</div>
+              <div class="ai"><span class="who">AI</span>目的: 全状態を実機で確認する
+Playwright で 14 状態を開きました。横スクロールなし、console error なし。
+見つけた不具合: 360px でグローバルバーが画面幅を押し広げていた → 直しました。
+残課題: なし</div>
+            </div>
+            <p class="why">「作った」と「効いている」は別、を体感する場面です。事例では、この確認で 3 件の不具合が見つかりました（うち 2 件はキット側の部品の欠陥で、その場でキットを直しました）。</p>
+          </li>
+          <li><strong>完了判定と引き継ぎメモ</strong>
+            <div class="chat">
+              <div class="you"><span class="who">あなた</span>done-gate で完了判定して、CURRENT_STATE.md を更新して</div>
+              <div class="ai"><span class="who">AI</span>目的: 完了判定
+未完了。残り 2 項目: L3 E2E は未実行（要求なし）／Excel 取り込みは未実装。
+モックとしての完了基準（5 画面・全状態確認・check-design NG=0・単一ファイル・秘密情報なし）は満たしています。
+CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました。</div>
+            </div>
+            <p class="why">「未完了。残り N 項目」と出るのが正常です。何が済んで何が残っているかが一覧になるので、次の人（または明日の自分）がそこから始められます。</p>
+          </li>
+        </ol>
+
+        <h3>進行役向けメモ</h3>
+        <table>
+          <thead><tr><th>時間</th><th>やること</th><th>参加者に見せたいこと</th></tr></thead>
+          <tbody>
+            <tr><td>0〜5 分</td><td>完成品を開いて触る</td><td>結果が返る（トースト・確認・空状態・消えない失敗）</td></tr>
+            <tr><td>5〜10 分</td><td>init-project → export → claude 起動</td><td>導入 B の実際。<code>.claude/</code> の中身</td></tr>
+            <tr><td>10〜25 分</td><td>依頼 1 行 → 生成 → 判断を返す</td><td>「目的:」「残課題:」「判断が要る点」。テストを勝手に回さない</td></tr>
+            <tr><td>25〜32 分</td><td>check-design → uiux_review</td><td>機械で落とす → 実機で見る、の順番</td></tr>
+            <tr><td>32〜40 分</td><td>done-gate → CURRENT_STATE</td><td>「未完了。残り N 項目」が正常であること。引き継ぎメモの形</td></tr>
+          </tbody>
+        </table>
+        <div class="callout info">
+          <div class="callout-title">事例の中身を読みたいとき</div>
+          <p><code>docs/examples/library-loan/README.md</code> にファイルの説明と再生成の方法があります。<code>app.css</code>（20 行）と <code>app.js</code>（画面ロジック）がモック固有のソースで、それ以外はキットの部品をそのまま貼っています。仕様は <code>spec.md</code>、引き継ぎは <code>CURRENT_STATE.md</code>。</p>
         </div>
       </section>
 

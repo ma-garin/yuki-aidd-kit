@@ -34,6 +34,7 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - **`skills/design-system/SKILL.md` を 473 → 115 行に**: 値の唯一の真実源を `templates/tokens.css` に一本化し、決めの理由は `references/tokens.md`、部品の使い分けと落とし穴（実不具合由来 7 件）は `references/components.md` へ。`check-docs.sh` の「SKILL ≦ 200 行」を **NG に昇格**
 - `tokens.css` に `--color-medium-text` / `--color-scrim` / `--color-tooltip-bg/-text` / `--color-knob` を追加（直値解消のため）
 - **`docs/lessons.md`**（新設）: キット自身の改善ログ。本セッションと移行準備が最初のエントリ。移行後の週次 `/usage` 記録欄付き
+- **`docs/examples/library-loan/`**（新設）: 事例「社内図書館の貸出管理を Excel から Web へ。HTML でモック」。依頼文 1 行からキットの手順だけで作った完成品・ソース・仕様・引き継ぎメモ。`docs/userguide.html` の「ハンズオン」章の教材。この検証でキットの欠陥 3 件（F-14〜F-16）を見つけて是正
 - `export-project.sh` の settings.json に `block-explore.sh`（Read/Grep/Glob）を配線。グローバル導入と配布先で `/implement` の振る舞いが同じになった
 
 ## Ver.6.3 での主な更新（2026-08-25）— デザイン: トークン実物・画面の作り方・フレームワーク別適用
@@ -175,6 +176,7 @@ yuki-aidd-kit/
 │   ├── PROJECT-FIT-REPORT.md             # 実プロジェクト適合レポート
 │   ├── rules-rationale/                  # rules の根拠・原文・実測記録（毎回は読まない）
 │   ├── lessons.md                        # キット自身の改善ログ（Keep / Problem / Try、週次 /usage）
+│   ├── examples/library-loan/            # 事例: 貸出管理モック（完成品・app.css/js・build.py・spec・CURRENT_STATE）
 │   ├── userguide.html                    # ユーザーガイド（概要・導入。初学者向け）
 │   └── yuki-aidd-kit-manual.html         # HTML 取説（13 章）
 ├── rules/                    # 規律 4本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
