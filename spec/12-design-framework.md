@@ -116,7 +116,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 
 - **完了条件**: `frameworks.md` が「値の説明」でなく「出荷物への導線＋分担表」に縮む
 
-### DS-4. `scripts/check-design.sh`（新規）
+### DS-4. `scripts/check-design.sh`（新規）— **実装済み 2026-09-17**（`check_design.py` 236行 ＋ `test-check-design.sh` 36ケース。実装時の判定範囲は `spec/05-scripts.md`「デザイン検査」が正）
 
 `templates/design-system.md` の再現チェックリストのうち**機械判定できるものを実行する**。
 
@@ -127,7 +127,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 | 未使用トークン | 定義されているが誰も参照していないもの（WARN） |
 | 外部 CDN | `fonts.googleapis.com` / アイコン CDN の読み込み（オフライン要件のあるプロジェクトでは NG） |
 | `alert(` / `confirm(` | ブラウザ標準ダイアログの直接使用（`feedback.js` を使うべき） |
-| タップ領域 | `button` / `a` に `min-height` が効いているか（`tokens.css` を読み込んでいるか） |
+| tokens.css 読込 | `.html` が `tokens.css` を読み込んでいるか（`<link>` か `<style>` 内の定義）。タップ領域の `min-height` は `tokens.css` 側の適用ルールで担保 |
 
 - 出力は3層（結論 NG 件数 → 種別ごと → 全件は `check-design-report.md`）。既存の `trace-check.sh` / `quality_harness.py` と同じ作法
 - NG>0 で exit 1

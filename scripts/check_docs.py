@@ -300,7 +300,7 @@ def check_spec_inventory(root: Path, r: Result) -> None:
         if not f.is_file():
             continue
         rel = f.relative_to(root).as_posix()
-        if rel.split("/")[0] in (".git", "spec") or rel in ("check-docs-report.md", "trace-check-report.md"):
+        if rel.split("/")[0] in (".git", "spec") or rel in ("check-docs-report.md", "trace-check-report.md", "check-design-report.md"):
             continue
         names = {rel} | {rel[len(pre):] for pre in INVENTORY_PREFIXES if pre and rel.startswith(pre)}
         if not any(f"`{n}`" in text for n in names):

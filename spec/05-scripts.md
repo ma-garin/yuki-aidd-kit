@@ -245,7 +245,28 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 - 出力は3層、全件は `check-docs-report.md`（`.gitignore` 済み）。NG>0 で exit 1
 - 履歴文書（`docs/Roadmap.md` / `docs/AUDIT-2026-07.md`）は「当時の事実」なので数値の突合対象にしない
 
-## 回帰テスト（6件・全 green）
+## デザイン検査（2026-09-17 追加・S11）
+
+### `check-design.sh` → `check_design.py`
+
+```bash
+./scripts/check-design.sh [--root DIR] [--tokens templates/tokens.css] [-o REPORT] [PATH ...]   # PATH 省略時 templates/ui templates/components
+```
+
+| # | 検査 | 内容 | 既定 |
+|---|---|---|---|
+| 1 | 直値 | 色（`#hex` / `rgb(` / `hsl(`）はどこでも。px は padding / margin / gap / border-radius / font-size / line-height に限る（幅・高さ・ブレークポイントは対象外）。除外: 3px 以下のヘアライン、`var(--x, フォールバック)` の中、行内 `token-exempt` コメント、`tokens.css` 自身 | NG |
+| 2 | 未定義トークン | `var(--x)` が `tokens.css` にも自ファイルにも無い | NG |
+| 3 | 未使用トークン | `tokens.css` で定義されているが対象のどこからも参照されない | WARN |
+| 4 | 外部 CDN | `<link>` / `<script src>` / `@import` / `url()` が `http(s)://` を読む | NG |
+| 5 | alert() | `alert(` `confirm(` `prompt(`（`window.` 付き含む）の直接使用。`Feedback.confirm(` と関数定義は対象外 | NG |
+| 6 | tokens.css 読込 | `.html` に `tokens.css` の `<link>` も `<style>` 内の `--color-primary:` 定義も無い | NG |
+
+- `.html` は `<style>` / `<script>` ブロックだけを見る。`.js` は自己注入 CSS（テンプレート文字列）を含めて全文
+- 出力は3層、全件は `check-design-report.md`（`.gitignore` 済み）。対象なしは exit 0
+- 配布先では `./scripts/check-design.sh static src` のように対象を渡す（`templates/design-system.md` 再現チェックリストの機械判定分）
+
+## 回帰テスト（7件・全 green）
 
 | スクリプト | 行 | ケース数 | 2026-09-16 実測 | 特筆 |
 |---|---|---|---|---|
@@ -255,6 +276,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | `test-install.sh` | 123 | **66** | PASS=66 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
 | `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
 | `test-check-docs.sh` | 104 | 9 ケース群 | 全 PASS | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
+| `test-check-design.sh` | 126 | **36** | PASS=36 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。
 雛形が NG を出すと利用者が検査結果そのものを無視するようになる、という理由が明記されている。
