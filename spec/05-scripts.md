@@ -273,9 +273,9 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | `test-hooks.sh` | 127 | **19** | PASS=19 / FAIL=0 | AUDIT A-01 の再発防止。stdin JSON を実際に流して期待出力を assert |
 | `test-trace-check.sh` | 179 | **15** | PASS=15 / FAIL=0 | ケース1 整合／ケース2 NG を仕込む／ケース3 対象なしでスキップ／**ケース4 `init-lifecycle.sh` 直後の雛形が NG=0** |
 | `test-quality-harness.sh` | 89 | **11** | PASS=11 / FAIL=0 | 検出9種＋allowlist 動作＋**配布雛形が新規プロジェクトで PASS** |
-| `test-install.sh` | 123 | **66** | PASS=66 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
+| `test-install.sh` | 130 | **73** | PASS=73 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
 | `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
-| `test-check-docs.sh` | 104 | 9 ケース群 | 全 PASS | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
+| `test-check-docs.sh` | 105 | **25** | PASS=25 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
 | `test-check-design.sh` | 126 | **36** | PASS=36 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。

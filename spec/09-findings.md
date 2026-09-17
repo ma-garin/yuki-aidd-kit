@@ -98,7 +98,9 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 「画面の作り方」を `references/screen-construction.md` に分割し、SKILL.md は索引＋判断に絞る。
 `templates/tokens.css` との真実源関係を壊さないこと。
 
-### F-05 — 自己改善ループ（Vision 到達点③）が一度も回っていない ★
+### F-05 — 自己改善ループ（Vision 到達点③）が一度も回っていない ★ — **是正済み（M17 S15）**
+
+是正内容: `docs/lessons.md` を新設し、本セッション（読解→spec→M15〜M17）を Keep / Problem / Try の最初のエントリにした。移行後の週次 `/usage` 記録欄を持つ。`templates/lessons.md` は配布雛形のまま（Q-2）。
 
 **severity: Medium**（キットの3大目標のうち1つが未達）
 
@@ -137,7 +139,9 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 **是正案**: `spec/10-backlog.md` B-01。
 
-### F-08 — `export-project.sh` が生成する settings.json に `block-explore.sh` の配線が無い
+### F-08 — `export-project.sh` が生成する settings.json に `block-explore.sh` の配線が無い — **是正済み（M17 S15、案①・Q-3）**
+
+是正内容: ヒアドキュメントに `Read|Grep|Glob` → `block-explore.sh` を追加（`.claude/mode` が無ければ exit 0 で副作用なし）。出力メッセージの「/implement 利用時に追記」を削除。`test-install.sh` に配線と JSON 妥当性の assert を追加。
 
 **severity: Low**（仕様として意図的だが、利用者から見ると `/implement` が静かに無効化される）
 

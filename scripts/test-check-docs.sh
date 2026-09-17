@@ -14,7 +14,7 @@ expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出�
 expect_noout(){ printf '%s' "$3" | grep -qF -- "$2" && ng "$1" "出力に '$2' が出た" || ok "$1"; }
 
 # テスト実行の代替（各検査の突合に集中するため、実テストの再実行はしない）
-export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=71,test-git-gates.sh=27"
+export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=73,test-git-gates.sh=27"
 
 fresh() { # 複製を作り直してパスを返す
   rm -rf "$TMP/copy"; mkdir -p "$TMP/copy"
@@ -50,7 +50,7 @@ grep -q "| 掲載漏れ | skills/retro |" "$TMP/report.md" && ok "種別「掲�
 
 echo "[ケース4: ケース数のズレ]"
 C=$(fresh)
-OUT=$(CHECK_DOCS_TEST_TOTALS="test-hooks.sh=20,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=71,test-git-gates.sh=27" run "$C"); RC=$?
+OUT=$(CHECK_DOCS_TEST_TOTALS="test-hooks.sh=20,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=73,test-git-gates.sh=27" run "$C"); RC=$?
 expect_exit "実測が記載と違えば exit 1" 1 "$RC"
 expect_out  "種別「ケース数」で検出" "ケース数" "$OUT"
 OUT=$(CHECK_DOCS_TEST_TOTALS= run "$C" --skip-tests); RC=$?
