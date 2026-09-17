@@ -15,8 +15,10 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
-./scripts/test-hooks.sh                       # hooks の回帰テスト（11ケース）
+./scripts/test-hooks.sh                       # hooks の回帰テスト（19ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
+./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（66ケース）
+./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置

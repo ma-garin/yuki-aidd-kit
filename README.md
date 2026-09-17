@@ -80,8 +80,10 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
-./scripts/verify.sh      # 配置確認（リストは自動導出）
-./scripts/test-hooks.sh  # hooks の回帰テスト（11ケース）
+./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
+./scripts/test-hooks.sh  # hooks の回帰テスト（19ケース）
+./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（66ケース。実 ~/.claude には触らない）
+./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ```
 
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md` を書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
