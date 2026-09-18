@@ -101,6 +101,28 @@
     .mobile-toc ol { margin: 8px 0 0; }
     details.more { border: 1px dashed var(--border); border-radius: var(--radius); padding: 8px 14px; margin: 8px 0 14px; background: var(--surface); }
     details.more summary { cursor: pointer; color: var(--accent-dark); font-weight: 700; font-size: 14px; }
+    .fig { background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin: 10px 0 8px; overflow-x: auto; }
+    .fig svg { display: block; min-width: 720px; width: 100%; height: auto; font-family: inherit; }
+    .fig-cap { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+    .sv-box { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
+    .sv-box.lft { fill: #eef6ff; stroke: #9cc4f0; }
+    .sv-box.rgt { fill: #eff8e8; stroke: #a9d98a; }
+    .sv-box.mid { fill: #fff7e6; stroke: #e9c07a; }
+    .sv-box.done { fill: #eff8e8; stroke: #7cb342; }
+    .sv-box.part { fill: #fff7e6; stroke: #e9a13b; }
+    .sv-box.none { fill: #f3f4f6; stroke: #b9bec4; }
+    .sv-t { font-size: 13px; font-weight: 700; fill: var(--text); }
+    .sv-s { font-size: 11px; fill: var(--muted); }
+    .sv-v { fill: none; stroke: #dfeed2; stroke-width: 14; stroke-linejoin: round; stroke-linecap: round; }
+    .sv-link { stroke: #7cb342; stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+    .sv-flow { stroke: #b9bec4; stroke-width: 1.5; fill: none; }
+    .sv-h { font-size: 12px; font-weight: 700; fill: var(--muted); }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; margin: 0 0 14px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); display: inline-block; }
+    .legend .i-done { background: #eff8e8; border-color: #7cb342; }
+    .legend .i-part { background: #fff7e6; border-color: #e9a13b; }
+    .legend .i-none { background: #f3f4f6; border-color: #b9bec4; }
     footer { color: var(--muted); font-size: 13px; text-align: center; padding: 8px 0 24px; }
     @media (max-width: 900px) {
       .layout { grid-template-columns: 1fr; padding: 16px 12px 40px; }
@@ -140,6 +162,7 @@
           <li><a href="#daily">1 日の流れ</a></li>
           <li><a href="#phrases">こんな時はこう言う</a></li>
           <li><a href="#gates">品質チェックの回し方（手動）</a></li>
+          <li><a href="#vmodel">V字・W字モデルとの対応</a></li>
           <li><a href="#pro">Pro プラン・Sonnet で使うコツ</a></li>
           <li><a href="#design">画面の見た目を揃える</a></li>
           <li><a href="#trouble">困ったとき</a></li>
@@ -165,6 +188,7 @@
           <li><a href="#daily">1 日の流れ</a></li>
           <li><a href="#phrases">こんな時はこう言う</a></li>
           <li><a href="#gates">品質チェックの回し方</a></li>
+          <li><a href="#vmodel">V字・W字との対応</a></li>
           <li><a href="#pro">Pro・Sonnet で使うコツ</a></li>
           <li><a href="#design">画面の見た目を揃える</a></li>
           <li><a href="#trouble">困ったとき</a></li>
@@ -653,6 +677,156 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
             <tr><td>デザインの直値検査</td><td>CSS に <code>#1976D2</code> や <code>16px</code> をベタ書き、外部サイトからフォントやアイコンを読む、<code>alert()</code> を使う</td><td><code>./scripts/check-design.sh static src</code>（見たいフォルダを並べる）</td></tr>
           </tbody>
         </table>
+      </section>
+
+      <section id="vmodel">
+        <h2><span class="h2-ic">V</span>V字・W字モデルとの対応</h2>
+        <p>社内やお客様に「この進め方は何に基づいているのか」を説明するための章です。<strong>キットの工程ライフサイクル（<code>dev-lifecycle</code>）は V字モデルそのもの</strong>で、左右の対応は機械で検証されます。W字モデルの要素は一部だけ入っています。ここでは「できていること」と「できていないこと」を分けて示します。</p>
+
+        <h3>V字：左の成果物と右のテストが 1 対 1 で紐づく</h3>
+        <div class="fig">
+          <svg viewBox="0 0 880 380" role="img" aria-label="V字モデルとキットの工程・成果物の対応図">
+            <title>V字モデルとキットの成果物の対応</title>
+            <path class="sv-v" d="M 90 39 L 440 314 L 770 39"/>
+            <line class="sv-link" x1="220" y1="104" x2="640" y2="104"/>
+            <line class="sv-link" x1="280" y1="169" x2="560" y2="169"/>
+            <line class="sv-link" x1="340" y1="234" x2="520" y2="234"/>
+            <text class="sv-s" x="430" y="97" text-anchor="middle">REQ-F ↔ UAT（追跡表で UAT 列が必須）</text>
+            <text class="sv-s" x="420" y="162" text-anchor="middle">BD ↔ IT・ST（REQ-N は ST 列が必須）</text>
+            <text class="sv-s" x="430" y="227" text-anchor="middle">DD ↔ UT</text>
+
+            <rect class="sv-box lft" x="20" y="20" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="32" y="37">RFD</text><text class="sv-s" x="148" y="37" text-anchor="end">RFD</text>
+            <text class="sv-s" x="32" y="51">00-rfd.md</text>
+
+            <rect class="sv-box lft" x="80" y="85" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="92" y="102">要件定義</text><text class="sv-s" x="208" y="102" text-anchor="end">REQ</text>
+            <text class="sv-s" x="92" y="116">01-requirements.md</text>
+
+            <rect class="sv-box lft" x="140" y="150" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="152" y="167">基本設計</text><text class="sv-s" x="268" y="167" text-anchor="end">BD</text>
+            <text class="sv-s" x="152" y="181">02-basic-design.md</text>
+
+            <rect class="sv-box lft" x="200" y="215" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="212" y="232">詳細設計</text><text class="sv-s" x="328" y="232" text-anchor="end">DD</text>
+            <text class="sv-s" x="212" y="246">03-detailed-design.md</text>
+
+            <rect class="sv-box mid" x="370" y="295" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="382" y="312">実装</text><text class="sv-s" x="498" y="312" text-anchor="end">T</text>
+            <text class="sv-s" x="382" y="326">04-implementation.md</text>
+
+            <rect class="sv-box rgt" x="520" y="215" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="532" y="232">単体テスト</text><text class="sv-s" x="648" y="232" text-anchor="end">UT</text>
+            <text class="sv-s" x="532" y="246">05-unit-test.md</text>
+
+            <rect class="sv-box rgt" x="560" y="150" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="572" y="167">結合テスト</text><text class="sv-s" x="688" y="167" text-anchor="end">IT</text>
+            <text class="sv-s" x="572" y="181">06-integration-test.md</text>
+
+            <rect class="sv-box rgt" x="710" y="150" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="722" y="167">システムテスト</text><text class="sv-s" x="838" y="167" text-anchor="end">ST</text>
+            <text class="sv-s" x="722" y="181">07-system-test.md</text>
+
+            <rect class="sv-box rgt" x="640" y="85" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="652" y="102">受け入れテスト</text><text class="sv-s" x="768" y="102" text-anchor="end">UAT</text>
+            <text class="sv-s" x="652" y="116">08-acceptance-test.md</text>
+
+            <rect class="sv-box" x="700" y="20" width="140" height="38" rx="6"/>
+            <text class="sv-t" x="712" y="37">保守運用</text><text class="sv-s" x="828" y="37" text-anchor="end">OPS</text>
+            <text class="sv-s" x="712" y="51">09-operations.md</text>
+
+            <text class="sv-h" x="20" y="352">左：作るための成果物（上から下へ）</text>
+            <text class="sv-h" x="860" y="352" text-anchor="end">右：確かめるためのテスト（下から上へ）</text>
+          </svg>
+        </div>
+        <p class="fig-cap">緑の点線が V字の横の対応です。この対応は <code>traceability-matrix.md</code> の列として持ち、<code>./scripts/trace-check.sh</code> が空欄をカバー漏れとして検出します。目視ではなく機械が見ている、というのが説明の要点です。</p>
+
+        <h3>工程ごとに何が出て、何が機械で検証されるか</h3>
+        <table>
+          <thead><tr><th>工程</th><th>成果物と ID</th><th>機械で検証されること</th><th>人間の承認</th></tr></thead>
+          <tbody>
+            <tr><td>0 RFD</td><td><code>00-rfd.md</code> / RFD</td><td>ID の重複定義・未定義参照</td><td><strong>必須</strong></td></tr>
+            <tr><td>1 要件定義</td><td><code>01-requirements.md</code> / REQ-F・REQ-N</td><td>全 REQ が追跡表に載っているか</td><td><strong>必須</strong></td></tr>
+            <tr><td>2 基本設計</td><td><code>02-basic-design.md</code> / BD</td><td>REQ が BD に割り当て済みか</td><td>—</td></tr>
+            <tr><td>3 詳細設計</td><td><code>03-detailed-design.md</code> / DD</td><td>BD が DD に分解済みか</td><td>—</td></tr>
+            <tr><td>4 実装</td><td><code>04-implementation.md</code> / T</td><td>秘密情報の混入（pre-commit）</td><td>—</td></tr>
+            <tr><td>5 単体テスト</td><td><code>05-unit-test.md</code> / UT</td><td>孤立テスト（要件に紐づかない UT）</td><td>—</td></tr>
+            <tr><td>6 結合テスト</td><td><code>06-integration-test.md</code> / IT</td><td>同上</td><td>—</td></tr>
+            <tr><td>7 システムテスト</td><td><code>07-system-test.md</code> / ST</td><td>REQ-N の ST 列が空でないか</td><td>—</td></tr>
+            <tr><td>8 受け入れテスト</td><td><code>08-acceptance-test.md</code> / UAT</td><td>REQ-F の UAT 列が空でないか</td><td><strong>必須</strong></td></tr>
+            <tr><td>9 保守運用</td><td><code>09-operations.md</code> / OPS</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+        <p>入口基準と出口基準は <code>skills/dev-lifecycle/references/phase-gates.md</code> にあります。全工程共通の出口基準は 3 つで、未確定の TBD がゼロ、<code>trace-check.sh</code> が NG=0、自己レビューで Critical と High がゼロです。</p>
+
+        <h3>W字：並行するテスト活動はどこまで入っているか</h3>
+        <p>W字モデルは「左側の工程と<strong>並行して</strong>テスト設計と静的レビューを行い、欠陥を作り込んだ工程へ戻す」という型です。キットは名前こそ使っていませんが、出口基準の形で一部を取り込んでいます。正直な現状は次のとおりです。</p>
+        <div class="legend">
+          <span><i class="i-done"></i>できている</span>
+          <span><i class="i-part"></i>一部だけ</span>
+          <span><i class="i-none"></i>できていない</span>
+        </div>
+        <div class="fig">
+          <svg viewBox="0 0 880 300" role="img" aria-label="W字モデルの並行テスト活動と、キットの対応状況">
+            <title>W字モデルとキットの対応状況</title>
+            <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b9bec4"/></marker></defs>
+            <text class="sv-h" x="25" y="30">左側の工程（作る）</text>
+            <text class="sv-h" x="25" y="140">並行して行うテスト活動（W字の下側）</text>
+
+            <rect class="sv-box lft" x="25" y="45" width="150" height="38" rx="6"/><text class="sv-t" x="100" y="69" text-anchor="middle">RFD</text>
+            <rect class="sv-box lft" x="195" y="45" width="150" height="38" rx="6"/><text class="sv-t" x="270" y="69" text-anchor="middle">要件定義</text>
+            <rect class="sv-box lft" x="365" y="45" width="150" height="38" rx="6"/><text class="sv-t" x="440" y="69" text-anchor="middle">基本設計</text>
+            <rect class="sv-box lft" x="535" y="45" width="150" height="38" rx="6"/><text class="sv-t" x="610" y="69" text-anchor="middle">詳細設計</text>
+            <rect class="sv-box lft" x="705" y="45" width="150" height="38" rx="6"/><text class="sv-t" x="780" y="69" text-anchor="middle">実装</text>
+
+            <line class="sv-link" x1="100" y1="83" x2="100" y2="155"/>
+            <line class="sv-link" x1="270" y1="83" x2="270" y2="155"/>
+            <line class="sv-link" x1="440" y1="83" x2="440" y2="155"/>
+            <line class="sv-link" x1="610" y1="83" x2="610" y2="155"/>
+            <line class="sv-link" x1="780" y1="83" x2="780" y2="155"/>
+
+            <rect class="sv-box part" x="25" y="155" width="150" height="44" rx="6"/>
+            <text class="sv-t" x="100" y="174" text-anchor="middle">テスト計画</text><text class="sv-s" x="100" y="190" text-anchor="middle">雛形はある／工程に未接続</text>
+            <rect class="sv-box done" x="195" y="155" width="150" height="44" rx="6"/>
+            <text class="sv-t" x="270" y="174" text-anchor="middle">受入テスト設計</text><text class="sv-s" x="270" y="190" text-anchor="middle">出口基準で受入基準を必須化</text>
+            <rect class="sv-box part" x="365" y="155" width="150" height="44" rx="6"/>
+            <text class="sv-t" x="440" y="174" text-anchor="middle">IT・ST 設計</text><text class="sv-s" x="440" y="190" text-anchor="middle">ST のみ／IT 観点が無い</text>
+            <rect class="sv-box done" x="535" y="155" width="150" height="44" rx="6"/>
+            <text class="sv-t" x="610" y="174" text-anchor="middle">UT 設計</text><text class="sv-s" x="610" y="190" text-anchor="middle">出口基準で境界値・異常系</text>
+            <rect class="sv-box part" x="705" y="155" width="150" height="44" rx="6"/>
+            <text class="sv-t" x="780" y="174" text-anchor="middle">静的レビュー</text><text class="sv-s" x="780" y="190" text-anchor="middle">観点はある／記録の様式が無い</text>
+
+            <path class="sv-flow" stroke-dasharray="5 4" marker-end="url(#ah)" d="M 780 199 L 780 232 L 270 232 L 270 205"/>
+            <rect class="sv-box none" x="330" y="242" width="380" height="36" rx="6"/>
+            <text class="sv-t" x="520" y="265" text-anchor="middle">欠陥を作り込んだ工程へ戻す（W字の核・未対応）</text>
+          </svg>
+        </div>
+        <p class="fig-cap">上段の工程と下段のテスト活動が同じ時期に動くのが W字です。キットは 5 つのうち 2 つを出口基準として強制し、3 つは道具はあるが工程に結び付いていません。</p>
+
+        <div class="callout warn">
+          <div class="callout-title">説明するときに隠さない 3 点</div>
+          <p>①基本設計の出口基準に結合テストの観点が無い（要件と詳細設計には対応するテストの種が必須化されているのに、ここだけ抜けている）。②レビュー（静的テスト）の記録様式が無い。観点は <code>qa-review-standards</code> にあるが、工程ごとの記録が残らない。③欠陥に「どの工程で作り込んだか」の欄が無い。だから前工程へのフィードバックが人の記憶に依存する。</p>
+        </div>
+
+        <h3>いつ V字で進め、いつ進めないか</h3>
+        <p>すべての案件を V字で進めるわけではありません。キットは最初にこれを判断させます（<code>dev-lifecycle</code> の適用判断）。</p>
+        <table>
+          <thead><tr><th>進め方</th><th>適用する案件</th><th>成果物</th></tr></thead>
+          <tbody>
+            <tr><td>軽量 SDD</td><td>個人 PWA・単一 HTML ツール・PoC。工程分割のコストが回収できない規模</td><td><code>spec.md</code> / <code>plan.md</code> / <code>tasks.md</code> の 3 つ</td></tr>
+            <tr><td>工程ライフサイクル（V字）</td><td>他者へ納品・引き継ぐ／要件の合意が要る／テスト分割が要る／保守運用が続く</td><td><code>docs/lifecycle/</code> の 11 本 ＋ 追跡表</td></tr>
+          </tbody>
+        </table>
+        <p>両者は排他ではなく入れ子です。要件定義は <code>spec.md</code> の上位に立ち、実装記録の T-ID は <code>tasks.md</code> の番号をそのまま使います。同じ内容を二重に書かないための決めです。<a href="#handson">ハンズオンの事例</a>（貸出管理モック）は軽量 SDD 側を通っています。</p>
+
+        <h3>そのまま使える説明の型</h3>
+        <div class="callout">
+          <div class="callout-title">対外説明の 3 文</div>
+          <p>「開発工程は V字モデルに沿っています。要件・基本設計・詳細設計のそれぞれに、受け入れ・システム結合・単体のテストが 1 対 1 で対応します」<br>
+          「対応は追跡表で管理し、<code>trace-check.sh</code> が要件のカバー漏れと要件に紐づかないテストを検出します。目視確認ではありません」<br>
+          「RFD の決定、要件定義の確定、受け入れテストの合格判定は人間が承認します。AI は承認しません」</p>
+        </div>
+        <p>より詳しい規約は <code>skills/dev-lifecycle/SKILL.md</code>（10 工程・ID 体系・役割）、<code>references/phase-gates.md</code>（入口出口基準）、<code>references/test-levels.md</code>（レベル別の設計観点）にあります。ISO/IEC/IEEE 29119 の文書一式は <code>templates/test/</code> です。</p>
       </section>
 
       <section id="pro">
