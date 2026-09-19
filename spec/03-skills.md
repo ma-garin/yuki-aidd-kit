@@ -153,7 +153,7 @@
   8. フォント読み込み方針 — **既定はシステムフォントスタック**。CDN は「オフライン要件がなく常時オンラインと確定している場合」の任意強化に格下げ（single-html-tool / nfr-standards との矛盾解消）
   9. **画面の作り方**（2026-08 追加）— 直値禁止（*整理開始時点で色105種・角丸11種・文字21種あった*）/ 骨格（globalbar / sidebar / topbar / content）/ **操作には必ず結果を返す**（成功＝消えるトースト、失敗＝**消えない**＋次の行動、処理中、0件、危険操作の確認。`textContent` で入れる）/ アイコン（同梱・CDN 禁止・慣用の形）/ 文言規約6条
 - **references/frameworks.md**（36行。M17 S12 で縮小）: 出荷物への導線表（tokens / components.css / layout.css / feedback.js / icons.js / tailwind.config.js / streamlit_theme.py / check-design.sh）＋分担表（値＝本スキル / 実装規約＝ECC / 独創的 UI 生成＝`frontend-design` に**起動時トークンを渡す** / ブランド起こし＝`ckm:design` / 検証＝`uiux_review`＋`check-design.sh`）＋共通の落とし穴4点。FW 別の置き場所・読み込み順は `templates/ui/README.md` の1枚表へ移した
-- **注**: PRD の非機能「1スキル ≦ 200行」超過（F-04）は S13 で是正済み。`check-docs.sh` 検査7が NG で監視する
+- **注**: PRD の非機能「1スキル ≦ 200行」超過（F-04）は S13 で是正済み。`check-docs.sh` 検査7が NG で監視する。SKILL.md を変えたのに INDEX・本章が未更新なら検査 12（`--changed`）が止める
 
 ## nfr-standards（89行）
 

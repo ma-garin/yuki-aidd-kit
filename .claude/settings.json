@@ -11,6 +11,17 @@
             "statusMessage": "保守者の指示に応答済みか確認中"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/claude-code/hooks/docs-gate.py",
+            "timeout": 60,
+            "statusMessage": "変更を説明する文書が同じ差分で更新されているか確認中"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [

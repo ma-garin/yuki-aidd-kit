@@ -328,6 +328,26 @@ else
 fi
 
 echo ""
+echo "[docs-gate.py]"
+# git commit 以外・check_docs.py の無いプロジェクトでは何もしない。キット相当の一時リポジトリで文書未更新の commit を deny する
+DG="$TMP/dg"; mkdir -p "$DG/scripts" "$DG/claude-code/hooks" "$DG/docs"
+cp "$KIT_DIR/scripts/check_docs.py" "$DG/scripts/"
+printf 'echo hook\n' > "$DG/claude-code/hooks/foo.sh"; printf '# 説明\n\n`foo.sh` は挨拶する hook。\n' > "$DG/docs/guide.md"
+(cd "$DG" && git init -q && git -c user.name=t -c user.email=t@t add -A && git -c user.name=t -c user.email=t@t commit -q -m init)
+OUT=$(cd "$DG" && bash_json "git status" | CLAUDE_PROJECT_DIR="$DG" python3 "$HOOKS/docs-gate.py"); RC=$?
+expect_empty "git commit 以外は何もしない" "$OUT" "$RC"
+OUT=$(cd "$TMP" && bash_json "git commit -m x" | CLAUDE_PROJECT_DIR="$TMP" python3 "$HOOKS/docs-gate.py"); RC=$?
+expect_empty "check_docs.py の無いプロジェクトでは何もしない" "$OUT" "$RC"
+OUT=$(cd "$DG" && bash_json "git commit -m x" | CLAUDE_PROJECT_DIR="$DG" python3 "$HOOKS/docs-gate.py"); RC=$?
+expect_empty "差分が無ければ通す" "$OUT" "$RC"
+printf 'echo hi\n' >> "$DG/claude-code/hooks/foo.sh"
+OUT=$(cd "$DG" && bash_json "git add -A && git commit -m x" | CLAUDE_PROJECT_DIR="$DG" python3 "$HOOKS/docs-gate.py")
+expect_contains "hook を変えて説明文書（docs/guide.md）が未更新なら deny" '"permissionDecision": "deny"' "$OUT"
+expect_contains "deny 理由に未更新の文書名" "docs/guide.md" "$OUT"
+sed -i '$ s/$/ /' "$DG/docs/guide.md"
+OUT=$(cd "$DG" && bash_json "git commit -m x" | CLAUDE_PROJECT_DIR="$DG" python3 "$HOOKS/docs-gate.py"); RC=$?
+expect_empty "説明文書を同じ差分で触れば通す" "$OUT" "$RC"
+
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 if [ "$FAIL" -eq 0 ]; then
   echo "✅ 全て正常"

@@ -6,6 +6,21 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
+## Ver.6.9 での主な更新（2026-09-19）— Codex CLI にも hook を効かせる（M23）
+
+「Codex には hook が無い」を前提に、Codex 側は `AGENTS.md` の散文だけに頼っていました。openai/codex 本体の `codex-rs/hooks`（2026-09-19 時点）で、Claude Code と同じイベント名・stdin・出力形式の lifecycle hook が Stable・既定有効であることを確認し、前提を訂正しました。
+
+- **`export-project.sh` が `.codex/hooks.json` を生成**: stdin の形まで照合できた 4 hook（`block-gates.py` / `filter-output.py` / `prompt-priority.py` / `context-guard.py`）だけを配線。編集系（Codex の `tool_input` はパッチ本文でパスが無い）・transcript 依存（rollout 形式）・Read 系（ツールが無い）は理由付きで配線しない（効くふりをしない）
+- 初回は Codex で `/hooks` を開いて信頼する（ハッシュで管理。内容を変えると再承認）
+- 古い記述 5 箇所を修正（Roadmap M22 の残・`spec/10` B-14・`spec/11` D-4・`context-compression`・userguide）。`spec/09` F-26
+- 導入テスト 102 → 115 ケース。Codex 実機での動作確認は未実施（残課題は B-14）
+
+同日追記 — **文書の鮮度を機械が見る**（保守者「なぜドキュメント類が最新化されていないのか」）: 上の変更で userguide・PRD・spec/04 が古いまま残り、`check-docs.sh` の NG=0 を「文書は最新」と取り違えて完了報告した。行数・件数の突合は内容の鮮度を見ない。
+
+- **`check-docs.sh --changed` 検査 12**: git 差分で変わった scripts / hooks / skills / rules / templates を「説明している文書」（README・INDEX・docs・spec・雛形・SKILL）が同じ差分に無ければ NG。台帳（Roadmap / lessons / spec/09 / spec/10）は対象外。回帰テストの代替値（`CHECK_DOCS_TEST_TOTALS` の直値）も実測と突合
+- **`docs-gate.py`**（PreToolUse Bash・キット開発用）: `git commit` の前に検査 12 を回し、NG なら deny。理由に未更新の文書名を載せる。バイパス無し。`rules/speed-harness.md` H-7 と `done-gate` Type C にも配線
+- 入れた直後に自分の差分で 7 文書（INDEX・README・PRD・userguide・spec/03・05・README）の未更新を拾った。hooks 回帰テスト 79 → 85、check-docs 回帰テスト 32 → 46
+
 ## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22。6.8.1: 全体導入 `install-guard.sh`）
 
 作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。
@@ -73,7 +88,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 
 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
 
-- **`scripts/test-install.sh`**（102 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
+- **`scripts/test-install.sh`**（115 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
 - **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
@@ -135,7 +150,7 @@ python3 scripts/quality_harness.py                       # 機能契約の検証
 - **hooks 3本追加**: `block-gates.py`（pytest / make test / lint をユーザー要求時以外 deny）/ `progress.py` + `statusline.py`（進行中タスクの経過・見積・残りをステータスラインに表示）
 - **`templates/settings.sandbox.json`**: sandbox・denyRead・network allowlist・permissions deny の雛形
 - `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先」「必須プロセス」「完了条件」で改訂。「指定外ファイルは読まない」「セッション分割を提案」は廃止（AUDIT-2026-07 C-02 / X-4）
-- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 79 ケース）
+- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 85 ケース）
 
 ## Ver.6.0 での主な更新（2026-08）— 開発工程ライフサイクル
 
@@ -178,8 +193,8 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/install-guard.sh   # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge。Claude Code 全体に効く）
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
-./scripts/test-hooks.sh  # hooks の回帰テスト（79ケース）
-./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（102ケース。実 ~/.claude には触らない）
+./scripts/test-hooks.sh  # hooks の回帰テスト（85ケース）
+./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（115ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
@@ -194,7 +209,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 cd <対象プロジェクトのパス> && git add .claude AGENTS.md CLAUDE.md && git commit -m "chore: add AIDD Kit"
 ```
 
-Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md`）。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。claude.ai の Projects で使う場合は `claude-projects-setup.md` を参照。
+Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md`）。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。hook は `.codex/hooks.json` に 4 本を配線します（Codex で `/hooks` を開いて信頼すると有効。`git add` に `.codex` を含める）。claude.ai の Projects で使う場合は `claude-projects-setup.md` を参照。
 
 ## 取り扱い説明書
 

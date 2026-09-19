@@ -15,12 +15,19 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   9. 常時読込     CLAUDE.md.template ＋ AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
   8. spec 同期    spec/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
+ 12. 変更文書    --changed 時のみ。git 差分で変わった scripts / hooks / skills / rules / templates を
+                 「説明している文書」（README・INDEX・docs・spec・雛形・SKILL）が同じ差分に無ければ NG。
+                 台帳・履歴（Roadmap / lessons / spec/09 / spec/10 / spec/01）は対象外。
+                 「検査が緑＝文書が最新」ではない（M23 で userguide・PRD・spec/04 の陳腐化を見逃した）ことへの対処
 
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
 
 使い方: python3 scripts/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
+                                     [--changed [--base REF] [--only-changed]]
   --fix-inventory: spec/01-inventory.md の行数を実測で書き換えてから検査する（網羅性の不足は手で足す）
+  --changed:       検査 12 を行う（作業ツリー＋index＋未追跡。--base REF で REF...HEAD も含める）。
+                   --only-changed で検査 12 だけを回す（docs-gate.py がコミット前に使う）
   環境変数 CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,test-trace-check.sh=15" でテスト実行を代替できる（回帰テスト用）。
 """
 from __future__ import annotations
@@ -197,6 +204,15 @@ def check_case_counts(root: Path, r: Result, totals: dict[str, int]) -> None:
                     for n in nums:
                         if n != total:
                             r.add(True, "ケース数", f"{rel}:{i + j + 1}", f"{name} 記載 {n} / 実測 {total}")
+    # 回帰テストが代替値として持つ直値（CHECK_DOCS_TEST_TOTALS="test-x.sh=N,..."）も実測と突合する
+    p = root / "scripts" / "test-check-docs.sh"
+    if p.is_file():
+        for i, line in enumerate(read(p).splitlines(), 1):
+            if "CHECK_DOCS_TEST_TOTALS=" not in line or not line.lstrip().startswith("export"):
+                continue
+            for name, n in re.findall(r"(test-[\w-]+\.sh)=(\d+)", line):
+                if name in totals and int(n) != totals[name]:
+                    r.add(True, "ケース数", f"scripts/test-check-docs.sh:{i}", f"{name} 記載 {n} / 実測 {totals[name]}")
 
 
 def check_references(root: Path, r: Result) -> None:
@@ -369,6 +385,78 @@ def check_spec_inventory(root: Path, r: Result) -> None:
             r.add(True, "spec同期", "spec/01-inventory.md", f"`{rel}` が目録に無い")
 
 
+# ---- 検査12: 変更文書 ------------------------------------------------------------------
+# 変更したファイルを「説明している文書」が同じ差分で更新されているか。
+CHANGED_SRC_PREFIXES = ("scripts/", "claude-code/", "skills/", "rules/", "templates/", "github-actions/")
+CHANGED_SRC_EXCLUDE_RE = re.compile(r"^scripts/test-[\w-]+\.sh$")     # 回帰テスト自体はケース数検査（3）で見る
+# 「説明している文書」= 利用者向け文書・仕様・常時読み込みの雛形。skills / rules / templates / commands 同士の
+# 名前による導線（「done-gate へ」等）は説明ではないので対象にしない（変更のたびに十数件が鳴り、検査が無視される）
+CHANGED_DOC_GLOBS = ("README.md", "INDEX.md", "claude-projects-setup.md", "*.template", "docs/*.md", "docs/*.html",
+                     "docs/rules-rationale/*.md", "spec/*.md")
+# 台帳・履歴・機械生成（当時の事実や計画を書く場所。変更のたびに触るものではない）
+CHANGED_DOC_EXCLUDE = {"docs/Roadmap.md", "docs/lessons.md", "docs/AUDIT-2026-07.md", "docs/PROJECT-FIT-REPORT.md",
+                       "docs/maintainer-tendencies.md", "docs/ECC-ASSET-MAP.md",  # ECC-ASSET-MAP は対応表（スキル名の導線のみ）
+                       "spec/01-inventory.md", "spec/09-findings.md", "spec/10-backlog.md"}
+CHANGED_DOC_EXCLUDE_PREFIXES = ("docs/examples/",)
+AMBIGUOUS_BASENAMES = {"SKILL.md", "README.md", "settings.json", "index.html", "demo.html", "__init__.py"}
+
+
+def git_changed_files(root: Path, base: str | None) -> set[str] | None:
+    def run(*args: str) -> list[str]:
+        out = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=True).stdout
+        return [x for x in out.split("\n") if x]
+    try:
+        files = set(run("diff", "--name-only", "HEAD")) | set(run("diff", "--name-only", "--cached")) \
+            | set(run("ls-files", "--others", "--exclude-standard"))
+        if base:
+            files |= set(run("diff", "--name-only", f"{base}...HEAD"))
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return None
+    return files
+
+
+def mention_keys(rel: str) -> list[str]:
+    """文書がそのファイルに言及するときの表記。曖昧な basename は親ディレクトリ付きで探す。"""
+    parts = rel.split("/")
+    name = parts[-1]
+    if name == "SKILL.md" and len(parts) >= 2:
+        return [f"skills/{parts[1]}", f"`{parts[1]}`"]
+    if name in AMBIGUOUS_BASENAMES:
+        return [rel, "/".join(parts[-2:])]
+    return [name]
+
+
+def check_changed_docs(root: Path, r: Result, base: str | None) -> None:
+    changed = git_changed_files(root, base)
+    if changed is None:
+        r.add(False, "変更文書", "-", "git 差分を取れないためスキップ（git リポジトリの外、または git 不在）")
+        return
+    srcs = sorted(f for f in changed if f.startswith(CHANGED_SRC_PREFIXES)
+                  and not CHANGED_SRC_EXCLUDE_RE.match(f) and (root / f).is_file())
+    if not srcs:
+        return
+    docs: list[Path] = []
+    for g in CHANGED_DOC_GLOBS:
+        docs += [p for p in root.glob(g) if p.is_file()]
+    seen: set[str] = set()
+    for doc in sorted(set(docs)):
+        rel = doc.relative_to(root).as_posix()
+        if rel in seen or rel in changed or rel in CHANGED_DOC_EXCLUDE or rel.startswith(CHANGED_DOC_EXCLUDE_PREFIXES) \
+                or rel.endswith("-report.md"):
+            continue
+        seen.add(rel)
+        text = read(doc)
+        hits = []
+        for src in srcs:
+            for key in mention_keys(src):
+                if re.search(r"(?<![\w-])" + re.escape(key) + r"(?![\w-])", text):
+                    hits.append(src)
+                    break
+        if hits:
+            shown = ", ".join(f"`{h}`" for h in hits[:3]) + (f" ほか {len(hits) - 3} 件" if len(hits) > 3 else "")
+            r.add(True, "変更文書", rel, f"変更 {shown} を説明しているが同じ差分に無い（同じコミットで更新するか、言及を直す）")
+
+
 # ---- 出力 ---------------------------------------------------------------------------------
 
 def write_report(path: Path, root: Path, r: Result) -> None:
@@ -393,23 +481,29 @@ def main() -> int:
     ap.add_argument("--strict", action="store_true", help="検査 6・7 を WARN でなく NG にする")
     ap.add_argument("--skip-tests", action="store_true", help="検査 3 のテスト実行を省く")
     ap.add_argument("--fix-inventory", action="store_true", help="spec/01-inventory.md の行数を実測で書き換えてから検査する")
+    ap.add_argument("--changed", action="store_true", help="検査 12（変更を説明する文書が同じ差分で更新されているか）を行う")
+    ap.add_argument("--base", default=None, help="--changed で REF...HEAD の差分も含める（CI 用。例: origin/main）")
+    ap.add_argument("--only-changed", action="store_true", help="検査 12 だけを回す（--changed を含意）")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     r = Result()
     if a.fix_inventory:
         print(f"spec/01-inventory.md: {fix_spec_inventory(root)} 行の行数を実測に更新")
 
-    check_costs(root, r)
-    check_index_coverage(root, r)
-    check_case_counts(root, r, test_totals(root, a.skip_tests))
-    check_references(root, r)
-    check_frontmatter(root, r)
-    check_always_loaded(root, r, a.strict or RULES_STRICT)
-    check_claude_total(root, r)
-    check_counts(root, r)
-    check_absolute_paths(root, r)
-    check_size_targets(root, r, a.strict or SIZE_STRICT)
-    check_spec_inventory(root, r)
+    if not a.only_changed:
+        check_costs(root, r)
+        check_index_coverage(root, r)
+        check_case_counts(root, r, test_totals(root, a.skip_tests))
+        check_references(root, r)
+        check_frontmatter(root, r)
+        check_always_loaded(root, r, a.strict or RULES_STRICT)
+        check_claude_total(root, r)
+        check_counts(root, r)
+        check_absolute_paths(root, r)
+        check_size_targets(root, r, a.strict or SIZE_STRICT)
+        check_spec_inventory(root, r)
+    if a.changed or a.only_changed:
+        check_changed_docs(root, r, a.base)
 
     report = Path(a.report)
     if not report.is_absolute():

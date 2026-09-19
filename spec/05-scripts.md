@@ -36,7 +36,7 @@
 - 出力: 項目ごとに `✅`/`❌` ＋ 末尾に `結果: OK=n / NG=n`
 - **終了コード**: NG=0 → 0 ／ NG>0 → 1（S1 で修正。`test-install.sh` が assert）。導入済み版（`KIT_VERSION`）とリポジトリ版を表示
 
-### `export-project.sh`（138行）— プロジェクト配布
+### `export-project.sh`（201行）— プロジェクト配布
 
 ```bash
 ./scripts/export-project.sh <対象プロジェクトのパス>
@@ -51,13 +51,14 @@
 | `.claude/templates/` | templates 全体（スキル本文から参照されるため同梱） |
 | `.claude/INDEX.md` | フルコピーなので地図として同梱 |
 | `.claude/KIT_VERSION` | `<VERSION> <commit> <日付>`。配布先がどの版から出たかを判別（S2） |
-| `.claude/settings.json` | 相対パス版をヒアドキュメントで生成。**block-explore の配線は含まない** |
+| `.claude/settings.json` | 相対パス版をヒアドキュメントで生成（block-explore / block-phase / 指示優先 3 hook を含む全 hook） |
+| `.codex/hooks.json` | Codex CLI 用（M23）。入出力を照合済みの 4 hook（block-gates / filter-output / prompt-priority / context-guard）だけを配線。既存は `.bak`。初回は Codex の `/hooks` で信頼 |
 | `AGENTS.md` / `CLAUDE.md` | template から生成。`sed` で `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md` → `.claude/INDEX.md` に変換 |
 | `scripts/trace-check.sh` | 既存があればスキップ |
 | `scripts/{quality_harness.py,ui-hash.py,pre-commit-ui-gate.sh}` | 既存があればスキップ |
 
-- 既存の `settings.json` / `AGENTS.md` / `CLAUDE.md` は `.bak` に退避
-- 完了後に「次にやること」6項目を出力（プレースホルダを埋める／git add & commit／init-lifecycle／sandbox 設定／init-test-docs）
+- 既存の `settings.json` / `.codex/hooks.json` / `AGENTS.md` / `CLAUDE.md` は `.bak` に退避
+- 完了後に「次にやること」7項目を出力（プレースホルダを埋める／git add & commit（Codex は `/hooks` で信頼）／init-lifecycle／sandbox 設定／init-test-docs／phase-gate）
 - **書き出した時点のスナップショット**。本体更新には自動追従しない
 
 ### `init-project.sh`（102行）— 新規プロジェクト雛形
@@ -227,7 +228,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 ### `check-docs.sh` → `check_docs.py`
 
 ```bash
-./scripts/check-docs.sh [--root DIR] [-o REPORT] [--strict] [--skip-tests]
+./scripts/check-docs.sh [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--changed [--base REF] [--only-changed]]
 ```
 
 | # | 検査 | 内容 | 既定 |
@@ -240,8 +241,9 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | 6 | 常時読込 | `rules/*.md` で `paths:` frontmatter の無いものの合計 ≦ 100 行 | **WARN**（S7 で NG） |
 | 7 | 行数目安 | SKILL ≦ 200 / コマンド ≦ 40 | NG（S13 で昇格） |
 | 8 | spec 同期 | `spec/01-inventory.md` の行数 ↔ 実測、実ファイルが目録に載っているか | NG |
+| 12 | 変更文書 | `--changed` 時のみ。git 差分（作業ツリー＋index＋未追跡、`--base REF` で REF...HEAD も）で変わった `scripts/` `claude-code/` `skills/` `rules/` `templates/` `github-actions/` を、README・INDEX・docs・spec・雛形・SKILL が言及しているのに同じ差分に無ければ NG。台帳（Roadmap / lessons / AUDIT / spec/01 / 09 / 10）と `test-*.sh` は対象外。SKILL.md はスキル名、曖昧な basename（settings.json 等）は親ディレクトリ付きで探す。`--only-changed` はこれだけを回す（`docs-gate.py` がコミット前に使う） | NG |
 
-- 環境変数 `CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,…"` でテスト実行を代替（回帰テスト用）
+- 環境変数 `CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,…"` でテスト実行を代替（回帰テスト用。この直値も検査 3 が実測と突合する）
 - 出力は3層、全件は `check-docs-report.md`（`.gitignore` 済み）。NG>0 で exit 1
 - 履歴文書（`docs/Roadmap.md` / `docs/AUDIT-2026-07.md`）は「当時の事実」なので数値の突合対象にしない
 
@@ -275,7 +277,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | `test-quality-harness.sh` | 89 | **11** | PASS=11 / FAIL=0 | 検出9種＋allowlist 動作＋**配布雛形が新規プロジェクトで PASS** |
 | `test-install.sh` | 130 | **73** | PASS=73 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
 | `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
-| `test-check-docs.sh` | 105 | **25** | PASS=25 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
+| `test-check-docs.sh` | 149 | **46** | PASS=46 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
 | `test-check-design.sh` | 143 | **43** | PASS=43 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス ／ **配布先の形（.claude/templates/tokens.css 自動検出・.claude/ 不走査・貼り込んだ定義行）** |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。

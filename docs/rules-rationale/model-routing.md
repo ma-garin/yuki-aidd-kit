@@ -22,7 +22,7 @@
 | `autoCompactWindow: 200k` | Sonnet 5 は native 1M。既定では ≒967K まで自動圧縮されず、毎メッセージが巨大なキャッシュ読みになる。200k で従来モデル相当に戻す（同上） |
 | `BASH_MAX_OUTPUT_LENGTH: 12000` | 既定 30,000 文字（最大 150,000）。`filter-output.py` で絞れなかった出力の上限（`code.claude.com/docs/en/env-vars`、2026-09-19） |
 | 絞る hook | PreToolUse は `updatedInput` でツール入力を書き換えられる（公式例: テスト出力を grep で失敗行に絞る）。PostToolUse は出力を書き換えられない。UserPromptSubmit / PreCompact は `additionalContext` を注入できる（`code.claude.com/docs/en/hooks` `costs`、2026-09-19） |
-| Codex | `/model` `/effort` `/usage` は Claude Code のコマンド。Codex 側にはモデル設定と会話の切り方しか無い |
+| Codex | `/model` `/effort` `/usage` は Claude Code のコマンド。Codex 側はモデル設定と会話の切り方で代替する。hook は Codex にもある（openai/codex `codex-rs/hooks`、2026-09-19 時点。Stable・既定有効）: `.codex/hooks.json` に `filter-output` / `context-guard` / `prompt-priority` / `block-gates` を配線（`export-project.sh`）。`pre-read-guard` は Codex に Read ツールが無いため効かない |
 
 ## 未確認（埋まったら判断表を更新する）
 

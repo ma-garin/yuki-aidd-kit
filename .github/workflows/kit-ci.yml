@@ -20,6 +20,8 @@ jobs:
       GATES_REQUESTED: "1"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 検査 12（変更文書）で main との差分を取る
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -51,6 +53,10 @@ jobs:
       - name: 文書整合検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec 同期）
         id: docs
         run: bash scripts/check-docs.sh -o check-docs-report.md
+      - name: 変更文書（検査 12。main との差分で変わったファイルを説明する文書が未更新なら NG）
+        run: |
+          git fetch -q origin main
+          bash scripts/check-docs.sh --only-changed --base origin/main -o check-docs-changed-report.md
 
       # 失敗時も詳細レポートを残す（会話・ログには結論だけ、全件はここ）
       - name: レポートを保存
@@ -60,6 +66,7 @@ jobs:
           name: check-reports
           path: |
             check-docs-report.md
+            check-docs-changed-report.md
             check-design-report.md
           if-no-files-found: ignore
       - name: サマリ

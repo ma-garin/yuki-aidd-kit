@@ -7,7 +7,7 @@ description: コンテキストウィンドウとトークンを推論に温存�
 
 トークンは「推論」に使い、「作業ログ・生データの垂れ流し」に使わない。以下の3原則を常に適用する。
 
-**機械化済み（Claude Code では hook が強制する。散文で二重に守らなくてよい）**: 大きいファイルの部分読み（`pre-read-guard.py`: 800 行超は先頭 300 行）、テスト・install・build・`git log/diff` の出力の絞り込み（`filter-output.py`）、`/clear` `/compact` の促し（`context-guard.py`）。本スキルはそれ以外 — **3層要約とスクリプト化** — の規範。Codex では hook が無いので 3 原則を全部自分で守る。
+**機械化済み（Claude Code では hook が強制する。散文で二重に守らなくてよい）**: 大きいファイルの部分読み（`pre-read-guard.py`: 800 行超は先頭 300 行）、テスト・install・build・`git log/diff` の出力の絞り込み（`filter-output.py`）、`/clear` `/compact` の促し（`context-guard.py`）。本スキルはそれ以外 — **3層要約とスクリプト化** — の規範。Codex では `filter-output.py` と `context-guard.py` が `.codex/hooks.json` 経由で効く（`export-project.sh` が配線）。`pre-read-guard.py` は Codex に Read ツールが無いため効かないので、部分読みは自分で守る。
 
 ## 原則1: 長大な出力は3層で要約する
 
