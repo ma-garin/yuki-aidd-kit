@@ -32,7 +32,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: `verify.sh` が rules の配置を OK/NG で報告する。同名ファイルが利用者の `~/.claude/rules` 配下に既にある場合は上書きせずスキップする
 - **FR-04 導入・検証スクリプト**: `install.sh` が `~/.claude/` へ配置し、`verify.sh` が全資産の配置を OK/NG で報告し、NG>0 で exit 1 を返す
   - 検証基準: クリーン環境で install → verify が NG=0・exit 0 で完了する（`./scripts/test-install.sh` が HOME 差し替えで検証）
-- **FR-04a プロジェクト配布**: `export-project.sh <target>` が対象プロジェクト直下に `.claude/`（skills・commands・hooks・rules・settings.json・INDEX.md 一式）と `AGENTS.md`・`CLAUDE.md` を生成し、install なしで Codex・エフェメラルな Claude Code 環境でも動作する形にする
+- **FR-04a プロジェクト配布**: `export-project.sh <target>` が対象プロジェクト直下に `.claude/`（skills・commands・hooks・rules・settings.json・INDEX.md 一式）と `.codex/hooks.json`（Codex CLI 用。入出力を照合済みの hook だけを配線）と `AGENTS.md`・`CLAUDE.md` を生成し、install なしで Codex・エフェメラルな Claude Code 環境でも動作する形にする
   - 検証基準: 生成物を対象プロジェクトの git にコミットするだけで、そのプロジェクトを開いた別セッションでスキル・コマンド・hooks が発火する。既存ファイルがある場合は `.bak` に退避してから上書きする
 - **FR-05 検索構造**: `INDEX.md` が DAILY／LIBRARY の2層で全資産への導線を提供する
   - 検証基準: 全スキル・コマンドが INDEX.md に1行要約＋参照コスト付きで掲載されている
@@ -67,7 +67,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 
 ## 非機能要求（ISO/IEC 25010）
 
-- **互換性（最重要）**: **Claude Code と他エージェント（Codex 等）の双方で動作すること。** 共通規約の本体は `AGENTS.md`（Codex が直接読む）一本とし、`CLAUDE.md` は `@AGENTS.md` の import ＋ Claude Code でしか効かないものだけを持つ（二重管理をしない）。スキル・コマンド本文は特定ツールの内部名に依存せず、固有機能に言及する場合は「汎用表現（Claude Code では X）」の併記形式を守る。加えて、**グローバル導入（`install.sh`）とプロジェクト配布（`export-project.sh`）のどちらでも同一の振る舞いになること**（Vision.md「配置の2層」参照）
+- **互換性（最重要）**: **Claude Code と他エージェント（Codex 等）の双方で動作すること。** 共通規約の本体は `AGENTS.md`（Codex が直接読む）一本とし、`CLAUDE.md` は `@AGENTS.md` の import ＋ Claude Code でしか効かないものだけを持つ（二重管理をしない）。スキル・コマンド本文は特定ツールの内部名に依存せず、固有機能に言及する場合は「汎用表現（Claude Code では X）」の併記形式を守る。hook は Claude Code と Codex の両方に配線するが、**stdin の値の形まで照合できたものだけ**を Codex に配線し、未照合のものは「効くふりをしない」（M23。対応表は `spec/11` D-4）。加えて、**グローバル導入（`install.sh`）とプロジェクト配布（`export-project.sh`）のどちらでも同一の振る舞いになること**（Vision.md「配置の2層」参照）
 - **使用性**: 新しいセッションが `AGENTS.md` の「読む範囲」表から 1 ファイル以内の参照で作業開始できる（INDEX.md は表に無いときの第2段）。**毎セッション自動読み込みの `rules/`（`paths` 無し）は合計 ≦ 100 行**（`check-docs.sh` が NG で止める）。**1スキル ≦ 200行、1コマンド ≦ 40行**（`check-docs.sh` が NG で止める）
 - **性能効率性（トークン）**: 毎回読む層（DAILY）の合計を小さく保つ。詳細は references/・docs/ に逃がし、必要時のみ読む
 - **保守性**: 同一情報の真実源は1箇所（デザイン値は design-system、ECC 対応は ECC-ASSET-MAP）。重複を作る変更は監査（AUDIT）で検出・却下する

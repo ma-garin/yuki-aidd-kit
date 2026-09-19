@@ -36,7 +36,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 
 **導入方式は2つ**（併用が前提。`docs/Vision.md` の「配置の2層」参照）:
 - **グローバル導入**（`install.sh`）: 自分のPC1台で複数プロジェクトを横断する日常運用
-- **プロジェクト配布**（`export-project.sh`）: 対象プロジェクト直下に `.claude/` と `AGENTS.md`/`CLAUDE.md` を書き出し、そのプロジェクトの git にコミット。Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先でも install 不要でそのまま効く
+- **プロジェクト配布**（`export-project.sh`）: 対象プロジェクト直下に `.claude/`・`.codex/hooks.json`（Codex 用 hook 4 本。Codex の `/hooks` で信頼）・`AGENTS.md`/`CLAUDE.md` を書き出し、そのプロジェクトの git にコミット。Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先でも install 不要でそのまま効く
 
 テスト活動の雛形（戦略・DoD・29119 文書・機能契約・UI 検証ゲート）:
 
@@ -162,8 +162,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 | `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
-| `docs/userguide.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1158行 |
-| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `userguide.html`・事例・V字章へ導線 | 1443行 |
+| `docs/userguide.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1169行 |
+| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `userguide.html`・事例・V字章へ導線 | 1444行 |
 
 `docs/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。
 `docs/examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/userguide.html`）。

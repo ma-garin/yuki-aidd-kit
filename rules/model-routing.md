@@ -13,4 +13,4 @@
 | 絞る | テスト・install・build・`git log/diff` の出力は `filter-output.py` が読む前に絞る（全量は `FULL_OUTPUT=1`）。800 行超のファイルは `pre-read-guard.py` が先頭 300 行に（続きは `offset`）。仕組みの点検は `./scripts/token-audit.sh` |
 | 測る | 週1回 `/usage` の内訳（スキル・MCP・サブエージェント・長コンテキスト・キャッシュミス）を `docs/lessons.md` に1行残す。Opus の3条件は実測を見て見直す |
 
-Codex には `/model` `/effort` `/usage` が無い。同じ判断をモデル選択の設定で行い、委譲の規律と `/clear` 相当（新しい会話で始める）だけを守る。
+Codex には `/model` `/effort` `/usage` が無い。同じ判断をモデル選択の設定で行い、委譲の規律と `/clear` 相当（新しい会話で始める）だけを守る。絞る hook は `filter-output` / `context-guard` が `.codex/hooks.json` で効く（`pre-read-guard` は効かない。部分読みは自分で守る）。
