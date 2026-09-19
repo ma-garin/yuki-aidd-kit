@@ -275,6 +275,27 @@ def check_counts(root: Path, r: Result) -> None:
                         r.add(False, "件数", f"{rel}:{i}", f"{key} を {n} と記載 / 実数 {actual[key]}（直値を書かず実体から出す）")
 
 
+ABS_PATH_RE = re.compile(r"(?<![\w<])(/Users/|/home/|/root/)")
+ABS_PATH_DOCS = ("README.md", "docs/userguide.html", "docs/yuki-aidd-kit-manual.html")
+
+
+def check_absolute_paths(root: Path, r: Result) -> None:
+    """検査11: 利用者向け文書・雛形に絶対パス（/Users/ /home/ /root/）が無いか（WARN）。
+
+    利用者は CLI の知識が無い前提。文書のコマンドは貼れば動く形にし、環境依存のパスは <対象ディレクトリ> のような
+    プレースホルダにする（docs/maintainer-tendencies.md #22）。
+    """
+    files = [root / rel for rel in ABS_PATH_DOCS] + sorted((root / "templates").rglob("*.md"))
+    for p in files:
+        if not p.is_file():
+            continue
+        rel = p.relative_to(root).as_posix()
+        for i, line in enumerate(read(p).splitlines(), 1):
+            m = ABS_PATH_RE.search(line)
+            if m:
+                r.add(False, "絶対パス", f"{rel}:{i}", f"`{m.group(1)}...` を含む。<対象ディレクトリ> 等のプレースホルダにする（貼れば動く形）")
+
+
 def check_claude_total(root: Path, r: Result) -> None:
     files = [root / "CLAUDE.md.template", root / "AGENTS.md.template"]
     files = [f for f in files if f.is_file()]
@@ -386,6 +407,7 @@ def main() -> int:
     check_always_loaded(root, r, a.strict or RULES_STRICT)
     check_claude_total(root, r)
     check_counts(root, r)
+    check_absolute_paths(root, r)
     check_size_targets(root, r, a.strict or SIZE_STRICT)
     check_spec_inventory(root, r)
 

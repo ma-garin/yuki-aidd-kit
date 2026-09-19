@@ -251,6 +251,22 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 - 検証記録: test-check-docs 29/29・test-install 84/84・`check-docs.sh` NG=0
 - 運用: 同じ指摘を 2 回受けたら `maintainer-tendencies.md` に行を足し、反映先（hook / 検査 → rules → AGENTS → スキル）を決める。散文に書いて終わりにしない
 
+### M21 第 2 回（同日。保守者「やはり浅すぎる」を受けて深掘り）
+
+未読だった qa-autopilot の `harness/loop.md`・HANDOVER・VERIFICATION_REPORT（30 ペルソナ）・WORK_ORDER・personas・standards・specs/006 と
+キット自身の OPERATING-MODE・Vision・AUDIT を読み、**実装者に課している手順の型** 16 傾向（#15〜#30）を追加。反映先は rules でなく手順が走る場所（Q-15）。
+
+- [x] `rules/speed-harness.md` H-1 を 4 行に（`終了条件:`）。A-12 の出力を「止まる報告 5 項目」に。rules 90 行 ≦ 100
+- [x] `/plan`: 着手前の 5 つの質問（答えられなければ `/implement` に入らない）と `templates/work-order.md` への導線
+- [x] `templates/implement-profile.md` 止まる条件表／`templates/work-order.md`（新規: 守ること表・Step 完了条件・止まる条件・質問節）
+- [x] `templates/CURRENT_STATE.md` に決まっていること・未検証（項目／確かめ方）・次にやるなら・最初の 5 分／`templates/ADR-template.md` に判断基準（規格名）と捨てた案
+- [x] `skills/qa-review-standards/references/personas.md`（16 ペルソナ・判定一覧の型・順次）＋ SKILL の多ペルソナ検証・準拠の主張範囲、`/qa-review` 手順 6
+- [x] `skills/done-gate`: 受入基準を検証するテストだけを PASS に数える・0 件実行・未検証の確かめ方。`AGENTS.md.template` 完了条件・報告の型 ③（分と往復数）
+- [x] `skills/design-system`: 並びは利用者の目的順。`skills/retro`: 反映候補は Vision の 3 基準に照らす
+- [x] `check-docs.sh` 検査 11: 利用者向け文書・雛形の絶対パス（WARN）。userguide の `/Users/you/...` 5 箇所を修正
+- 検証記録: test-hooks 63 / trace-check 15 / quality-harness 11 / install 84 / git-gates 27 / check-docs 32 / check-design 44 / check-approval 54 / token-audit 12 / test-metrics 40 すべて PASS・`check-docs.sh` NG=0 WARN=0
+- 残: 検査 11 は WARN（配布先の文書は対象外）。`/qa-review` のペルソナ順次実行を実プロジェクトで 1 回回して所要往復数を `docs/lessons.md` に記録する
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。

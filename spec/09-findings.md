@@ -306,6 +306,19 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 - severity: Medium
 - 是正: 両スクリプトに追加し、`test-install.sh` に生成物の assert。**新スクリプトを足したら配布リストと test-install を同じコミットで更新する**を横断ルールに追加
 
+### F-24 — 保守者の傾向分析が「言葉の規約」で止まり、実装者に課している「手順の型」を拾っていなかった — **是正済み（M21 第 2 回）**
+
+- evidence: 第 1 回（PR #20）は本セッションの発言と qa-autopilot の CLAUDE.md・constitution・PROMPT_FOR_CODEX から 14 傾向を出したが、
+  保守者「この依頼についての対応がない。不愉快だ」「やはり浅すぎる」。未読だった `harness/loop.md`・HANDOVER・VERIFICATION_REPORT（30 ペルソナ）・
+  WORK_ORDER・personas・standards/README・specs/006 に、着手前 4 行／5 つの質問／止まる条件／3 回失敗の報告 5 項目／予実はツール実行回数／
+  多ペルソナ検証／作業指示書の型／貼れば動く形／未検証の確かめ方／準拠の主張範囲 が明文化されていた
+- severity: High（保守者の要望に対する未達。第 1 回の反映先が `rules`・`AGENTS` の散文に偏り、手順が走る場所に入っていなかった）
+- 是正: `docs/maintainer-tendencies.md` に第 2 回 16 傾向（#15〜#30）を原文つきで追加。反映先を「手順が走る場所」に変更 —
+  H-1 を 4 行（終了条件）／`/plan` に 5 つの質問と作業指示書への導線／`templates/implement-profile.md` に止まる条件表／
+  `templates/work-order.md`（新規）／`templates/CURRENT_STATE.md` に決まっていること・未検証の確かめ方・最初の 5 分／
+  `templates/ADR-template.md` に判断基準と捨てた案／`skills/qa-review-standards/references/personas.md`（16 ペルソナ・判定一覧の型）と
+  `/qa-review` 手順 6／`done-gate` に受入基準の検証と 0 件実行／A-12 の報告 5 項目／`check-docs.sh` 検査 11（絶対パス。userguide の 5 箇所を修正）
+
 ### severity 別サマリ（更新）
 
 | severity | 件数 | ID |
@@ -314,7 +327,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
 | Medium | 4 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測）／**F-21（警告 hook の stdout。未確認）** |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 20 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／**F-22 F-23（M20 テストメトリクス）** |
+| 是正済み | 21 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／**F-24（M21 第 2 回）** |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 

@@ -11,6 +11,8 @@ description: タスクや機能を「完了」と判定する前の最終チェ�
 - [ ] spec.md の対象FRの検証基準を全て満たす（evidence提示可能）
 - [ ] qa-review-standardsの観点で自己レビュー済み（Critical/High残ゼロ）
 - [ ] **テストがpassする**（test-automationスキル。「動作確認した」は人力でなくテスト実行で判定）
+- [ ] テストが受入基準（Given/When/Then）を検証している。件数だけ数えるテスト・0 件実行の PASS・通すために弱めた assert が無い（実行件数を末尾 1 行に出す）
+- [ ] 未検証の項目は「項目／確かめ方」の表にした（`templates/CURRENT_STATE.md`。「動くはず」を書かない）
 - [ ] 秘密情報がコードに混入していない（grep確認）
 - [ ] CURRENT_STATE.md を更新した
 - [ ] implement.md に作業記録を追記した
