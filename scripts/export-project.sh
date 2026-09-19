@@ -17,8 +17,9 @@ if [ -z "$TARGET" ] || [ ! -d "$TARGET" ]; then
   exit 1
 fi
 TARGET="$(cd "$TARGET" && pwd)"
+KIT_VERSION="$(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown) $(git -C "$KIT_DIR" rev-parse --short HEAD 2>/dev/null || echo -) $(date -I)"
 
-echo "=== AIDD Kit プロジェクト配布 ==="
+echo "=== AIDD Kit プロジェクト配布（版: $KIT_VERSION）==="
 echo "対象: $TARGET"
 
 backup_if_exists() {
@@ -86,6 +87,10 @@ echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/ho
 cp "$KIT_DIR/rules/"*.md "$TARGET/.claude/rules/"
 echo "✅ Rules: $(ls "$KIT_DIR/rules/"*.md | wc -l | tr -d ' ')個（.claude/rules/。speed-harness.md の H-2 環境チートシートを埋めること）"
 
+# 版の刻印（配布先がどの版のキットから出たかを判別するため。書式: <VERSION> <commit> <日付>）
+printf '%s\n' "$KIT_VERSION" > "$TARGET/.claude/KIT_VERSION"
+echo "✅ .claude/KIT_VERSION: $KIT_VERSION"
+
 # INDEX.md（フルコピーなのでDAILY/LIBRARYの地図として同梱する）
 cp "$KIT_DIR/INDEX.md" "$TARGET/.claude/INDEX.md"
 echo "✅ INDEX.md 同梱"
@@ -126,7 +131,7 @@ echo ""
 echo "=== 完了 ==="
 echo "次にやること:"
 echo "1. $TARGET/AGENTS.md と $TARGET/CLAUDE.md 内の残りの <...> プレースホルダ（GITHUB_OWNER等）を埋める"
-echo "2. $TARGET で: git add .claude AGENTS.md CLAUDE.md scripts/trace-check.sh && git commit"
+echo "2. $TARGET で: git add .claude AGENTS.md CLAUDE.md scripts/ && git commit"
 echo "3. これでCodex・リモート/エフェメラルなClaude Code・teammateのclone先でも自動的に効く"
 echo "4. 工程（RFD〜保守運用）で進める場合: $KIT_DIR/scripts/init-lifecycle.sh $TARGET --github"
 echo "5. サンドボックス（denyRead / network allowlist / permissions）を使う場合: $KIT_DIR/templates/settings.sandbox.json を .claude/settings.json にマージ"

@@ -15,8 +15,11 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
-./scripts/test-hooks.sh                       # hooks の回帰テスト（11ケース）
+./scripts/test-hooks.sh                       # hooks の回帰テスト（19ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
+./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（66ケース）
+./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
+./scripts/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。NG=0 が合格）
 ./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
@@ -42,13 +45,13 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 | `dev-lifecycle` | RFD→要件定義→基本/詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用。工程ゲートとトレーサビリティ | #lifecycle #process | 105行 |
 | `context-compression` | 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存 | #token #process | 56行 |
 | `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 57行 |
-| `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 53行 |
-| `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only | #qa #review | 43行 |
+| `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 55行 |
+| `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only | #qa #review | 46行 |
 | `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 71行 |
-| `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 49行 |
+| `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 55行 |
 | `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 105行 |
 | `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 95行 |
-| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 43行 |
+| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 56行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 199行 |
 | `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 38行 |
 
@@ -56,7 +59,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/frameworks.md に React/Tailwind/Streamlit/Flask 別の当て方とデザイン系スキルの分担 | #ui #design | 463行 |
+| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/frameworks.md に React/Tailwind/Streamlit/Flask 別の当て方とデザイン系スキルの分担 | #ui #design | 465行 |
 | `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値 | #nfr #spec | 89行 |
 | `agent-eval` | LLM/RAG/エージェント出力の品質をデータセット＋スコアラーで回帰評価 | #ai #eval | 67行 |
 | `code-doc-search` | 技術ドキュメント検索のクエリ最適化 | #search #docs | 55行 |
@@ -70,7 +73,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 |---|---|---|---|
 | `absolute-rules` | A-1〜A-10: 着手前の目的1行・予実の実測・残課題の申告・未検証を断定しない・放置しない | #process #must | 112行 |
 | `speed-harness` | 往復×12秒の見積、環境チートシート、バッチ検証、委譲の型、見積の既定、ゲートは要求時のみ、進捗の逐次提示 | #speed #process | 115行 |
-| `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない | #qa #done | 39行 |
+| `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない | #qa #done | 41行 |
 
 ## claude-code/hooks/（settings.json で配線）
 
@@ -109,20 +112,37 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 ## ECC 連携
 
-ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP.md`（147行）が唯一の真実源**。ここには複製しない。
+ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP.md`（148行）が唯一の真実源**。ここには複製しない。
+
+## spec/（キット現況の仕様書）— 本体を触る前にここ
+
+全 126 ファイルを読み切った記録。**キット自体を作り込むセッションは `spec/README.md` から始める**。
+設計値の再定義はせず、現況の事実・残課題・バックログだけを持つ（真実源の重複を作らない）。
+
+| ファイル | 1行要約 |
+|---|---|
+| `spec/README.md` | 読む順序・位置づけ・更新規約 |
+| `spec/00-overview.md` | 目的・思想・配置の2層・規模・版歴 |
+| `spec/01-inventory.md` | 全 126 ファイルの目録（行数・役割） |
+| `spec/02-architecture.md` | 読み込み経路・真実源マップ・発火機構・依存 |
+| `spec/03-skills.md` 〜 `08-quality-gates.md` | 資産別の詳細（スキル/コマンド・hooks/スクリプト/テンプレート/rules・docs/品質ゲート） |
+| `spec/09-findings.md` | 現況の残課題（severity・evidence つき） |
+| `spec/10-backlog.md` | 作り込みバックログ（完了条件・検証手順つき） |
+
+**本体を変更したら同じコミットで `spec/` を更新する。**
 
 ## docs/（キット自体の文書）
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 115行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 171行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
-| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 64行 |
+| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 76行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
 | `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
-| `docs/OPERATING-MODE.md` | 日常の標準作業モード | 75行 |
+| `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
-| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1337行 |
+| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1434行 |
 
 templates/: `design-system.md`（視覚的指示書）/ `tokens.css`（デザイントークンの実物。ライト＋ダーク）/ `components/`（`feedback.js` `icons.js` `demo.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
 

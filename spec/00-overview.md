@@ -1,0 +1,108 @@
+# 00 — 全体像
+
+> **2026-10 からの運用条件（Claude Pro ＋ Sonnet 基盤 ＋ Codex 併用）が最上位の制約。** 詳細と設計含意は `spec/11-target-operating-model.md`。以下は「キットが何か」の説明で、その条件に照らした優先順位は `spec/10-backlog.md` にある。
+
+## 一文
+
+**AI 駆動開発（AIDD）の「進め方」自体を資産化し、どの AI エージェントに渡しても同じ品質・同じトークン効率で開発が回る状態を作るための、個人用キット。**
+
+コードのテンプレート集ではない。本体は「**AI にどう作業させるか**」の運用知識であり、
+それを AI が直接読める形式（skills / commands / hooks / rules）で保存している。
+
+## 誰が使うか（4種の読み手）
+
+| 読み手 | 入口 | 何をする |
+|---|---|---|
+| 保守者（人間） | `README.md` → `docs/Roadmap.md` | キットの導入・更新・レトロ反映。QA エンジニアで ISTQB/ISO 用語は説明不要 |
+| Claude Code | `~/.claude/` 配下（install 後） | スキル・コマンド・hooks・rules として自動読み込み、日常開発で発火 |
+| 他エージェント（Codex 等） | `AGENTS.md` + スキル本文 | 文書として読み込み、同じ規約で動作 |
+| ゼロコンテキストのモデル | `INDEX.md` → `docs/Roadmap.md`（今後は `spec/`） | キット自体の開発を継続 |
+
+## 解いている6つの問題（`docs/Vision.md`）
+
+| 問題 | キットの答え |
+|---|---|
+| セッションごとに規約・品質基準を説明し直している | スキルとして永続化し、frontmatter の `description` で自動発火 |
+| AI が探索的にファイルを読みトークンを浪費する | `context-compression` / DAILY・LIBRARY の2層参照 / `INDEX.md` 入口 |
+| 「動いた」＝完成と誤判定される | `done-gate` / `test-automation` / `agent-eval` の3段判定 |
+| レビュー品質が AI の気分で変わる | ISO/IEC 25010・ISTQB・evidence-only を規格として注入 |
+| 外部資産（ECC）が膨大で全部読むと破綻する | `ecc-daily-router` + `docs/ECC-ASSET-MAP.md` でプロジェクト別に絞る |
+| 改善知見がセッション終了で消える | `retro` → `templates/lessons.md` → キットへ還流 |
+
+## 到達点3つ（Vision の KPI 相当）
+
+1. **エージェント可搬性** — Claude Code でも Codex でも同じファイルで同じ振る舞い。ツール固有名に依存しない（固有機能は「汎用表現（Claude Code では X）」の併記形式）
+2. **ゼロコンテキスト継続性** — 前提知識ゼロのモデルが `INDEX.md` → `docs/Roadmap.md` の順に読むだけでキット開発を続行できる
+3. **自己改善ループ** — retro → `lessons.md` → スキル/コマンド/hook への反映が月次で回る
+   → **③は現時点で未達**（`templates/lessons.md` が雛形のまま。`spec/09-findings.md` F-05）
+
+## やらないこと（Non-Goals）
+
+- 不特定多数への OSS 公開・汎用フレームワーク化（ドキュメントサイト運営・外部コントリビュータ受け入れ・スター獲得目的の公開はしない）
+  - ただし**自分のプロジェクト・チームメイトへのプロジェクト単位の配布は行う**（`scripts/export-project.sh`）
+- ECC 資産の同梱・複製（外部キットとして参照のみ。真実源は `docs/ECC-ASSET-MAP.md`）
+- 実プロジェクトのコード資産の保管（キットは進め方のみ。成果物は各プロジェクトリポジトリ）
+
+## 採否の判定基準
+
+キットへの変更は、次のいずれかに寄与しない限り採用しない。
+
+> **新しいセッションの立ち上がりが速くなるか／トークンあたりの成果が増えるか／品質判定が再現可能になるか**
+
+---
+
+## 配置の2層（併用が前提。どちらかに統一しない）
+
+| 層 | 置き場所 | 導入 | 効く範囲 | 目的 |
+|---|---|---|---|---|
+| **グローバル層** | `~/.claude/` `~/.codex/` | `scripts/install.sh` | 自分の PC 1台・複数プロジェクト横断 | 普段使いの一貫性。キット更新が即座に全プロジェクトへ反映 |
+| **プロジェクト配布層** | 対象プロジェクト直下の `.claude/` `AGENTS.md` `CLAUDE.md` | `scripts/export-project.sh <target>` | Codex／リモート・エフェメラルな Claude Code／CI／teammate の clone 先 | install 不要でその場で効く。対象の git にコミットして持ち運ぶ |
+
+プロジェクト配布層は**書き出した時点のスナップショット**であり、キット本体の更新には自動追従しない（再エクスポートで同期）。
+配布の性質上避けられないトレードオフとして許容している。
+
+---
+
+## 規模（2026-09-17 実測・M15 後）
+
+| 区分 | 件数 | 行数 |
+|---|---|---|
+| skills（SKILL.md） | 19 | 1,712 |
+| skills/*/references/ | 13 | 1,601 |
+| skills/atarimae-quality-audit/scan.sh | 1 | 77 |
+| claude-code/commands | 16 | 352 |
+| claude-code/hooks（sh 4 + py 3 + settings.json） | 8 | 356 |
+| rules | 3 | 268 |
+| scripts（sh 15 + py 4 + pre-commit） | 20 | 2,214 |
+| templates（lifecycle11 / test8 / github4 / components3 / 単体7） | 33 | 2,119 |
+| docs | 8 | 2,096 |
+| github-actions（配布用サンプル） | 4 | 177 |
+| .github/workflows/kit-ci.yml（キット自身の CI） | 1 | 59 |
+| ルート（README / INDEX / 2 template / claude-projects-setup / .gitignore / VERSION） | 7 | 594 |
+| **合計** | **133** | **11,645** |
+
+うち最大は `docs/yuki-aidd-kit-manual.html`（1,434行）、`skills/uiux_review/references/viewpoints.md`（849行）、
+`skills/design-system/SKILL.md`（465行）。
+
+---
+
+## 版歴（README のリリースノートより）
+
+| 版 | 時期 | 主題 | 追加された主な資産 |
+|---|---|---|---|
+| Ver.5.0 | 2026-07 | コンテキスト圧縮・資産監査・自己文書化 | `context-compression` / `/compact-work` / `docs/AUDIT-2026-07.md` / Vision・PRD・Roadmap / `templates/design-system.md` / INDEX 2層化 |
+| Ver.6.0 | 2026-08 | 開発工程ライフサイクル | `dev-lifecycle`(+3 refs) / `templates/lifecycle/` 11本 / `trace-check.sh` / `/rfd` `/lifecycle` `/trace` / GitHub テンプレート / `lifecycle-check.yml` |
+| Ver.6.1 | 2026-08-25 | 速度ハーネス・機能完全性・UI/UX 実機レビュー | `rules/` 3本 / `uiux_review`(+viewpoints) / `block-gates.py` `progress.py` `statusline.py` / `templates/settings.sandbox.json` |
+| Ver.6.2 | 2026-08-25 | テスト活動の設計と機械ゲート | `test-strategy`(+2 refs) / `e2e-cycle` / `templates/test/` 8本 / `quality_harness.py` / `ui-hash.py` + `pre-commit-ui-gate.sh` / `init-test-docs.sh` / `test-gates.yml` |
+| Ver.6.3 | 2026-08-25〜26 | デザイン: トークン実物・画面の作り方・FW 別適用 | `templates/tokens.css` / `design-system` 「画面の作り方」+ `references/frameworks.md` / `templates/components/` 3本 |
+
+Ver.6.1 以降は、実プロジェクト（WebSpec2Doc / UX_Auto_Reviewer / my_forward）で育った運用を
+キットへ還流する流れ。**出所と実損害が各所に明記されている**のが特徴（例: テスト資産 17 件が
+1 週間陳腐化した事故 → `test-strategy` の「ゲートの実行タイミング」節）。
+
+## 設計思想（横断する4本の柱）
+
+1. **真実源の一本化** — デザイン値＝`skills/design-system`、ECC 対応＝`docs/ECC-ASSET-MAP.md`、要件追跡＝`traceability-matrix.md`、テストレベルの設計観点＝`dev-lifecycle/references/test-levels.md`。重複は監査（AUDIT）で検出・却下
+2. **「作った」を「効いている」と言わせない** — `rules/functional-integrity.md`（実行経路）→ `uiux_review`（全状態を実機で）→ `done-gate`（完了判定）
+3. **人の注意力に頼らず機械で止める** — `trace-check.sh`（追跡漏れ）/ `quality_harness.py`（実行経路の無い機能）/ `.ui-verified`（E2E 未実行の UI コミット）/ `block-gates.py`（ゲートの無断実行）/ `pre-commit`（秘密情報）
+4. **速度は工程削減でなく往復削減** — `rules/speed-harness.md`「所要時間 ≒ 往復回数 × 12秒」。ゲートは削らない

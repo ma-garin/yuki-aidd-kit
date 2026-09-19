@@ -150,6 +150,22 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] 「弱点」表記を「残課題」に変更（A-3。分かっている不足は申告で済ませず対応する）
 - 検証記録: `demo.html` を Playwright でライト／ダーク・トースト・確認ダイアログ・空状態を実機確認（2026-08-26）
 
+## M15: 土台 — Sonnet が壊しても機械が気づける状態にする（完了 2026-09-17）
+
+背景: 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行を前に、`spec/`（全 126 ファイル読解の記録）で
+入口スクリプトと git ゲートが未テスト・CI 不在・版の刻印なし・文書の数値が実体とズレる（F-01〜F-03, F-06, F-07, F-09, F-11, F-12）
+ことが分かった。運用条件と設計含意は `spec/11-target-operating-model.md`、実行順は `spec/10-backlog.md`。
+
+- [x] `scripts/verify.sh` が NG>0 で exit 1 を返す（S1。CI・テストから合否を機械判定できる）
+- [x] 版の刻印（S2）: `VERSION` を新設し、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。`verify.sh` が表示
+- [x] `scripts/test-install.sh`（S3、66 ケース）: install / verify / export / init-project / init-test-docs を HOME 差し替えで検証。実 `~/.claude` には触らない
+- [x] `scripts/test-git-gates.sh`（S4、27 ケース）: pre-commit（簡易パターン経路）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで検証
+- [x] `scripts/check_docs.py` + `check-docs.sh` + `test-check-docs.sh`（S5）: INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数（WARN）・SKILL 行数目安（WARN）・spec/01 の同期を機械判定
+- [x] `.github/workflows/kit-ci.yml`（S5）: 6 本の回帰テストと check-docs を実行（`github-actions/` の配布用サンプルとは別物）。**2026-09-17 保守者決定で `workflow_dispatch` のみに変更**（PR / push での自動実行はしない。ゲートは要求時だけ、の規律を CI にも適用）
+- [x] 数値の是正と spec 同期（S6）: check-docs が検出した INDEX 11 件・manual 2 件を是正。`spec/01` を実測に同期
+- 検証記録: test-hooks 19/19・test-trace-check 15/15・test-quality-harness 11/11・test-install 66/66・test-git-gates 27/27・test-check-docs 全 PASS・`check-docs.sh` NG=0（WARN 2: rules 268 行 > 100、design-system 465 行 > 200 — M16 / M17 で解消）
+- 残: `git tag v6.3.0` は main へのマージ時に保守者が打つ
+
 ## 完了の定義（全マイルストーン共通）
 
-`skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み。
+`skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。
