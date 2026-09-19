@@ -18,7 +18,7 @@
 | 1 | `01-inventory.md` | **全ファイル目録**（パス・行数・役割1行） | 大 |
 | 2 | `02-architecture.md` | 読み込み経路・真実源マップ・発火機構・依存グラフ | 中 |
 | 3 | `03-skills.md` | 20スキルの目的・トリガー・要点・委譲先 | 大 |
-| 4 | `04-commands-hooks.md` | 17コマンド・13hooks・settings.json・実装モードの状態機械 | 中 |
+| 4 | `04-commands-hooks.md` | 18コマンド・13hooks・settings.json・実装モードの状態機械 | 中 |
 | 5 | `05-scripts.md` | 14スクリプトの仕様（引数・出力・終了コード・回帰テスト） | 中 |
 | 6 | `06-templates.md` | templates 31本 + github-actions 4本 | 中 |
 | 7 | `07-rules-docs.md` | rules 3本（A/H/機能完全性）・docs 8本・ルート4ファイル | 中 |

@@ -164,6 +164,7 @@
           <li><a href="#gates">品質チェックの回し方（手動）</a></li>
           <li><a href="#vmodel">V字・W字モデルとの対応</a></li>
           <li><a href="#approval">工程の承認ゲート（要求どおり作られているか）</a></li>
+          <li><a href="#metrics">テストの進みと品質を数字で見る</a></li>
           <li><a href="#pro">Pro プラン・Sonnet で使うコツ</a></li>
           <li><a href="#tokens">トークンを減らす仕組み</a></li>
           <li><a href="#design">画面の見た目を揃える</a></li>
@@ -192,6 +193,7 @@
           <li><a href="#gates">品質チェックの回し方</a></li>
           <li><a href="#vmodel">V字・W字との対応</a></li>
           <li><a href="#approval">工程の承認ゲート</a></li>
+          <li><a href="#metrics">テストの進みと品質</a></li>
           <li><a href="#pro">Pro・Sonnet で使うコツ</a></li>
           <li><a href="#tokens">トークンを減らす仕組み</a></li>
           <li><a href="#design">画面の見た目を揃える</a></li>
@@ -669,7 +671,8 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
 ./scripts/check-docs.sh          <span class="c"># 説明書と中身がズレていないか</span>
 ./scripts/check-design.sh        <span class="c"># デザイン部品に直値・外部読み込み・alert() が無いか</span>
 ./scripts/check-approval.sh      <span class="c"># 工程の承認が揃っているか・失効していないか</span>
-./scripts/token-audit.sh         <span class="c"># トークン節約の仕組みが配線されているか</span></code></pre>
+./scripts/token-audit.sh         <span class="c"># トークン節約の仕組みが配線されているか</span>
+./scripts/test-metrics.sh        <span class="c"># テストの消化率・合格率・Critical/High 残・完了予測</span></code></pre>
         <p>ほかに <code>test-trace-check.sh</code>（15）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（25）、<code>test-check-design.sh</code>（44）、<code>test-check-approval.sh</code>（54）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
 
         <h3>自分のプロジェクトで使う検査</h3>
@@ -934,6 +937,72 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
           <p>デザインの CSS、工程文書、テスト文書は<strong>完成品のファイル</strong>として同梱してあります。Sonnet に「同じものを書いて」ではなく「このファイルを読み込んで使って」と言う形にすると、ブレず、安く済みます。</p>
         </div>
         <p>Codex には <code>/model</code> <code>/effort</code> <code>/usage</code> がありません。モデルは設定画面で選び、「話題が変わったら新しい会話にする」だけ守ってください。</p>
+      </section>
+
+      <section id="metrics">
+        <h2><span class="h2-ic">測</span>テストの進みと品質を数字で見る</h2>
+        <p>外部結合テストから受け入れテストまでを担当していると、聞かれるのはいつも同じです。「どこまで進んだ？」「あと何日？」「危ない不具合は残ってる？」<br>
+        今までは工程文書の表を目で数えて答えていました。数えた瞬間から数字は古くなり、数え間違いも起きます。<strong>表を埋めるだけで、機械が数える</strong>ようにしました。</p>
+
+        <h3>何を埋めれば、何が出るか</h3>
+        <table>
+          <thead><tr><th>埋めるもの（工程文書の表）</th><th>出てくる数字・検知</th></tr></thead>
+          <tbody>
+            <tr><td>テスト表の <code>結果</code>（<code>pass / fail / blocked / skip / 未実施</code>。受け入れは <code>合 / 否</code> でも可）</td><td>消化率（実行 ÷ 全件）・合格率（PASS ÷ 実行）。レベル別と全体</td></tr>
+            <tr><td>テスト表の <code>実施日</code> <code>実施者</code></td><td>実施ペースと<strong>完了予定日（推定。根拠つき）</strong>、担当の偏り</td></tr>
+            <tr><td>欠陥表の <code>severity</code> <code>起票日</code> <code>対応</code></td><td>欠陥密度・未解決件数・<strong>Critical/High の残</strong>・5 日以上の滞留</td></tr>
+            <tr><td><code>docs/test/TESTING_STRATEGY.md</code> §7 の完了基準の表（しきい値＋出典）</td><td>基準ごとの ✓/✗ と「進める／進めない／判定できない」の判定候補</td></tr>
+          </tbody>
+        </table>
+        <p>29119 の様式で進める案件は <code>docs/system_test_cases.csv</code> の末尾 4 列（結果・実施日・実施者・DEF）を埋めれば同じように読みます。</p>
+
+        <h3>実際の出力（図書館貸出の事例）</h3>
+        <p>システムテスト 8 件・受け入れ 5 件・欠陥 3 件を入れて回したときの、そのままの出力です。</p>
+        <pre><code>./scripts/test-metrics.sh
+<span class="c">=== テストメトリクス: /Users/you/work/library-loan ===
+  ST: 全 8 / 実行 5（pass 4・fail 1）/ 未実施 1 / 判定不能 1 → 消化率 62.5%・合格率 80.0%
+ UAT: 全 5 / 実行 3（pass 2・fail 1）/ 未実施 2 / 判定不能 0 → 消化率 60.0%・合格率 66.7%
+ ALL: 全 17 / 実行 10（pass 8・fail 2）/ 未実施 5 / 判定不能 1 → 消化率 58.8%・合格率 80.0%
+欠陥: 3 件 / 未解決 2 / Critical・High 未解決 2 / 密度 0.30
+検知 4 件:
+  - [unread] 結果欄が語彙外の行 1 件（分母に含めた。合格に数えない）（ST-006「たぶん大丈夫」…）
+  - [severe] Critical/High の未解決 2 件（これが残る限り進めない）（DEF-001（Critical・未対応）、DEF-003（High・修正する））
+  - [stale] Critical/High の未解決の欠陥 1 件が 5 日以上滞留（DEF-001（2026-09-12 起票・Critical））
+  - [forecast] 完了予定 2026-09-23（推定。残 7 件）（根拠: 直近 3 日の実施ペース 3.3 件/日（10 件 ÷ 3 日）。ペースが変われば外れる）</span></code></pre>
+
+        <div class="callout warn">
+          <div class="callout-title">「判定できない」を合格に数えない</div>
+          <p>結果欄に「たぶん大丈夫」のような<strong>決まった言葉以外</strong>が入っていると、その行は「判定できない」として<strong>分母に残ります</strong>（消した方が消化率は上がりますが、それは水増しです）。1 件でも残っていると、完了判定は「進めない」ではなく「<strong>判定できない</strong>」になります。<br>
+          欠陥表そのものが無いときも「0 件」とは言いません。「算出できない」と出ます。</p>
+        </div>
+
+        <h3>完了してよいか（<code>--gate</code>）</h3>
+        <p>基準は <code>docs/test/TESTING_STRATEGY.md</code> §7 の表に、しきい値と<strong>出典</strong>つきで書きます。案件ごとに値を変えてよく、出典が空の行は基準として読みません。</p>
+        <pre><code>./scripts/test-metrics.sh --gate
+<span class="c">--- 完了基準（docs/test/TESTING_STRATEGY.md §7）---
+  ✗ 1. 消化率（実行済み ÷ 全件。判定できない行も分母に数える）: progress >= 100（実測 58.82）
+  ✗ 2. 合格率（PASS ÷ 実行済み）: pass_rate >= 95（実測 80.00）
+  ✗ 3. Critical / High の未解決: severe_open == 0（実測 2）
+  ✗ 4. 判定できない行（結果欄が語彙外・欠陥表なし）: unread == 0（実測 1）
+  手動 5. L3（UI 変更時）全 PASS ＋ スクショ目視、L4（新機能時）依頼者の承認、quality_harness.py PASS
+判定候補: **判定できない**（結果欄が語彙外の行が 1 件（語彙に直すか 未実施 にする）。判定不能を合格に数えない）</span></code></pre>
+        <p>終了コードは <code>0</code>（進める）／<code>1</code>（進めない）／<code>2</code>（判定できない）の 3 つ。<strong>GO / NO-GO は人が決めます。</strong>機械が出すのは「判定候補」と根拠までです。</p>
+
+        <h3>時系列と完了報告書</h3>
+        <ul>
+          <li><code>./scripts/test-metrics.sh --history</code> — <code>docs/test/metrics-history.tsv</code> に 1 行足し、前回との差を出します。実測: <code>前回 2026-09-19 から: 実行 10 → 11（+1）、FAIL 2 → 2、未解決 2 → 2</code></li>
+          <li><code>./scripts/test-metrics.sh --into docs/test/iso29119-test-completion-report.md</code> — 完了報告書の §2（レベル別の表）と「完了基準の評価」を置き換えます。マーカーの外は触りません。判定は人が §6 に書きます</li>
+          <li>会話で <code>/test-metrics</code> と打つと、AI が数字と検知を読み解いて「次の行動」を提案します。AI は判定しません</li>
+        </ul>
+
+        <h3>そのまま使える説明の型</h3>
+        <div class="callout">
+          <div class="callout-title">対外説明の 3 文</div>
+          <p>「進捗と品質は工程文書の表から機械で集計しています。手で数えた数字は使いません」<br>
+          「完了基準は文書に出典つきで書き、機械が基準ごとに ✓/✗ を出します。判定できない行が 1 件でもあれば合格に数えません」<br>
+          「完了予定は直近の実施ペースからの推定で、根拠を併記します。GO/NO-GO は人が判定します」</p>
+        </div>
+        <p>詳しくは <code>skills/test-strategy/SKILL.md</code>「測る」、<code>skills/dev-lifecycle/references/test-levels.md</code>「結果の記録」、<code>templates/test/TESTING_STRATEGY.md</code> §7 にあります。</p>
       </section>
 
       <section id="tokens">
