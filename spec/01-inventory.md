@@ -9,8 +9,8 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 233 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 189 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `README.md` | 237 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `INDEX.md` | 190 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 21 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 74 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
@@ -36,8 +36,8 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `dev-lifecycle/SKILL.md` | 105 | RFD〜保守運用の10工程・ID体系・V字・工程ゲート・役割・委譲表。軽量SDDとの使い分け判断表を冒頭に持つ |
-| `dev-lifecycle/references/phase-gates.md` | 115 | 工程0〜9の入口/出口基準チェックリストと差し戻し規則 |
+| `dev-lifecycle/SKILL.md` | 114 | RFD〜保守運用の10工程・ID体系・V字・工程ゲート・役割・委譲表。軽量SDDとの使い分け判断表を冒頭に持つ |
+| `dev-lifecycle/references/phase-gates.md` | 139 | 工程0〜9の入口/出口基準チェックリストと差し戻し規則 |
 | `dev-lifecycle/references/traceability.md` | 69 | ID 書式・所有ファイル・追跡表の記入規則・trace-check が検出する6種別・GitHub 連携 |
 | `dev-lifecycle/references/test-levels.md` | 90 | UT/IT/ST/UAT の設計観点と技法（同値・境界・分岐・デシジョンテーブル・FedEx Tour 等）の分担表 |
 | `test-strategy/SKILL.md` | 105 | テストレベル L1〜L4・ゲート基準・**ゲートの実行タイミング**・変更タイプ別 DoD・完了基準・29119 対応・機械ゲート一覧 |
@@ -55,7 +55,7 @@
 | `test-automation/references/playwright_smoke.py` | 53 | PWA/単一HTML 用スモーク scaffold（console error / localStorage / export / 360×820・768×1812 / offline） |
 | `test-automation/references/pytest_streamlit.py` | 42 | Streamlit AppTest scaffold（起動・session_state 衝突・LLM モック・マルチテナント越境） |
 | `phase-approval/SKILL.md` | 93 | 工程承認レビュー。越えない線（AI は承認しない）・3役を順次で回す理由・出力形式・人間が承認する手順 |
-| `done-gate/SKILL.md` | 56 | 完了判定チェックリスト。全種別共通＋変更タイプ別＋工程ライフサイクル＋AI/LLM＋PWA＋単一HTML＋Streamlit |
+| `done-gate/SKILL.md` | 57 | 完了判定チェックリスト。全種別共通＋変更タイプ別＋工程ライフサイクル＋AI/LLM＋PWA＋単一HTML＋Streamlit |
 | `uiux_review/SKILL.md` | 199 | 画面を実際に開いて全状態を確認する手順。適用実数を数える・報告の型・骨格・文言・数字・アイコン・やってはいけないこと |
 | `uiux_review/references/viewpoints.md` | 849 | **UI/UX レビュー観点 74件**（VP-001〜VP-074）。8分類・優先度・25010 副特性・不合格の実例つき |
 | `retro/SKILL.md` | 38 | KPT 変形のレトロと `lessons.md` への蓄積、キットへの還流手順 |
@@ -85,7 +85,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `rfd.md` | 24 | 工程0。課題を事実で書き選択肢2つ以上（「何もしない」必須）→推奨提示→人間の決定で停止 |
-| `lifecycle.md` | 28 | 指定工程の成果物生成とゲート判定。`status` で進捗のみ。前工程の ID だけを入力にする |
+| `lifecycle.md` | 33 | 指定工程の成果物生成とゲート判定。`status` で進捗のみ。前工程の ID だけを入力にする |
 | `phase-review.md` | 26 | 3役を順次実行し `phase-N-ai.md` へ追記。承認欄には触れない。最大2ラウンド |
 | `trace.md` | 22 | `trace-check.sh` 実行と NG の分類別対処。**追跡表を埋めるために要件・テストを発明しない** |
 | `plan.md` | 18 | `.claude/mode` を削除して探索許可 → 調査 → 方針合意 → `PLAN.md` 生成 |
@@ -125,7 +125,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `install.sh` | 69 | `~/.claude` へ配置（CLAUDE.md・skills・commands・hooks・rules）。既存は `.bak` 退避、rules は同名既存をスキップ |
-| `verify.sh` | 51 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
+| `verify.sh` | 55 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
 | `export-project.sh` | 146 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
 | `check-approval.sh` | 8 | 工程承認検査の薄いラッパ。`--phase N` / `--gate N` / `--quiet`。exit 0/1/2 |
@@ -172,16 +172,16 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `00-rfd.md` | 46 | RFD。背景・影響範囲・選択肢表（「何もしない」を含む）・決定・スコープ外・承認欄 |
-| `01-requirements.md` | 69 | 要件定義。REQ-F/REQ-N・MoSCoW・観測可能な受入基準・前提制約依存・用語・TBD・承認欄 |
-| `02-basic-design.md` | 75 | 基本設計。BD 表・画面設計・データモデル・外部I/F・REQ-N 実現方式・技術選定・リスク |
-| `03-detailed-design.md` | 62 | 詳細設計。DD ごとに入出力・処理手順・事前事後条件・**異常系**・**境界値**・状態遷移 |
-| `04-implementation.md` | 41 | 実装記録。T 表・作業ログ・設計からの逸脱と逆同期・秘密情報チェック |
-| `05-unit-test.md` | 41 | 単体テスト。UT 表（正常系/異常系/境界値の3区分必須）・実行結果 evidence・欠陥 |
-| `06-integration-test.md` | 48 | 結合テスト。IT 表・必須観点チェック5項目・モック方針（外部境界まで） |
-| `07-system-test.md` | 38 | システムテスト。ST 表（**実測値必須**）・観点チェック6項目・欠陥 |
-| `08-acceptance-test.md` | 45 | 受け入れテスト。業務シナリオ単位・探索的テスト1周・不合格項目の判断・**人間の承認欄** |
-| `09-operations.md` | 81 | 保守運用。稼働環境・監視 OPS・変更/ロールバック手順（1度実行済みのチェック）・障害切り分け・既知の制約・引き継ぎ順序 |
+| `00-rfd.md` | 53 | RFD。背景・影響範囲・選択肢表（「何もしない」を含む）・決定・スコープ外・承認欄 |
+| `01-requirements.md` | 72 | 要件定義。REQ-F/REQ-N・MoSCoW・観測可能な受入基準・前提制約依存・用語・TBD・承認欄 |
+| `02-basic-design.md` | 82 | 基本設計。BD 表・画面設計・データモデル・外部I/F・REQ-N 実現方式・技術選定・リスク |
+| `03-detailed-design.md` | 69 | 詳細設計。DD ごとに入出力・処理手順・事前事後条件・**異常系**・**境界値**・状態遷移 |
+| `04-implementation.md` | 48 | 実装記録。T 表・作業ログ・設計からの逸脱と逆同期・秘密情報チェック |
+| `05-unit-test.md` | 48 | 単体テスト。UT 表（正常系/異常系/境界値の3区分必須）・実行結果 evidence・欠陥 |
+| `06-integration-test.md` | 55 | 結合テスト。IT 表・必須観点チェック5項目・モック方針（外部境界まで） |
+| `07-system-test.md` | 45 | システムテスト。ST 表（**実測値必須**）・観点チェック6項目・欠陥 |
+| `08-acceptance-test.md` | 48 | 受け入れテスト。業務シナリオ単位・探索的テスト1周・不合格項目の判断・**人間の承認欄** |
+| `09-operations.md` | 88 | 保守運用。稼働環境・監視 OPS・変更/ロールバック手順（1度実行済みのチェック）・障害切り分け・既知の制約・引き継ぎ順序 |
 | `traceability-matrix.md` | 41 | **追跡表の唯一の真実源**。記入規則（空欄禁止・非該当は `-`・REQ-F は UAT 必須・REQ-N は ST 必須） |
 
 #### lifecycle/approvals/（2件）— 工程承認記録の雛形
@@ -227,7 +227,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 233 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 237 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
@@ -278,4 +278,4 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `.github/workflows/kit-ci.yml` | 64 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |
+| `.github/workflows/kit-ci.yml` | 66 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |

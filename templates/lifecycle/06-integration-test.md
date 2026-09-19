@@ -46,3 +46,10 @@
 - [ ] 全 `BD-xxx` の I/F に1件以上の `IT-xxx` がある（`./scripts/trace-check.sh` NG=0）
 - [ ] 失敗系ケースを含んでいる
 - [ ] Critical / High の欠陥が残ゼロ
+
+## 承認
+
+- 承認記録: `docs/lifecycle/approvals/phase-6.md` — **判定・根拠・承認者は人間が埋める**（AI は埋めない）
+- 事前レビュー: `/phase-review 6`（AI 3 役が指摘を出し切る。AI は承認しない）
+- 有効性の確認: `./scripts/check-approval.sh --phase 6`（exit 0 なら次工程へ進んでよい）
+- **承認後にこの文書を変更すると承認は自動失効する**（`reviewed_hash` の不一致で検出）。変更したら取り直す

@@ -93,6 +93,8 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 ```bash
 ./scripts/init-lifecycle.sh <対象プロジェクト> --github   # 工程文書＋GitHub テンプレート一式
 ./scripts/trace-check.sh docs/lifecycle                   # 追跡の機械検証（NG=0 で合格）
+./scripts/check-approval.sh                               # 工程承認の機械検査（0=合格 / 1=未承認・失効 / 2=判定不能）
+./scripts/check-approval.sh --gate 3                      # 「第3工程に着手してよいか」だけを判定（hook もこれを呼ぶ）
 ```
 
 ## Ver.5.0 での主な更新（2026-07）
@@ -116,6 +118,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（79ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
+./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
 ```
 
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md` を書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
@@ -195,6 +198,7 @@ yuki-aidd-kit/
 │   ├── check-design.sh (check_design.py) / test-check-design.sh  # デザイン検査（直値・トークン・CDN・alert()）
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
+│   ├── check-approval.sh (check_approval.py) / phase-hash.py / test-check-approval.sh  # 工程承認ゲート
 │   ├── init-test-docs.sh / quality_harness.py / test-quality-harness.sh  # テスト活動
 │   ├── ui-hash.py / pre-commit-ui-gate.sh          # UI 検証マーカー
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit
