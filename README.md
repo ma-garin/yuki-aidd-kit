@@ -6,6 +6,18 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
+## Ver.6.6 での主な更新（2026-09-19）— テスト工程のメトリクス: 表を埋めれば機械が数える
+
+外部結合〜受け入れテストで聞かれる「どこまで進んだ・あと何日・危ない不具合は残っているか」に、目視で数えた数字でしか答えられませんでした。根本原因は実行記録が機械可読でないこと。列と語彙を固定し、集計を機械に任せます。
+
+- **記録の形式**: 05〜08 のテスト表に `実施日・実施者`、欠陥表に `起票日`。結果の語彙は `pass / fail / blocked / skip / 未実施`（受け入れは `合 / 否` も可）。29119 側の `system_test_cases.csv` に `結果・実施日・実施者・DEF` の 4 列
+- **`scripts/test-metrics.sh`**（40 アサーションの回帰テスト付き）: レベル別＋全体の消化率・合格率・欠陥密度・Critical/High 未解決と、検知（語彙外の行・重大欠陥・5 日以上の滞留・区分の偏り・**完了予測は根拠付き**）。**語彙外の行は分母に残し、欠陥表が無ければ「算出できない」**（0 と言わない）
+- **`--gate`**: `TESTING_STRATEGY.md` §7 を機械が読める表（しきい値＋出典必須）にし、基準ごとに ✓/✗。終了コードは 0 進める / 1 進めない / **2 判定できない**（語彙外の行が 1 件でもあれば 2）。GO/NO-GO は人が書く
+- **`--history`** で `metrics-history.tsv` に時系列、**`--into`** で完了報告書 §2 と基準評価を置き換え（マーカー外は触らない）
+- `/test-metrics` コマンド、`/lifecycle status`・done-gate・phase-approval への配線。図書館貸出の事例で端から端まで実測し `docs/userguide.html` に章を追加
+
+**機械が数える。人が判定する。** 判定できない状態を合格に数えないのは、工程承認ゲートと同じ線です。
+
 ## Ver.6.5 での主な更新（2026-09-19）— トークン節約を仕組みに: 散文を hook・設定・検査へ
 
 節約の約束事は前からありましたが、**AI が自分で読んで自分で守る散文**でした（機械が強制していたのは 3 つだけ）。Pro＋Sonnet では上限に直結するので、機械にできるものを全部 hook・設定・検査に落としました。公式の削減策（`code.claude.com/docs/en/costs`）を当日の一次情報で確認して設計しています。
@@ -37,7 +49,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 
 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
 
-- **`scripts/test-install.sh`**（82 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
+- **`scripts/test-install.sh`**（84 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
 - **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
@@ -142,11 +154,12 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
 ./scripts/test-hooks.sh  # hooks の回帰テスト（63ケース）
-./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（82ケース。実 ~/.claude には触らない）
+./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（84ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
 ./scripts/test-token-audit.sh && ./scripts/token-audit.sh         # トークン節約の仕組みの回帰テストと点検
+./scripts/test-test-metrics.sh && ./scripts/test-metrics.sh       # テストメトリクスの回帰テストと集計（--gate で完了基準の判定）
 ```
 
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md` を書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
@@ -228,6 +241,7 @@ yuki-aidd-kit/
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
 │   ├── check-approval.sh (check_approval.py) / phase-hash.py / test-check-approval.sh  # 工程承認ゲート
 │   ├── token-audit.sh (token_audit.py) / test-token-audit.sh  # トークン節約の仕組みの点検
+│   ├── test-metrics.sh (test_metrics.py) / test-test-metrics.sh  # テストの進捗・品質メトリクス
 │   ├── init-test-docs.sh / quality_harness.py / test-quality-harness.sh  # テスト活動
 │   ├── ui-hash.py / pre-commit-ui-gate.sh          # UI 検証マーカー
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit

@@ -44,8 +44,9 @@ expect_out  "settings.json 既存時に手動マージの警告" "手動でマ�
 expect_out  "同名 rules が別ディレクトリにあればスキップ表示" "absolute-rules.md は ~/.claude/rules 配下に既存のためスキップ" "$OUT"
 expect_nofile "スキップした rule は aidd-kit/ に置かれない" "$FAKE_HOME/.claude/rules/aidd-kit/absolute-rules.md"
 expect_file "スキップしなかった rule は aidd-kit/ に置かれる" "$FAKE_HOME/.claude/rules/aidd-kit/speed-harness.md"
-expect_count "スキルが 20 個配置される" 20 "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
-expect_count "コマンドが 17 個配置される" 17 "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
+SKILL_N=$(ls -d "$KIT_DIR"/skills/*/ | wc -l | tr -d " "); CMD_N=$(ls "$KIT_DIR"/claude-code/commands/*.md | wc -l | tr -d " ")
+expect_count "スキルが全部配置される（リポジトリ実体から導出: $SKILL_N 個）" "$SKILL_N" "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
+expect_count "コマンドが全部配置される（$CMD_N 個）" "$CMD_N" "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
 HOOK_N=$(ls "$KIT_DIR"/claude-code/hooks/*.sh "$KIT_DIR"/claude-code/hooks/*.py | wc -l | tr -d " ")
 expect_count "hooks が全部配置される（リポジトリ実体から導出: $HOOK_N 個）" "$HOOK_N" "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
 expect_file "工程承認の判定スクリプトが ~/.claude/scripts/ に置かれる（block-phase.py の探索先）" "$FAKE_HOME/.claude/scripts/check_approval.py"
@@ -68,11 +69,11 @@ P="$TMP/proj"; mkdir -p "$P/scripts"
 echo "# my own trace-check" > "$P/scripts/trace-check.sh"
 OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1); RC=$?
 expect_exit "export-project.sh が exit 0" 0 "$RC"
-expect_count "skills 20 個" 20 "$(ls -d "$P"/.claude/skills/*/ | wc -l)"
-expect_count "commands 17 個" 17 "$(ls "$P"/.claude/commands/*.md | wc -l)"
+expect_count "skills $SKILL_N 個（リポジトリ実体と同数）" "$SKILL_N" "$(ls -d "$P"/.claude/skills/*/ | wc -l)"
+expect_count "commands $CMD_N 個（リポジトリ実体と同数）" "$CMD_N" "$(ls "$P"/.claude/commands/*.md | wc -l)"
 expect_count "hooks $HOOK_N 個（リポジトリ実体と同数）" "$HOOK_N" "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
 expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
-for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py; do
+for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py scripts/test_metrics.py scripts/test-metrics.sh; do
   expect_file "生成物: $f" "$P/$f"
 done
 expect_grep "既存 scripts/trace-check.sh はスキップ（内容保持）" "# my own trace-check" "$P/scripts/trace-check.sh"
@@ -120,14 +121,14 @@ echo "[init-test-docs.sh]"
 Q="$TMP/qproj"; mkdir -p "$Q"
 OUT=$(bash "$KIT_DIR/scripts/init-test-docs.sh" "$Q" --ci 2>&1); RC=$?
 expect_exit "--ci: exit 0" 0 "$RC"
-expect_count "--ci: 12 ファイル配置（✅ の数）" 12 "$(printf '%s\n' "$OUT" | grep -c '^✅')"
+expect_count "--ci: 14 ファイル配置（✅ の数）" 14 "$(printf '%s\n' "$OUT" | grep -c '^✅')"
 for f in docs/test/TESTING_STRATEGY.md docs/test/iso29119-test-plan.md docs/system_test_cases.csv quality/feature_contracts.yml scripts/quality_harness.py .github/workflows/test-gates.yml; do
   expect_file "配置物: $f" "$Q/$f"
 done
 expect_file "docs/quality/evidence/ を作る" "$Q/docs/quality/evidence"
 [ -x "$Q/scripts/pre-commit-ui-gate.sh" ] && ok "ゲートスクリプトに実行権限" || ng "ゲートスクリプトに実行権限" "chmod +x されていない"
 OUT=$(bash "$KIT_DIR/scripts/init-test-docs.sh" "$Q" --ci 2>&1)
-expect_count "再実行は全件スキップ（↷ が 12）" 12 "$(printf '%s\n' "$OUT" | grep -c '^↷')"
+expect_count "再実行は全件スキップ（↷ が 14）" 14 "$(printf '%s\n' "$OUT" | grep -c '^↷')"
 # 配置直後に機能契約ハーネスが PASS すること（雛形が NG を出すと利用者が検査を無視するため）
 mkdir -p "$Q/.claude/rules" && touch "$Q/.claude/rules/functional-integrity.md"
 OUT=$(python3 "$Q/scripts/quality_harness.py" --root "$Q" 2>&1); RC=$?

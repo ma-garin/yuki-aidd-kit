@@ -9,12 +9,12 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 266 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 196 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `README.md` | 280 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `INDEX.md` | 198 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 29 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 74 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
-| `.gitignore` | 28 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
+| `.gitignore` | 29 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
 | `VERSION` | 1 | 版の真実源（`6.3.0`）。git tag と対応。`install.sh` / `export-project.sh` が導入先の `KIT_VERSION` に刻印 |
 
 ---
@@ -39,8 +39,8 @@
 | `dev-lifecycle/SKILL.md` | 114 | RFD〜保守運用の10工程・ID体系・V字・工程ゲート・役割・委譲表。軽量SDDとの使い分け判断表を冒頭に持つ |
 | `dev-lifecycle/references/phase-gates.md` | 139 | 工程0〜9の入口/出口基準チェックリストと差し戻し規則 |
 | `dev-lifecycle/references/traceability.md` | 69 | ID 書式・所有ファイル・追跡表の記入規則・trace-check が検出する6種別・GitHub 連携 |
-| `dev-lifecycle/references/test-levels.md` | 90 | UT/IT/ST/UAT の設計観点と技法（同値・境界・分岐・デシジョンテーブル・FedEx Tour 等）の分担表 |
-| `test-strategy/SKILL.md` | 105 | テストレベル L1〜L4・ゲート基準・**ゲートの実行タイミング**・変更タイプ別 DoD・完了基準・29119 対応・機械ゲート一覧 |
+| `dev-lifecycle/references/test-levels.md` | 100 | UT/IT/ST/UAT の設計観点と技法（同値・境界・分岐・デシジョンテーブル・FedEx Tour 等）の分担表 |
+| `test-strategy/SKILL.md` | 111 | テストレベル L1〜L4・ゲート基準・**ゲートの実行タイミング**・変更タイプ別 DoD・完了基準・29119 対応・機械ゲート一覧 |
 | `test-strategy/references/feature-contracts.md` | 51 | 機能契約 YAML の項目定義と検証8種・運用 |
 | `test-strategy/references/ui-verified-gate.md` | 45 | `.ui-verified` の仕組み・BLOCKED 条件・`.rebuild-mode`・配置手順 |
 | `e2e-cycle/SKILL.md` | 95 | E2E を5フェーズ（設計→生成→実行→ODC分析修整→コミット）で **1起動1フェーズ**、待機・ポーリング・バックグラウンド完全禁止 |
@@ -55,7 +55,7 @@
 | `test-automation/references/playwright_smoke.py` | 53 | PWA/単一HTML 用スモーク scaffold（console error / localStorage / export / 360×820・768×1812 / offline） |
 | `test-automation/references/pytest_streamlit.py` | 42 | Streamlit AppTest scaffold（起動・session_state 衝突・LLM モック・マルチテナント越境） |
 | `phase-approval/SKILL.md` | 93 | 工程承認レビュー。越えない線（AI は承認しない）・3役を順次で回す理由・出力形式・人間が承認する手順 |
-| `done-gate/SKILL.md` | 57 | 完了判定チェックリスト。全種別共通＋変更タイプ別＋工程ライフサイクル＋AI/LLM＋PWA＋単一HTML＋Streamlit |
+| `done-gate/SKILL.md` | 58 | 完了判定チェックリスト。全種別共通＋変更タイプ別＋工程ライフサイクル＋AI/LLM＋PWA＋単一HTML＋Streamlit |
 | `uiux_review/SKILL.md` | 199 | 画面を実際に開いて全状態を確認する手順。適用実数を数える・報告の型・骨格・文言・数字・アイコン・やってはいけないこと |
 | `uiux_review/references/viewpoints.md` | 849 | **UI/UX レビュー観点 74件**（VP-001〜VP-074）。8分類・優先度・25010 副特性・不合格の実例つき |
 | `retro/SKILL.md` | 38 | KPT 変形のレトロと `lessons.md` への蓄積、キットへの還流手順 |
@@ -80,12 +80,13 @@
 
 ---
 
-## claude-code/commands/（17件・383行）
+## claude-code/commands/（18件・411行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `rfd.md` | 24 | 工程0。課題を事実で書き選択肢2つ以上（「何もしない」必須）→推奨提示→人間の決定で停止 |
 | `lifecycle.md` | 33 | 指定工程の成果物生成とゲート判定。`status` で進捗のみ。前工程の ID だけを入力にする |
+| `test-metrics.md` | 23 | test-metrics.sh を回し、数字・検知・「人が判定すること」・次の行動を分けて報告。--gate/--history/--into は要求時のみ |
 | `phase-review.md` | 26 | 3役を順次実行し `phase-N-ai.md` へ追記。承認欄には触れない。最大2ラウンド |
 | `trace.md` | 22 | `trace-check.sh` 実行と NG の分類別対処。**追跡表を埋めるために要件・テストを発明しない** |
 | `plan.md` | 18 | `.claude/mode` を削除して探索許可 → 調査 → 方針合意 → `PLAN.md` 生成 |
@@ -125,7 +126,7 @@
 
 ---
 
-## scripts/（23件・2,583行）
+## scripts/（33件・4,734行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -133,6 +134,9 @@
 | `verify.sh` | 55 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
 | `export-project.sh` | 161 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
+| `test-metrics.sh` | 7 | テストメトリクスの薄いラッパ。status / --gate / --history / --into |
+| `test_metrics.py` | 597 | 05〜08 の表と CSV から消化率・合格率・欠陥密度・Critical/High 残・偏り・滞留・完了予測（根拠付き）。§7 の基準表で exit 0/1/2。unread は分母に入れ、欠陥表なしは None |
+| `test-test-metrics.sh` | 173 | test-metrics の回帰テスト（雛形・実データ・unread・欠陥表なし・基準表・偏り・履歴・報告書置換・CSV） |
 | `token-audit.sh` | 7 | トークン監査の薄いラッパ |
 | `token_audit.py` | 234 | 床（常時読み込み）の推定 tok・実測ログ集計・hook/設定の配線・MCP 数・スキル肥大。配線漏れは NG |
 | `test-token-audit.sh` | 56 | token-audit の回帰テスト（キット自身 NG=0・配布先・配線漏れ・ログ集計・MCP 過多） |
@@ -151,7 +155,7 @@
 | `test-hooks.sh` | 284 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
-| `test-install.sh` | 138 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
+| `test-install.sh` | 139 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
 | `check_docs.py` | 385 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
@@ -185,10 +189,10 @@
 | `02-basic-design.md` | 82 | 基本設計。BD 表・画面設計・データモデル・外部I/F・REQ-N 実現方式・技術選定・リスク |
 | `03-detailed-design.md` | 69 | 詳細設計。DD ごとに入出力・処理手順・事前事後条件・**異常系**・**境界値**・状態遷移 |
 | `04-implementation.md` | 48 | 実装記録。T 表・作業ログ・設計からの逸脱と逆同期・秘密情報チェック |
-| `05-unit-test.md` | 48 | 単体テスト。UT 表（正常系/異常系/境界値の3区分必須）・実行結果 evidence・欠陥 |
-| `06-integration-test.md` | 55 | 結合テスト。IT 表・必須観点チェック5項目・モック方針（外部境界まで） |
-| `07-system-test.md` | 45 | システムテスト。ST 表（**実測値必須**）・観点チェック6項目・欠陥 |
-| `08-acceptance-test.md` | 48 | 受け入れテスト。業務シナリオ単位・探索的テスト1周・不合格項目の判断・**人間の承認欄** |
+| `05-unit-test.md` | 50 | 単体テスト。UT 表（正常系/異常系/境界値の3区分必須）・実行結果 evidence・欠陥 |
+| `06-integration-test.md` | 57 | 結合テスト。IT 表・必須観点チェック5項目・モック方針（外部境界まで） |
+| `07-system-test.md` | 47 | システムテスト。ST 表（**実測値必須**）・観点チェック6項目・欠陥 |
+| `08-acceptance-test.md` | 50 | 受け入れテスト。業務シナリオ単位・探索的テスト1周・不合格項目の判断・**人間の承認欄** |
 | `09-operations.md` | 88 | 保守運用。稼働環境・監視 OPS・変更/ロールバック手順（1度実行済みのチェック）・障害切り分け・既知の制約・引き継ぎ順序 |
 | `traceability-matrix.md` | 41 | **追跡表の唯一の真実源**。記入規則（空欄禁止・非該当は `-`・REQ-F は UAT 必須・REQ-N は ST 必須） |
 
@@ -203,11 +207,11 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `TESTING_STRATEGY.md` | 81 | レベル・ゲート・ツールチェーン・**§4 ゲートの実行タイミング**・完了基準・リスク管理 |
+| `TESTING_STRATEGY.md` | 90 | レベル・ゲート・ツールチェーン・**§4 ゲートの実行タイミング**・完了基準・リスク管理 |
 | `DEFINITION_OF_DONE.md` | 67 | 変更タイプ別 DoD（A バックエンド / **B フロントエンド★** / C 文書）と PROHIBITED・機械ゲート図 |
 | `iso29119-test-plan.md` | 69 | 29119-3 テスト計画。対象/対象外・リスク登録簿・開始/終了/中断/再開基準・環境・役割 |
 | `iso29119-test-design-spec.md` | 68 | 技法適用分析（ブラックボックス5技法・境界値の1対1突合・カバレッジ死角・経験ベース） |
-| `iso29119-test-completion-report.md` | 65 | 完了報告。レベル別結果・計画との差異・25010 別到達・残存リスク・GO/NO-GO・申し送り |
+| `iso29119-test-completion-report.md` | 75 | 完了報告。レベル別結果・計画との差異・25010 別到達・残存リスク・GO/NO-GO・申し送り |
 | `iso29119-incident-report.md` | 47 | インシデント。**製品欠陥/テスト陳腐化/環境依存/flaky** の分類と、テストと実装のどちらを直すかの判定 |
 | `system_test_cases.csv` | 7 | システムテストケース。列＝ID/ロール/機能/**ツアー観点**/目的/前提/手順/期待結果/severity。6行の記入例 |
 | `feature_contracts.yml` | 31 | 機能契約の雛形（JSON 互換 YAML）。harness 設定＋`example_feature`（status: planned） |
@@ -235,7 +239,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 266 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 280 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
@@ -247,13 +251,13 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `userguide.html` | 1089 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
+| `userguide.html` | 1158 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
 | `yuki-aidd-kit-manual.html` | 1443 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。冒頭に `userguide.html`／事例／V字章への導線（2026-09-18）。**デザイン適用除外ジャンル** |
-| `Roadmap.md` | 229 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
+| `Roadmap.md` | 242 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |
 | `AUDIT-2026-07.md` | 114 | 資産監査の記録。判定軸・監査表3種・指摘 A-01〜A-09（ISTQB severity）・重複マップ D-01〜D-04・適用記録 |
 | `OPERATING-MODE.md` | 78 | 日常の標準作業モード（種別判定・読む範囲・ECC 使い分け・実装ループ・完了判定・クレジット節約） |
-| `PRD.md` | 83 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
+| `PRD.md` | 85 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
 | `PROJECT-FIT-REPORT.md` | 48 | 実プロジェクト群への適合レポート（2026-06 時点）。Summary/Evidence/Recommendation |
 | `Vision.md` | 47 | 目的・解決する問題6件・到達点3つ・Non-Goals・配置の2層・価値の判定基準 |
 | `rules-rationale/absolute-rules.md` | 119 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
@@ -286,4 +290,4 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `.github/workflows/kit-ci.yml` | 68 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |
+| `.github/workflows/kit-ci.yml` | 70 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |

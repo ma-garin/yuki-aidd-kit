@@ -224,6 +224,19 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - 検証記録: test-hooks 63/63・test-install 82/82・test-check-docs 27/27・test-token-audit 12/12・他 5 スイート PASS・`check-docs.sh` NG=0・`token-audit.sh` NG=0（床 ≒ 6,200 tok 推定）。偽の pytest で「102 行 → 7 行、exit 1 保持」を実測
 - 残: 移行後 1 週間の `/usage`・`/context` 実測で `READ_GUARD_MAX_LINES` / `CONTEXT_GUARD_IDLE_MIN` / `effortLevel` の既定を見直す（保守者）。F-21（警告 hook の stdout）の確認
 
+## M20: テスト工程のメトリクス — 表を埋めれば機械が数える（完了 2026-09-19）
+
+背景: 保守者（QA・外部結合〜受入担当）の最初の優先事項。実行記録が機械可読でなく、進捗・品質を目視で数えていた（F-22）。
+保守者決定は Q-13（記録は工程文書の表・CSV も対象・基準は §7・status と gate を分ける）。
+
+- [x] 記録の形式（S30）: 05〜08 のテスト表に実施日・実施者、欠陥表に起票日、結果の語彙を固定。CSV に 4 列。§7 を機械が読める表（しきい値＋出典）に。完了報告書に metrics:begin/end
+- [x] `test-metrics.sh` ＋ `test_metrics.py` ＋ `test-test-metrics.sh`（S31、10 ケース 40 アサーション）: レベル別＋全体の指標、検知（unread / severe / stale / bias / duplicate / forecast）、status（常に 0）/ `--gate`（0/1/2）/ `--history` / `--into`
+- [x] 配線（S32）: `/test-metrics`、`/lifecycle status`、done-gate、phase-approval 役 3、test-strategy「測る」、test-levels の語彙表、CI（手動）、INDEX / README。test-install のスキル・コマンド個数をリポジトリ実体から導出
+- [x] 事例で実測（S33）: 図書館貸出の ST 8 / UAT 5 / DEF 3 で status → history × 2 → gate → into を端から端まで。配布スクリプトの同梱漏れ（F-23）を検出して是正
+- [x] 文書化（S34）: userguide「テストの進みと品質を数字で見る」章（実測付き）、PRD FR-16、spec/09 F-22・F-23、spec/10 Q-13
+- 検証記録: test-test-metrics 40/40・test-install 84/84・test-trace-check 15/15・test-check-approval 54/54・他 6 スイート PASS・`check-docs.sh` NG=0
+- 残: 単体テストの結果 XML からの自動転記（`filter-output.py` の集計行から）、Jira / Excel 取り込み（qa-autopilot の mapping 方式）は次の計画
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。
