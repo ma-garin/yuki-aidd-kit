@@ -53,6 +53,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       {
         "matcher": "Read|Grep|Glob",
         "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/pre-read-guard.py", "timeout": 5, "statusMessage": "読む価値とサイズを確認中" },
           { "type": "command", "command": "bash .claude/hooks/block-explore.sh", "timeout": 5, "statusMessage": "実装モードの再探索を確認中" }
         ]
       },

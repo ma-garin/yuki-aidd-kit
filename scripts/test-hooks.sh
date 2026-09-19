@@ -142,6 +142,36 @@ OUT=$(HOME="$TMP/nohome" pj "docs/lifecycle/02-basic-design.md" | HOME="$TMP/noh
 expect_contains "判定スクリプトが無ければ deny（導入手順を案内）" "check_approval.py が見つかりません" "$(reason "$OUT")"
 mv "$PG/scripts/check_approval.py.off" "$PG/scripts/check_approval.py"
 
+echo "[pre-read-guard.py]"
+# 読む価値の無いファイルを deny、大きすぎるファイルは先頭だけに絞る（PreToolUse Read）
+rg() { python3 "$HOOKS/pre-read-guard.py"; }
+rj() { printf '{"tool_name":"Read","tool_input":{"file_path":"%s"%s}}' "$1" "${2:-}"; }
+rg_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("permissionDecisionReason","") if d.strip() else "")' 2>/dev/null; }
+rg_limit()  { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"]["updatedInput"].get("limit","") if d.strip() else "")' 2>/dev/null; }
+RG="$TMP/proj-read"; mkdir -p "$RG/node_modules/x" "$RG/src"
+echo '{}' > "$RG/package-lock.json"; echo 'x' > "$RG/node_modules/x/index.js"; echo '# r' > "$RG/check-docs-report.md"
+seq 1 900 > "$RG/src/big.py"; seq 1 300 > "$RG/src/small.py"; printf 'PNG\0\0\0' > "$RG/src/img.png"
+OUT=$(rj "$RG/package-lock.json" | rg)
+expect_contains "ロックファイルは deny" '"permissionDecision": "deny"' "$OUT"
+expect_contains "deny 理由に代替（grep）を示す" "grep" "$(rg_reason "$OUT")"
+OUT=$(rj "$RG/node_modules/x/index.js" | rg)
+expect_contains "node_modules 配下は deny" '"permissionDecision": "deny"' "$OUT"
+OUT=$(rj "$RG/check-docs-report.md" | rg)
+expect_contains "生成レポートは deny" '"permissionDecision": "deny"' "$OUT"
+OUT=$(rj "$RG/src/big.py" | rg)
+expect_contains "900 行のファイルは limit 300 に絞る" "300" "$(rg_limit "$OUT")"
+expect_contains "systemMessage に全体の行数と続きの読み方" "900 行" "$OUT"
+OUT=$(rj "$RG/src/big.py" ',"limit":50' | rg); RC=$?
+expect_empty "limit 指定ありは触らない" "$OUT" "$RC"
+OUT=$(rj "$RG/src/big.py" ',"offset":400' | rg); RC=$?
+expect_empty "offset 指定ありは触らない" "$OUT" "$RC"
+OUT=$(rj "$RG/src/small.py" | rg); RC=$?
+expect_empty "300 行のファイルは触らない" "$OUT" "$RC"
+OUT=$(rj "$RG/src/img.png" | rg); RC=$?
+expect_empty "バイナリは触らない（Read に任せる）" "$OUT" "$RC"
+OUT=$(printf '{"tool_name":"Grep","tool_input":{"pattern":"x","path":"%s"}}' "$RG/package-lock.json" | rg); RC=$?
+expect_empty "Grep は対象外（Read だけ）" "$OUT" "$RC"
+
 bash_json() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$1"; }
 echo "[filter-output.py]"
 # 冗長な出力を Claude が読む前に絞る（PreToolUse Bash・updatedInput）。終了コードは元のコマンドのまま
