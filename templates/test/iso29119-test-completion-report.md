@@ -12,11 +12,21 @@
 
 ## 2. テスト実施サマリ（Test results summary）
 
-| レベル | 実行 | PASS | FAIL | SKIP | 所要 | 証跡 |
-|---|---|---|---|---|---|---|
-| L1/L2 | <n> | | | | <43s> | `docs/quality/evidence/<日付>-l1l2.txt` |
-| L3 | <n> | | | | <193s> | `tests/e2e/screenshots/` |
-| L4 | <n> | | | | | `uat-XX.png` |
+<!-- metrics:begin — `./scripts/test-metrics.sh --into docs/test/iso29119-test-completion-report.md` が置き換える。手で埋めない -->
+| レベル | 全件 | 実行 | PASS | FAIL | BLOCKED | SKIP | 未実施 | 判定不能 | 消化率 | 合格率 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| （未生成。`./scripts/test-metrics.sh --into <このファイル>` を実行する） | | | | | | | | | | |
+
+### 完了基準の評価（`TESTING_STRATEGY.md` §7）
+
+| # | 基準 | しきい値 | 実測 | 判定 |
+|---|---|---|---|---|
+| （未生成） | | | | |
+
+判定候補: （未生成）
+<!-- metrics:end -->
+
+所要時間と証跡（手で書く）: L1/L2 <43s> `docs/quality/evidence/<日付>-l1l2.txt` ／ L3 <193s> `tests/e2e/screenshots/` ／ L4 `uat-XX.png`
 
 失敗の内訳（分類は `iso29119-incident-report.md` と一致させる）: 製品欠陥 <n> / テスト陳腐化 <n> / 環境・データ依存 <n> / flaky <n> / 未判定 <n>
 
@@ -47,7 +57,7 @@
 
 **判定: <GO / 条件付き GO / NO-GO>**
 
-- 終了基準の充足状況（`TESTING_STRATEGY.md` §7 の 1〜5 を個別に ✓/✗）
+- 終了基準の充足状況は §2「完了基準の評価」（機械が埋める）を参照。手動確認の行だけここに ✓/✗ を書く
 - 判定根拠（すべて実測値に紐づける）
 - 条件付きの場合の条件（すべて必須）
 

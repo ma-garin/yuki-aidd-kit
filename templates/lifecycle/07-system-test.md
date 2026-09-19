@@ -8,12 +8,14 @@
 
 ## テストケース
 
-| ID | 対象 REQ-N | 観点 | 測定条件 | 判定基準 | 実測値 | 合否 | evidence |
-|---|---|---|---|---|---|---|---|
-| ST-001 | REQ-N-001 | 性能効率性 | 3G相当(1.6Mbps) | 3秒以内 | 2.1秒 | 合 | `evidence/lighthouse.html` |
-| ST-0xx | REQ-N-0xx | デバイス対応 | 360×820px |  |  |  | `evidence/360.png` |
-| ST-0xx | REQ-N-0xx | 信頼性 | オフライン |  |  |  |  |
-| ST-0xx | REQ-N-0xx | セキュリティ |  |  |  |  |  |
+| ID | 対象 REQ-N | 観点 | 測定条件 | 判定基準 | 実測値 | 合否 | evidence | 実施日 | 実施者 |
+|---|---|---|---|---|---|---|---|---|---|
+| ST-001 | REQ-N-001 | 性能効率性 | 3G相当(1.6Mbps) | 3秒以内 | 2.1秒 | 合 | `evidence/lighthouse.html` | 2026-09-19 | <実施者> |
+| ST-0xx | REQ-N-0xx | デバイス対応 | 360×820px |  |  |  | `evidence/360.png` |  |  |
+| ST-0xx | REQ-N-0xx | 信頼性 | オフライン |  |  |  |  |  |  |
+| ST-0xx | REQ-N-0xx | セキュリティ |  |  |  |  |  |  |  |
+
+<!-- 結果の語彙: pass / fail / blocked / skip / 未実施（UAT は 合 / 否 も可）。語彙外は「判定できない行」として分母に数える。集計は手書きせず ./scripts/test-metrics.sh -->
 
 ### 観点チェック（該当するものだけ実施。非該当は追跡表で `—`）
 
@@ -26,8 +28,8 @@
 
 ## 検出した欠陥
 
-| DEF-ID | 対象 ST | 対象 REQ-N | severity | 内容 | evidence | 対応 |
-|---|---|---|---|---|---|---|
+| DEF-ID | 対象 ST | 対象 REQ-N | severity | 内容 | evidence | 起票日 | 対応 |
+|---|---|---|---|---|---|---|---|
 
 severity は ISTQB（Critical / High / Medium / Low）。severity と priority を混同しない。
 

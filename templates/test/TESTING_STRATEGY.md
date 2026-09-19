@@ -63,9 +63,18 @@
 
 実施記録: シナリオごとにスクリーンショットを `<tests/e2e/screenshots/uat-XX.png>` として保存する。
 
-## 7. 完了基準（Exit Criteria）
+## 7. 完了基準（Exit Criteria）— `./scripts/test-metrics.sh --gate` がこの表を読む
 
-1. L1+L2 全 PASS + カバレッジ 80%+ ／ 2. L3（UI 変更時）全 PASS + スクショ目視 ／ 3. L4（新機能時）依頼者の承認 ／ 4. Critical/High 未解決ゼロ ／ 5. `quality_harness.py` PASS
+| # | 基準 | しきい値（機械が読む） | 出典 |
+|---|---|---|---|
+| 1 | 消化率（実行済み ÷ 全件。判定できない行も分母に数える） | `progress >= 100` | ISO/IEC/IEEE 29119-2 テスト完了基準 |
+| 2 | 合格率（PASS ÷ 実行済み） | `pass_rate >= 95` | 案件の合意 <YYYY-MM-DD> |
+| 3 | Critical / High の未解決 | `severe_open == 0` | `qa-review-standards`（ISTQB severity） |
+| 4 | 判定できない行（結果欄が語彙外・欠陥表なし） | `unread == 0` | 判定不能を合格に数えない |
+| 5 | L3（UI 変更時）全 PASS ＋ スクショ目視、L4（新機能時）依頼者の承認、`quality_harness.py` PASS | 手動確認 | `test-strategy` |
+
+- しきい値に使える語: `progress` `pass_rate` `severe_open` `open_defects` `unread` `failed`、比較は `>= <= == >`。「手動確認」の行は機械が判定しない
+- **出典が空の行は基準として読まない**（案件ごとに値を変えるときは出典も書き換える）
 
 ## 8. リスク管理
 
