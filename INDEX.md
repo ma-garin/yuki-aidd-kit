@@ -25,6 +25,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
 ./scripts/trace-check.sh docs/lifecycle       # 要件→設計→実装→テストの追跡を機械検証（NG=0 で合格）
+./scripts/token-audit.sh                      # トークン節約の仕組みの点検（床の推定・hook と設定の配線・MCP 数。実測は /context /usage）
 ./scripts/check-approval.sh                   # 工程承認の機械検査（記録の有無・版の一致=失効・工程順序。0=合格 1=未承認 2=判定不能）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
 open docs/userguide.html                      # ユーザーガイド（概要・導入手順。初学者向け）
@@ -120,7 +121,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `/eval` | AIシステムのeval実行（スコアラー選定〜回帰判定） | #ai #eval | 20行 |
 | `/doc-search` | 技術ドキュメント特化検索 | #search | 14行 |
 | `/retro` | レトロ実行と lessons.md 追記 | #improve | 17行 |
-| `/token-check` | トークン使用量の確認と最適化提案 | #token | 23行 |
+| `/token-check` | トークン使用量の確認と最適化提案 | #token | 28行 |
 
 ## ECC 連携
 

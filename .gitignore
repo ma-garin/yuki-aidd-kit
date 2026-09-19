@@ -24,3 +24,5 @@ output/
 trace-check-report.md
 check-docs-report.md
 check-design-report.md
+check-approval-report.md
+token-audit-report.md

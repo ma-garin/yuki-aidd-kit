@@ -100,6 +100,12 @@ OUT=$(run "$C"); RC=$?
 expect_exit "spec/01 の行数がズレると exit 1" 1 "$RC"
 expect_out  "種別「spec同期」で検出" "spec同期" "$OUT"
 
+echo "[ケース10: CLAUDE.md.template ＋ AGENTS.md.template の合計 ≦ 200 行]"
+C=$(fresh); for i in $(seq 1 120); do echo "- 水増し $i" >> "$C/AGENTS.md.template"; done
+OUT=$(run "$C" --skip-tests); RC=$?
+expect_exit "合計が 200 行を超えると exit 1" 1 "$RC"
+expect_out  "種別「常時読込」で検出" "CLAUDE.md.template + AGENTS.md.template" "$OUT"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

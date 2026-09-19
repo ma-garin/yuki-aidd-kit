@@ -132,6 +132,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
+./scripts/test-token-audit.sh && ./scripts/token-audit.sh         # トークン節約の仕組みの回帰テストと点検
 ```
 
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md` を書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
@@ -212,6 +213,7 @@ yuki-aidd-kit/
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
 │   ├── check-approval.sh (check_approval.py) / phase-hash.py / test-check-approval.sh  # 工程承認ゲート
+│   ├── token-audit.sh (token_audit.py) / test-token-audit.sh  # トークン節約の仕組みの点検
 │   ├── init-test-docs.sh / quality_harness.py / test-quality-harness.sh  # テスト活動
 │   ├── ui-hash.py / pre-commit-ui-gate.sh          # UI 検証マーカー
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit
