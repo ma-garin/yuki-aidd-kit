@@ -46,7 +46,8 @@ expect_nofile "スキップした rule は aidd-kit/ に置かれない" "$FAKE_
 expect_file "スキップしなかった rule は aidd-kit/ に置かれる" "$FAKE_HOME/.claude/rules/aidd-kit/speed-harness.md"
 expect_count "スキルが 20 個配置される" 20 "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
 expect_count "コマンドが 17 個配置される" 17 "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
-expect_count "hooks が 8 個配置される（sh 4 + py 4）" 8 "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
+HOOK_N=$(ls "$KIT_DIR"/claude-code/hooks/*.sh "$KIT_DIR"/claude-code/hooks/*.py | wc -l | tr -d " ")
+expect_count "hooks が全部配置される（リポジトリ実体から導出: $HOOK_N 個）" "$HOOK_N" "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
 expect_file "工程承認の判定スクリプトが ~/.claude/scripts/ に置かれる（block-phase.py の探索先）" "$FAKE_HOME/.claude/scripts/check_approval.py"
 expect_file "phase-hash.py も同じ場所に置かれる（check_approval.py が隣を参照する）" "$FAKE_HOME/.claude/scripts/phase-hash.py"
 V=$(cat "$FAKE_HOME/.claude/KIT_VERSION" 2>/dev/null)
@@ -69,7 +70,7 @@ OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1); RC=$?
 expect_exit "export-project.sh が exit 0" 0 "$RC"
 expect_count "skills 20 個" 20 "$(ls -d "$P"/.claude/skills/*/ | wc -l)"
 expect_count "commands 17 個" 17 "$(ls "$P"/.claude/commands/*.md | wc -l)"
-expect_count "hooks 8 個" 8 "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
+expect_count "hooks $HOOK_N 個（リポジトリ実体と同数）" "$HOOK_N" "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
 expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
 for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py; do
   expect_file "生成物: $f" "$P/$f"
@@ -84,6 +85,10 @@ expect_grep "hooks の settings.json が相対パス参照" ".claude/hooks/block
 expect_grep "block-explore.sh が Read|Grep|Glob に配線される（グローバル導入と同じ振る舞い）" ".claude/hooks/block-explore.sh" "$P/.claude/settings.json"
 expect_grep "block-phase.py が Write|Edit|MultiEdit に配線される（.claude/phase-gate が無ければ何もしない）" ".claude/hooks/block-phase.py" "$P/.claude/settings.json"
 python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$P/.claude/settings.json" 2>/dev/null && ok "生成した settings.json が JSON として妥当" || ng "生成した settings.json が JSON として妥当" "パース失敗"
+SJ=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('effortLevel'), d.get('autoCompactWindow'), d.get('env',{}).get('BASH_MAX_OUTPUT_LENGTH'))" "$P/.claude/settings.json" 2>/dev/null)
+expect_out "effortLevel=high（xhigh から 1 段下げ。設計判断のときだけ上げる）" "high" "$SJ"
+expect_out "autoCompactWindow=200k（Sonnet 5 の 1M を放置しない）" "200k" "$SJ"
+expect_out "BASH_MAX_OUTPUT_LENGTH=12000（絞れなかった出力の上限）" "12000" "$SJ"
 expect_count ".claude/KIT_VERSION が3フィールド" 3 "$(wc -w < "$P/.claude/KIT_VERSION")"
 # 再実行で退避
 OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1)

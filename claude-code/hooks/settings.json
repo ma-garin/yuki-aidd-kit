@@ -1,4 +1,9 @@
 {
+  "effortLevel": "high",
+  "autoCompactWindow": "200k",
+  "env": {
+    "BASH_MAX_OUTPUT_LENGTH": "12000"
+  },
   "statusLine": {
     "type": "command",
     "command": "python3 ~/.claude/hooks/statusline.py",
@@ -26,6 +31,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 ~/.claude/hooks/pre-read-guard.py",
+            "timeout": 5,
+            "statusMessage": "読む価値とサイズを確認中"
+          },
+          {
+            "type": "command",
             "command": "bash ~/.claude/hooks/block-explore.sh"
           }
         ]
@@ -38,6 +49,45 @@
             "command": "python3 ~/.claude/hooks/block-gates.py",
             "timeout": 10,
             "statusMessage": "ゲート実行の要否を確認中"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/filter-output.py",
+            "timeout": 5,
+            "statusMessage": "冗長な出力を絞る書き換えを確認中"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/context-guard.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/pre-compact.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/log-instructions.py",
+            "timeout": 5
           }
         ]
       }

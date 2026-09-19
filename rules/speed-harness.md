@@ -41,6 +41,7 @@ kill $(lsof -ti:<PORT>) 2>/dev/null                                            #
 見積の1.5倍を超えたら、原因1行を `docs/rules-rationale/speed-harness.md` の実測記録に追記してから完了報告する。ルールを新設せず、H-1〜H-5 のどこで落ちたかを特定する。
 ## H-7. コミット・プッシュ・マージ
 - ゲート（pytest / make test / verify-ui / lint）は**ユーザーが要求した時だけ実行する**（Claude Code では `block-gates.py` が強制。要求時は `GATES_REQUESTED=1` を付ける）
+- 実行したときの出力は `filter-output.py` が失敗行＋集計に絞る（全量は `FULL_OUTPUT=1`）。絞られた結果で判断できないときだけ全量を取る
 - 手順は一直線: add（パス明示）→ commit → push → PR 作成 → マージ。作成とマージは別コマンド
 - コミット前に変更の性質（docs のみ / code / UI）を1行で確定させる
 - ゲートが赤なら: 変更を stash した素の状態で同じ失敗が再現したら main 由来と断定し、それ以上切り分けない。PR 本文に「main 由来・スコープ外」と1行

@@ -142,8 +142,105 @@ OUT=$(HOME="$TMP/nohome" pj "docs/lifecycle/02-basic-design.md" | HOME="$TMP/noh
 expect_contains "判定スクリプトが無ければ deny（導入手順を案内）" "check_approval.py が見つかりません" "$(reason "$OUT")"
 mv "$PG/scripts/check_approval.py.off" "$PG/scripts/check_approval.py"
 
-echo "[block-gates.py]"
+echo "[context-guard.py / pre-compact.py / log-instructions.py]"
+# 会話の寿命: transcript の mtime でアイドル、サイズで肥大を判定（UserPromptSubmit・警告して通す）
+CG="$TMP/cg"; mkdir -p "$CG"; TR="$CG/transcript.jsonl"
+cgj() { printf '{"hook_event_name":"UserPromptSubmit","transcript_path":"%s","prompt":"x"}' "$1"; }
+cg_ctx() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("additionalContext","") if d.strip() else "")' 2>/dev/null; }
+echo '{}' > "$TR"; touch -d '70 minutes ago' "$TR"
+OUT=$(cgj "$TR" | python3 "$HOOKS/context-guard.py")
+expect_contains "70 分空いたら /clear か要約再開を注入" "/clear" "$(cg_ctx "$OUT")"
+expect_contains "経過分数を含む" "70 分" "$(cg_ctx "$OUT")"
+touch -d '10 minutes ago' "$TR"
+OUT=$(cgj "$TR" | python3 "$HOOKS/context-guard.py"); RC=$?
+expect_empty "10 分なら何も注入しない" "$OUT" "$RC"
+truncate -s 5M "$TR"; touch "$TR"
+OUT=$(cgj "$TR" | python3 "$HOOKS/context-guard.py")
+expect_contains "5 MB 超なら /compact を注入" "/compact" "$(cg_ctx "$OUT")"
+OUT=$(cgj "$CG/none.jsonl" | python3 "$HOOKS/context-guard.py"); RC=$?
+expect_empty "transcript が無ければ何もしない（初回）" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"PreCompact","trigger":"auto"}' | python3 "$HOOKS/pre-compact.py")
+expect_contains "PreCompact に「残す／捨てる」の指示を注入" "決定事項" "$(cg_ctx "$OUT")"
+PL="$TMP/proj-log"; mkdir -p "$PL/.claude"
+printf '{"hook_event_name":"InstructionsLoaded","file_path":"/x/CLAUDE.md","load_reason":"session_start"}' | CLAUDE_PROJECT_DIR="$PL" python3 "$HOOKS/log-instructions.py"; RC=$?
+if [ "$RC" -eq 0 ] && grep -q '"/x/CLAUDE.md"' "$PL/.claude/instructions-loaded.log" 2>/dev/null; then
+  echo "  ✅ InstructionsLoaded を .claude/instructions-loaded.log に追記（Claude には何も返さない）"; PASS=$((PASS+1))
+else
+  echo "  ❌ InstructionsLoaded を .claude/instructions-loaded.log に追記"; FAIL=$((FAIL+1))
+fi
+
+echo "[pre-read-guard.py]"
+# 読む価値の無いファイルを deny、大きすぎるファイルは先頭だけに絞る（PreToolUse Read）
+rg() { python3 "$HOOKS/pre-read-guard.py"; }
+rj() { printf '{"tool_name":"Read","tool_input":{"file_path":"%s"%s}}' "$1" "${2:-}"; }
+rg_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("permissionDecisionReason","") if d.strip() else "")' 2>/dev/null; }
+rg_limit()  { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"]["updatedInput"].get("limit","") if d.strip() else "")' 2>/dev/null; }
+RG="$TMP/proj-read"; mkdir -p "$RG/node_modules/x" "$RG/src"
+echo '{}' > "$RG/package-lock.json"; echo 'x' > "$RG/node_modules/x/index.js"; echo '# r' > "$RG/check-docs-report.md"
+seq 1 900 > "$RG/src/big.py"; seq 1 300 > "$RG/src/small.py"; printf 'PNG\0\0\0' > "$RG/src/img.png"
+OUT=$(rj "$RG/package-lock.json" | rg)
+expect_contains "ロックファイルは deny" '"permissionDecision": "deny"' "$OUT"
+expect_contains "deny 理由に代替（grep）を示す" "grep" "$(rg_reason "$OUT")"
+OUT=$(rj "$RG/node_modules/x/index.js" | rg)
+expect_contains "node_modules 配下は deny" '"permissionDecision": "deny"' "$OUT"
+OUT=$(rj "$RG/check-docs-report.md" | rg)
+expect_contains "生成レポートは deny" '"permissionDecision": "deny"' "$OUT"
+OUT=$(rj "$RG/src/big.py" | rg)
+expect_contains "900 行のファイルは limit 300 に絞る" "300" "$(rg_limit "$OUT")"
+expect_contains "systemMessage に全体の行数と続きの読み方" "900 行" "$OUT"
+OUT=$(rj "$RG/src/big.py" ',"limit":50' | rg); RC=$?
+expect_empty "limit 指定ありは触らない" "$OUT" "$RC"
+OUT=$(rj "$RG/src/big.py" ',"offset":400' | rg); RC=$?
+expect_empty "offset 指定ありは触らない" "$OUT" "$RC"
+OUT=$(rj "$RG/src/small.py" | rg); RC=$?
+expect_empty "300 行のファイルは触らない" "$OUT" "$RC"
+OUT=$(rj "$RG/src/img.png" | rg); RC=$?
+expect_empty "バイナリは触らない（Read に任せる）" "$OUT" "$RC"
+OUT=$(printf '{"tool_name":"Grep","tool_input":{"pattern":"x","path":"%s"}}' "$RG/package-lock.json" | rg); RC=$?
+expect_empty "Grep は対象外（Read だけ）" "$OUT" "$RC"
+
 bash_json() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$1"; }
+echo "[filter-output.py]"
+# 冗長な出力を Claude が読む前に絞る（PreToolUse Bash・updatedInput）。終了コードは元のコマンドのまま
+fo() { python3 "$HOOKS/filter-output.py"; }
+fo_cmd() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"]["updatedInput"]["command"] if d.strip() else "")' 2>/dev/null; }
+fo_msg() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d).get("systemMessage","") if d.strip() else "")' 2>/dev/null; }
+
+OUT=$(bash_json "GATES_REQUESTED=1 pytest tests/" | fo)
+expect_contains "pytest を失敗行＋末尾に絞る（updatedInput）" "grep -A 5 -E" "$(fo_cmd "$OUT")"
+expect_contains "元の終了コードで終える" 'exit $__rc' "$(fo_cmd "$OUT")"
+expect_contains "systemMessage で全量の取り方を伝える" "FULL_OUTPUT=1" "$(fo_msg "$OUT")"
+OUT=$(bash_json "FULL_OUTPUT=1 GATES_REQUESTED=1 pytest tests/" | fo); RC=$?
+expect_empty "FULL_OUTPUT=1 なら触らない" "$OUT" "$RC"
+OUT=$(bash_json "bash scripts/test-hooks.sh" | fo); RC=$?
+expect_empty "キット自身の回帰テスト（bash scripts/test-*.sh）は絞らない" "$OUT" "$RC"
+OUT=$(printf '{"tool_name":"Bash","tool_input":{"command":"cat <<EOF > a.md\\npytest を実行する手順\\nEOF"}}' | fo); RC=$?
+expect_empty "ヒアドキュメント内の pytest は触らない" "$OUT" "$RC"
+OUT=$(bash_json "git log" | fo)
+expect_contains "git log に件数が無ければ --oneline -20 を補う" "git log --oneline -20" "$(fo_cmd "$OUT")"
+OUT=$(bash_json "git log -n 5" | fo); RC=$?
+expect_empty "git log -n 5 は触らない" "$OUT" "$RC"
+OUT=$(bash_json "git diff" | fo)
+expect_contains "git diff（対象なし）は --stat に" "git diff --stat" "$(fo_cmd "$OUT")"
+OUT=$(bash_json "git diff -- README.md" | fo); RC=$?
+expect_empty "git diff -- <path> は触らない" "$OUT" "$RC"
+OUT=$(bash_json "npm install" | fo)
+expect_contains "npm install は末尾 40 行に" "tail -40" "$(fo_cmd "$OUT")"
+# block-gates.py と共存: GATES_REQUESTED=1 が無ければ block-gates が deny（filter の allow より deny が勝つ）
+OUT=$(bash_json "pytest tests/" | python3 "$HOOKS/block-gates.py")
+expect_contains "GATES_REQUESTED=1 無しは block-gates.py が deny のまま" '"permissionDecision": "deny"' "$OUT"
+# 書き換えたコマンドを実際に実行: 偽の pytest（100 行出力・1 行 FAIL・exit 1）で出力が絞られ終了コードが保たれる
+FB="$TMP/fakebin"; mkdir -p "$FB"
+printf '#!/bin/bash\nfor i in $(seq 1 100); do echo "test_$i PASSED"; done\necho "FAILED test_x - assert 1 == 2"\necho "=== 1 failed, 100 passed ==="\nexit 1\n' > "$FB/pytest"; chmod +x "$FB/pytest"
+NEWCMD=$(fo_cmd "$(bash_json "GATES_REQUESTED=1 pytest tests/" | fo)")
+RUN=$(PATH="$FB:$PATH" bash -c "$NEWCMD" 2>&1); RC=$?
+if [ "$RC" -eq 1 ] && printf '%s' "$RUN" | grep -qF "FAILED test_x" && ! printf '%s' "$RUN" | grep -qF "test_50 PASSED" && printf '%s' "$RUN" | grep -qF "1 failed, 100 passed"; then
+  echo "  ✅ 実行すると失敗行と集計だけが残り exit 1 が保たれる（$(printf '%s' "$RUN" | wc -l | tr -d ' ') 行 / 元 102 行）"; PASS=$((PASS+1))
+else
+  echo "  ❌ 実行すると失敗行と集計だけが残り exit 1 が保たれる（exit=$RC / $(printf '%s' "$RUN" | head -3 | tr '\n' ' ')）"; FAIL=$((FAIL+1))
+fi
+
+echo "[block-gates.py]"
 OUT=$(bash_json "pytest tests/" | python3 "$HOOKS/block-gates.py")
 expect_contains "pytest を deny" '"permissionDecision": "deny"' "$OUT"
 

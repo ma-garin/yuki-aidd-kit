@@ -76,15 +76,15 @@
 
 | 公式の策 | キットの現状 |
 |---|---|
-| タスク間で `/clear` | `context-compression` にあるが CLAUDE.md には無い |
+| タスク間で `/clear` | `CLAUDE.md.template` `model-routing` に明記。**55 分超の再開と 4 MB 超は `context-guard.py` が警告する**（M19） |
 | **CLAUDE.md から skills へ移す**（skills は on-demand） | 方向は合っている。ただし `rules/` が常時4,500トークン |
-| MCP より CLI ツールを使う | 記述なし |
-| **hook で前処理してから Claude に渡す**（テスト出力を grep で絞る等） | **未活用**。キットの hook は警告・ブロックのみで、入力を絞る使い方をしていない |
+| MCP より CLI ツールを使う | `CLAUDE.md.template` に明記。`token-audit.sh` が MCP 数 > 3 で WARN（M19） |
+| **hook で前処理してから Claude に渡す**（テスト出力を grep で絞る等） | **実装済み（M19）**: `filter-output.py`（テスト・install・build・git log/diff）・`pre-read-guard.py`（Read の切り詰め・deny）。既定 ON、`FULL_OUTPUT=1` で全量 |
 | skill にドメイン知識を置き探索させない | まさにキットの設計 |
 | サブエージェントに冗長な処理を隔離 | `speed-harness` H-4 にあるが、Pro では委譲自体が高コスト |
-| `/effort` で effort を下げる | **記述なし** |
+| `/effort` で effort を下げる | `effortLevel: high` を settings で固定（M19、Q-12）。上げる場面は `model-routing` |
 | 具体的なプロンプト／plan mode／早期の軌道修正 | `speed-harness` H-1・H-3 が近い |
-| Agent teams は通常の約7倍のトークン | **記述なし。Pro では原則禁止でよい** |
+| Agent teams は通常の約7倍のトークン | `model-routing`「Agent teams は使わない」。3 役レビューも順次（Q-11） |
 
 ### Sonnet 5 の API 上の性質（bundled skill `claude-api`）
 
@@ -122,7 +122,7 @@
 | `functional-integrity`（`paths` 付き） | 955 | ~523 | コード/UI を触ったときだけ |
 | `INDEX.md` | 9,165 | ~4,456 | **毎回は読まない**（表に無いときだけ） |
 
-実トークンは保守者の `/context` で U-2 として記録する。
+実トークンは保守者の `/context` で U-2 として記録する。M19 以降は `log-instructions.py` が `.claude/instructions-loaded.log` に実ロードを記録し、`token-audit.sh` が集計する（推定 → 実測の材料）。
 
 `INDEX.md` は自動ロードではなく **CLAUDE.md が「まず読め」と指示しているから**毎回載る。これは設計判断なので変えられる。
 

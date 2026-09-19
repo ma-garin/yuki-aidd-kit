@@ -47,12 +47,16 @@ chmod +x "$TARGET/.claude/hooks/"*.sh "$TARGET/.claude/hooks/"*.py
 backup_if_exists "$TARGET/.claude/settings.json"
 cat > "$TARGET/.claude/settings.json" << 'JSON'
 {
+  "effortLevel": "high",
+  "autoCompactWindow": "200k",
+  "env": { "BASH_MAX_OUTPUT_LENGTH": "12000" },
   "statusLine": { "type": "command", "command": "python3 .claude/hooks/statusline.py", "padding": 2 },
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Read|Grep|Glob",
         "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/pre-read-guard.py", "timeout": 5, "statusMessage": "読む価値とサイズを確認中" },
           { "type": "command", "command": "bash .claude/hooks/block-explore.sh", "timeout": 5, "statusMessage": "実装モードの再探索を確認中" }
         ]
       },
@@ -66,9 +70,19 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" }
+          { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" },
+          { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/context-guard.py", "timeout": 5 } ] }
+    ],
+    "PreCompact": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/pre-compact.py", "timeout": 5 } ] }
+    ],
+    "InstructionsLoaded": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/log-instructions.py", "timeout": 5 } ] }
     ],
     "PostToolUse": [
       {
@@ -88,7 +102,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
   }
 }
 JSON
-echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み: .claude/mode ・ .claude/phase-gate が無ければ何もしない）"
+echo "✅ settings: effortLevel=high / autoCompactWindow=200k / BASH_MAX_OUTPUT_LENGTH=12000（トークン節約の既定。設計判断のときだけ /effort xhigh）"
+echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み: .claude/mode ・ .claude/phase-gate が無ければ何もしない。filter-output.py が冗長な出力を絞る: 全量は FULL_OUTPUT=1）"
 
 # Rules（.claude/rules/*.md は Claude Code が常時読み込む。speed-harness.md の H-2 はプロジェクトごとに埋める）
 cp "$KIT_DIR/rules/"*.md "$TARGET/.claude/rules/"

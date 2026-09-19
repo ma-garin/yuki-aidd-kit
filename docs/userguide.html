@@ -165,6 +165,7 @@
           <li><a href="#vmodel">V字・W字モデルとの対応</a></li>
           <li><a href="#approval">工程の承認ゲート（要求どおり作られているか）</a></li>
           <li><a href="#pro">Pro プラン・Sonnet で使うコツ</a></li>
+          <li><a href="#tokens">トークンを減らす仕組み</a></li>
           <li><a href="#design">画面の見た目を揃える</a></li>
           <li><a href="#trouble">困ったとき</a></li>
           <li><a href="#glossary">用語集</a></li>
@@ -192,6 +193,7 @@
           <li><a href="#vmodel">V字・W字との対応</a></li>
           <li><a href="#approval">工程の承認ゲート</a></li>
           <li><a href="#pro">Pro・Sonnet で使うコツ</a></li>
+          <li><a href="#tokens">トークンを減らす仕組み</a></li>
           <li><a href="#design">画面の見た目を揃える</a></li>
           <li><a href="#trouble">困ったとき</a></li>
           <li><a href="#glossary">用語集</a></li>
@@ -661,12 +663,13 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
 
         <h3>キット自身を確かめたいとき（更新を取り込んだ後など）</h3>
         <pre><code>./scripts/verify.sh              <span class="c"># 入っているか</span>
-./scripts/test-hooks.sh          <span class="c"># 見張り役が反応するか（32）</span>
-./scripts/test-install.sh        <span class="c"># 導入・配布が正しいか（79）</span>
+./scripts/test-hooks.sh          <span class="c"># 見張り役が反応するか（63）</span>
+./scripts/test-install.sh        <span class="c"># 導入・配布が正しいか（82）</span>
 ./scripts/test-git-gates.sh      <span class="c"># 秘密情報・UI 検証マーカーの検査が正しいか（27）</span>
 ./scripts/check-docs.sh          <span class="c"># 説明書と中身がズレていないか</span>
 ./scripts/check-design.sh        <span class="c"># デザイン部品に直値・外部読み込み・alert() が無いか</span>
-./scripts/check-approval.sh      <span class="c"># 工程の承認が揃っているか・失効していないか</span></code></pre>
+./scripts/check-approval.sh      <span class="c"># 工程の承認が揃っているか・失効していないか</span>
+./scripts/token-audit.sh         <span class="c"># トークン節約の仕組みが配線されているか</span></code></pre>
         <p>ほかに <code>test-trace-check.sh</code>（15）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（25）、<code>test-check-design.sh</code>（44）、<code>test-check-approval.sh</code>（54）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
 
         <h3>自分のプロジェクトで使う検査</h3>
@@ -931,6 +934,52 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
           <p>デザインの CSS、工程文書、テスト文書は<strong>完成品のファイル</strong>として同梱してあります。Sonnet に「同じものを書いて」ではなく「このファイルを読み込んで使って」と言う形にすると、ブレず、安く済みます。</p>
         </div>
         <p>Codex には <code>/model</code> <code>/effort</code> <code>/usage</code> がありません。モデルは設定画面で選び、「話題が変わったら新しい会話にする」だけ守ってください。</p>
+      </section>
+
+      <section id="tokens">
+        <h2><span class="h2-ic">節</span>トークンを減らす仕組み（何が自動で効いているか）</h2>
+        <p>Pro プランで困るのは「気づいたら上限」です。節約の約束事は前からありましたが、<strong>AI が自分で読んで自分で守る</strong>前提の散文でした。人が覚えていないと効かない <code>/clear</code> や effort も同じです。<br>
+        そこで、機械にできるものは全部 <strong>hook（見張り役）と設定</strong>に落としました。あなたが何もしなくても効きます。</p>
+
+        <h3>自動で効いているもの</h3>
+        <table>
+          <thead><tr><th>仕組み</th><th>何をするか</th><th>全部が要るとき</th></tr></thead>
+          <tbody>
+            <tr><td><code>filter-output.py</code></td><td>テスト・install・build の出力を、Claude が読む<strong>前に</strong>失敗行と集計だけに絞る。<code>git log</code> は最新 20 件、<code>git diff</code> は <code>--stat</code> に。<strong>終了コードは元のまま</strong></td><td>コマンドの先頭に <code>FULL_OUTPUT=1</code></td></tr>
+            <tr><td><code>pre-read-guard.py</code></td><td>ロックファイル・minified・<code>node_modules</code>・生成レポートは読ませない（grep で該当行だけ）。800 行超のファイルを丸ごと読もうとしたら先頭 300 行に</td><td><code>offset</code> / <code>limit</code> を指定して読む</td></tr>
+            <tr><td><code>context-guard.py</code></td><td>55 分以上空けて再開したとき（キャッシュが切れて全履歴を再処理する）と、会話が 4 MB を超えたときに「<code>/clear</code> か要約から」「<code>/compact</code>」を思い出させる。<strong>止めはしない</strong></td><td>—</td></tr>
+            <tr><td><code>pre-compact.py</code></td><td>圧縮のとき「決定事項・変更ファイル・未解決・テスト集計は残す／ツール出力の本文は捨てる」を指示</td><td>—</td></tr>
+            <tr><td>設定 3 つ</td><td><code>effortLevel=high</code>（考える深さを 1 段下げる）／<code>autoCompactWindow=200k</code>（Sonnet 5 の 1M を放置しない）／<code>BASH_MAX_OUTPUT_LENGTH=12000</code>（絞れなかった出力の上限）</td><td>設計判断のときだけ <code>/effort xhigh</code>、終わったら戻す</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout warn">
+          <div class="callout-title">黙って削らない</div>
+          <p>絞ったときは必ず Claude に「絞った・全部を取る方法」が伝わります。黙って欠けると AI が探し直して逆に高くつくためです。実際にはこう見えます。</p>
+        </div>
+        <pre><code>テスト出力を失敗行の前後と末尾 5 行に絞りました（filter-output.py）。全量が要るとき: FULL_OUTPUT=1 GATES_REQUESTED=1 pytest tests/
+big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-guard.py）。続きは offset=301 を指定する。全部が要ることは稀なので、先に `grep -n` で当たりを付けてから範囲指定で読むのが安い。
+[context-guard] 前回の応答から 70 分空いています。プロンプトキャッシュ（寿命 1 時間）が切れ、この 1 通は会話全体を再処理します。無関係な作業なら `/clear` してから送り直す、続きなら「ここまでの決定事項と変更ファイル」を 5 行で要約してから進める</code></pre>
+        <p>偽のテストで測った実例：102 行の出力が 7 行になり、<code>exit 1</code>（失敗）はそのまま伝わりました。</p>
+
+        <h3>自分で押すもの（ここだけは人の判断）</h3>
+        <ul>
+          <li><code>/clear</code> — 無関係な作業に移るとき。古い会話は 1 通ごとに全部読み直されます</li>
+          <li><code>/compact</code> — 長い作業の区切りで。何を残すかは <code>pre-compact.py</code> が指示します</li>
+          <li><code>/effort xhigh</code> — 複数の部品にまたがる設計判断のときだけ。終わったら <code>/effort high</code></li>
+          <li>Agent の並列委譲は使わない（約 7 倍）。3 役レビューも順番に回します</li>
+        </ul>
+
+        <h3>効いているか確かめる</h3>
+        <pre><code>./scripts/token-audit.sh
+<span class="c">=== トークン監査: /Users/you/work/library-loan ===
+床（常時読み込み・推定）≒ 5800 tok（実測は /context）
+✅ NG=0（絞る hook 4 本と設定 3 キーが配線済み）
+次: Claude Code で /context と /usage を実行し、推定を実測に置き換える</span></code></pre>
+        <p>「床」は毎回のセッション開始で必ず読まれる分の<strong>推定</strong>です。本当の数字は Claude Code で <code>/context</code>（何が載っているか）と <code>/usage</code>（何に使ったか・キャッシュミス）を打つと出ます。週に 1 回、<code>docs/lessons.md</code> の表に 1 行残してください。会話内で <code>/token-check</code> と打つと、AI がこの点検を代行して結果を読み解きます。</p>
+
+        <h3>Codex では</h3>
+        <p>hook は Claude Code だけの仕組みです。Codex では <code>AGENTS.md</code> の散文（grep してから読む・出力は 3 層・決定論的な作業はスクリプトに）を AI が自分で守る形になります。設定 3 つと <code>/clear</code> 相当（新しい会話で始める）は同じ考え方で使えます。</p>
       </section>
 
       <section id="design">

@@ -33,7 +33,7 @@ echo "✅ コマンド: $(ls "$KIT_DIR/claude-code/commands" | wc -l)個"
 cp "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py "$CLAUDE_DIR/hooks/"
 chmod +x "$CLAUDE_DIR/hooks/"*.sh "$CLAUDE_DIR/hooks/"*.py
 if [ -f "$CLAUDE_DIR/settings.json" ]; then
-  echo "⚠ settings.json が既存。hooks / statusLine 設定を手動でマージしてください（参照: claude-code/hooks/settings.json）"
+  echo "⚠ settings.json が既存。hooks / statusLine と、トークン節約の 3 キー（effortLevel=high / autoCompactWindow=200k / env.BASH_MAX_OUTPUT_LENGTH=12000）を手動でマージしてください（参照: claude-code/hooks/settings.json）"
 else
   cp "$KIT_DIR/claude-code/hooks/settings.json" "$CLAUDE_DIR/settings.json"
 fi

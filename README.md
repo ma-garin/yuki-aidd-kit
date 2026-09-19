@@ -6,6 +6,20 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
+## Ver.6.5 での主な更新（2026-09-19）— トークン節約を仕組みに: 散文を hook・設定・検査へ
+
+節約の約束事は前からありましたが、**AI が自分で読んで自分で守る散文**でした（機械が強制していたのは 3 つだけ）。Pro＋Sonnet では上限に直結するので、機械にできるものを全部 hook・設定・検査に落としました。公式の削減策（`code.claude.com/docs/en/costs`）を当日の一次情報で確認して設計しています。
+
+- **`filter-output.py`**（PreToolUse Bash）: テスト・install・build の出力を Claude が読む**前に**失敗行＋集計だけに絞る（`updatedInput`）。`git log` は最新 20 件、`git diff` は `--stat`。**終了コードは元のまま**（偽の pytest で「102 行 → 7 行、exit 1 保持」を実測）。全量は `FULL_OUTPUT=1`
+- **`pre-read-guard.py`**（PreToolUse Read）: ロックファイル・minified・`node_modules`・生成レポートは deny。800 行超を範囲指定なしで読むと先頭 300 行にして「続きは `offset`」を伝える
+- **`context-guard.py` / `pre-compact.py` / `log-instructions.py`**: 55 分超の再開（キャッシュ切れ）と 4 MB 超の会話で `/clear` `/compact` を促す（止めない）／圧縮の「残す・捨てる」を注入／指示ファイルの実ロードを記録（推定を実測に置き換える材料）
+- **設定 3 キー**: `effortLevel: high`（Sonnet 5 / Fable は effort だけが思考量のレバー）／`autoCompactWindow: 200k`（Sonnet 5 の 1M を放置しない）／`BASH_MAX_OUTPUT_LENGTH: 12000`
+- **`scripts/token-audit.sh`**（12 ケースの回帰テスト付き）: 床の推定・実測ログの集計・hook と設定の配線（漏れは NG）・MCP 数・スキル肥大。`/token-check` はこれを回す
+- `check-docs.sh` 検査 9: `CLAUDE.md` ＋ `AGENTS.md` の合計 ≦ 200 行（公式の目安）
+- 散文は「hook が強制する」の導線に置き換え（rules は 87 行 ≦ 100 を維持）。`docs/userguide.html` に「トークンを減らす仕組み」章
+
+**黙って削らない。** 絞ったときは必ず「絞った・全量の取り方」が Claude に伝わります（黙って欠けると探し直して逆に高くつく）。逃がし口は `FULL_OUTPUT=1` と `offset` の明示だけで、恒久バイパスはありません。
+
 ## Ver.6.4 での主な更新（2026-09-19）— 工程承認ゲート: 要求どおり作られているかを工程ごとに止めて確かめる
 
 AIDD では「プロセスが正しく回っているか」を見ても、企業が知りたい「**SDD で要求したものが確実に作られているか**」には答えられません。誤りが成果物として出てから見つかると手戻りが最大になります。各工程の出口に**人間の承認**を置き、**承認を成果物の版に縛る**ことで、誤りの伝播を工程 1 つ分に閉じ込めます。
@@ -23,7 +37,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 
 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
 
-- **`scripts/test-install.sh`**（79 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
+- **`scripts/test-install.sh`**（82 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
 - **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
@@ -85,7 +99,7 @@ python3 scripts/quality_harness.py                       # 機能契約の検証
 - **hooks 3本追加**: `block-gates.py`（pytest / make test / lint をユーザー要求時以外 deny）/ `progress.py` + `statusline.py`（進行中タスクの経過・見積・残りをステータスラインに表示）
 - **`templates/settings.sandbox.json`**: sandbox・denyRead・network allowlist・permissions deny の雛形
 - `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先」「必須プロセス」「完了条件」で改訂。「指定外ファイルは読まない」「セッション分割を提案」は廃止（AUDIT-2026-07 C-02 / X-4）
-- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 32 ケース）
+- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 63 ケース）
 
 ## Ver.6.0 での主な更新（2026-08）— 開発工程ライフサイクル
 
@@ -127,11 +141,12 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
-./scripts/test-hooks.sh  # hooks の回帰テスト（32ケース）
-./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（79ケース。実 ~/.claude には触らない）
+./scripts/test-hooks.sh  # hooks の回帰テスト（63ケース）
+./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（82ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
+./scripts/test-token-audit.sh && ./scripts/token-audit.sh         # トークン節約の仕組みの回帰テストと点検
 ```
 
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md` を書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
@@ -212,6 +227,7 @@ yuki-aidd-kit/
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
 │   ├── check-approval.sh (check_approval.py) / phase-hash.py / test-check-approval.sh  # 工程承認ゲート
+│   ├── token-audit.sh (token_audit.py) / test-token-audit.sh  # トークン節約の仕組みの点検
 │   ├── init-test-docs.sh / quality_harness.py / test-quality-harness.sh  # テスト活動
 │   ├── ui-hash.py / pre-commit-ui-gate.sh          # UI 検証マーカー
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit

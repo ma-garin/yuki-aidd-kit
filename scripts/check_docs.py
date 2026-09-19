@@ -12,6 +12,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   5. frontmatter  SKILL.md の name ↔ ディレクトリ名
   6. 常時読込     rules/*.md で paths: frontmatter の無いものの合計行数 ≦ RULES_ALWAYS_MAX
   7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（docs/PRD.md 使用性）
+  9. 常時読込     CLAUDE.md.template ＋ AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
   8. spec 同期    spec/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
 
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
@@ -33,6 +34,7 @@ from pathlib import Path
 
 # ---- しきい値（RULES_STRICT は M16、SIZE_STRICT は M17 で NG に昇格済み） -------------
 RULES_ALWAYS_MAX = 100
+CLAUDE_TOTAL_MAX = 200   # 検査9: CLAUDE.md.template ＋ AGENTS.md.template（@import は起動時に展開される）。公式「200 行未満」
 SKILL_MAX = 200
 COMMAND_MAX = 40
 RULES_STRICT = True     # 検査6: S7（M16）で NG に昇格
@@ -245,6 +247,17 @@ def check_always_loaded(root: Path, r: Result, strict: bool) -> None:
         r.add(strict, "常時読込", "rules/（paths 無し）", detail)
 
 
+def check_claude_total(root: Path, r: Result) -> None:
+    files = [root / "CLAUDE.md.template", root / "AGENTS.md.template"]
+    files = [f for f in files if f.is_file()]
+    if not files:
+        return
+    total = sum(wc_l(f) for f in files)
+    if total > CLAUDE_TOTAL_MAX:
+        r.add(True, "常時読込", "CLAUDE.md.template + AGENTS.md.template",
+              f"合計 {total}行 > {CLAUDE_TOTAL_MAX}（" + ", ".join(f"{f.name}={wc_l(f)}" for f in files) + "）。skills へ移す")
+
+
 def check_size_targets(root: Path, r: Result, strict: bool) -> None:
     for f in sorted((root / "skills").glob("*/SKILL.md")):
         n = wc_l(f)
@@ -300,7 +313,7 @@ def check_spec_inventory(root: Path, r: Result) -> None:
         if not f.is_file():
             continue
         rel = f.relative_to(root).as_posix()
-        if rel.split("/")[0] in (".git", "spec") or rel in ("check-docs-report.md", "trace-check-report.md", "check-design-report.md"):
+        if rel.split("/")[0] in (".git", "spec") or rel in ("check-docs-report.md", "trace-check-report.md", "check-design-report.md", "check-approval-report.md", "token-audit-report.md"):
             continue
         names = {rel} | {rel[len(pre):] for pre in INVENTORY_PREFIXES if pre and rel.startswith(pre)}
         if not any(f"`{n}`" in text for n in names):
@@ -343,6 +356,7 @@ def main() -> int:
     check_references(root, r)
     check_frontmatter(root, r)
     check_always_loaded(root, r, a.strict or RULES_STRICT)
+    check_claude_total(root, r)
     check_size_targets(root, r, a.strict or SIZE_STRICT)
     check_spec_inventory(root, r)
 

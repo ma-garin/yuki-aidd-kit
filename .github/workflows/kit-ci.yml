@@ -36,6 +36,8 @@ jobs:
         run: bash scripts/test-git-gates.sh
       - name: 工程承認ゲート（check-approval / phase-hash）
         run: bash scripts/test-check-approval.sh
+      - name: トークン監査（token-audit）
+        run: bash scripts/test-token-audit.sh
       - name: check-docs の回帰テスト
         run: bash scripts/test-check-docs.sh
       - name: check-design の回帰テスト
