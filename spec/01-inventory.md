@@ -108,7 +108,7 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `settings.json` | 112 | 配線定義。statusLine ＋ PreToolUse(Write/Edit, Read/Grep/Glob, Bash) ＋ PostToolUse ＋ Stop |
+| `settings.json` | 117 | 配線定義。statusLine ＋ PreToolUse(Write/Edit, Read/Grep/Glob, Bash) ＋ PostToolUse ＋ Stop |
 | `pre-write-check.sh` | 35 | PreToolUse Write/Edit。秘密情報ファイル名・単一HTML の CSS/JS 分割を**警告のみ**（exit 0） |
 | `post-write-html.sh` | 34 | PostToolUse。HTML 保存後に行数/KB を報告、500行超で部分編集を推奨、localStorage 未使用を助言 |
 | `block-explore.sh` | 40 | PreToolUse Read/Grep/Glob。`.claude/mode` 存在時に **exit 2** で探索を物理ブロック |
@@ -131,7 +131,7 @@
 |---|---|---|
 | `install.sh` | 69 | `~/.claude` へ配置（CLAUDE.md・skills・commands・hooks・rules）。既存は `.bak` 退避、rules は同名既存をスキップ |
 | `verify.sh` | 55 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
-| `export-project.sh` | 157 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
+| `export-project.sh` | 161 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
 | `check-approval.sh` | 8 | 工程承認検査の薄いラッパ。`--phase N` / `--gate N` / `--quiet`。exit 0/1/2 |
 | `check_approval.py` | 422 | 工程承認の本体。承認記録の必須欄・版の一致（失効）・未解消の差し戻し・未確認事項・approver が人間か・工程順序 |
@@ -148,7 +148,7 @@
 | `test-hooks.sh` | 284 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
-| `test-install.sh` | 134 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
+| `test-install.sh` | 138 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
 | `check_docs.py` | 371 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |

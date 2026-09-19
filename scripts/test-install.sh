@@ -85,6 +85,10 @@ expect_grep "hooks の settings.json が相対パス参照" ".claude/hooks/block
 expect_grep "block-explore.sh が Read|Grep|Glob に配線される（グローバル導入と同じ振る舞い）" ".claude/hooks/block-explore.sh" "$P/.claude/settings.json"
 expect_grep "block-phase.py が Write|Edit|MultiEdit に配線される（.claude/phase-gate が無ければ何もしない）" ".claude/hooks/block-phase.py" "$P/.claude/settings.json"
 python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$P/.claude/settings.json" 2>/dev/null && ok "生成した settings.json が JSON として妥当" || ng "生成した settings.json が JSON として妥当" "パース失敗"
+SJ=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('effortLevel'), d.get('autoCompactWindow'), d.get('env',{}).get('BASH_MAX_OUTPUT_LENGTH'))" "$P/.claude/settings.json" 2>/dev/null)
+expect_out "effortLevel=high（xhigh から 1 段下げ。設計判断のときだけ上げる）" "high" "$SJ"
+expect_out "autoCompactWindow=200k（Sonnet 5 の 1M を放置しない）" "200k" "$SJ"
+expect_out "BASH_MAX_OUTPUT_LENGTH=12000（絞れなかった出力の上限）" "12000" "$SJ"
 expect_count ".claude/KIT_VERSION が3フィールド" 3 "$(wc -w < "$P/.claude/KIT_VERSION")"
 # 再実行で退避
 OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1)
