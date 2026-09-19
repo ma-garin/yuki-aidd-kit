@@ -28,7 +28,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: 各コマンドが「引数」「実行内容」を持ち、参照先スキルが実在する
 - **FR-03 hooks 供給**: 書き込み前チェック・HTML 保存後チェック・セッション終了時リマインド・実装モードの探索ブロック・ゲート実行の要求時限定（`block-gates.py`）・進捗表示（`progress.py` / `statusline.py`）の7 hook と、それらを配線した `settings.json` を提供する
   - 検証基準: stdin に Claude Code hooks 形式の JSON を渡すと期待出力を返す（`./scripts/test-hooks.sh` 19 ケース。`docs/AUDIT-2026-07.md` A-01 の再発防止）
-- **FR-03a 常時読み込みルール供給**: `rules/<name>.md` 形式で、全セッションに効く規律（`absolute-rules` / `speed-harness` / `functional-integrity`）を提供する。`install.sh` は `~/.claude/rules/aidd-kit/` へ、`export-project.sh` は `.claude/rules/` へ配置する
+- **FR-03a ルール供給**: `rules/<name>.md` 形式で規律を提供する。`paths:` frontmatter の無いもの（`absolute-rules` / `speed-harness` / `model-routing`）は毎セッション、`paths:` 付き（`functional-integrity`）は該当ファイルを触ったときだけ読み込まれる。根拠・原文は `docs/rules-rationale/`（自動ロードされない場所）に置く。`install.sh` は `~/.claude/rules/aidd-kit/` へ、`export-project.sh` は `.claude/rules/` へ配置する
   - 検証基準: `verify.sh` が rules の配置を OK/NG で報告する。同名ファイルが利用者の `~/.claude/rules` 配下に既にある場合は上書きせずスキップする
 - **FR-04 導入・検証スクリプト**: `install.sh` が `~/.claude/` へ配置し、`verify.sh` が全資産の配置を OK/NG で報告し、NG>0 で exit 1 を返す
   - 検証基準: クリーン環境で install → verify が NG=0・exit 0 で完了する（`./scripts/test-install.sh` が HOME 差し替えで検証）
@@ -57,8 +57,8 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 
 ## 非機能要求（ISO/IEC 25010）
 
-- **互換性（最重要）**: **Claude Code と他エージェント（Codex 等）の双方で動作すること。** スキル・コマンド本文は特定ツールの内部名に依存せず、固有機能に言及する場合は「汎用表現（Claude Code では X）」の併記形式を守る。加えて、**グローバル導入（`install.sh`）とプロジェクト配布（`export-project.sh`）のどちらでも同一の振る舞いになること**（Vision.md「配置の2層」参照）
-- **使用性**: 新しいセッションが INDEX.md から 2 ファイル以内の参照で作業開始できる。1スキル ≦ 200行、1コマンド ≦ 40行を目安とする
+- **互換性（最重要）**: **Claude Code と他エージェント（Codex 等）の双方で動作すること。** 共通規約の本体は `AGENTS.md`（Codex が直接読む）一本とし、`CLAUDE.md` は `@AGENTS.md` の import ＋ Claude Code でしか効かないものだけを持つ（二重管理をしない）。スキル・コマンド本文は特定ツールの内部名に依存せず、固有機能に言及する場合は「汎用表現（Claude Code では X）」の併記形式を守る。加えて、**グローバル導入（`install.sh`）とプロジェクト配布（`export-project.sh`）のどちらでも同一の振る舞いになること**（Vision.md「配置の2層」参照）
+- **使用性**: 新しいセッションが `AGENTS.md` の「読む範囲」表から 1 ファイル以内の参照で作業開始できる（INDEX.md は表に無いときの第2段）。**毎セッション自動読み込みの `rules/`（`paths` 無し）は合計 ≦ 100 行**（`check-docs.sh` が NG で止める）。1スキル ≦ 200行、1コマンド ≦ 40行を目安とする
 - **性能効率性（トークン）**: 毎回読む層（DAILY）の合計を小さく保つ。詳細は references/・docs/ に逃がし、必要時のみ読む
 - **保守性**: 同一情報の真実源は1箇所（デザイン値は design-system、ECC 対応は ECC-ASSET-MAP）。重複を作る変更は監査（AUDIT）で検出・却下する
 - **信頼性**: verify.sh が資産の欠落を検出する。hooks は入力不正時に無害終了（exit 0）する

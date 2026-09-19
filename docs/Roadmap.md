@@ -166,6 +166,19 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - 検証記録: test-hooks 19/19・test-trace-check 15/15・test-quality-harness 11/11・test-install 66/66・test-git-gates 27/27・test-check-docs 全 PASS・`check-docs.sh` NG=0（WARN 2: rules 268 行 > 100、design-system 465 行 > 200 — M16 / M17 で解消）
 - 残: `git tag v6.3.0` は main へのマージ時に保守者が打つ
 
+## M16: Pro 移行準備 — 常時読み込み層のダイエットとモデル規律（完了 2026-09-17）
+
+条件: `spec/11-target-operating-model.md`（Pro ＋ Sonnet ＋ Codex 併用）。一次情報: Claude Code `memory` docs（`paths` 付き rules は該当ファイルを触ったときだけ読み込まれる／`@AGENTS.md` import／`rules/` は再帰的に自動ロード）。
+
+- [x] `rules/absolute-rules.md` を表形式に圧縮（112→19行）、`rules/speed-harness.md` を規範だけに（115→51行）。根拠・失敗事例・原文と H-6 の実測記録は `docs/rules-rationale/` へ（S7a）
+- [x] `rules/functional-integrity.md` に `paths:` frontmatter（コード/UI 編集時のみ読み込み。17行）（S7a）
+- [x] `AGENTS.md.template` を共通規約の本体にし、「読む範囲」を **タスク種別 → 最初に使うスキル/コマンド** の表に。`INDEX.md` は「表に無い・迷ったときだけ」に降格（S7b）
+- [x] `CLAUDE.md.template` を `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks・トークン）の 21 行に。`install.sh` が `~/.claude/AGENTS.md` も配置、`verify.sh` が確認。二重管理のルール（M12 の X-5）は廃止（S7c）
+- [x] `rules/model-routing.md`（15行）: 既定 Sonnet／Opus へ上げる3条件（暫定）／effort／`/clear`／委譲は隔離目的のみ／上限時の手順／週1で `/usage`。根拠は `docs/rules-rationale/model-routing.md`（S8）
+- [x] `check_docs.py` の検査6（`paths` 無し rules ≦ 100 行）を NG に昇格。`test-install.sh` に AGENTS.md・`@AGENTS.md`・`paths` の保持を追加（71 ケース）
+- 実測（文字数からの推定）: 常時の床 10,810 → **5,028 tok**（rules 2本 2,511 ＋ CLAUDE.md/AGENTS.md 2,518）。INDEX 4,456 は必要時のみ。**実トークンは保守者が `/context` で計測し `spec/11` U-2 に記録する**
+- 残: Opus へ上げる3条件は暫定。移行後1週間の `/usage` 実測で見直す（Q-7）
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。

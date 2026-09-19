@@ -14,7 +14,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（docs/PRD.md 使用性）
   8. spec 同期    spec/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
 
-6・7 は STRICT が False の間は WARN（移行作業の途中で CI を止めないため）。
+6 は NG（M16 で昇格済み）。7 は SIZE_STRICT が False の間は WARN（M17 で昇格）。--strict で両方 NG。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
 
 使い方: python3 scripts/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
@@ -31,11 +31,12 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-# ---- しきい値（S7 / S13 で STRICT を True に昇格させる） ------------------------------
+# ---- しきい値（RULES_STRICT は M16 で昇格済み。SIZE_STRICT は M17 で昇格させる） -------------
 RULES_ALWAYS_MAX = 100
 SKILL_MAX = 200
 COMMAND_MAX = 40
-STRICT_DEFAULT = False
+RULES_STRICT = True     # 検査6: S7（M16）で NG に昇格
+SIZE_STRICT = False     # 検査7: S13（M17）で NG に昇格
 
 # ---- 参照切れ検査の除外 ----------------------------------------------------------------
 # ECC（外部キット）のスキル名。実在はこのリポジトリから検証不能（docs/PRD.md 制約・AUDIT A-08）
@@ -327,7 +328,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="キット文書の整合検査")
     ap.add_argument("--root", default=".")
     ap.add_argument("-o", "--report", default="check-docs-report.md")
-    ap.add_argument("--strict", action="store_true", default=STRICT_DEFAULT, help="検査 6・7 を WARN でなく NG にする")
+    ap.add_argument("--strict", action="store_true", help="検査 6・7 を WARN でなく NG にする")
     ap.add_argument("--skip-tests", action="store_true", help="検査 3 のテスト実行を省く")
     ap.add_argument("--fix-inventory", action="store_true", help="spec/01-inventory.md の行数を実測で書き換えてから検査する")
     a = ap.parse_args()
@@ -341,8 +342,8 @@ def main() -> int:
     check_case_counts(root, r, test_totals(root, a.skip_tests))
     check_references(root, r)
     check_frontmatter(root, r)
-    check_always_loaded(root, r, a.strict)
-    check_size_targets(root, r, a.strict)
+    check_always_loaded(root, r, a.strict or RULES_STRICT)
+    check_size_targets(root, r, a.strict or SIZE_STRICT)
     check_spec_inventory(root, r)
 
     report = Path(a.report)

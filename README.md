@@ -10,11 +10,21 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
 
-- **`scripts/test-install.sh`**（66 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
+- **`scripts/test-install.sh`**（71 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
 - **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
 - `verify.sh` が NG>0 で exit 1 を返す。`VERSION` と `KIT_VERSION`（導入先への刻印）で版を追跡できる
+
+**Pro 移行準備（M16）— 常時読み込み層のダイエットとモデル規律**
+
+- **`CLAUDE.md = @AGENTS.md + Claude Code 固有`** に変更。共通規約の本体は `AGENTS.md.template` 一本になり、Claude Code は import で、Codex は直接読む。「両テンプレを同時に更新する」ルールは不要になった（`install.sh` は `~/.claude/AGENTS.md` も配置）
+- **`rules/` を規範だけに圧縮**: `absolute-rules` 112→19行（表形式）、`speed-harness` 115→51行。根拠・失敗事例・原文と H-6 の実測記録は `docs/rules-rationale/` へ（`rules/` 配下は再帰的に自動ロードされるため外に置く）
+- **`functional-integrity` に `paths:` frontmatter**: コード/UI（`.py .js .ts .tsx .jsx .html .css .vue .svelte`）を触ったときだけ読み込まれる
+- **`INDEX.md` を毎回読むのをやめた**: `AGENTS.md` の「読む範囲」表（タスク種別 → 最初に使うスキル/コマンド）から直行し、表に無いときだけ INDEX を開く
+- **`rules/model-routing.md`（新設）**: 既定 Sonnet、Opus へ上げる3条件、effort、`/clear`、委譲は隔離目的のみ、上限時の手順、週1で `/usage`
+- 常時読み込みの床（推定）: **10,810 → 5,028 トークン**（rules 2本 + CLAUDE.md/AGENTS.md。INDEX 4,456 は必要時のみ）。実トークンは `/context` で要実測
+- `check-docs.sh` の「常時読込 rules ≦ 100 行」を WARN から **NG に昇格**（逆戻りを CI が止める）
 
 ## Ver.6.3 での主な更新（2026-08-25）— デザイン: トークン実物・画面の作り方・フレームワーク別適用
 
@@ -92,7 +102,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
 ./scripts/test-hooks.sh  # hooks の回帰テスト（19ケース）
-./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（66ケース。実 ~/.claude には触らない）
+./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（71ケース。実 ~/.claude には触らない）
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ```
 
@@ -103,7 +113,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 cd <対象プロジェクトのパス> && git add .claude AGENTS.md CLAUDE.md && git commit -m "chore: add AIDD Kit"
 ```
 
-Codex ローカル利用のみで済む場合は `AGENTS.md.template` を `~/.codex/AGENTS.md` にコピーする方法もあります。claude.ai の Projects で使う場合は `claude-projects-setup.md` を参照。
+Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md`）。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。claude.ai の Projects で使う場合は `claude-projects-setup.md` を参照。
 
 ## 取り扱い説明書
 
@@ -142,8 +152,8 @@ ECC（外部キット）の資産は全部読まず、プロジェクトごと�
 yuki-aidd-kit/
 ├── README.md                 # この文書（入口の案内）
 ├── INDEX.md                  # 全資産の索引（DAILY/LIBRARY・タグ・参照コスト）
-├── AGENTS.md.template        # 他エージェント用グローバル設定
-├── CLAUDE.md.template        # Claude Code 用グローバル設定
+├── AGENTS.md.template        # 共通規約の本体（Codex は直接、Claude Code は CLAUDE.md の @AGENTS.md で読む）
+├── CLAUDE.md.template        # @AGENTS.md + Claude Code 固有（実装モード・hooks・トークン）
 ├── claude-projects-setup.md  # claude.ai Projects のセットアップ
 ├── docs/
 │   ├── Vision.md / PRD.md / Roadmap.md   # キット自体の目的・要求・作業台帳
@@ -151,8 +161,9 @@ yuki-aidd-kit/
 │   ├── AUDIT-2026-07.md                  # 資産監査の記録
 │   ├── OPERATING-MODE.md                 # 標準作業モード
 │   ├── PROJECT-FIT-REPORT.md             # 実プロジェクト適合レポート
+│   ├── rules-rationale/                  # rules の根拠・原文・実測記録（毎回は読まない）
 │   └── yuki-aidd-kit-manual.html         # HTML 取説
-├── rules/                    # 常時読み込みの規律 3本（absolute-rules / speed-harness / functional-integrity）
+├── rules/                    # 規律 4本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
 ├── skills/                   # 19スキル（各 SKILL.md、一部 references/ 付き）
 │   ├── dev-lifecycle/        # 工程ライフサイクル（+ phase-gates / traceability / test-levels）
 │   ├── test-strategy/        # テスト活動の設計（+ feature-contracts / ui-verified-gate）

@@ -14,6 +14,12 @@ if [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
   echo "⚠ 既存のCLAUDE.mdを CLAUDE.md.bak に退避（手動マージ推奨）"
 fi
 cp "$KIT_DIR/CLAUDE.md.template" "$CLAUDE_DIR/CLAUDE.md"
+# 共通規約の本体 AGENTS.md（CLAUDE.md の `@AGENTS.md` が ~/.claude/AGENTS.md を解決する）
+if [ -f "$CLAUDE_DIR/AGENTS.md" ]; then
+  cp "$CLAUDE_DIR/AGENTS.md" "$CLAUDE_DIR/AGENTS.md.bak"
+  echo "⚠ 既存のAGENTS.mdを AGENTS.md.bak に退避（手動マージ推奨）"
+fi
+cp "$KIT_DIR/AGENTS.md.template" "$CLAUDE_DIR/AGENTS.md"
 
 # スキル
 cp -r "$KIT_DIR/skills/"* "$CLAUDE_DIR/skills/"
@@ -51,7 +57,7 @@ echo "✅ KIT_VERSION: $KIT_VERSION"
 
 # Codex用
 echo ""
-echo "Codexを使う場合: AGENTS.md.template を ~/.codex/AGENTS.md にコピーしてください"
+echo "Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または cp）。CLAUDE.md と同じ本体を読ませる"
 echo ""
 echo "=== 完了 ==="
 echo "確認: ./scripts/verify.sh"
