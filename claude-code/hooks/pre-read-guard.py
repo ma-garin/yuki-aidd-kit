@@ -22,7 +22,7 @@ LOCK_FILES = {"package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock",
               "Gemfile.lock", "composer.lock", "Pipfile.lock", "uv.lock"}
 GENERATED_SUFFIX = (".min.js", ".min.css", ".map", ".bundle.js")
 GENERATED_DIRS = {"node_modules", "dist", "build", ".git", "__pycache__", ".venv", "venv", "coverage", ".next"}
-REPORT_RE = re.compile(r"^(?:check-[a-z-]+|trace-check|token-audit)-report\.md$")
+REPORT_RE = re.compile(r"^(?:check-[a-z-]+|trace-check|token-audit|test-metrics)-report\.md$")
 MAX_LINES = int(os.environ.get("READ_GUARD_MAX_LINES", "800"))
 LIMIT = int(os.environ.get("READ_GUARD_LIMIT", "300"))
 
