@@ -135,7 +135,7 @@
 | `export-project.sh` | 161 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
 | `test-metrics.sh` | 7 | テストメトリクスの薄いラッパ。status / --gate / --history / --into |
-| `test_metrics.py` | 589 | 05〜08 の表と CSV から消化率・合格率・欠陥密度・Critical/High 残・偏り・滞留・完了予測（根拠付き）。§7 の基準表で exit 0/1/2。unread は分母に入れ、欠陥表なしは None |
+| `test_metrics.py` | 597 | 05〜08 の表と CSV から消化率・合格率・欠陥密度・Critical/High 残・偏り・滞留・完了予測（根拠付き）。§7 の基準表で exit 0/1/2。unread は分母に入れ、欠陥表なしは None |
 | `test-test-metrics.sh` | 173 | test-metrics の回帰テスト（雛形・実データ・unread・欠陥表なし・基準表・偏り・履歴・報告書置換・CSV） |
 | `token-audit.sh` | 7 | トークン監査の薄いラッパ |
 | `token_audit.py` | 234 | 床（常時読み込み）の推定 tok・実測ログ集計・hook/設定の配線・MCP 数・スキル肥大。配線漏れは NG |
@@ -155,7 +155,7 @@
 | `test-hooks.sh` | 284 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
-| `test-install.sh` | 138 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
+| `test-install.sh` | 139 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
 | `check_docs.py` | 385 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |

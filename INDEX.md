@@ -17,7 +17,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
 ./scripts/test-hooks.sh                       # hooks の回帰テスト（63ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
-./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（82ケース）
+./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（84ケース）
 ./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./scripts/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。NG=0 が合格）
 ./scripts/check-design.sh [対象パス]           # デザイン検査（直値・未定義トークン・外部 CDN・alert()。既定 templates/ui templates/components。NG=0 が合格）

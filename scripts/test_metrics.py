@@ -438,17 +438,25 @@ def criteria_table(evals, manual: list[str], dropped: list[str], crit_present: b
     return lines
 
 
-def verdict_line(code: int, evals) -> str:
+def verdict_line(code: int, evals, m: Metrics | None = None) -> str:
     if code == 0:
         return "判定候補: **進める**（機械が読める基準はすべて ✓。手動確認の行と GO/NO-GO は人が判定する）"
     if code == 1:
         ng = "、".join(f"{c.no}. {c.name}" for c, _, j in evals if j == "✗")
         return f"判定候補: **進めない**（満たさない基準: {ng}）"
     und = "、".join(f"{c.no}. {c.name}" for c, _, j in evals if j == "判定不能")
-    return "判定候補: **判定できない**（" + (f"実測が出せない基準: {und}" if und else "結果欄が語彙外の行がある、基準が無い、または対象が無い") + "。判定不能を合格に数えない）"
+    if m is not None and m.unread > 0:
+        why = f"結果欄が語彙外の行が {m.unread} 件（語彙に直すか 未実施 にする）"
+    elif und:
+        why = f"実測が出せない基準: {und}"
+    elif not evals:
+        why = "基準が無い、または対象が無い"
+    else:
+        why = "対象が無い"
+    return f"判定候補: **判定できない**（{why}。判定不能を合格に数えない）"
 
 
-def write_report(path: Path, root: Path, by_level, total: Metrics, findings, evals, manual, dropped, crit_present, code) -> None:
+def write_report(path: Path, root: Path, by_level, total: Metrics, findings, evals, manual, dropped, crit_present, code) -> None:  # noqa: E501
     lines = ["# テストメトリクス レポート", "", f"- 対象: `{root}`", f"- 集計日: {date.today()}",
              "- 真実源: `docs/lifecycle/05〜08` のテスト表・欠陥表、`docs/system_test_cases.csv`。集計値は手書きしない",
              "- 基準: `docs/test/TESTING_STRATEGY.md` §7（出典が空の行は読まない）", "",
@@ -456,19 +464,19 @@ def write_report(path: Path, root: Path, by_level, total: Metrics, findings, eva
     lines += ["", f"欠陥: {'欠陥表なし（密度・未解決は算出できない。05〜08 の欠陥表を埋めると出る）' if not total.defects_known else f'{total.defects_total} 件（未解決 {total.defects_open}、Critical/High 未解決 {total.defects_severe_open}）'}",
               f"欠陥密度（欠陥 ÷ 実行）: {num(total.defect_density)}", "", "## 検知", ""]
     lines += [f"- [{f.kind}] {f.summary} — {f.evidence}" for f in findings] or ["なし。"]
-    lines += ["", "## 完了基準の評価", ""] + criteria_table(evals, manual, dropped, crit_present) + ["", verdict_line(code, evals)]
+    lines += ["", "## 完了基準の評価", ""] + criteria_table(evals, manual, dropped, crit_present) + ["", verdict_line(code, evals, total)]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def replace_block(report: Path, by_level, evals, manual, dropped, crit_present, code) -> bool:
+def replace_block(report: Path, by_level, evals, manual, dropped, crit_present, code, today: date, m: Metrics) -> bool:
     text = report.read_text(encoding="utf-8")
     b, e = text.find(MARK_BEGIN), text.find(MARK_END)
     if b < 0 or e < 0 or e < b:
         return False
     b_end = text.find("\n", b) + 1
     body = level_table(by_level) + ["", "### 完了基準の評価（`TESTING_STRATEGY.md` §7）", ""] + \
-        criteria_table(evals, manual, dropped, crit_present) + ["", verdict_line(code, evals),
-                                                                 f"（生成: `./scripts/test-metrics.sh --into` {date.today()}。判定・GO/NO-GO は人が §6 に書く）", ""]
+        criteria_table(evals, manual, dropped, crit_present) + ["", verdict_line(code, evals, m),
+                                                                 f"（生成: `./scripts/test-metrics.sh --into` {today}。判定・GO/NO-GO は人が §6 に書く）", ""]
     report.write_text(text[:b_end] + "\n".join(body) + "\n" + text[e:], encoding="utf-8")
     return True
 
@@ -568,7 +576,7 @@ def main() -> int:
         print(append_history(root / "docs" / "test" / "metrics-history.tsv", by_level, today))
     if a.into:
         target = Path(a.into) if Path(a.into).is_absolute() else root / a.into
-        ok = target.is_file() and replace_block(target, by_level, evals, manual, dropped, bool(crit), code)
+        ok = target.is_file() and replace_block(target, by_level, evals, manual, dropped, bool(crit), code, today, total)
         print(("✅ 置き換え: " if ok else "❌ metrics:begin/end マーカーが見つからない: ") + str(target))
     if a.gate:
         print("--- 完了基準（" + str(crit_path.relative_to(root) if crit_path.is_relative_to(root) else crit_path) + " §7）---")
@@ -578,7 +586,7 @@ def main() -> int:
             print(f"  手動 {mt}")
         for dt in dropped:
             print(f"  読まず {dt}")
-        print(verdict_line(code, evals))
+        print(verdict_line(code, evals, total))
         print(f"詳細: {report}")
         return code
     print(f"詳細: {report}" + ("　／ ゲート判定: --gate" if crit else "　／ 基準表が無い（docs/test/TESTING_STRATEGY.md §7）"))
