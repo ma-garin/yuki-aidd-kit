@@ -38,6 +38,8 @@ else
   cp "$KIT_DIR/claude-code/hooks/settings.json" "$CLAUDE_DIR/settings.json"
 fi
 echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個"
+# 指示優先の 3 hook は既存 settings.json にも merge する（A-13。手動マージ待ちにしない）
+python3 "$KIT_DIR/scripts/install_guard.py" --home "$HOME" --hooks-dir "$KIT_DIR/claude-code/hooks" | grep -E "配線|変更なし" || true
 
 # 判定スクリプト（block-phase.py が ~/.claude/scripts/ から探す。phase-hash.py は同じ場所に必要）
 mkdir -p "$CLAUDE_DIR/scripts"

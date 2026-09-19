@@ -30,7 +30,7 @@ HOME_OVERRIDE="$FAKE_HOME"
 # 既存ファイルを置いてから install（退避・非上書き・スキップの3経路を同時に検証）
 mkdir -p "$FAKE_HOME/.claude/rules/other"
 echo "my old claude md" > "$FAKE_HOME/.claude/CLAUDE.md"
-echo '{"hooks":{}}' > "$FAKE_HOME/.claude/settings.json"
+echo '{"hooks":{},"theme":"dark"}' > "$FAKE_HOME/.claude/settings.json"
 echo "user's own rule" > "$FAKE_HOME/.claude/rules/other/absolute-rules.md"
 
 OUT=$(run_home bash "$KIT_DIR/scripts/install.sh" 2>&1); RC=$?
@@ -39,7 +39,9 @@ expect_grep "既存 CLAUDE.md を .bak に退避（内容保持）" "my old clau
 expect_file "AGENTS.md（共通規約の本体）を ~/.claude に配置" "$FAKE_HOME/.claude/AGENTS.md"
 expect_grep "CLAUDE.md が @AGENTS.md を import する形" "@AGENTS.md" "$FAKE_HOME/.claude/CLAUDE.md"
 expect_grep "functional-integrity の paths frontmatter が保たれる" "paths:" "$FAKE_HOME/.claude/rules/aidd-kit/functional-integrity.md"
-expect_grep "既存 settings.json は上書きしない" '"hooks":{}' "$FAKE_HOME/.claude/settings.json"
+expect_grep "既存 settings.json は上書きしない（他のキーが残る）" '"theme": "dark"' "$FAKE_HOME/.claude/settings.json"
+expect_grep "既存 settings.json にも指示優先 hook（instruction-guard）を merge する" 'instruction-guard.py' "$FAKE_HOME/.claude/settings.json"
+[ -f "$FAKE_HOME/.claude/settings.json.bak" ] && ok "merge 前の settings.json を .bak に退避" || ng "merge 前の settings.json を .bak に退避" "無い"
 expect_out  "settings.json 既存時に手動マージの警告" "手動でマージ" "$OUT"
 expect_out  "同名 rules が別ディレクトリにあればスキップ表示" "absolute-rules.md は ~/.claude/rules 配下に既存のためスキップ" "$OUT"
 expect_nofile "スキップした rule は aidd-kit/ に置かれない" "$FAKE_HOME/.claude/rules/aidd-kit/absolute-rules.md"
@@ -62,6 +64,33 @@ rm "$FAKE_HOME/.claude/skills/retro/SKILL.md"
 OUT=$(run_home bash "$KIT_DIR/scripts/verify.sh" 2>&1); RC=$?
 expect_exit "スキルを1つ消すと verify.sh が exit 1" 1 "$RC"
 expect_out  "欠落したスキル名が出力に出る" "retro" "$OUT"
+
+# ---------------------------------------------------------------- install-guard.sh（指示優先 3 hook の最小導入・merge・冪等）
+echo "[install-guard.sh]"
+GH="$TMP/guard-home"; mkdir -p "$GH/.claude"
+echo '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo mine"}]}]},"effortLevel":"high"}' > "$GH/.claude/settings.json"
+OUT=$(HOME="$GH" bash "$KIT_DIR/scripts/install-guard.sh" 2>&1); RC=$?
+expect_exit "install-guard.sh が exit 0" 0 "$RC"
+for f in instruction-guard.py prompt-priority.py reply-language.py; do
+  [ -x "$GH/.claude/hooks/$f" ] && ok "hooks/$f を配置（実行可）" || ng "hooks/$f を配置" "無い"
+done
+expect_grep "既存の他の hook（echo mine）を残す" 'echo mine' "$GH/.claude/settings.json"
+expect_grep "既存の他のキー（effortLevel）を残す" '"effortLevel": "high"' "$GH/.claude/settings.json"
+expect_grep "PreToolUse に instruction-guard を配線" 'instruction-guard.py' "$GH/.claude/settings.json"
+expect_grep "Stop に reply-language を配線" 'reply-language.py' "$GH/.claude/settings.json"
+expect_grep "UserPromptSubmit に prompt-priority を配線" 'prompt-priority.py' "$GH/.claude/settings.json"
+python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$GH/.claude/settings.json" 2>/dev/null && ok "merge 後の settings.json が JSON として妥当" || ng "merge 後の settings.json が JSON として妥当" "パース失敗"
+OUT=$(HOME="$GH" bash "$KIT_DIR/scripts/install-guard.sh" 2>&1)
+expect_out "2 回目は「変更なし」（冪等）" "変更なし" "$OUT"
+N=$(grep -c 'instruction-guard.py' "$GH/.claude/settings.json"); [ "$N" -eq 1 ] && ok "2 回実行しても配線が重複しない（1 箇所）" || ng "2 回実行しても配線が重複しない" "$N 箇所"
+GH2="$TMP/guard-home2"; mkdir -p "$GH2"
+OUT=$(HOME="$GH2" bash "$KIT_DIR/scripts/install-guard.sh" 2>&1); RC=$?
+expect_exit "settings.json が無くても exit 0（新規作成）" 0 "$RC"
+expect_grep "新規作成した settings.json に配線" 'instruction-guard.py' "$GH2/.claude/settings.json"
+echo '{broken' > "$GH2/.claude/settings.json"
+OUT=$(HOME="$GH2" bash "$KIT_DIR/scripts/install-guard.sh" 2>&1); RC=$?
+expect_exit "壊れた settings.json は触らず exit 1" 1 "$RC"
+expect_grep "壊れた settings.json を上書きしない" '{broken' "$GH2/.claude/settings.json"
 
 # ---------------------------------------------------------------- export-project.sh
 echo "[export-project.sh]"

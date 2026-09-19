@@ -281,4 +281,5 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 - [x] 配線: `claude-code/hooks/settings.json`・`export-project.sh` ヒアドキュメント・キット自身の `.claude/settings.json`（`$CLAUDE_PROJECT_DIR` 参照）
 - [x] `test-hooks.sh` 16 ケース追加（63 → 79）。本セッションの実 transcript の応答前断面で deny・応答後で許可を確認
 - [x] `AGENTS.md.template` 必須プロセス・`CLAUDE.md.template` hooks 一覧・INDEX・spec/01・spec/09 F-25・spec/10 Q-16・PRD FR-17・`maintainer-tendencies.md` #31
-- 残: Codex には hook が無い。`AGENTS.md` の散文のみ（移行後の実測 U-5 で見直す）
+- [x] **Claude Code 全体に効かせる導入**（保守者「この環境ではない。claude code 全体全て」）: `scripts/install-guard.sh` / `install_guard.py` が既存 `~/.claude/settings.json` に配線を merge（冪等）。`install.sh` からも自動実行。test-install 84 → 102
+- 残: Codex には hook が無い。`AGENTS.md` の散文のみ（移行後の実測 U-5 で見直す）。Web 環境の Setup script 経由の導入は未検証（非公開リポジトリの clone 可否）

@@ -6,7 +6,7 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
-## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22）
+## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22。6.8.1: 全体導入 `install-guard.sh`）
 
 作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。
 
@@ -14,7 +14,8 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - **`instruction-guard.py`**（PreToolUse・全ツール）: 会話記録の末尾を見て、発言（ターン冒頭・途中で届いた queued_command・キュー投入）の後に日本語の応答が無ければ **deny**。理由に指示の先頭を載せるので読み飛ばせない。バイパス用の環境変数は作らない
 - **`reply-language.py`**（Stop）: 最後の応答に日本語が無い／未応答のまま終わろうとしたら続行させて出し直させる。**`prompt-priority.py`**（UserPromptSubmit）: 緊急語を含む発言に「作業より優先」を注入
 - 本セッションの実際の会話記録で検証: 指示に応答する前の断面では deny、応答後は許可。キット自身の開発セッションにも `.claude/settings.json` で配線（hooks は file watcher で即時反映）
-- hooks 回帰テスト 63 → 79 ケース
+- **Claude Code 全体に効かせる**: `./scripts/install-guard.sh` が 3 hook を `~/.claude/hooks/` に置き、既存の `~/.claude/settings.json` に**配線だけを merge** する（他の hook・キーはそのまま。冪等。変更時は `.bak`）。`install.sh` も既存 settings に対してこれを自動で行う（手動マージ待ちにしない）。Web 環境（claude.ai/code）は環境の Setup script に `git clone <このリポジトリ> /tmp/kit && bash /tmp/kit/scripts/install-guard.sh` を 1 行（未検証: 非公開リポジトリの clone 可否は環境の設定による）
+- hooks 回帰テスト 63 → 79 ケース、導入テスト 84 → 102 ケース
 
 ## Ver.6.7 での主な更新（2026-09-19）— 保守者の傾向を「手順が走る場所」に埋める（M21 第 2 回）
 
@@ -72,7 +73,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 
 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
 
-- **`scripts/test-install.sh`**（84 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
+- **`scripts/test-install.sh`**（102 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
 - **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
@@ -175,9 +176,10 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
+./scripts/install-guard.sh   # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge。Claude Code 全体に効く）
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
 ./scripts/test-hooks.sh  # hooks の回帰テスト（79ケース）
-./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（84ケース。実 ~/.claude には触らない）
+./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（102ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
