@@ -28,6 +28,7 @@ description: タスクや機能を「完了」と判定する前の最終チェ�
 - [ ] `./scripts/trace-check.sh docs/lifecycle` が NG=0（要件が設計・実装・テストへ紐づいている）
 - [ ] 成果物に未確定の `TBD` が残っていない
 - [ ] `./scripts/check-approval.sh` が exit 0（**全ての着手済み工程に有効な承認がある**。未承認・失効・工程順序違反は exit 1、判定不能は exit 2）
+- [ ] テスト工程（5〜8）は `./scripts/test-metrics.sh --gate` が exit 0（`TESTING_STRATEGY.md` §7 の基準を全て ✓。判定できない行が 1 つでもあれば exit 2 で完了にしない）
 - [ ] 承認は人間が行った（`approver` に AI 名が入っていない）。AI は `/phase-review` で指摘を出すところまで
 
 ## AI/LLMを含む場合の追加項目

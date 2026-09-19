@@ -29,7 +29,7 @@ Agent への並列委譲はトークンが**約 7 倍**になり、Pro＋Sonnet 
 |---|---|---|---|
 | 1 | **追跡担当** | `traceability-matrix.md` ＋ `./scripts/trace-check.sh docs/lifecycle` の出力 | 上流 ID で下流に紐づいていないもの、空欄、孤立したテスト。**ID で列挙する** |
 | 2 | **仕様一致担当** | **上流工程の成果物と当該工程の成果物だけ**（実装コードを読まない） | 上流の項目が当該工程で落ちている／意味が変わっている／上流に無いものが増えている（スコープ膨張） |
-| 3 | **リスク担当** | 当該工程の成果物 ＋ `skills/qa-review-standards` | 異常系・境界値・非機能の抜け。ISTQB severity を付ける |
+| 3 | **リスク担当** | 当該工程の成果物 ＋ `skills/qa-review-standards`（テスト工程 5〜8 は `./scripts/test-metrics.sh` の検知も） | 異常系・境界値・非機能の抜け。ISTQB severity を付ける。テスト工程では unread・Critical/High 残・滞留・偏りを差し戻し事項に |
 
 役2が実装コードを読むと「実装の写し」になり、設計と実装の食い違いを検出できなくなる（`dev-lifecycle` の
 「前工程の成果物だけを入力にする」と同じ理由）。

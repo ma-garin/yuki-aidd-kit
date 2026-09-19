@@ -44,8 +44,9 @@ expect_out  "settings.json 既存時に手動マージの警告" "手動でマ�
 expect_out  "同名 rules が別ディレクトリにあればスキップ表示" "absolute-rules.md は ~/.claude/rules 配下に既存のためスキップ" "$OUT"
 expect_nofile "スキップした rule は aidd-kit/ に置かれない" "$FAKE_HOME/.claude/rules/aidd-kit/absolute-rules.md"
 expect_file "スキップしなかった rule は aidd-kit/ に置かれる" "$FAKE_HOME/.claude/rules/aidd-kit/speed-harness.md"
-expect_count "スキルが 20 個配置される" 20 "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
-expect_count "コマンドが 17 個配置される" 17 "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
+SKILL_N=$(ls -d "$KIT_DIR"/skills/*/ | wc -l | tr -d " "); CMD_N=$(ls "$KIT_DIR"/claude-code/commands/*.md | wc -l | tr -d " ")
+expect_count "スキルが全部配置される（リポジトリ実体から導出: $SKILL_N 個）" "$SKILL_N" "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
+expect_count "コマンドが全部配置される（$CMD_N 個）" "$CMD_N" "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
 HOOK_N=$(ls "$KIT_DIR"/claude-code/hooks/*.sh "$KIT_DIR"/claude-code/hooks/*.py | wc -l | tr -d " ")
 expect_count "hooks が全部配置される（リポジトリ実体から導出: $HOOK_N 個）" "$HOOK_N" "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
 expect_file "工程承認の判定スクリプトが ~/.claude/scripts/ に置かれる（block-phase.py の探索先）" "$FAKE_HOME/.claude/scripts/check_approval.py"
@@ -68,8 +69,8 @@ P="$TMP/proj"; mkdir -p "$P/scripts"
 echo "# my own trace-check" > "$P/scripts/trace-check.sh"
 OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1); RC=$?
 expect_exit "export-project.sh が exit 0" 0 "$RC"
-expect_count "skills 20 個" 20 "$(ls -d "$P"/.claude/skills/*/ | wc -l)"
-expect_count "commands 17 個" 17 "$(ls "$P"/.claude/commands/*.md | wc -l)"
+expect_count "skills $SKILL_N 個（リポジトリ実体と同数）" "$SKILL_N" "$(ls -d "$P"/.claude/skills/*/ | wc -l)"
+expect_count "commands $CMD_N 個（リポジトリ実体と同数）" "$CMD_N" "$(ls "$P"/.claude/commands/*.md | wc -l)"
 expect_count "hooks $HOOK_N 個（リポジトリ実体と同数）" "$HOOK_N" "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
 expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
 for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py; do

@@ -7,7 +7,7 @@
 dev-lifecycle スキルに従い、指定工程の成果物を生成・更新してゲート判定まで行う。
 
 1. **工程を特定する**（0:RFD / 1:要件定義 / 2:基本設計 / 3:詳細設計 / 4:実装 / 5:単体テスト / 6:結合テスト / 7:システムテスト / 8:受け入れテスト / 9:保守運用）
-   - 引数が `status` の場合は、各工程の成果物の有無と `trace-check.sh` の結果だけを出して終了する
+   - 引数が `status` の場合は、各工程の成果物の有無・`trace-check.sh`・`check-approval.sh`・`test-metrics.sh`（消化率・合格率・Critical/High 残）の結果だけを出して終了する
    - 引数が空なら、`docs/lifecycle/` の充足状況から次に着手すべき工程を提案して確認を取る
 2. **入口基準を確認する**（`skills/dev-lifecycle/references/phase-gates.md`）
    - `./scripts/check-approval.sh --gate <工程番号>` を実行し、**exit 0 以外なら着手しない**（前工程が未承認・失効・差し戻し中）

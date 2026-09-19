@@ -64,6 +64,12 @@ description: プロジェクトのテスト活動全体（テストレベル L1�
 4. Critical / High の未解決指摘ゼロ（severity は `qa-review-standards`）
 5. `quality_harness.py` PASS（critical/high 機能に failure_modes と失敗系テストがある）
 
+**測る（手書きしない）**: 05〜08 のテスト表（結果・実施日・実施者）と欠陥表（severity・起票日・対応）を埋めれば、
+`./scripts/test-metrics.sh` が消化率・合格率・欠陥密度・Critical/High 残・滞留・偏り・完了予測（根拠付き）を出す。
+`--gate` は `docs/test/TESTING_STRATEGY.md` §7 の表（しきい値＋出典）を読み 0 進める / 1 進めない / 2 判定できない。
+結果欄が語彙外の行は分母に入り、1 件でもあれば 2（**判定不能を合格に数えない**）。欠陥表が無ければ密度は「算出できない」（0 ではない）。
+`--into docs/test/iso29119-test-completion-report.md` が §2 と基準評価を埋める。GO/NO-GO は人が §6 に書く。
+
 ## 機械的ゲート（人の注意力に頼らない）
 
 | ゲート | 何を止めるか | 実装 |

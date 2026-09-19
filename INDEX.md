@@ -25,6 +25,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
 ./scripts/trace-check.sh docs/lifecycle       # 要件→設計→実装→テストの追跡を機械検証（NG=0 で合格）
+./scripts/test-metrics.sh [--gate]           # テスト工程の消化率・合格率・欠陥密度・滞留・完了予測を表から集計（--gate は §7 の基準で 0/1/2）
 ./scripts/token-audit.sh                      # トークン節約の仕組みの点検（床の推定・hook と設定の配線・MCP 数。実測は /context /usage）
 ./scripts/check-approval.sh                   # 工程承認の機械検査（記録の有無・版の一致=失効・工程順序。0=合格 1=未承認 2=判定不能）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
@@ -53,10 +54,10 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only | #qa #review | 46行 |
 | `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 71行 |
 | `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 55行 |
-| `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 105行 |
+| `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 111行 |
 | `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 95行 |
 | `phase-approval` | 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る | #lifecycle #qa #process | 93行 |
-| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 57行 |
+| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 58行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 199行 |
 | `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 38行 |
 
@@ -108,6 +109,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `/rfd` | RFD（提案・論点出し）を起票し、決定を人間に求める | #lifecycle | 24行 |
 | `/lifecycle` | 指定工程の成果物を生成し入口/出口基準で判定（`status` で進捗確認） | #lifecycle | 33行 |
 | `/trace` | トレーサビリティの更新と `trace-check.sh` による機械検証 | #lifecycle #qa | 22行 |
+| `/test-metrics` | テスト工程の進捗・品質を数字で出し、検知と「人が判定すること」を分けて報告 | #qa #test | 23行 |
 | `/phase-review` | 工程の出口で AI 3 役を順次レビュー。差し戻し事項を出し切って人間の承認へ渡す | #lifecycle #qa | 26行 |
 | `/plan` | 方針を確定し実装モードを解除（探索を許可）。PLAN.md を生成 | #process | 18行 |
 | `/implement` | 実装モード開始（plan 必須。Read/Grep/Glob を hook で物理ブロック） | #process | 19行 |
