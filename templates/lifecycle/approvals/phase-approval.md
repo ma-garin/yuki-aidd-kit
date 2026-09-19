@@ -12,7 +12,7 @@
 | approved_at | 未記入 |
 | approver | 未記入 |
 
-`reviewed_hash` は承認した瞬間の成果物の版。次で取得して貼る（`covers` と同じパスを同じ順で渡す）:
+`reviewed_hash` は承認した瞬間の成果物の版。次で取得して貼る（パスの順序は結果に影響しない）:
 
 ```bash
 ./scripts/phase-hash.py __COVERS_ARGS__

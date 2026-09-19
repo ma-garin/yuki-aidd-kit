@@ -125,6 +125,7 @@
 | `verify.sh` | 51 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
 | `export-project.sh` | 144 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
+| `phase-hash.py` | 79 | 工程成果物のコンテンツハッシュ（承認を版に縛る）。対象0件は `empty`。`--staged` あり |
 | `init-lifecycle.sh` | 117 | 工程文書11本を `docs/lifecycle/` へ。`--github` で Issue/PR/CI も。既存は上書きしない |
 | `init-test-docs.sh` | 37 | テスト文書6本＋CSV＋機能契約＋ゲートスクリプト3本を配置。`--ci` で `test-gates.yml` |
 | `trace-check.sh` | 247 | **トレーサビリティの機械検証**。6種別（重複定義/未定義参照/所有ファイル違反/追跡表未記載/カバー漏れ/孤立テスト）。NG>0 で exit 1 |
