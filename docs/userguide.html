@@ -264,7 +264,7 @@
             <tr><td><strong>Codex</strong></td><td>OpenAI 社の似た道具。このキットは両方で使えるように作ってあります</td></tr>
             <tr><td><strong>ターミナル</strong></td><td>文字でパソコンに命令する黒い画面。Mac なら「ターミナル.app」、Windows なら「PowerShell」や「WSL」。このガイドでは <code>./scripts/install.sh</code> のような 1 行を貼り付けて Enter を押します</td></tr>
             <tr><td><strong>リポジトリ（repo）</strong></td><td>プロジェクトのファイル一式と、その変更履歴をまとめたもの。<code>git clone</code> はそれを自分のパソコンに丸ごとコピーする命令です</td></tr>
-            <tr><td><strong><code>~/.claude/</code></strong></td><td>自分のホームフォルダにある、Claude Code の設定置き場。<code>~</code> はホームフォルダ（Mac なら <code>/Users/あなた</code>）の略。ここに置いたものは、どのプロジェクトを開いても効きます</td></tr>
+            <tr><td><strong><code>~/.claude/</code></strong></td><td>自分のホームフォルダにある、Claude Code の設定置き場。<code>~</code> はホームフォルダ（Mac なら「ユーザ › あなたの名前」）の略。ここに置いたものは、どのプロジェクトを開いても効きます</td></tr>
             <tr><td><strong>スキル</strong></td><td>「UI を作るときはこう」「テストはこう回す」という場面別の手順書。AI はあなたの言葉を見て、合う手順書を自分で開きます</td></tr>
             <tr><td><strong>hook（フック）</strong></td><td>AI が何かする直前・直後に自動で走る小さなプログラム。「頼んでいないテストは走らせない」のように、口約束ではなく機械で止めます</td></tr>
             <tr><td><strong>ゲート</strong></td><td>「通らないと先に進めない検査」のこと。テスト、秘密情報の検査、文書のズレ検査など。このキットでは<strong>人が「回して」と言ったときだけ</strong>回ります</td></tr>
@@ -400,7 +400,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ./scripts/export-project.sh ~/work/my-app</code></pre>
             <p class="expect"></p>
             <pre><code>=== AIDD Kit プロジェクト配布（版: 6.3.0 xxxxxxx 2026-09-17）===
-対象: /Users/you/work/my-app
+対象: <対象ディレクトリ>
 ✅ スキル: 20個
 ✅ コマンド: 18個
 ✅ Hooks: 7個（プロジェクトスコープ・相対パス参照。block-explore.sh も配線済み）
@@ -564,7 +564,7 @@ library-loan.html を作りました。5 画面（ダッシュボード / 蔵書
           <li><strong>機械で検査する（人が起動する）</strong>
             <pre><code>./scripts/check-design.sh .</code></pre>
             <p class="expect"></p>
-            <pre><code>=== デザイン検査: /Users/you/work/library-loan ===
+            <pre><code>=== デザイン検査: library-loan ===
 対象: 1 ファイル
 ✅ NG=0</code></pre>
             <p class="why">「色や余白を数字でベタ書きしていないか」「外部サイトからフォントを読んでいないか」「alert() を使っていないか」を機械が見ます。人がコードを読む前に、機械で落とせるものを落とす、がこのキットの考え方です。</p>
@@ -959,7 +959,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
         <h3>実際の出力（図書館貸出の事例）</h3>
         <p>システムテスト 8 件・受け入れ 5 件・欠陥 3 件を入れて回したときの、そのままの出力です。</p>
         <pre><code>./scripts/test-metrics.sh
-<span class="c">=== テストメトリクス: /Users/you/work/library-loan ===
+<span class="c">=== テストメトリクス: library-loan ===
   ST: 全 8 / 実行 5（pass 4・fail 1）/ 未実施 1 / 判定不能 1 → 消化率 62.5%・合格率 80.0%
  UAT: 全 5 / 実行 3（pass 2・fail 1）/ 未実施 2 / 判定不能 0 → 消化率 60.0%・合格率 66.7%
  ALL: 全 17 / 実行 10（pass 8・fail 2）/ 未実施 5 / 判定不能 1 → 消化率 58.8%・合格率 80.0%
@@ -1041,7 +1041,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
 
         <h3>効いているか確かめる</h3>
         <pre><code>./scripts/token-audit.sh
-<span class="c">=== トークン監査: /Users/you/work/library-loan ===
+<span class="c">=== トークン監査: library-loan ===
 床（常時読み込み・推定）≒ 5800 tok（実測は /context）
 ✅ NG=0（絞る hook 4 本と設定 3 キーが配線済み）
 次: Claude Code で /context と /usage を実行し、推定を実測に置き換える</span></code></pre>

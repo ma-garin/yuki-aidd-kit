@@ -51,21 +51,21 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `context-compression` | 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存 | #token #process | 59行 |
 | `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 57行 |
 | `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 55行 |
-| `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only | #qa #review | 46行 |
+| `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only。references/personas.md に検証ペルソナ 16 体（作った本人に検証させない・順次）と準拠の主張範囲 | #qa #review | 54行 |
 | `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 71行 |
 | `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 55行 |
 | `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 111行 |
 | `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 95行 |
 | `phase-approval` | 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る | #lifecycle #qa #process | 93行 |
-| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 58行 |
+| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 60行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 199行 |
-| `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 38行 |
+| `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 40行 |
 
 ## LIBRARY スキル（種別・場面で選ぶ）
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/ に tokens.md（値の理由）・components.md（部品の使い分けと落とし穴）・frameworks.md（分担）。実物は templates/tokens.css・templates/ui/ | #ui #design | 115行 |
+| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/ に tokens.md（値の理由）・components.md（部品の使い分けと落とし穴）・frameworks.md（分担）。実物は templates/tokens.css・templates/ui/ | #ui #design | 117行 |
 | `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値 | #nfr #spec | 89行 |
 | `agent-eval` | LLM/RAG/エージェント出力の品質をデータセット＋スコアラーで回帰評価 | #ai #eval | 67行 |
 | `code-doc-search` | 技術ドキュメント検索のクエリ最適化 | #search #docs | 55行 |
@@ -78,7 +78,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
 | `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 21行 |
-| `speed-harness` | H-1〜H-8: 着手前3行・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示 | #speed #process | 52行 |
+| `speed-harness` | H-1〜H-8: 着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示 | #speed #process | 53行 |
 | `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 16行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
 
@@ -111,14 +111,14 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `/trace` | トレーサビリティの更新と `trace-check.sh` による機械検証 | #lifecycle #qa | 22行 |
 | `/test-metrics` | テスト工程の進捗・品質を数字で出し、検知と「人が判定すること」を分けて報告 | #qa #test | 23行 |
 | `/phase-review` | 工程の出口で AI 3 役を順次レビュー。差し戻し事項を出し切って人間の承認へ渡す | #lifecycle #qa | 26行 |
-| `/plan` | 方針を確定し実装モードを解除（探索を許可）。PLAN.md を生成 | #process | 19行 |
+| `/plan` | 方針を確定し実装モードを解除（探索を許可）。PLAN.md を生成 | #process | 21行 |
 | `/implement` | 実装モード開始（plan 必須。Read/Grep/Glob を hook で物理ブロック） | #process | 19行 |
 | `/compact-work` | context-compression 規約で作業（3層要約・スクリプト化） | #token | 13行 |
 | `/ecc-daily` | プロジェクトに合うECC資産の分類を実行 | #ecc | 26行 |
 | `/app-scan` | アプリワークスペースの軽量棚卸し | #ecc #scan | 20行 |
 | `/sdd-start` | SDDのspec/plan/tasks/CLAUDE.mdを一気に生成 | #sdd | 28行 |
 | `/new-pwa` | 新規個人PWAのspec〜スキャフォールド生成 | #pwa | 27行 |
-| `/qa-review` | ISO/ISTQB準拠のレビュー実行 | #qa | 28行 |
+| `/qa-review` | ISO/ISTQB準拠のレビュー実行 | #qa | 30行 |
 | `/e2e-cycle` | E2E の 1 フェーズだけ実行して停止（1〜5 / help） | #qa #e2e | 25行 |
 | `/eval` | AIシステムのeval実行（スコアラー選定〜回帰判定） | #ai #eval | 20行 |
 | `/doc-search` | 技術ドキュメント特化検索 | #search | 14行 |
@@ -150,8 +150,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 256行 |
-| `docs/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 14 項目（複数リポジトリの記録から抽出）と規約・hook・検査への反映先。同じ指摘を 2 回受けたら行を足す | 45行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 272行 |
+| `docs/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 80行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
 | `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 85行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
@@ -164,7 +164,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 `docs/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。
 `docs/examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/userguide.html`）。
 
-templates/: `design-system.md`（視覚的指示書。チェックリストは機械/目視の別付き）/ `tokens.css`（デザイントークンの実物。**値の唯一の真実源**。ライト＋ダーク）/ `ui/`（`components.css` 部品 / `layout.css` 骨格 / `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `README.md` FW 別1枚表）/ `components/`（`feedback.js` `icons.js` `demo.html` `demo-shell.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
+templates/: `design-system.md`（視覚的指示書。チェックリストは機械/目視の別付き）/ `tokens.css`（デザイントークンの実物。**値の唯一の真実源**。ライト＋ダーク）/ `ui/`（`components.css` 部品 / `layout.css` 骨格 / `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `README.md` FW 別1枚表）/ `components/`（`feedback.js` `icons.js` `demo.html` `demo-shell.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md`（決まっていること・未検証の確かめ方・最初の 5 分つき）/ `ADR-template.md`（判断基準を規格名で・捨てた案）/ `lessons.md` / `implement-profile.md`（止まる条件つき）/ `work-order.md`（別モデルへ渡す作業指示書: 守ること表・Step 完了条件・止まる条件・質問節）
 
 ## templates/lifecycle/ — 工程成果物の雛形（`dev-lifecycle` 用）
 
@@ -193,7 +193,7 @@ CI は `github-actions/lifecycle-check.yml`（手動起動で `trace-check.sh` �
 - 工程分割が要る案件（他者へ納品/引き継ぐ・要件合意が要る・保守が続く）は `dev-lifecycle`、個人PWA/単一HTML/PoC は軽量な `sdd-ecc-workflow`。判断表は `skills/dev-lifecycle/SKILL.md` 冒頭
 - 全量導入より、対象プロジェクトに合う DAILY だけを読む。LIBRARY は削除せず必要時に検索・参照
 - ファイルを読む前に grep/glob で絞る（`context-compression` 参照）
-- 着手前に `目的:` `見積:` `検証:` の3行を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒
+- 着手前に `目的:` `終了条件:` `見積:` `検証:` の4行を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒
 - UI変更は `uiux_review` で全状態を実機で開いて確認する。実行経路の検証なしに「完了」と言わない（`rules/functional-integrity.md`）
 - AI出力品質は `agent-eval`、コード動作は `test-automation`、完了判定は `done-gate` で分ける
 - セッション終了時は `CURRENT_STATE.md` と `lessons.md` を更新する

@@ -112,6 +112,14 @@ OUT=$(run "$C" --skip-tests); RC=$?
 expect_exit "件数のズレは WARN なので exit 0" 0 "$RC"
 grep -q "| 件数 | docs/userguide.html" "$TMP/report.md" && ok "種別「件数」で skills 19 / 実数 20 を検出（レポート）" || ng "種別「件数」で検出" "レポートに無い"
 
+echo "[ケース12: 絶対パス（検査11・WARN）]"
+C=$(fresh); sed -i 's|^- 1. <作業>.*|- 1. /Users/you/work/app を開く|' "$C/templates/CURRENT_STATE.md"   # 行数を変えない（spec 同期を崩さない）
+OUT=$(run "$C" --skip-tests); RC=$?
+expect_exit "絶対パスは WARN なので exit 0" 0 "$RC"
+grep -q "| 絶対パス | templates/CURRENT_STATE.md" "$TMP/report.md" && ok "種別「絶対パス」で /Users/ を検出（レポート）" || ng "種別「絶対パス」で検出" "レポートに無い"
+C=$(fresh); OUT=$(run "$C" --skip-tests)
+grep -q "| 絶対パス |" "$TMP/report.md" && ng "元の状態では検出されない" "残っている: $(grep '| 絶対パス |' "$TMP/report.md" | head -2)" || ok "元の状態では検出されない（配布雛形・README・userguide に絶対パスなし）"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }
