@@ -270,3 +270,15 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。
+
+## M22: 指示優先を hook で強制（完了 2026-09-19）
+
+背景: 作業中に届いた保守者の指示を読み飛ばし、英語で途中報告を続けた（`spec/09` F-25、Critical）。保守者「仕組みで改善しなさい」。
+
+- [x] `rules/absolute-rules.md` A-13 指示優先（指示 ＞ 計画 ＞ 自分の規範）。rules 91 行 ≦ 100
+- [x] `claude-code/hooks/instruction-guard.py`（PreToolUse 全ツール）: transcript 末尾を後ろから走査。発言の後に日本語の応答が無ければ deny、理由に指示の先頭。サブエージェント・機械由来タグ・transcript 無しは fail-open
+- [x] `reply-language.py`（Stop、判定を共有）／`prompt-priority.py`（UserPromptSubmit、緊急語に注入）
+- [x] 配線: `claude-code/hooks/settings.json`・`export-project.sh` ヒアドキュメント・キット自身の `.claude/settings.json`（`$CLAUDE_PROJECT_DIR` 参照）
+- [x] `test-hooks.sh` 16 ケース追加（63 → 79）。本セッションの実 transcript の応答前断面で deny・応答後で許可を確認
+- [x] `AGENTS.md.template` 必須プロセス・`CLAUDE.md.template` hooks 一覧・INDEX・spec/01・spec/09 F-25・spec/10 Q-16・PRD FR-17・`maintainer-tendencies.md` #31
+- 残: Codex には hook が無い。`AGENTS.md` の散文のみ（移行後の実測 U-5 で見直す）

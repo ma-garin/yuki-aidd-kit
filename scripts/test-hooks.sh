@@ -169,6 +169,60 @@ else
   echo "  ❌ InstructionsLoaded を .claude/instructions-loaded.log に追記"; FAIL=$((FAIL+1))
 fi
 
+echo "[instruction-guard.py / reply-language.py / prompt-priority.py]"
+# 保守者の指示に応答するまでツールを呼ばせない（PreToolUse 全ツール）／最後の応答の言語（Stop）／優先の注入（UserPromptSubmit）
+IG="$TMP/ig"; mkdir -p "$IG"; TRJ="$IG/t.jsonl"
+igj() { printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{},"transcript_path":"%s"}' "$1"; }
+ig_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("permissionDecisionReason","") if d.strip() else "")' 2>/dev/null; }
+u_text()  { printf '{"type":"user","message":{"role":"user","content":"%s"}}\n' "$1"; }
+u_tool()  { printf '{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"x","content":"ok"}]}}\n'; }
+a_text()  { printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"%s"}]}}\n' "$1"; }
+a_tool()  { printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"x","name":"Bash","input":{}}]}}\n'; }
+queued()  { printf '{"type":"attachment","attachment":{"type":"queued_command","prompt":"%s","humanTurn":true}}\n' "$1"; }
+enqueue() { printf '{"type":"queue-operation","operation":"enqueue","content":"%s"}\n' "$1"; }
+{ u_text "日本語で報告しなさい"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "指示の直後にツールを呼ぶと deny（未応答）" "未応答" "$(ig_reason "$OUT")"
+expect_contains "deny 理由に指示の先頭を載せる（読み飛ばし防止）" "日本語で報告しなさい" "$(ig_reason "$OUT")"
+{ u_text "日本語で報告しなさい"; a_text "目的: 報告します。"; a_tool; u_tool; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "日本語で応答済みなら許可（ツール結果が続いても素通り）" "$OUT" "$RC"
+{ u_text "作業して"; a_text "目的: 作業。"; a_tool; u_tool; queued "中間報告をしなさい。今すぐに。"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "途中で届いた発言（queued_command）に未応答なら deny" "中間報告をしなさい" "$(ig_reason "$OUT")"
+{ u_text "作業して"; a_text "目的: 作業。"; a_tool; enqueue "止めなさい"; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "キュー投入（enqueue）の時点で deny（配達前でも理由に載る）" "止めなさい" "$(ig_reason "$OUT")"
+{ u_text "作業して"; a_text "目的: 作業。"; a_tool; u_tool; queued "中間報告をしなさい。"; a_text "中間報告です。"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "途中の発言に日本語で応答済みなら許可" "$OUT" "$RC"
+{ u_text "日本語で報告しなさい"; a_text "Reflections are in place. Now updating."; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "日本語の指示に英語で応答したら deny" "日本語が無い" "$(ig_reason "$OUT")"
+{ u_text "Please fix the test"; a_text "Fixing the test now."; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "英語の指示に英語で応答は許可（言語は指示に合わせる）" "$OUT" "$RC"
+{ u_text "<command-name>/plan</command-name><command-args>x</command-args>"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "機械由来のタグだけの発言（スラッシュコマンド）は対象外" "$OUT" "$RC"
+{ printf '{"type":"user","isSidechain":true,"message":{"role":"user","content":"調べて"}}\n'; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "サブエージェント（isSidechain）は対象外" "$OUT" "$RC"
+OUT=$(igj "$IG/none.jsonl" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "transcript が無ければ許可（fail-open）" "$OUT" "$RC"
+{ u_text "日本語で報告しなさい"; a_text "Done."; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: 最後の応答に日本語が無ければ block で続行させる" '"decision": "block"' "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: stop_hook_active なら何もしない（無限ループ防止）" "$OUT" "$RC"
+{ u_text "日本語で報告しなさい"; a_text "報告します。"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 日本語で応答していれば何もしない" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
+expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
+OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?
+expect_empty "UserPromptSubmit: 通常の発言には何も足さない" "$OUT" "$RC"
+
 echo "[pre-read-guard.py]"
 # 読む価値の無いファイルを deny、大きすぎるファイルは先頭だけに絞る（PreToolUse Read）
 rg() { python3 "$HOOKS/pre-read-guard.py"; }

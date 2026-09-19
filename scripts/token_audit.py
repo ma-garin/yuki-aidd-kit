@@ -124,7 +124,9 @@ def check_loaded_log(root: Path, r: Result) -> None:
 
 
 def load_settings(root: Path) -> tuple[dict, Path | None]:
-    for c in (root / ".claude/settings.json", root / "claude-code/hooks/settings.json", Path.home() / ".claude/settings.json"):
+    # キット本体（claude-code/hooks/settings.json がある形）では配布形の settings を見る。キット自身の .claude/settings.json は
+    # 開発セッション用の一部配線（instruction-guard 等）だけなので、床・配線の判定対象にしない
+    for c in (root / "claude-code/hooks/settings.json", root / ".claude/settings.json", Path.home() / ".claude/settings.json"):
         if c.is_file():
             try:
                 return json.loads(read(c)), c

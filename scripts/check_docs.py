@@ -167,7 +167,7 @@ def test_totals(root: Path, skip: bool) -> dict[str, int]:
     for f in sorted((root / "scripts").glob("test-*.sh")):
         if f.name == "test-check-docs.sh":   # 自分自身の回帰テストは再帰になるので除外
             continue
-        proc = subprocess.run(["bash", str(f)], cwd=root, capture_output=True, text=True,
+        proc = subprocess.run(["bash", str(f)], cwd=root, capture_output=True, text=True, errors="replace",
                               env={**os.environ, "GATES_REQUESTED": "1"})
         m = re.search(r"PASS=(\d+)\s*/\s*FAIL=(\d+)", proc.stdout)
         if m:

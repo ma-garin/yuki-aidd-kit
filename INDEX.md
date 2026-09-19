@@ -15,7 +15,7 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
-./scripts/test-hooks.sh                       # hooks の回帰テスト（63ケース）
+./scripts/test-hooks.sh                       # hooks の回帰テスト（79ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
 ./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（84ケース）
 ./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
@@ -77,7 +77,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 21行 |
+| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 22行 |
 | `speed-harness` | H-1〜H-8: 着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示 | #speed #process | 53行 |
 | `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 16行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
@@ -93,6 +93,9 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `block-phase.py` | PreToolUse Write/Edit | 前工程が未承認のまま次工程の成果物を書くのを deny（`.claude/phase-gate` あり時のみ）。承認記録への書き込みは常に許可 |
 | `filter-output.py` | PreToolUse Bash | テスト・install・build・`git log`・`git diff` の出力を Claude が読む前に絞る（`updatedInput`）。全量は `FULL_OUTPUT=1` |
 | `block-gates.py` | PreToolUse Bash | pytest / make test / lint をユーザー要求時（`GATES_REQUESTED=1`）以外は deny |
+| `instruction-guard.py` | PreToolUse（全ツール） | 保守者の発言（ターン冒頭・途中の queued_command・enqueue）に日本語で応答するまで deny。理由に指示の先頭を載せる（読み飛ばし防止）。バイパス無し |
+| `reply-language.py` | Stop | 最後の応答に日本語が無い／指示に未応答のまま終わろうとしたら block で続行させる（stop_hook_active で 1 回だけ） |
+| `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
 | `context-guard.py` | UserPromptSubmit | 55 分以上空いた再開・4 MB 超の会話で `/clear` `/compact` を促す注入（止めない） |
 | `pre-compact.py` | PreCompact | 圧縮時に「残す／捨てる」を注入 |
 | `log-instructions.py` | InstructionsLoaded | 指示ファイルの読み込みを `.claude/instructions-loaded.log` に記録（実測用。Claude には返さない） |
@@ -150,10 +153,10 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 272行 |
-| `docs/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 80行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 284行 |
+| `docs/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
-| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 85行 |
+| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
 | `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |

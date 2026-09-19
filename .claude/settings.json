@@ -1,0 +1,39 @@
+{
+  "_comment": "キット自身の開発セッション用。2026-09-19 に保守者の指示（日本語で報告／中間報告を今すぐ）を作業中に読み飛ばした事故の再発防止。配布形は claude-code/hooks/settings.json と export-project.sh",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/claude-code/hooks/instruction-guard.py",
+            "timeout": 5,
+            "statusMessage": "保守者の指示に応答済みか確認中"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/claude-code/hooks/prompt-priority.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/claude-code/hooks/reply-language.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
