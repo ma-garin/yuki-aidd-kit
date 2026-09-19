@@ -292,4 +292,5 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 - [x] 違い: Bash の `tool_input` は `{"command"}` で同じ。編集は `apply_patch` で `tool_input` が `{"command": <パッチ本文>}`（`file_path` 無し。`Write|Edit` は matcher の別名として通る）。Read/Grep/Glob ツール・InstructionsLoaded イベント・コマンド式 status line は無い。transcript は Codex 独自の rollout 形式。PreCompact の出力に `additionalContext` が無い。JSON でない標準出力は捨てられる
 - [x] `export-project.sh` が `.codex/hooks.json` を生成。配線は入出力を照合できた 4 本だけ（block-gates / filter-output / prompt-priority / context-guard）。他は理由付きで配線しない（効くふりをしない）。test-install 102 → 115
 - [x] 古い記述の修正: M22 の残・`spec/10` B-14・`spec/11` D-4・`skills/context-compression`・`docs/userguide.html`・`spec/05`・`spec/09` F-26
+- [x] 同日追記（保守者「なぜドキュメント類が最新化されていないのか」）: 一次コミットで userguide・PRD・spec/04 が古いまま残った（`spec/09` F-27）。`check-docs.sh --changed` 検査 12（変更を説明する文書が同じ差分に無ければ NG）＋ `docs-gate.py`（`git commit` 前に deny）＋ H-7・done-gate・kit-ci への配線。test-hooks 79 → 85、test-check-docs 32 → 46
 - 残: 編集系 3 本（block-phase / pre-write-check / post-write-html）のパッチ本文からのパス抽出、instruction-guard / reply-language の rollout 形式対応、`install.sh` の `~/.codex/hooks.json` 出力、Codex 実機での動作確認（本セッションに Codex CLI は無い）。いずれも B-14

@@ -51,7 +51,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 - **FR-11 版の刻印**: `VERSION` を真実源とし、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。配布先がどの版のキットから出たかを判別できる
   - 検証基準: `./scripts/test-install.sh` が KIT_VERSION の3フィールドと VERSION との一致を assert する
 - **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` から**保守者が手動起動したときだけ**実行する（自動実行はしない。ゲートは要求時のみ、の規律と同じ）
-  - 検証基準: `./scripts/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec/01 同期）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
+  - 検証基準: `./scripts/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec/01 同期）。コミット前は `--changed` も NG=0（変更を説明する文書が同じ差分で更新されている。`docs-gate.py` が止める）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
 - **FR-13 デザイン検査**: `scripts/check-design.sh` が CSS/HTML/JS の直値（色・余白・角丸・文字サイズ）・未定義トークン・外部 CDN・`alert()`・`tokens.css` 未読込を機械判定する（NG>0 で exit 1）。キットの出荷物自身が NG=0 で通ることを回帰テストに含める。配布先では対象パスを引数で渡す
   - 検証基準: `templates/design-system.md` 再現チェックリストの「機械」項目が全て `check-design.sh` で判定される
 - **FR-14 工程承認ゲート**: 各工程の出口に**人間の承認**を置き、その承認を**承認時の成果物の版に縛る**。承認後に成果物が変われば承認は自動失効する。`scripts/check-approval.sh` が記録の有無・必須欄・版の一致・未解消の差し戻し・未確認事項・承認者が人間か・工程順序を機械判定する

@@ -84,6 +84,7 @@
 | サブエージェントに冗長な処理を隔離 | `speed-harness` H-4 にあるが、Pro では委譲自体が高コスト |
 | `/effort` で effort を下げる | `effortLevel: high` を settings で固定（M19、Q-12）。上げる場面は `model-routing` |
 | 具体的なプロンプト／plan mode／早期の軌道修正 | `speed-harness` H-1・H-3 が近い |
+| CLAUDE.md・文書を最新に保つ（古い指示は誤った行動の原因） | `speed-harness` H-7 ＋ 検査 12（`check-docs.sh --changed`）＋ `docs-gate.py`（M23）。変更を説明する文書が同じ差分に無ければ commit を止める |
 | Agent teams は通常の約7倍のトークン | `model-routing`「Agent teams は使わない」。3 役レビューも順次（Q-11） |
 
 ### Sonnet 5 の API 上の性質（bundled skill `claude-api`）

@@ -58,6 +58,7 @@ Codex CLI の lifecycle hook（openai/codex `codex-rs/hooks`、Stable・既定�
 | `pre-compact.py` | ❌ | PreCompact の出力に `additionalContext` が無い |
 | `pre-read-guard.py` / `block-explore.sh` | ❌ | Read/Grep/Glob ツールが無い（読み取りは shell 経由） |
 | `log-instructions.py` | ❌ | InstructionsLoaded イベントが無い |
+| `docs-gate.py`（キット開発用。`.claude/settings.json` のみ配線） | 未配線 | Bash の `tool_input.command` を読むので互換だが、キット自身の開発でしか意味が無い |
 | `statusline.py` / `progress.py` | ❌ | status line がコマンド式でない |
 | `session-summary.sh` | ❌ | JSON でない標準出力は Codex 側で捨てられる |
 

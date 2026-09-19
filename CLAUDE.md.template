@@ -17,6 +17,7 @@
 - `context-guard.py` / `pre-compact.py`: 55 分超の再開・4 MB 超の会話で `/clear` `/compact` を促す／圧縮時に残す・捨てるを注入
 - `progress.py` / `statusline.py`: 1分超の作業は `start / step / done` を bash に連結する（`rules/speed-harness.md` H-8）
 - `pre-write-check.sh` / `post-write-html.sh` / `session-summary.sh`: 警告・通知のみ（ブロックしない）
+- `docs-gate.py`（キット自身の開発でのみ配線）: `git commit` の前に `check-docs.sh --only-changed` を回し、変更を説明する文書が同じ差分に無ければ deny
 
 ## トークン・モデル
 - 無関係なタスクへ移るときは `/clear`（1 時間超の再開は `context-guard.py` が警告する。続きなら要約から）

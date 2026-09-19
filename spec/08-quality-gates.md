@@ -53,6 +53,7 @@ L4 受入 ─┴─→ ここで初めて「ユーザーが価値を受け取れ
 | 日常のコミット | **実行しない**（`block-gates.py` が無断実行を止める） | `rules/speed-harness.md` H-7（速度） |
 | **マイルストーン**（機能の区切り・PR マージ前・リリース判断） | **フルゲート**: L1/L2 + L3 + lint + security + `quality_harness.py`。結果を `docs/quality/evidence/` へ保存 | `test-strategy` |
 | ユーザーが要求した時 | 要求されたもの（`GATES_REQUESTED=1` を付ける） | H-7 |
+| コミット前（文書の鮮度） | `check-docs.sh --only-changed`（変更を説明する文書が同じ差分に無ければ NG。キットでは `docs-gate.py` が commit を止める） | H-7・done-gate Type C（M23。検査 1〜11 は行数・件数の突合で鮮度を見ない） |
 
 **この優先関係をプロジェクト文書に必ず書く。**
 書かれていなかったため、H-7 運用でゲートが1週間実行されず、**テスト資産17件が陳腐化したまま放置された（2026-08-23 実損害）**。

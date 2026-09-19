@@ -58,7 +58,7 @@
 | 工程の入口/出口基準 | `skills/dev-lifecycle/references/phase-gates.md` | `done-gate` / `/lifecycle` / PR テンプレート |
 | 機能契約の項目定義 | `skills/test-strategy/references/feature-contracts.md` | `quality_harness.py` / `templates/test/feature_contracts.yml` |
 | `.ui-verified` の仕様 | `skills/test-strategy/references/ui-verified-gate.md` | `pre-commit-ui-gate.sh` / `ui-hash.py` / `done-gate` |
-| 速度の規律 | `rules/speed-harness.md` | `CLAUDE.md.template` / `AGENTS.md.template` / `OPERATING-MODE.md` |
+| 速度の規律 | `rules/speed-harness.md` | `CLAUDE.md.template` / `AGENTS.md.template` / `OPERATING-MODE.md` / `docs-gate.py`（H-7 の文書更新確認を commit 前に強制） |
 | キット自体の要求 | `docs/PRD.md` | `docs/Roadmap.md`（各項目の完了条件） |
 | **現況の事実・残課題** | `spec/`（本ディレクトリ） | — |
 
