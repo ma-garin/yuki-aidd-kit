@@ -125,7 +125,7 @@
 | `verify.sh` | 51 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
 | `export-project.sh` | 144 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
-| `init-lifecycle.sh` | 78 | 工程文書11本を `docs/lifecycle/` へ。`--github` で Issue/PR/CI も。既存は上書きしない |
+| `init-lifecycle.sh` | 117 | 工程文書11本を `docs/lifecycle/` へ。`--github` で Issue/PR/CI も。既存は上書きしない |
 | `init-test-docs.sh` | 37 | テスト文書6本＋CSV＋機能契約＋ゲートスクリプト3本を配置。`--ci` で `test-gates.yml` |
 | `trace-check.sh` | 247 | **トレーサビリティの機械検証**。6種別（重複定義/未定義参照/所有ファイル違反/追跡表未記載/カバー漏れ/孤立テスト）。NG>0 で exit 1 |
 | `quality_harness.py` | 204 | **機能契約ハーネス**。8種の検証（統制文書/列挙値/参照パス/実行経路/失敗系/シンボル/未登録モジュール/未実装マーカー）。NG>0 で exit 1 |
@@ -176,6 +176,13 @@
 | `08-acceptance-test.md` | 45 | 受け入れテスト。業務シナリオ単位・探索的テスト1周・不合格項目の判断・**人間の承認欄** |
 | `09-operations.md` | 81 | 保守運用。稼働環境・監視 OPS・変更/ロールバック手順（1度実行済みのチェック）・障害切り分け・既知の制約・引き継ぎ順序 |
 | `traceability-matrix.md` | 41 | **追跡表の唯一の真実源**。記入規則（空欄禁止・非該当は `-`・REQ-F は UAT 必須・REQ-N は ST 必須） |
+
+#### lifecycle/approvals/（2件）— 工程承認記録の雛形
+
+| ファイル | 行 | 役割 |
+|---|---|---|
+| `approvals/phase-approval.md` | 55 | 1工程分の承認記録。covers / reviewed_hash / approver のメタ表・3値判定・条件・根拠・差し戻し事項（解消の検証方法必須）・未確認事項 |
+| `approvals/README.md` | 53 | 承認記録の運用。機械と人間の境界表・3値判定・着手判定（`YYYY-MM-DD` の有無）・`.claude/phase-gate` による強制 |
 
 ### test/（8件・435行）— テスト活動の雛形
 
