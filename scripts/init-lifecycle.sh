@@ -68,14 +68,14 @@ while IFS='|' read -r n name covers; do
   echo "  ✅ approvals/phase-${n}.md"; ANEW=$((ANEW+1))
 done <<'PHASES'
 0|RFD|docs/lifecycle/00-rfd.md
-1|要件定義|docs/lifecycle/01-requirements.md, docs/lifecycle/traceability-matrix.md
-2|基本設計|docs/lifecycle/02-basic-design.md, docs/lifecycle/traceability-matrix.md
-3|詳細設計|docs/lifecycle/03-detailed-design.md, docs/lifecycle/traceability-matrix.md
-4|実装|docs/lifecycle/04-implementation.md, docs/lifecycle/traceability-matrix.md
-5|単体テスト|docs/lifecycle/05-unit-test.md, docs/lifecycle/traceability-matrix.md
-6|結合テスト|docs/lifecycle/06-integration-test.md, docs/lifecycle/traceability-matrix.md
-7|システムテスト|docs/lifecycle/07-system-test.md, docs/lifecycle/traceability-matrix.md
-8|受け入れテスト|docs/lifecycle/08-acceptance-test.md, docs/lifecycle/traceability-matrix.md
+1|要件定義|docs/lifecycle/01-requirements.md
+2|基本設計|docs/lifecycle/02-basic-design.md
+3|詳細設計|docs/lifecycle/03-detailed-design.md
+4|実装|docs/lifecycle/04-implementation.md
+5|単体テスト|docs/lifecycle/05-unit-test.md
+6|結合テスト|docs/lifecycle/06-integration-test.md
+7|システムテスト|docs/lifecycle/07-system-test.md
+8|受け入れテスト|docs/lifecycle/08-acceptance-test.md
 9|保守運用|docs/lifecycle/09-operations.md
 PHASES
 echo "工程承認記録: 新規 $ANEW / スキップ $ASKIP"

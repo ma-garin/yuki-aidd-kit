@@ -125,6 +125,9 @@
 | `verify.sh` | 51 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
 | `export-project.sh` | 144 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
+| `check-approval.sh` | 8 | 工程承認検査の薄いラッパ。`--phase N` / `--gate N` / `--quiet`。exit 0/1/2 |
+| `check_approval.py` | 422 | 工程承認の本体。承認記録の必須欄・版の一致（失効）・未解消の差し戻し・未確認事項・approver が人間か・工程順序 |
+| `test-check-approval.sh` | 239 | check-approval の回帰テスト。配布雛形 NG=0 と各検査の NG ケース |
 | `phase-hash.py` | 79 | 工程成果物のコンテンツハッシュ（承認を版に縛る）。対象0件は `empty`。`--staged` あり |
 | `init-lifecycle.sh` | 117 | 工程文書11本を `docs/lifecycle/` へ。`--github` で Issue/PR/CI も。既存は上書きしない |
 | `init-test-docs.sh` | 37 | テスト文書6本＋CSV＋機能契約＋ゲートスクリプト3本を配置。`--ci` で `test-gates.yml` |
@@ -182,8 +185,8 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `approvals/phase-approval.md` | 55 | 1工程分の承認記録。covers / reviewed_hash / approver のメタ表・3値判定・条件・根拠・差し戻し事項（解消の検証方法必須）・未確認事項 |
-| `approvals/README.md` | 53 | 承認記録の運用。機械と人間の境界表・3値判定・着手判定（`YYYY-MM-DD` の有無）・`.claude/phase-gate` による強制 |
+| `approvals/phase-approval.md` | 59 | 1工程分の承認記録。covers / reviewed_hash / approver のメタ表・3値判定・条件・根拠・差し戻し事項（解消の検証方法必須）・未確認事項 |
+| `approvals/README.md` | 60 | 承認記録の運用。機械と人間の境界表・3値判定・着手判定（`YYYY-MM-DD` の有無）・`.claude/phase-gate` による強制 |
 
 ### test/（8件・435行）— テスト活動の雛形
 
