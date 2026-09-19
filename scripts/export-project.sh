@@ -59,7 +59,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "bash .claude/hooks/pre-write-check.sh" }
+          { "type": "command", "command": "bash .claude/hooks/pre-write-check.sh" },
+          { "type": "command", "command": "python3 .claude/hooks/block-phase.py", "timeout": 25, "statusMessage": "前工程の承認を確認中" }
         ]
       },
       {
@@ -87,7 +88,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
   }
 }
 JSON
-echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh も配線済み: .claude/mode が無ければ何もしない）"
+echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み: .claude/mode ・ .claude/phase-gate が無ければ何もしない）"
 
 # Rules（.claude/rules/*.md は Claude Code が常時読み込む。speed-harness.md の H-2 はプロジェクトごとに埋める）
 cp "$KIT_DIR/rules/"*.md "$TARGET/.claude/rules/"
@@ -117,7 +118,7 @@ else
 fi
 
 # テスト活動のゲートスクリプト（機能契約ハーネス・UI 検証マーカー。文書雛形は init-test-docs.sh で配置）
-for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh; do
+for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh check_approval.py check-approval.sh phase-hash.py; do
   if [ -e "$TARGET/scripts/$s" ]; then echo "↷ scripts/$s は既存のためスキップ"
   else cp "$KIT_DIR/scripts/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"; echo "✅ scripts/$s 同梱"; fi
 done
@@ -142,3 +143,4 @@ echo "3. これでCodex・リモート/エフェメラルなClaude Code・teamma
 echo "4. 工程（RFD〜保守運用）で進める場合: $KIT_DIR/scripts/init-lifecycle.sh $TARGET --github"
 echo "5. サンドボックス（denyRead / network allowlist / permissions）を使う場合: $KIT_DIR/templates/settings.sandbox.json を .claude/settings.json にマージ"
 echo "6. テスト戦略・DoD・29119 文書・機能契約を置く場合: $KIT_DIR/scripts/init-test-docs.sh $TARGET --ci"
+echo "7. 未承認のまま次工程へ進むのを物理的に止める場合: touch $TARGET/.claude/phase-gate（判定は scripts/check-approval.sh）"

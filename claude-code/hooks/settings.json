@@ -12,6 +12,12 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/pre-write-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/block-phase.py",
+            "timeout": 25,
+            "statusMessage": "前工程の承認を確認中"
           }
         ]
       },

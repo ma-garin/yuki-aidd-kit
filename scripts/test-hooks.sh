@@ -82,6 +82,66 @@ fi
 OUT=$(json_tool "Write" | CLAUDE_PROJECT_DIR="$PROJ_ON" bash "$HOOKS/block-explore.sh" 2>&1); RC=$?
 expect_empty "モードONでもWriteは素通り（無言 exit 0）" "$OUT" "$RC"
 
+echo "[block-phase.py]"
+# 工程承認ゲート。.claude/phase-gate がある時だけ発動し、前工程が未承認なら下流成果物への書き込みを deny する
+PG="$TMP/proj-phase"; mkdir -p "$PG/scripts" "$PG/.claude"
+"$KIT_DIR/scripts/init-lifecycle.sh" "$PG" >/dev/null
+cp "$KIT_DIR/scripts/check_approval.py" "$KIT_DIR/scripts/phase-hash.py" "$PG/scripts/"
+pj() { printf '{"tool_name":"%s","tool_input":{"file_path":"%s"}}' "${2:-Write}" "$PG/$1"; }
+ph() { CLAUDE_PROJECT_DIR="$PG" python3 "$HOOKS/block-phase.py" 2>&1; }
+reason() { printf '%s' "$1" | python3 -c 'import json,sys;print(json.load(sys.stdin)["hookSpecificOutput"]["permissionDecisionReason"])' 2>/dev/null; }
+
+OUT=$(pj "docs/lifecycle/02-basic-design.md" | ph); RC=$?
+expect_empty "マーカー(.claude/phase-gate)が無ければ素通り" "$OUT" "$RC"
+
+touch "$PG/.claude/phase-gate"
+OUT=$(pj "docs/lifecycle/02-basic-design.md" | ph); RC=$?
+expect_empty "手前に着手済み工程が無ければ許可" "$OUT" "$RC"
+
+sed -i 's/YYYY-MM-DD/2026-09-19/' "$PG/docs/lifecycle/01-requirements.md"
+OUT=$(pj "docs/lifecycle/02-basic-design.md" | ph)
+expect_contains "前工程が未承認なら deny" '"permissionDecision": "deny"' "$OUT"
+expect_contains "deny 理由に前工程の状態を含む" "第1工程 要件定義: 未承認" "$(reason "$OUT")"
+expect_contains "deny 理由に次の行動を含む" "/phase-review 1" "$(reason "$OUT")"
+
+OUT=$(pj "docs/lifecycle/approvals/phase-1.md" | ph); RC=$?
+expect_empty "承認記録そのものへの書き込みは常に許可" "$OUT" "$RC"
+OUT=$(pj "docs/lifecycle/traceability-matrix.md" | ph); RC=$?
+expect_empty "追跡表は工程成果物ではないので素通り" "$OUT" "$RC"
+OUT=$(pj "src/app.py" | ph); RC=$?
+expect_empty "工程文書以外は素通り" "$OUT" "$RC"
+
+# 第1工程を承認する（承認は covers の版に縛られる）
+python3 - "$PG" <<'FILL'
+import re, subprocess, sys
+from pathlib import Path
+proj = Path(sys.argv[1]); p = proj / "docs/lifecycle/approvals/phase-1.md"; s = p.read_text(encoding="utf-8")
+s = s.replace("判定: 未記入", "判定: 承認", 1)
+for k, v in (("approver", "藤曲 雄基"), ("approved_at", "2026-09-19T10:00:00+09:00"), ("git_head", "deadbeef")):
+    s = re.sub(rf"^\| {k} \| .*? \|$", f"| {k} | {v} |", s, count=1, flags=re.M)
+s = s.replace("| 出口基準 | 確認方法・確認した対象 | 結果 |\n|---|---|---|",
+              "| 出口基準 | 確認方法・確認した対象 | 結果 |\n|---|---|---|\n"
+              "| 全 REQ-F に受入基準 | 01-requirements.md の REQ-F 8件を目視 | 充足 |", 1)
+h = subprocess.run([sys.executable, str(proj / "scripts/phase-hash.py"), "docs/lifecycle/01-requirements.md"],
+                   cwd=proj, capture_output=True, text=True).stdout.strip()
+s = re.sub(r"^\| reviewed_hash \| .*? \|$", f"| reviewed_hash | {h} |", s, count=1, flags=re.M)
+p.write_text(s, encoding="utf-8")
+FILL
+OUT=$(pj "docs/lifecycle/02-basic-design.md" | ph); RC=$?
+expect_empty "前工程が承認済みなら許可" "$OUT" "$RC"
+
+OUT=$(pj "docs/lifecycle/01-requirements.md" | ph)
+expect_contains "承認済み工程の成果物の書き換えは deny" '"permissionDecision": "deny"' "$OUT"
+expect_contains "deny 理由に失効の警告を含む" "承認が失効します" "$(reason "$OUT")"
+OUT=$(pj "docs/lifecycle/01-requirements.md" Edit | ph)
+expect_contains "Edit でも同じく deny" '"permissionDecision": "deny"' "$OUT"
+
+# 判定スクリプトが見つからないときは素通りさせず deny する（オプトインした以上、無言で緩めない）
+mv "$PG/scripts/check_approval.py" "$PG/scripts/check_approval.py.off"
+OUT=$(HOME="$TMP/nohome" pj "docs/lifecycle/02-basic-design.md" | HOME="$TMP/nohome" ph)
+expect_contains "判定スクリプトが無ければ deny（導入手順を案内）" "check_approval.py が見つかりません" "$(reason "$OUT")"
+mv "$PG/scripts/check_approval.py.off" "$PG/scripts/check_approval.py"
+
 echo "[block-gates.py]"
 bash_json() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$1"; }
 OUT=$(bash_json "pytest tests/" | python3 "$HOOKS/block-gates.py")

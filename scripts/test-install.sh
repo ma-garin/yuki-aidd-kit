@@ -46,7 +46,9 @@ expect_nofile "スキップした rule は aidd-kit/ に置かれない" "$FAKE_
 expect_file "スキップしなかった rule は aidd-kit/ に置かれる" "$FAKE_HOME/.claude/rules/aidd-kit/speed-harness.md"
 expect_count "スキルが 19 個配置される" 19 "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
 expect_count "コマンドが 16 個配置される" 16 "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
-expect_count "hooks が 7 個配置される（sh 4 + py 3）" 7 "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
+expect_count "hooks が 8 個配置される（sh 4 + py 4）" 8 "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
+expect_file "工程承認の判定スクリプトが ~/.claude/scripts/ に置かれる（block-phase.py の探索先）" "$FAKE_HOME/.claude/scripts/check_approval.py"
+expect_file "phase-hash.py も同じ場所に置かれる（check_approval.py が隣を参照する）" "$FAKE_HOME/.claude/scripts/phase-hash.py"
 V=$(cat "$FAKE_HOME/.claude/KIT_VERSION" 2>/dev/null)
 expect_count "KIT_VERSION が <版> <commit> <日付> の3フィールド" 3 "$(printf '%s' "$V" | wc -w)"
 expect_out  "KIT_VERSION の版が VERSION ファイルと一致" "$(cat "$KIT_DIR/VERSION")" "$V"
@@ -67,9 +69,9 @@ OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1); RC=$?
 expect_exit "export-project.sh が exit 0" 0 "$RC"
 expect_count "skills 19 個" 19 "$(ls -d "$P"/.claude/skills/*/ | wc -l)"
 expect_count "commands 16 個" 16 "$(ls "$P"/.claude/commands/*.md | wc -l)"
-expect_count "hooks 7 個" 7 "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
+expect_count "hooks 8 個" 8 "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
 expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
-for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh; do
+for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py; do
   expect_file "生成物: $f" "$P/$f"
 done
 expect_grep "既存 scripts/trace-check.sh はスキップ（内容保持）" "# my own trace-check" "$P/scripts/trace-check.sh"
@@ -80,6 +82,7 @@ expect_grep "配布先の rules に paths frontmatter が保たれる" "paths:" 
 if grep -q "<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md" "$P/CLAUDE.md" "$P/AGENTS.md"; then ng "INDEX の絶対参照が残っていない" "残っている"; else ok "INDEX の絶対参照が残っていない"; fi
 expect_grep "hooks の settings.json が相対パス参照" ".claude/hooks/block-gates.py" "$P/.claude/settings.json"
 expect_grep "block-explore.sh が Read|Grep|Glob に配線される（グローバル導入と同じ振る舞い）" ".claude/hooks/block-explore.sh" "$P/.claude/settings.json"
+expect_grep "block-phase.py が Write|Edit|MultiEdit に配線される（.claude/phase-gate が無ければ何もしない）" ".claude/hooks/block-phase.py" "$P/.claude/settings.json"
 python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$P/.claude/settings.json" 2>/dev/null && ok "生成した settings.json が JSON として妥当" || ng "生成した settings.json が JSON として妥当" "パース失敗"
 expect_count ".claude/KIT_VERSION が3フィールド" 3 "$(wc -w < "$P/.claude/KIT_VERSION")"
 # 再実行で退避
