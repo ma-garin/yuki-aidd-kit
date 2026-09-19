@@ -38,6 +38,12 @@
             "command": "python3 ~/.claude/hooks/block-gates.py",
             "timeout": 10,
             "statusMessage": "ゲート実行の要否を確認中"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/filter-output.py",
+            "timeout": 5,
+            "statusMessage": "冗長な出力を絞る書き換えを確認中"
           }
         ]
       }

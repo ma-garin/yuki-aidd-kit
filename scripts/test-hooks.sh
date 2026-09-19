@@ -142,8 +142,48 @@ OUT=$(HOME="$TMP/nohome" pj "docs/lifecycle/02-basic-design.md" | HOME="$TMP/noh
 expect_contains "判定スクリプトが無ければ deny（導入手順を案内）" "check_approval.py が見つかりません" "$(reason "$OUT")"
 mv "$PG/scripts/check_approval.py.off" "$PG/scripts/check_approval.py"
 
-echo "[block-gates.py]"
 bash_json() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$1"; }
+echo "[filter-output.py]"
+# 冗長な出力を Claude が読む前に絞る（PreToolUse Bash・updatedInput）。終了コードは元のコマンドのまま
+fo() { python3 "$HOOKS/filter-output.py"; }
+fo_cmd() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"]["updatedInput"]["command"] if d.strip() else "")' 2>/dev/null; }
+fo_msg() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d).get("systemMessage","") if d.strip() else "")' 2>/dev/null; }
+
+OUT=$(bash_json "GATES_REQUESTED=1 pytest tests/" | fo)
+expect_contains "pytest を失敗行＋末尾に絞る（updatedInput）" "grep -A 5 -E" "$(fo_cmd "$OUT")"
+expect_contains "元の終了コードで終える" 'exit $__rc' "$(fo_cmd "$OUT")"
+expect_contains "systemMessage で全量の取り方を伝える" "FULL_OUTPUT=1" "$(fo_msg "$OUT")"
+OUT=$(bash_json "FULL_OUTPUT=1 GATES_REQUESTED=1 pytest tests/" | fo); RC=$?
+expect_empty "FULL_OUTPUT=1 なら触らない" "$OUT" "$RC"
+OUT=$(bash_json "bash scripts/test-hooks.sh" | fo); RC=$?
+expect_empty "キット自身の回帰テスト（bash scripts/test-*.sh）は絞らない" "$OUT" "$RC"
+OUT=$(printf '{"tool_name":"Bash","tool_input":{"command":"cat <<EOF > a.md\\npytest を実行する手順\\nEOF"}}' | fo); RC=$?
+expect_empty "ヒアドキュメント内の pytest は触らない" "$OUT" "$RC"
+OUT=$(bash_json "git log" | fo)
+expect_contains "git log に件数が無ければ --oneline -20 を補う" "git log --oneline -20" "$(fo_cmd "$OUT")"
+OUT=$(bash_json "git log -n 5" | fo); RC=$?
+expect_empty "git log -n 5 は触らない" "$OUT" "$RC"
+OUT=$(bash_json "git diff" | fo)
+expect_contains "git diff（対象なし）は --stat に" "git diff --stat" "$(fo_cmd "$OUT")"
+OUT=$(bash_json "git diff -- README.md" | fo); RC=$?
+expect_empty "git diff -- <path> は触らない" "$OUT" "$RC"
+OUT=$(bash_json "npm install" | fo)
+expect_contains "npm install は末尾 40 行に" "tail -40" "$(fo_cmd "$OUT")"
+# block-gates.py と共存: GATES_REQUESTED=1 が無ければ block-gates が deny（filter の allow より deny が勝つ）
+OUT=$(bash_json "pytest tests/" | python3 "$HOOKS/block-gates.py")
+expect_contains "GATES_REQUESTED=1 無しは block-gates.py が deny のまま" '"permissionDecision": "deny"' "$OUT"
+# 書き換えたコマンドを実際に実行: 偽の pytest（100 行出力・1 行 FAIL・exit 1）で出力が絞られ終了コードが保たれる
+FB="$TMP/fakebin"; mkdir -p "$FB"
+printf '#!/bin/bash\nfor i in $(seq 1 100); do echo "test_$i PASSED"; done\necho "FAILED test_x - assert 1 == 2"\necho "=== 1 failed, 100 passed ==="\nexit 1\n' > "$FB/pytest"; chmod +x "$FB/pytest"
+NEWCMD=$(fo_cmd "$(bash_json "GATES_REQUESTED=1 pytest tests/" | fo)")
+RUN=$(PATH="$FB:$PATH" bash -c "$NEWCMD" 2>&1); RC=$?
+if [ "$RC" -eq 1 ] && printf '%s' "$RUN" | grep -qF "FAILED test_x" && ! printf '%s' "$RUN" | grep -qF "test_50 PASSED" && printf '%s' "$RUN" | grep -qF "1 failed, 100 passed"; then
+  echo "  ✅ 実行すると失敗行と集計だけが残り exit 1 が保たれる（$(printf '%s' "$RUN" | wc -l | tr -d ' ') 行 / 元 102 行）"; PASS=$((PASS+1))
+else
+  echo "  ❌ 実行すると失敗行と集計だけが残り exit 1 が保たれる（exit=$RC / $(printf '%s' "$RUN" | head -3 | tr '\n' ' ')）"; FAIL=$((FAIL+1))
+fi
+
+echo "[block-gates.py]"
 OUT=$(bash_json "pytest tests/" | python3 "$HOOKS/block-gates.py")
 expect_contains "pytest を deny" '"permissionDecision": "deny"' "$OUT"
 
