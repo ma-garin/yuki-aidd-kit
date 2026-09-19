@@ -53,6 +53,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
   "statusLine": { "type": "command", "command": "python3 .claude/hooks/statusline.py", "padding": 2 },
   "hooks": {
     "PreToolUse": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/instruction-guard.py", "timeout": 5, "statusMessage": "保守者の指示に応答済みか確認中" } ] },
       {
         "matcher": "Read|Grep|Glob",
         "hooks": [
@@ -76,7 +77,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       }
     ],
     "UserPromptSubmit": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/context-guard.py", "timeout": 5 } ] }
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/prompt-priority.py", "timeout": 5 },
+                  { "type": "command", "command": "python3 .claude/hooks/context-guard.py", "timeout": 5 } ] }
     ],
     "PreCompact": [
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/pre-compact.py", "timeout": 5 } ] }
@@ -95,6 +97,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
     "Stop": [
       {
         "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/reply-language.py", "timeout": 5 },
           { "type": "command", "command": "bash .claude/hooks/session-summary.sh" }
         ]
       }

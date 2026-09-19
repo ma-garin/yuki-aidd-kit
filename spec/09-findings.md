@@ -319,6 +319,16 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
   `templates/ADR-template.md` に判断基準と捨てた案／`skills/qa-review-standards/references/personas.md`（16 ペルソナ・判定一覧の型）と
   `/qa-review` 手順 6／`done-gate` に受入基準の検証と 0 件実行／A-12 の報告 5 項目／`check-docs.sh` 検査 11（絶対パス。userguide の 5 箇所を修正）
 
+### F-25 — 作業中に届いた保守者の指示を読み飛ばし、英語で途中報告を続けた — **是正済み（M22）**
+
+- evidence: 2026-09-19、連続コマンド実行中に届いた「日本語で出力し、今何をやっているのかを正確に報告しなさい」「中間報告をしなさい。今すぐに」（2 回）を、
+  ツール結果の一部として扱い次のコマンドへ進んだ。途中報告 2 本は英語。保守者「強い怒りを覚えている。仕組みで改善しなさい」
+- severity: **Critical**（保守者の指示の無視。信頼の毀損）
+- 根本原因: 「作業を完遂する」「止まらない」（A-11・H-7）を保守者の最新の指示より上に置いた。散文の規約（日本語・簡潔）は作業の連鎖の中では読み返されない
+- 是正: **A-13 指示優先**を規範化し、Claude Code では hook が強制する — `instruction-guard.py`（PreToolUse 全ツール: 発言の後に日本語の応答が無ければ deny。
+  理由に指示の先頭を載せる）／`reply-language.py`（Stop: 最後の応答に日本語が無ければ続行）／`prompt-priority.py`（UserPromptSubmit: 緊急語に優先の注入）。
+  本セッションの実 transcript の応答前断面で deny、応答後で許可を確認。キット自身の開発セッションにも `.claude/settings.json` で配線（file watcher で即時反映）
+
 ### severity 別サマリ（更新）
 
 | severity | 件数 | ID |
@@ -327,7 +337,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
 | Medium | 4 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測）／**F-21（警告 hook の stdout。未確認）** |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 21 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／**F-24（M21 第 2 回）** |
+| 是正済み | 22 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／**F-25（M22 指示優先）** |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 

@@ -6,6 +6,16 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
+## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22）
+
+作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。
+
+- **A-13 指示優先**（`rules/absolute-rules.md`）: 保守者の発言が届いたら、次のツール呼び出しより前に日本語で応答する。「今すぐ・報告・説明」は切り分けの途中でも止める
+- **`instruction-guard.py`**（PreToolUse・全ツール）: 会話記録の末尾を見て、発言（ターン冒頭・途中で届いた queued_command・キュー投入）の後に日本語の応答が無ければ **deny**。理由に指示の先頭を載せるので読み飛ばせない。バイパス用の環境変数は作らない
+- **`reply-language.py`**（Stop）: 最後の応答に日本語が無い／未応答のまま終わろうとしたら続行させて出し直させる。**`prompt-priority.py`**（UserPromptSubmit）: 緊急語を含む発言に「作業より優先」を注入
+- 本セッションの実際の会話記録で検証: 指示に応答する前の断面では deny、応答後は許可。キット自身の開発セッションにも `.claude/settings.json` で配線（hooks は file watcher で即時反映）
+- hooks 回帰テスト 63 → 79 ケース
+
 ## Ver.6.7 での主な更新（2026-09-19）— 保守者の傾向を「手順が走る場所」に埋める（M21 第 2 回）
 
 保守者が別リポジトリで実装者（Sonnet / Haiku / Codex）に毎回課している**手順の型**を読み直し、16 傾向を追加しました（`docs/maintainer-tendencies.md` #15〜#30。第 1 回の 14 件と合わせて 30 件、すべて原文つき）。今回は規約の散文でなく、**手順が実際に走る場所**に入れています。
@@ -124,7 +134,7 @@ python3 scripts/quality_harness.py                       # 機能契約の検証
 - **hooks 3本追加**: `block-gates.py`（pytest / make test / lint をユーザー要求時以外 deny）/ `progress.py` + `statusline.py`（進行中タスクの経過・見積・残りをステータスラインに表示）
 - **`templates/settings.sandbox.json`**: sandbox・denyRead・network allowlist・permissions deny の雛形
 - `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先」「必須プロセス」「完了条件」で改訂。「指定外ファイルは読まない」「セッション分割を提案」は廃止（AUDIT-2026-07 C-02 / X-4）
-- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 63 ケース）
+- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 79 ケース）
 
 ## Ver.6.0 での主な更新（2026-08）— 開発工程ライフサイクル
 
@@ -166,7 +176,7 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
-./scripts/test-hooks.sh  # hooks の回帰テスト（63ケース）
+./scripts/test-hooks.sh  # hooks の回帰テスト（79ケース）
 ./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（84ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
