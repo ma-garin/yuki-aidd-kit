@@ -36,3 +36,10 @@ severity は ISTQB（Critical / High / Medium / Low）。severity と priority �
 - [ ] 全 `REQ-N` に1件以上の `ST-xxx` があり、実測値が記録されている（`./scripts/trace-check.sh` NG=0）
 - [ ] Critical / High の欠陥が残ゼロ
 - [ ] Medium / Low の残件は `09-operations.md` の既知の制約へ引き継ぎ済み
+
+## 承認
+
+- 承認記録: `docs/lifecycle/approvals/phase-7.md` — **判定・根拠・承認者は人間が埋める**（AI は埋めない）
+- 事前レビュー: `/phase-review 7`（AI 3 役が指摘を出し切る。AI は承認しない）
+- 有効性の確認: `./scripts/check-approval.sh --phase 7`（exit 0 なら次工程へ進んでよい）
+- **承認後にこの文書を変更すると承認は自動失効する**（`reviewed_hash` の不一致で検出）。変更したら取り直す

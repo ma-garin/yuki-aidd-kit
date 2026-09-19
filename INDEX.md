@@ -15,9 +15,9 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
-./scripts/test-hooks.sh                       # hooks の回帰テスト（19ケース）
+./scripts/test-hooks.sh                       # hooks の回帰テスト（32ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
-./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（73ケース）
+./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（79ケース）
 ./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./scripts/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。NG=0 が合格）
 ./scripts/check-design.sh [対象パス]           # デザイン検査（直値・未定義トークン・外部 CDN・alert()。既定 templates/ui templates/components。NG=0 が合格）
@@ -25,6 +25,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
 ./scripts/trace-check.sh docs/lifecycle       # 要件→設計→実装→テストの追跡を機械検証（NG=0 で合格）
+./scripts/check-approval.sh                   # 工程承認の機械検査（記録の有無・版の一致=失効・工程順序。0=合格 1=未承認 2=判定不能）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
 open docs/userguide.html                      # ユーザーガイド（概要・導入手順。初学者向け）
 open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書（13 章）
@@ -44,7 +45,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `dev-lifecycle` | RFD→要件定義→基本/詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用。工程ゲートとトレーサビリティ | #lifecycle #process | 105行 |
+| `dev-lifecycle` | RFD→要件定義→基本/詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用。工程ゲートとトレーサビリティ | #lifecycle #process | 114行 |
 | `context-compression` | 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存 | #token #process | 56行 |
 | `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 57行 |
 | `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 55行 |
@@ -53,7 +54,8 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 55行 |
 | `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 105行 |
 | `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 95行 |
-| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 56行 |
+| `phase-approval` | 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る | #lifecycle #qa #process | 93行 |
+| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 57行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 199行 |
 | `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 38行 |
 
@@ -85,6 +87,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `pre-write-check.sh` | PreToolUse Write/Edit | 秘密情報ファイル・単一HTMLの CSS/JS 分割を警告 |
 | `post-write-html.sh` | PostToolUse Write/Edit | HTML 保存後のレポート（500行超で部分編集を推奨） |
 | `block-explore.sh` | PreToolUse Read/Grep/Glob | 実装モード（`.claude/mode` あり）で探索をブロック |
+| `block-phase.py` | PreToolUse Write/Edit | 前工程が未承認のまま次工程の成果物を書くのを deny（`.claude/phase-gate` あり時のみ）。承認記録への書き込みは常に許可 |
 | `block-gates.py` | PreToolUse Bash | pytest / make test / lint をユーザー要求時（`GATES_REQUESTED=1`）以外は deny |
 | `progress.py` | 手動（bash に連結） | `start/step/done` で progress.json を管理 |
 | `statusline.py` | statusLine | 進行中タスクの経過/見積/残りを表示。無ければ従来表示へ素通し |
@@ -97,8 +100,9 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | コマンド | 1行要約 | タグ | コスト |
 |---|---|---|---|
 | `/rfd` | RFD（提案・論点出し）を起票し、決定を人間に求める | #lifecycle | 24行 |
-| `/lifecycle` | 指定工程の成果物を生成し入口/出口基準で判定（`status` で進捗確認） | #lifecycle | 28行 |
+| `/lifecycle` | 指定工程の成果物を生成し入口/出口基準で判定（`status` で進捗確認） | #lifecycle | 33行 |
 | `/trace` | トレーサビリティの更新と `trace-check.sh` による機械検証 | #lifecycle #qa | 22行 |
+| `/phase-review` | 工程の出口で AI 3 役を順次レビュー。差し戻し事項を出し切って人間の承認へ渡す | #lifecycle #qa | 26行 |
 | `/plan` | 方針を確定し実装モードを解除（探索を許可）。PLAN.md を生成 | #process | 18行 |
 | `/implement` | 実装モード開始（plan 必須。Read/Grep/Glob を hook で物理ブロック） | #process | 19行 |
 | `/compact-work` | context-compression 規約で作業（3層要約・スクリプト化） | #token | 13行 |
@@ -138,14 +142,14 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 198行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 214行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
-| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 78行 |
+| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 81行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
 | `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
-| `docs/userguide.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 952行 |
+| `docs/userguide.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1040行 |
 | `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `userguide.html`・事例・V字章へ導線 | 1443行 |
 
 `docs/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。

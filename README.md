@@ -6,11 +6,24 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
+## Ver.6.4 での主な更新（2026-09-19）— 工程承認ゲート: 要求どおり作られているかを工程ごとに止めて確かめる
+
+AIDD では「プロセスが正しく回っているか」を見ても、企業が知りたい「**SDD で要求したものが確実に作られているか**」には答えられません。誤りが成果物として出てから見つかると手戻りが最大になります。各工程の出口に**人間の承認**を置き、**承認を成果物の版に縛る**ことで、誤りの伝播を工程 1 つ分に閉じ込めます。
+
+- **承認記録**（`docs/lifecycle/approvals/phase-0..9.md`）: 承認欄があったのは 10 工程中 3 つだけだったのを全工程に。判定は 3 値（承認 / 条件付き承認 / 差し戻し）。差し戻し事項には**解消の検証方法**を必須にし、未確認事項を残したままの「承認」を認めない
+- **版に縛る**（`scripts/phase-hash.py`）: 承認時の成果物のハッシュを記録に残す。**承認後に成果物が 1 文字でも変われば承認は自動失効**する。判子を押した後に中身が差し替わるのと同じ状態を機械が検出する
+- **`scripts/check-approval.sh`**（20 ケース 54 アサーションの回帰テスト付き）: 記録の有無・必須欄・版の一致・未解消の差し戻し・承認者が人間か・工程順序を機械判定。終了コードは 0（合格）／1（未承認・失効）／2（**判定不能**）の 3 値で、判定不能を合格に数えない
+- **`claude-code/hooks/block-phase.py`**: 前工程が未承認のまま次工程の成果物を書こうとすると**その場で止める**。`.claude/phase-gate` を置いたプロジェクトでだけ発動し、承認記録そのものへの書き込みは常に許可。**バイパス用の環境変数は作らない**（止めるなら marker を消す＝git 差分に残る）
+- **`skills/phase-approval` ＋ `/phase-review`**: 人間が判子を押す前に AI 3 役（追跡・仕様一致・リスク）を**順次**で回して指摘を出し切る。並列委譲はトークンが約 7 倍になるため使わない。**AI は承認しない**（`approver` 欄には触れない）
+- `docs/userguide.html` に「工程の承認ゲート」章（実際に止まったときの画面つき）
+
+**機械が見るのは「承認記録の形式的な健全性と版の一致」まで。その設計が本当に要件を満たすかは人間しか判定できません。** この線を曖昧にすると「AI が承認した」ことになり、第三者検証としての価値が消えます。
+
 ## Ver.6.4 での主な更新（2026-09-17）— 土台: 回帰テスト・CI・版の刻印・文書整合
 
 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
 
-- **`scripts/test-install.sh`**（73 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
+- **`scripts/test-install.sh`**（79 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
 - **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
@@ -72,7 +85,7 @@ python3 scripts/quality_harness.py                       # 機能契約の検証
 - **hooks 3本追加**: `block-gates.py`（pytest / make test / lint をユーザー要求時以外 deny）/ `progress.py` + `statusline.py`（進行中タスクの経過・見積・残りをステータスラインに表示）
 - **`templates/settings.sandbox.json`**: sandbox・denyRead・network allowlist・permissions deny の雛形
 - `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先」「必須プロセス」「完了条件」で改訂。「指定外ファイルは読まない」「セッション分割を提案」は廃止（AUDIT-2026-07 C-02 / X-4）
-- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 19 ケース）
+- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 32 ケース）
 
 ## Ver.6.0 での主な更新（2026-08）— 開発工程ライフサイクル
 
@@ -93,6 +106,8 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 ```bash
 ./scripts/init-lifecycle.sh <対象プロジェクト> --github   # 工程文書＋GitHub テンプレート一式
 ./scripts/trace-check.sh docs/lifecycle                   # 追跡の機械検証（NG=0 で合格）
+./scripts/check-approval.sh                               # 工程承認の機械検査（0=合格 / 1=未承認・失効 / 2=判定不能）
+./scripts/check-approval.sh --gate 3                      # 「第3工程に着手してよいか」だけを判定（hook もこれを呼ぶ）
 ```
 
 ## Ver.5.0 での主な更新（2026-07）
@@ -112,10 +127,11 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
-./scripts/test-hooks.sh  # hooks の回帰テスト（19ケース）
-./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（73ケース。実 ~/.claude には触らない）
+./scripts/test-hooks.sh  # hooks の回帰テスト（32ケース）
+./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（79ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
+./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
 ```
 
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md` を書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
@@ -195,6 +211,7 @@ yuki-aidd-kit/
 │   ├── check-design.sh (check_design.py) / test-check-design.sh  # デザイン検査（直値・トークン・CDN・alert()）
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
+│   ├── check-approval.sh (check_approval.py) / phase-hash.py / test-check-approval.sh  # 工程承認ゲート
 │   ├── init-test-docs.sh / quality_harness.py / test-quality-harness.sh  # テスト活動
 │   ├── ui-hash.py / pre-commit-ui-gate.sh          # UI 検証マーカー
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit

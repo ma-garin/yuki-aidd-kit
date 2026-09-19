@@ -63,26 +63,26 @@
 
 ---
 
-## 規模（2026-09-17 実測・M15 後）
+## 規模（2026-09-19 実測・M18 後）
 
 | 区分 | 件数 | 行数 |
 |---|---|---|
-| skills（SKILL.md） | 19 | 1,712 |
-| skills/*/references/ | 13 | 1,601 |
+| skills（SKILL.md） | 20 | 1,465 |
+| skills/*/references/ | 15 | 1,778 |
 | skills/atarimae-quality-audit/scan.sh | 1 | 77 |
-| claude-code/commands | 16 | 352 |
-| claude-code/hooks（sh 4 + py 3 + settings.json） | 8 | 356 |
-| rules | 3 | 268 |
-| scripts（sh 15 + py 4 + pre-commit） | 20 | 2,214 |
-| templates（lifecycle11 / test8 / github4 / components3 / 単体7） | 33 | 2,119 |
-| docs | 8 | 2,096 |
-| github-actions（配布用サンプル） | 4 | 177 |
-| .github/workflows/kit-ci.yml（キット自身の CI） | 1 | 59 |
-| ルート（README / INDEX / 2 template / claude-projects-setup / .gitignore / VERSION） | 7 | 594 |
-| **合計** | **133** | **11,645** |
+| claude-code/commands | 17 | 383 |
+| claude-code/hooks（sh 4 + py 4 + settings.json） | 9 | 477 |
+| rules | 4 | 102 |
+| scripts（sh 20 + py 6 + pre-commit） | 27 | 3,522 |
+| templates（lifecycle11 ＋ approvals2 / test8 / github5 / components4 / ui6 / 単体7） | 42 | 2,863 |
+| docs（うち examples/library-loan 7件 1,734行） | 20 | 5,254 |
+| github-actions（配布用サンプル） | 4 | 171 |
+| .github/workflows/kit-ci.yml（キット自身の CI） | 1 | 66 |
+| ルート（README / INDEX / 2 template / claude-projects-setup / .gitignore / VERSION） | 7 | 607 |
+| **合計** | **167** | **16,765** |
 
-うち最大は `docs/yuki-aidd-kit-manual.html`（1,434行）、`skills/uiux_review/references/viewpoints.md`（849行）、
-`skills/design-system/SKILL.md`（465行）。
+うち最大は `docs/examples/library-loan/library-loan.html`（生成物）、`docs/yuki-aidd-kit-manual.html`、
+`docs/userguide.html`、`skills/uiux_review/references/viewpoints.md`。
 
 ---
 

@@ -39,6 +39,12 @@ else
 fi
 echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個"
 
+# 判定スクリプト（block-phase.py が ~/.claude/scripts/ から探す。phase-hash.py は同じ場所に必要）
+mkdir -p "$CLAUDE_DIR/scripts"
+cp "$KIT_DIR/scripts/check_approval.py" "$KIT_DIR/scripts/phase-hash.py" "$CLAUDE_DIR/scripts/"
+chmod +x "$CLAUDE_DIR/scripts/"*.py
+echo "✅ Scripts: check_approval.py / phase-hash.py（工程承認ゲートの判定。.claude/phase-gate があるプロジェクトでのみ発動）"
+
 # Rules（常時読み込み。~/.claude/rules 配下の別ディレクトリに同名があれば重複を避けてスキップ）
 RULES_OK=0
 for f in "$KIT_DIR/rules/"*.md; do

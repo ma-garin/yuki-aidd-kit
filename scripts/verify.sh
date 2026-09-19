@@ -36,6 +36,10 @@ for f in "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py; do
   check "$h" "$CLAUDE_DIR/hooks/$h"
 done
 
+echo "[判定スクリプト]"
+check "scripts/check_approval.py（工程承認ゲートの判定。block-phase.py の探索先）" "$CLAUDE_DIR/scripts/check_approval.py"
+check "scripts/phase-hash.py（承認を版に縛る。check_approval.py が隣を参照する）" "$CLAUDE_DIR/scripts/phase-hash.py"
+
 echo "[Rules]"
 for f in "$KIT_DIR/rules/"*.md; do
   n=$(basename "$f")

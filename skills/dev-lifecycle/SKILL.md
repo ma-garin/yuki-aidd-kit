@@ -45,11 +45,17 @@ description: RFD から保守運用までの開発工程（V字モデル）を A
 
 ## 工程ゲート（入口/出口基準）
 
-各工程は前工程の出口基準を満たさない限り開始しない。詳細な判定項目は `references/phase-gates.md`。共通の出口基準は3つ。
+各工程は前工程の出口基準を満たさない限り開始しない。詳細な判定項目は `references/phase-gates.md`。共通の出口基準は4つ。
 
 1. 成果物に**未確定の `TBD` が残っていない**（残す場合は RFD へ差し戻すか、ADR で保留理由を明記）
 2. 当該工程で採番した ID が全て追跡表に載っている（`./scripts/trace-check.sh` が NG=0）
 3. `qa-review-standards` の観点で自己レビュー済み（Critical/High 残ゼロ、evidence-only）
+4. **人間の承認記録があり、承認時の版のままである**（`./scripts/check-approval.sh --phase <n>` が exit 0）
+
+承認は `docs/lifecycle/approvals/phase-<n>.md` に残し、承認時の成果物のハッシュに紐づける。
+**承認後に成果物が変われば承認は自動失効する。** AI は承認しない — `/phase-review <n>`（`skills/phase-approval`）で
+指摘を出し切るところまでが AI の担当で、判定と `approver` は人間が埋める。
+未承認のまま次工程へ進むのを物理的に止めたい場合は `.claude/phase-gate` を置く（`block-phase.py` が deny する）。
 
 ## トレーサビリティ（このスキルの中核）
 
@@ -76,7 +82,8 @@ description: RFD から保守運用までの開発工程（V字モデル）を A
 - **Coordinator**: 工程の進行・ゲート判定のみ。設計もコードも書かない
 - **Implementor**: 指定された ID の範囲のみ実装。範囲外に手を出さない
 - **Verifier**: 実装と独立に、左側の ID の受入基準に対して evidence-only で判定
-- **承認者（人間）**: RFD の決定・要件定義の確定・UAT 合格の3点は必ず人間が承認する。AI は承認しない
+- **承認者（人間）**: **全10工程の出口**を人間が承認する（特に RFD の決定・要件定義の確定・UAT 合格）。
+  AI は承認しない。記録は `docs/lifecycle/approvals/phase-<n>.md`、検査は `check-approval.sh`
 
 ## 進め方（AI への標準手順）
 
@@ -84,9 +91,10 @@ description: RFD から保守運用までの開発工程（V字モデル）を A
 2. `./scripts/init-lifecycle.sh <対象>` で `docs/lifecycle/` に雛形を配置
 3. `/lifecycle <工程名>` で当該工程の成果物を生成・更新する（前工程の ID のみを入力とする）
 4. `/trace` で追跡表を更新し `trace-check.sh` を通す
-5. 出口基準を満たしたら次工程へ。満たさなければ差し戻す
-6. 実装工程は `/plan` → `/implement` の実装モードに接続する
-7. 全工程完了時は `done-gate` を通し、`09-operations.md` へ引き継ぐ
+5. `/phase-review <工程番号>` で AI 3 役の指摘を出し切り、**人間が承認記録を埋める**
+6. 出口基準（承認を含む4項目）を満たしたら次工程へ。満たさなければ差し戻す
+7. 実装工程は `/plan` → `/implement` の実装モードに接続する
+8. 全工程完了時は `done-gate` を通し、`09-operations.md` へ引き継ぐ
 
 ## 他スキルへの委譲（真実源の重複を作らない）
 
@@ -98,8 +106,9 @@ description: RFD から保守運用までの開発工程（V字モデル）を A
 | 完了判定のチェックリスト | `skills/done-gate` |
 | SDD の 3 ファイルとガバナンス | `skills/sdd-ecc-workflow` |
 | 画面の見た目・トークン | `skills/design-system` |
+| 工程の出口レビューと承認の運用 | `skills/phase-approval` ／ `templates/lifecycle/approvals/README.md` |
 | プロセス改善の蓄積 | `skills/retro` |
 
 ## 出力
 
-工程実行時は必ず「①対象工程と入口基準の充足②生成/更新した成果物のパス③採番した ID の一覧④`trace-check.sh` の結果⑤出口基準の未達項目」を提示する。未達がある場合、その工程を完了と判定しない。
+工程実行時は必ず「①対象工程と入口基準の充足（前工程の承認を含む）②生成/更新した成果物のパス③採番した ID の一覧④`trace-check.sh` の結果⑤`check-approval.sh` の結果⑥出口基準の未達項目」を提示する。未達がある場合、その工程を完了と判定しない。**AI が承認したことにしない。**

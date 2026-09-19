@@ -193,6 +193,22 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - 検証記録: test-check-design 36/36・test-install 73/73・test-check-docs 25/25・`check-design.sh` NG=0（WARN 6: 未使用トークン `--color-medium` `--leading-loose` `--motion-slow` `--radius-xl` `--shadow-md` `--shadow-lg`）・`check-docs.sh` NG=0 WARN=0
 - 残: A-4（`design-system` 発火時コストが半分以下）は保守者が `/context` で実測（推定: 473→115 行なので 1/4 程度）
 
+## M18: 工程承認ゲート — 要求どおり作られているかを工程ごとに止めて確かめる（完了 2026-09-19）
+
+背景: AIDD では「プロセスが回っているか」を見ても、企業が知りたい「**SDD で要求したものが確実に作られているか**」には答えられない。
+誤りが成果物として出てから見つかると手戻りが最大になる。調査の結果、承認欄は 10 工程中 3 つにしか無く（F-17）、
+承認という概念を機械が一切知らなかった（F-18）。保守者決定は Q-11（hook で物理的に止める／AI レビューは 3 役を順次）。
+
+- [x] 承認記録の雛形と配置（S16）: `templates/lifecycle/approvals/{phase-approval.md,README.md}`。`init-lifecycle.sh` が `phase-0..9.md` を工程名・covers を差し込んで生成
+- [x] `scripts/phase-hash.py`（S17）: 承認を版に縛る。対象0件は `empty`（対象なしを「一致」にしない）。`ui-hash.py` は UI 専用版として据え置き
+- [x] `scripts/check-approval.sh` ＋ `check_approval.py` ＋ `test-check-approval.sh`（S18、20 ケース 54 アサーション）: exit 0/1/2 の 3 値契約、判定不能を合格に数えない、工程順序の検出（省略された工程は飛ばす）。`covers` に追跡表を入れない設計へ修正（F-19）
+- [x] `claude-code/hooks/block-phase.py`（S19）: `.claude/phase-gate` オプトイン。未承認・失効・判定不能で deny、承認済み工程の成果物の書き換えも deny、`approvals/` は常に許可、バイパス用の環境変数は作らない。settings.json / export-project.sh / install.sh に配線
+- [x] `skills/phase-approval` ＋ `/phase-review`（S20）: 3 役を**順次**（追跡・仕様一致・リスク）。Agent 並列はトークン約 7 倍で使わない。AI は `approver` を埋めない
+- [x] 既存資産への配線（S21）: 全 10 工程テンプレートに「## 承認」節、`phase-gates.md` に承認ゲート節と機械／人間の境界表、共通出口基準 3→4、`dev-lifecycle/SKILL.md`・`/lifecycle`・`done-gate`・`verify.sh`・`kit-ci.yml`
+- [x] 文書化（S22）: `docs/userguide.html` に「工程の承認ゲート」章（実測した deny メッセージ付き）、PRD FR-14、`spec/09` F-17〜F-19、`spec/10` Q-11
+- 検証記録: test-hooks 32/32・test-install 79/79・test-check-approval 54/54・test-trace-check 15/15・test-quality-harness 11/11・test-git-gates 27/27・test-check-docs 25/25・test-check-design 44/44・`check-docs.sh` NG=0・`check-design.sh` NG=0。配布した実プロジェクトで「未承認→deny／承認→許可／成果物の変更→失効→再び deny」を端から端まで確認
+- 残: 実プロジェクトで 1 工程を実際に承認し、deny の false positive 頻度を `docs/lessons.md` に記録する（保守者）
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。

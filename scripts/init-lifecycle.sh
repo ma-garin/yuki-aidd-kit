@@ -45,6 +45,41 @@ for f in "$KIT_DIR/templates/lifecycle/"*.md; do
 done
 echo "工程文書: 新規 $NEW / スキップ $SKIP"
 
+# --- 工程承認記録 -----------------------------------------------------------
+# 1工程1ファイル。雛形は templates/lifecycle/approvals/phase-approval.md。
+# 仕様: templates/lifecycle/approvals/README.md / 検査: scripts/check-approval.sh
+mkdir -p "$TARGET/docs/lifecycle/approvals"
+ANEW=0; ASKIP=0
+dest="$TARGET/docs/lifecycle/approvals/README.md"
+if [ -e "$dest" ]; then ASKIP=$((ASKIP+1))
+else cp "$KIT_DIR/templates/lifecycle/approvals/README.md" "$dest"; ANEW=$((ANEW+1)); fi
+while IFS='|' read -r n name covers; do
+  [ -n "$n" ] || continue
+  dest="$TARGET/docs/lifecycle/approvals/phase-${n}.md"
+  if [ -e "$dest" ]; then
+    echo "  ↷ スキップ（既存）: approvals/phase-${n}.md"; ASKIP=$((ASKIP+1)); continue
+  fi
+  covers_args=$(echo "$covers" | tr -d ' ' | tr ',' ' ')
+  sed -e "s|__PHASE_NAME__|${name}|g" \
+      -e "s|__PHASE__|${n}|g" \
+      -e "s|__COVERS_ARGS__|${covers_args}|g" \
+      -e "s|__COVERS__|${covers}|g" \
+      "$KIT_DIR/templates/lifecycle/approvals/phase-approval.md" > "$dest"
+  echo "  ✅ approvals/phase-${n}.md"; ANEW=$((ANEW+1))
+done <<'PHASES'
+0|RFD|docs/lifecycle/00-rfd.md
+1|要件定義|docs/lifecycle/01-requirements.md
+2|基本設計|docs/lifecycle/02-basic-design.md
+3|詳細設計|docs/lifecycle/03-detailed-design.md
+4|実装|docs/lifecycle/04-implementation.md
+5|単体テスト|docs/lifecycle/05-unit-test.md
+6|結合テスト|docs/lifecycle/06-integration-test.md
+7|システムテスト|docs/lifecycle/07-system-test.md
+8|受け入れテスト|docs/lifecycle/08-acceptance-test.md
+9|保守運用|docs/lifecycle/09-operations.md
+PHASES
+echo "工程承認記録: 新規 $ANEW / スキップ $ASKIP"
+
 if [ "$WITH_GITHUB" -eq 1 ]; then
   echo ""
   echo "=== GitHub テンプレートを配置 ==="
@@ -75,4 +110,8 @@ echo "=== 完了 ==="
 echo "次にやること:"
 echo "1. docs/lifecycle/00-rfd.md から順に埋める（AI に任せる場合は /rfd → /lifecycle <工程名>）"
 echo "2. 工程の区切りごとに: ./scripts/trace-check.sh docs/lifecycle"
-echo "3. 工程の入口/出口基準: skills/dev-lifecycle/references/phase-gates.md"
+echo "3. 工程の出口で: /phase-review <工程番号> → 人間が docs/lifecycle/approvals/phase-<n>.md を埋める"
+echo "4. 承認の有効性を確認: ./scripts/check-approval.sh（--phase <n> で1工程だけ）"
+echo "5. 工程の入口/出口基準: skills/dev-lifecycle/references/phase-gates.md"
+echo ""
+echo "未承認のまま次工程へ進むのを物理的に止めたい場合: touch .claude/phase-gate"
