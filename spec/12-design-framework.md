@@ -11,10 +11,13 @@
 
 | ファイル | 行 | 中身 |
 |---|---|---|
-| `templates/tokens.css` | 97 | **トークン定義54行 ＋ 基本適用5ルール**（body / code / tap-min / reduced-motion / color-scheme）。ライト＋ダーク両対応 |
+| `templates/tokens.css` | 107 | **トークン定義54行 ＋ 基本適用5ルール**（body / code / tap-min / reduced-motion / color-scheme）。ライト＋ダーク両対応 |
 | `templates/components/feedback.js` | 282 | トースト・失敗（消えない）・処理中・空状態・確認ダイアログ。CSS を自己注入。自己完結 |
 | `templates/components/icons.js` | 152 | Material Symbols 48種を同梱。`data-icon` 自動置換。旧名エイリアス15件 |
-| `templates/components/demo.html` | 95 | 上記の実機確認ページ（バッジ／ボタン／カード／表／空状態／テーマ切替） |
+| `templates/components/demo.html` | 113 | 部品の実機確認ページ。`ui/components.css` を読み込む形（DS-1 で置換） |
+| `templates/components/demo-shell.html` | 71 | 骨格の実機確認ページ（DS-2 で追加） |
+| `templates/ui/components.css` | 175 | **部品 CSS の実物**（DS-1。2026-09-17 出荷） |
+| `templates/ui/layout.css` | 99 | **骨格 CSS の実物**（DS-2。2026-09-17 出荷） |
 
 ### 散文としてしか存在しないもの
 
@@ -68,7 +71,7 @@ Opus ＋ Max なら成立する。**Sonnet ＋ Pro では二重に損**:
 
 ## 3. 作るもの
 
-### DS-1. `templates/ui/components.css`（新規）
+### DS-1. `templates/ui/components.css`（新規）— **実装済み 2026-09-17**
 
 SKILL.md の CSS コードブロック17個を、**トークン参照だけで書かれた1ファイル**に起こす。
 
@@ -90,7 +93,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 - 直値を書かない（`tokens.css` の `var(--*)` のみ）。例外はコメントで理由を書く
 - **完了条件**: `demo.html` が `components.css` を読み込む形に変わり、`check-design.sh` の直値検査が 0
 
-### DS-2. `templates/ui/layout.css`（新規）
+### DS-2. `templates/ui/layout.css`（新規）— **実装済み 2026-09-17**（クラス名は `.shell` でなく `.app`。`demo-shell.html` で確認）
 
 骨格（`spec/03-skills.md` と SKILL.md が言う globalbar / sidebar / topbar / content）を実体化。
 
@@ -100,7 +103,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 - 360px / 1366×768 のブレークポイント
 - **完了条件**: 管理画面パターンの骨格が `layout.css` ＋ `components.css` だけで組めること（`demo.html` に shell の例を追加して確認）
 
-### DS-3. フレームワーク別の出荷物
+### DS-3. フレームワーク別の出荷物 — **実装済み 2026-09-17**（`streamlit_theme.py` は `badge` `empty_state` に加え `kpi` `callout` も持つ）
 
 `frameworks.md` が文章で説明しているものを、**コピーして置くだけのファイル**にする。
 
@@ -113,7 +116,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 
 - **完了条件**: `frameworks.md` が「値の説明」でなく「出荷物への導線＋分担表」に縮む
 
-### DS-4. `scripts/check-design.sh`（新規）
+### DS-4. `scripts/check-design.sh`（新規）— **実装済み 2026-09-17**（`check_design.py` 236行 ＋ `test-check-design.sh` 36ケース。実装時の判定範囲は `spec/05-scripts.md`「デザイン検査」が正）
 
 `templates/design-system.md` の再現チェックリストのうち**機械判定できるものを実行する**。
 
@@ -124,13 +127,15 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 | 未使用トークン | 定義されているが誰も参照していないもの（WARN） |
 | 外部 CDN | `fonts.googleapis.com` / アイコン CDN の読み込み（オフライン要件のあるプロジェクトでは NG） |
 | `alert(` / `confirm(` | ブラウザ標準ダイアログの直接使用（`feedback.js` を使うべき） |
-| タップ領域 | `button` / `a` に `min-height` が効いているか（`tokens.css` を読み込んでいるか） |
+| tokens.css 読込 | `.html` が `tokens.css` を読み込んでいるか（`<link>` か `<style>` 内の定義）。タップ領域の `min-height` は `tokens.css` 側の適用ルールで担保 |
 
 - 出力は3層（結論 NG 件数 → 種別ごと → 全件は `check-design-report.md`）。既存の `trace-check.sh` / `quality_harness.py` と同じ作法
 - NG>0 で exit 1
 - **回帰テスト `scripts/test-check-design.sh`** を付ける。**出荷している `demo.html` と `components.css` 自身が NG=0 で通ること**を必ずテストに入れる（雛形が NG を出すと利用者が検査を無視する、という既存2スクリプトと同じ理由）
 
-### DS-5. `skills/design-system/SKILL.md` の縮小（≦200行）
+### DS-5. `skills/design-system/SKILL.md` の縮小（≦200行）— **実装済み 2026-09-17: 473 → 115 行**
+
+実装時の決定（計画からの変更）: `references/tokens.md` に hex を**複製しない**。値の唯一の真実源は `templates/tokens.css`（`check-design.sh` が読む実ファイル）とし、tokens.md は役割と理由だけを持つ。SKILL.md と tokens.css の二重管理（乖離の温床）を廃止した。`templates/design-system.md` / `templates/ui/*` / `frameworks.md` / `templates/lifecycle/02-basic-design.md` のポインタも tokens.css に向け直した。7項目は grep で references に残っていることを確認済み。
 
 `spec/09-findings.md` F-04（PRD の「1スキル ≦ 200行」違反）と同時に解決する。
 
@@ -150,7 +155,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 - ダーク背景に淡色を重ねると濁る → `rgba(色,.18〜.20)`
 - `disabled` は値が送信されないので二重送信対策に使えない → `aria-busy` ＋「処理中…」
 
-### DS-6. `templates/design-system.md` の更新
+### DS-6. `templates/design-system.md` の更新 — **実装済み 2026-09-17**（再現チェックリストを表に変え、機械5項目（直値・未定義トークン・CDN・alert()・tokens.css 読込）と目視9項目に分けた）
 
 再現チェックリストの各項目に、**それが機械判定されるかどうか**を付ける（`check-design.sh` で見る／目視のみ）。
 人が見るべき項目と機械が見る項目を分ける。
@@ -169,6 +174,8 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 | A-4 | `design-system` スキルの発火時コストが現在の推定 8,187 トークンから**半分以下**になる |
 
 A-4 は `spec/11` の U-2 と同じく **`/context` での実測**で確認する（推定のままにしない）。
+
+実装状況（2026-09-17）: DS-1〜DS-6 すべて実装済み。A-1 / A-2 / A-3 は出荷物とテストで満たした（`demo-shell.html` が読み込み指示だけで骨格を出す／`templates/ui/README.md` の1枚表／`check-design.sh` が直値を NG にする）。A-4 は保守者の `/context` 実測待ち。
 
 ---
 

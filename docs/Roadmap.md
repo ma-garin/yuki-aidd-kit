@@ -179,6 +179,20 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - 実測（文字数からの推定）: 常時の床 10,810 → **5,028 tok**（rules 2本 2,511 ＋ CLAUDE.md/AGENTS.md 2,518）。INDEX 4,456 は必要時のみ。**実トークンは保守者が `/context` で計測し `spec/11` U-2 に記録する**
 - 残: Opus へ上げる3条件は暫定。移行後1週間の `/usage` 実測で見直す（Q-7）
 
+## M17: デザイン出荷物 — 散文を減らし、出荷物を増やす（完了 2026-09-17）
+
+計画: `spec/12-design-framework.md`（DS-1〜DS-6、受け入れ条件 A-1〜A-4）。判断軸は「Sonnet に書かせず、読ませる形になっているか」。
+
+- [x] `templates/ui/components.css`（S9、DS-1）: SKILL.md の CSS 17 ブロックを `var(--*)` だけで実体化。直値解消のため `tokens.css` に `--color-medium-text` / `--color-scrim` / `--color-tooltip-bg/-text` / `--color-knob` を追加。`demo.html` を読み込み形式に変更
+- [x] `templates/ui/layout.css`（S10、DS-2）: `.app` 骨格（globalbar / sidebar 折りたたみ・off-canvas / topbar / content）と `.layout-2pane`、ブレークポイント 1366 / 768 / 360。`demo-shell.html` を追加し Playwright でライト／ダーク／360px／1920px を確認
+- [x] `scripts/check_design.py` + `check-design.sh` + `test-check-design.sh`（S11、DS-4、36 ケース）: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・`alert()`・`tokens.css` 未読込。`kit-ci.yml` に追加。`feedback.js` の `::backdrop` 直値を検出→是正（赤→緑を確認）
+- [x] フレームワーク別の出荷物（S12、DS-3）: `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `templates/ui/README.md`（1枚表）。`references/frameworks.md` は 47→36 行の導線に
+- [x] `skills/design-system/SKILL.md` を 473 → 115 行（S13、DS-5、F-04）: 値の唯一の真実源を `templates/tokens.css` に一本化（Q-9）。`references/tokens.md`（理由）/ `references/components.md`（使い分けと落とし穴・実不具合 7 件を保持）。`check_docs.py` 検査7を NG に昇格
+- [x] `templates/design-system.md` のチェックリストに機械 5 / 目視 9 の別（S14、DS-6）
+- [x] `docs/lessons.md` 新設（S15、B-05、F-05）: 本セッションが最初のエントリ。`export-project.sh` に `block-explore.sh` を配線し `/implement` の非対称を解消（B-06、F-08、Q-3）。`test-install.sh` 73 ケース
+- 検証記録: test-check-design 36/36・test-install 73/73・test-check-docs 25/25・`check-design.sh` NG=0（WARN 6: 未使用トークン `--color-medium` `--leading-loose` `--motion-slow` `--radius-xl` `--shadow-md` `--shadow-lg`）・`check-docs.sh` NG=0 WARN=0
+- 残: A-4（`design-system` 発火時コストが半分以下）は保守者が `/context` で実測（推定: 473→115 行なので 1/4 程度）
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIDD Design System — layout (app shell) demo</title>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="../ui/components.css">
+<link rel="stylesheet" href="../ui/layout.css">
+<style>
+  /* デモ固有: 骨格は ../ui/layout.css。ここでは何も上書きしない */
+  .demo-note { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0 0 var(--space-4); }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="app-globalbar">
+    <button class="btn btn--ghost" id="menu" type="button" aria-label="メニュー"><span data-icon="grid-view" data-icon-size="18"></span></button>
+    <span class="brand">Review Console</span>
+    <span class="spacer"></span>
+    <span class="muted">テナント: demo</span>
+    <button class="btn btn--ghost" id="theme" type="button"><span data-icon="settings" data-icon-size="16"></span><span class="label-text">テーマ</span></button>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head"><span class="brand">メニュー</span><button class="btn btn--ghost" id="collapse" type="button" aria-label="折りたたむ">‹</button></div>
+      <nav aria-label="主要">
+        <a href="#" aria-current="page"><span class="icon" data-icon="home" data-icon-size="18"></span><span class="label-text">ダッシュボード</span></a>
+        <a href="#"><span class="icon" data-icon="table-view" data-icon-size="18"></span><span class="label-text">レビュー結果</span></a>
+        <a href="#"><span class="icon" data-icon="settings" data-icon-size="18"></span><span class="label-text">設定</span></a>
+      </nav>
+    </aside>
+    <div class="maincol">
+      <header class="app-topbar">
+        <div><div class="breadcrumb"><a href="#">ホーム</a><span>/</span><span>ダッシュボード</span></div><h1>ダッシュボード</h1></div>
+        <span class="spacer"></span>
+        <button class="btn btn--primary" type="button"><span data-icon="add" data-icon-size="16"></span>レビューを実行する</button>
+      </header>
+      <main class="app-content">
+        <p class="demo-note">骨格の確認用: globalbar 44px / topbar 56px / sidebar 240px（1366px 以下 200px、768px 以下はハンバーガーで開閉、折りたたみ 72px）。本文だけスクロールする。</p>
+        <div class="kpi-row">
+          <div class="card kpi"><span class="kpi-label">今週のレビュー</span><span class="kpi-value">128</span><span class="kpi-delta up">+12 前週比</span></div>
+          <div class="card kpi"><span class="kpi-label">未対応の指摘</span><span class="kpi-value">7</span><span class="kpi-delta down">-3 前週比</span></div>
+          <div class="card kpi"><span class="kpi-label">平均スコア</span><span class="kpi-value">82</span><span class="kpi-delta">±0</span></div>
+        </div>
+        <div class="filter-row"><span class="chip">severity: High <span class="x">×</span></span><span class="chip">期間: 30日 <span class="x">×</span></span><button class="btn btn--ghost" type="button">絞り込みを解除する</button></div>
+        <div class="card">
+          <h3>最近のレビュー</h3>
+          <div class="table-wrap"><table class="table">
+            <thead><tr><th>画面</th><th>指摘</th><th>severity</th><th class="num">スコア</th></tr></thead>
+            <tbody>
+              <tr><td>ダッシュボード</td><td>0 件表示で枠だけ残る</td><td><span class="badge badge-high">High</span></td><td class="num">72</td></tr>
+              <tr><td>設定</td><td>ボタンが「はい／いいえ」</td><td><span class="badge badge-medium">Medium</span></td><td class="num">85</td></tr>
+              <tr><td>ログイン</td><td>エラー文が原因を言わない</td><td><span class="badge badge-critical">Critical</span></td><td class="num">61</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+        <p class="measure demo-note" style="margin-top: var(--space-6)">本文の行幅は --text-measure で抑える。この段落は measure クラスの確認用で、長い説明文でも 1 行が読みにくい長さにならないことを見る。</p>
+      </main>
+    </div>
+  </div>
+</div>
+<script src="icons.js"></script>
+<script>
+  document.getElementById('theme').addEventListener('click', () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark'; });
+  const sb = document.getElementById('sidebar');
+  document.getElementById('collapse').addEventListener('click', () => sb.classList.toggle('collapsed'));
+  document.getElementById('menu').addEventListener('click', () => sb.classList.toggle('open'));   /* 768px 以下: off-canvas の開閉 */
+</script>
+</body>
+</html>

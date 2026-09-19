@@ -238,23 +238,45 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | 4 | 参照切れ | `` `skills/…` `` 等のキット内パス参照が実在するか。ECC スキル名 15 件と配布先の生成パスは除外。`spec/` は対象外 | NG |
 | 5 | frontmatter | `SKILL.md` の `name` ↔ ディレクトリ名、`description` の有無 | NG |
 | 6 | 常時読込 | `rules/*.md` で `paths:` frontmatter の無いものの合計 ≦ 100 行 | **WARN**（S7 で NG） |
-| 7 | 行数目安 | SKILL ≦ 200 / コマンド ≦ 40 | **WARN**（S13 で NG） |
+| 7 | 行数目安 | SKILL ≦ 200 / コマンド ≦ 40 | NG（S13 で昇格） |
 | 8 | spec 同期 | `spec/01-inventory.md` の行数 ↔ 実測、実ファイルが目録に載っているか | NG |
 
 - 環境変数 `CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,…"` でテスト実行を代替（回帰テスト用）
 - 出力は3層、全件は `check-docs-report.md`（`.gitignore` 済み）。NG>0 で exit 1
 - 履歴文書（`docs/Roadmap.md` / `docs/AUDIT-2026-07.md`）は「当時の事実」なので数値の突合対象にしない
 
-## 回帰テスト（6件・全 green）
+## デザイン検査（2026-09-17 追加・S11）
+
+### `check-design.sh` → `check_design.py`
+
+```bash
+./scripts/check-design.sh [--root DIR] [--tokens FILE] [-o REPORT] [PATH ...]   # PATH 省略時 templates/ui templates/components。--tokens 省略時は templates/tokens.css → .claude/templates/tokens.css
+```
+
+| # | 検査 | 内容 | 既定 |
+|---|---|---|---|
+| 1 | 直値 | 色（`#hex` / `rgb(` / `hsl(`）はどこでも。px は padding / margin / gap / border-radius / font-size / line-height に限る（幅・高さ・ブレークポイントは対象外）。除外: 3px 以下のヘアライン、`var(--x, フォールバック)` の中、行内 `token-exempt` コメント、`tokens.css` 自身、**カスタムプロパティの定義 `--x: 値`**（単一 HTML に貼った tokens.css がこれ） | NG |
+| 2 | 未定義トークン | `var(--x)` が `tokens.css` にも自ファイルにも無い | NG |
+| 3 | 未使用トークン | `tokens.css` で定義されているが対象のどこからも参照されない | WARN |
+| 4 | 外部 CDN | `<link>` / `<script src>` / `@import` / `url()` が `http(s)://` を読む | NG |
+| 5 | alert() | `alert(` `confirm(` `prompt(`（`window.` 付き含む）の直接使用。`Feedback.confirm(` と関数定義は対象外 | NG |
+| 6 | tokens.css 読込 | `.html` に `tokens.css` の `<link>` も `<style>` 内の `--color-primary:` 定義も無い | NG |
+
+- `.html` は `<style>` / `<script>` ブロックだけを見る。`.js` は自己注入 CSS（テンプレート文字列）を含めて全文。ディレクトリ走査では `.claude` `.git` `node_modules` `dist` `build` を除外（配布先で `.` を渡してもキット雛形を検査しない。F-14）
+- 出力は3層、全件は `check-design-report.md`（`.gitignore` 済み）。対象なしは exit 0
+- 配布先では `./scripts/check-design.sh static src` のように対象を渡す（`templates/design-system.md` 再現チェックリストの機械判定分）
+
+## 回帰テスト（7件・全 green）
 
 | スクリプト | 行 | ケース数 | 2026-09-16 実測 | 特筆 |
 |---|---|---|---|---|
 | `test-hooks.sh` | 127 | **19** | PASS=19 / FAIL=0 | AUDIT A-01 の再発防止。stdin JSON を実際に流して期待出力を assert |
 | `test-trace-check.sh` | 179 | **15** | PASS=15 / FAIL=0 | ケース1 整合／ケース2 NG を仕込む／ケース3 対象なしでスキップ／**ケース4 `init-lifecycle.sh` 直後の雛形が NG=0** |
 | `test-quality-harness.sh` | 89 | **11** | PASS=11 / FAIL=0 | 検出9種＋allowlist 動作＋**配布雛形が新規プロジェクトで PASS** |
-| `test-install.sh` | 123 | **66** | PASS=66 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
+| `test-install.sh` | 130 | **73** | PASS=73 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
 | `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
-| `test-check-docs.sh` | 104 | 9 ケース群 | 全 PASS | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
+| `test-check-docs.sh` | 105 | **25** | PASS=25 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
+| `test-check-design.sh` | 143 | **43** | PASS=43 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス ／ **配布先の形（.claude/templates/tokens.css 自動検出・.claude/ 不走査・貼り込んだ定義行）** |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。
 雛形が NG を出すと利用者が検査結果そのものを無視するようになる、という理由が明記されている。

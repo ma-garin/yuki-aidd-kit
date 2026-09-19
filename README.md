@@ -10,7 +10,7 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
 
-- **`scripts/test-install.sh`**（71 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
+- **`scripts/test-install.sh`**（73 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
 - **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
@@ -26,11 +26,22 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - 常時読み込みの床（推定）: **10,810 → 5,028 トークン**（rules 2本 + CLAUDE.md/AGENTS.md。INDEX 4,456 は必要時のみ）。実トークンは `/context` で要実測
 - `check-docs.sh` の「常時読込 rules ≦ 100 行」を WARN から **NG に昇格**（逆戻りを CI が止める）
 
+**デザイン出荷物（M17）— 散文を減らし、出荷物を増やす（Sonnet に書かせず読ませる）**
+
+- **`templates/ui/components.css`**（部品）/ **`templates/ui/layout.css`**（骨格）: `skills/design-system` の散文 CSS 17 ブロックを `var(--*)` だけで実体化。読み込むだけで管理画面の骨格と部品が揃う。`templates/components/demo.html` / `demo-shell.html` で Playwright 確認済み（ライト／ダーク／360px）
+- **`templates/ui/`** にフレームワーク別の出荷物: `tailwind.config.js`（CSS 変数参照）、`streamlit-config.toml` + `streamlit_theme.py`（`apply_theme()` / `badge()` / `kpi()` / `empty_state()` / `callout()`）、`README.md`（単一 HTML / PWA / React+Vite / Streamlit / Flask・Django の置き場所・読み込み順の1枚表）
+- **`scripts/check-design.sh`**（36 ケースの回帰テスト付き）: 直値（色は全域・px は余白角丸文字サイズ系）・未定義トークン・未使用トークン(WARN)・外部 CDN・`alert()`・`tokens.css` 未読込を機械判定。`templates/design-system.md` の再現チェックリストは機械 5 項目／目視 9 項目に分けた。CI に追加
+- **`skills/design-system/SKILL.md` を 473 → 115 行に**: 値の唯一の真実源を `templates/tokens.css` に一本化し、決めの理由は `references/tokens.md`、部品の使い分けと落とし穴（実不具合由来 7 件）は `references/components.md` へ。`check-docs.sh` の「SKILL ≦ 200 行」を **NG に昇格**
+- `tokens.css` に `--color-medium-text` / `--color-scrim` / `--color-tooltip-bg/-text` / `--color-knob` を追加（直値解消のため）
+- **`docs/lessons.md`**（新設）: キット自身の改善ログ。本セッションと移行準備が最初のエントリ。移行後の週次 `/usage` 記録欄付き
+- **`docs/examples/library-loan/`**（新設）: 事例「社内図書館の貸出管理を Excel から Web へ。HTML でモック」。依頼文 1 行からキットの手順だけで作った完成品・ソース・仕様・引き継ぎメモ。`docs/userguide.html` の「ハンズオン」章の教材。この検証でキットの欠陥 3 件（F-14〜F-16）を見つけて是正
+- `export-project.sh` の settings.json に `block-explore.sh`（Read/Grep/Glob）を配線。グローバル導入と配布先で `/implement` の振る舞いが同じになった
+
 ## Ver.6.3 での主な更新（2026-08-25）— デザイン: トークン実物・画面の作り方・フレームワーク別適用
 
 - **`templates/tokens.css`**: デザイントークンの実物（ライト＋ダーク、`prefers-color-scheme` と `data-theme` 両対応、reduced-motion、タップ最小 44px）。WebSpec2Doc の `on-primary` / `surface-3` / `border-strong` / severity `-border` / `motion-*`、UX_Auto_Reviewer の本文幅 68ch を統合
 - **`design-system` に「画面の作り方」を追加**: 直値禁止のトークン運用（色 105 種・角丸 11 種・文字 21 段階を整理した実績から）、骨格（globalbar / sidebar / topbar / content）、**操作には必ず結果を返す**（成功＝消えるトースト／失敗＝消えない＋次の行動／処理中／0 件／危険操作の確認、`textContent` で入れる）、アイコン（同梱・CDN 禁止・慣用の形）、文言規約（ボタンは動作名、見出しに動詞を入れない、「（任意）」を付けない）
-- **`design-system/references/frameworks.md`**: 単一 HTML / React+Vite（Tailwind は CSS 変数参照で登録）/ Streamlit（`config.toml` + `ui/theme.py` 集約）/ Flask・Django 別の当て方と、ECC `frontend-patterns`・`frontend-design`・`ckm:design`・`uiux_review` との分担表
+- **`design-system/references/frameworks.md`**: 出荷物への導線と、ECC `frontend-patterns`・`frontend-design`・`ckm:design`・`uiux_review` との分担表（Ver.6.4 で FW 別の置き場所は `templates/ui/README.md` へ移動）
 - `templates/design-system.md` の再現チェックリストに直値・フィードバック・文言・アイコンの項目を追加
 - **`templates/components/`**: `feedback.js`（トースト／消えない失敗＋次の行動／処理中／空状態／確認ダイアログ。自己完結）、`icons.js`（Material Symbols 同梱）、`demo.html`（ライト／ダークの実機確認ページ。Playwright で確認済み）
 - `github-actions/test-gates.yml` を Python / Node 両対応（ファイルの有無で自動判定）
@@ -44,7 +55,7 @@ WebSpec2Doc で運用してきたテスト活動（テスト戦略・DoD・ISO/I
 - **`templates/test/`**（8 本）: `TESTING_STRATEGY` / `DEFINITION_OF_DONE` / 29119 の計画・設計仕様・完了報告・インシデント / `system_test_cases.csv`（Whittaker ツアー観点・severity 列）/ `feature_contracts.yml`
 - **`scripts/quality_harness.py`**: 機能契約を検証（実行経路の無い implemented、critical/high の失敗系テスト欠落、契約未登録モジュール、未実装マーカーなど 9 種。NG>0 で exit 1）。回帰テスト `scripts/test-quality-harness.sh` 11 ケース。**雛形が新規プロジェクトで PASS することもテスト**
 - **`scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`**: E2E 合格時に git hash + UI hash + 時刻を `.ui-verified` に記録し、未検証・検証後変更の UI コミットを止める。刷新期間は `.rebuild-mode` で明示的に免除
-- `scripts/init-test-docs.sh <対象> [--ci]` で一式を配置、`github-actions/test-gates.yml` で CI 実行
+- `scripts/init-test-docs.sh <対象> [--ci]` で一式を配置、`github-actions/test-gates.yml` で CI 実行（手動起動のみ）
 - `done-gate`（変更タイプ別・ゲート実行の明記）/ `test-automation` / `qa-review-standards`（29119 導線）/ `rules/functional-integrity.md`（機械検証への導線）を更新
 
 ```bash
@@ -76,7 +87,7 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 - `templates/lifecycle/`: 工程成果物の雛形11本。`./scripts/init-lifecycle.sh <対象>` で配置（既存ファイルは上書きしない）
 - **`scripts/trace-check.sh`**: 要件が設計・実装・テストへ紐づいているかを目視でなく機械検証する。重複定義／未定義参照／所有ファイル違反／追跡表未記載／カバー漏れ／孤立テストの6種別を検出し、NG>0 で exit 1（CI でそのまま落とせる）
 - コマンド `/rfd`・`/lifecycle <工程名>`・`/trace` を追加
-- GitHub 連携: Issue テンプレート（RFD・要件・欠陥）、関係 ID 欄付き PR テンプレート、PR で trace-check を回す `lifecycle-check.yml`
+- GitHub 連携: Issue テンプレート（RFD・要件・欠陥）、関係 ID 欄付き PR テンプレート、手動起動で trace-check を回す `lifecycle-check.yml`
 - 回帰テスト `scripts/test-trace-check.sh`（15ケース）。**配布する雛形が最初から NG=0 で始まること**もテスト対象
 
 ```bash
@@ -102,7 +113,8 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
 ./scripts/test-hooks.sh  # hooks の回帰テスト（19ケース）
-./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（71ケース。実 ~/.claude には触らない）
+./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（73ケース。実 ~/.claude には触らない）
+./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ```
 
@@ -117,10 +129,11 @@ Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claud
 
 ## 取り扱い説明書
 
-初心者向けの HTML 版ガイドを同梱しています。ブラウザで開くと、サイドメニュー付きでキットの使い方、ECC との関係、プロジェクト別の使い分けを確認できます。
+HTML 版のガイドを 2 冊同梱しています。**初めて導入するなら `userguide.html`**（概要・導入手順・最初のセッション・毎日の流れ・品質チェック・Pro/Sonnet のコツ）、使い始めてからは `yuki-aidd-kit-manual.html`（スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時）。
 
 ```bash
-open docs/yuki-aidd-kit-manual.html
+open docs/userguide.html             # 概要と導入（初学者向け・Ver.6.4）
+open docs/yuki-aidd-kit-manual.html  # 取り扱い説明書（13 章）
 ```
 
 ## 推奨する使い方
@@ -162,12 +175,16 @@ yuki-aidd-kit/
 │   ├── OPERATING-MODE.md                 # 標準作業モード
 │   ├── PROJECT-FIT-REPORT.md             # 実プロジェクト適合レポート
 │   ├── rules-rationale/                  # rules の根拠・原文・実測記録（毎回は読まない）
-│   └── yuki-aidd-kit-manual.html         # HTML 取説
+│   ├── lessons.md                        # キット自身の改善ログ（Keep / Problem / Try、週次 /usage）
+│   ├── examples/library-loan/            # 事例: 貸出管理モック（完成品・app.css/js・build.py・spec・CURRENT_STATE）
+│   ├── userguide.html                    # ユーザーガイド（概要・導入。初学者向け）
+│   └── yuki-aidd-kit-manual.html         # HTML 取説（13 章）
 ├── rules/                    # 規律 4本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
 ├── skills/                   # 19スキル（各 SKILL.md、一部 references/ 付き）
 │   ├── dev-lifecycle/        # 工程ライフサイクル（+ phase-gates / traceability / test-levels）
 │   ├── test-strategy/        # テスト活動の設計（+ feature-contracts / ui-verified-gate）
 │   ├── e2e-cycle/            # 段階停止型 E2E ワークフロー
+│   ├── design-system/        # デザイン規律（+ references/tokens.md / components.md / frameworks.md）
 │   └── uiux_review/          # UI/UX 実機レビュー（+ references/viewpoints.md）
 ├── claude-code/
 │   ├── commands/             # 16スラッシュコマンド
@@ -175,6 +192,7 @@ yuki-aidd-kit/
 ├── scripts/
 │   ├── install.sh / verify.sh / test-hooks.sh / test-install.sh   # グローバル導入と回帰テスト
 │   ├── check-docs.sh (check_docs.py) / test-check-docs.sh / test-git-gates.sh  # 文書整合・git ゲートの検査
+│   ├── check-design.sh (check_design.py) / test-check-design.sh  # デザイン検査（直値・トークン・CDN・alert()）
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
 │   ├── init-test-docs.sh / quality_harness.py / test-quality-harness.sh  # テスト活動
@@ -182,13 +200,15 @@ yuki-aidd-kit/
 │   ├── init-project.sh / audit-app-workspace.sh / pre-commit
 ├── templates/
 │   ├── design-system.md      # 視覚的指示書
-│   ├── tokens.css            # デザイントークンの実物（ライト＋ダーク）
+│   ├── tokens.css            # デザイントークンの実物（ライト＋ダーク。値の唯一の真実源）
+│   ├── ui/                   # components.css / layout.css / tailwind.config.js / streamlit-config.toml / streamlit_theme.py / README.md
+│   ├── components/           # feedback.js / icons.js / demo.html / demo-shell.html
 │   ├── settings.sandbox.json # sandbox / denyRead / network allowlist / permissions の雛形
 │   ├── lifecycle/            # 工程成果物の雛形11本（RFD〜保守運用＋追跡表）
 │   ├── test/                 # テスト戦略・DoD・29119 文書・テストケース CSV・機能契約の雛形8本
 │   ├── github/               # Issue（RFD/要件/欠陥）・PR テンプレート
 │   └── CURRENT_STATE.md / ADR-template.md / lessons.md / implement-profile.md
-├── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates）
+├── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates。いずれも手動起動のみ）
 ├── .github/workflows/kit-ci.yml  # キット自身の CI（手動起動のみ）
 ├── VERSION                   # 版（git tag と対応）
 └── spec/                     # 現況仕様・運用条件・作り込み計画（キット自体を触るならまずここ）

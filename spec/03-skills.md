@@ -135,9 +135,13 @@
 
 # LIBRARY 層（7件）
 
-## design-system（465行 + references 47行）★ 最大のスキル
+## design-system（115行 + references 200行: tokens 73 / components 91 / frameworks 36）— M17 S13 で分割
 
-- **目的**: AIDD ツール群のビジュアルを統一する。**値の真実源は本ファイル**、実物は `templates/tokens.css`、FW 別適用は `references/frameworks.md`
+- **目的**: AIDD ツール群のビジュアルを統一する。**値の唯一の真実源は `templates/tokens.css`**（2026-09-17 に SKILL.md から移した。hex の複製を持たない）、部品は `templates/ui/components.css`、骨格は `templates/ui/layout.css`。SKILL.md は「使い方の規律」だけ
+- **SKILL.md の構成（115行）**: 何をどこで読むか（索引表）／トークン運用の規律（表。ダーク・フォント方針の要約を含む）／骨格（`.app` の図と規律）／操作には必ず結果を返す（`Feedback.*` 表）／アイコン／文言（表）／画面を作る手順6ステップ（Sonnet / Codex 共通。`check-design.sh` → `uiux_review`）／実物
+- **references/tokens.md（73行）**: 色の役割表（基調・面・境界・文字・状態・補助・重ね）／ダーク（変数名不変・両対応・色相不変で明度だけ・`rgba(色,.18〜.20)`・純黒純白禁止）／文字7段の用途／余白角丸影動き／フォント読み込み方針（既定システムフォント・CDN は任意強化）／出所
+- **references/components.md（91行）**: ボタン／入力／バッジ／カード・スコア・KPI／表／トグル・セグメント／情報ツールチップ／モーダル／通知ポップオーバー／空状態／コールアウト／スケルトン／レスポンシブ の使い分けと落とし穴。**実不具合由来の7項目**（`spec/12` DS-5）を全て保持
+- **旧構成（参考。2026-09-17 以前の 465 行）**:
 - **構成**:
   1. カラーパレット（CSS 変数）— primary `#1976D2` / surface 3段 / border・divider / text 3段 / **status（ISTQB severity 対応）** critical#D32F2F・high#F57C00・medium#FBC02D・low#388E3C・info#0288D1 ＋各 `-bg`
   2. ダークテーマ — **変数名は変えず `prefers-color-scheme` と `data-theme` で上書きのみ**。色相は変えず明度だけ上げる／背景は `rgba(色,.18〜.20)`／純黒・純白を使わない
@@ -148,8 +152,8 @@
   7. 折りたたみ端末レスポンシブ（360px / 768px）＋タッチターゲット 44px
   8. フォント読み込み方針 — **既定はシステムフォントスタック**。CDN は「オフライン要件がなく常時オンラインと確定している場合」の任意強化に格下げ（single-html-tool / nfr-standards との矛盾解消）
   9. **画面の作り方**（2026-08 追加）— 直値禁止（*整理開始時点で色105種・角丸11種・文字21種あった*）/ 骨格（globalbar / sidebar / topbar / content）/ **操作には必ず結果を返す**（成功＝消えるトースト、失敗＝**消えない**＋次の行動、処理中、0件、危険操作の確認。`textContent` で入れる）/ アイコン（同梱・CDN 禁止・慣用の形）/ 文言規約6条
-- **references/frameworks.md**: 分担表（値＝本スキル / 実装規約＝ECC / 独創的 UI 生成＝`frontend-design` に**起動時トークンを渡す** / ブランド起こし＝`ckm:design` / 検証＝`uiux_review`）＋ 単一HTML / React+Vite（Tailwind は `theme.extend` に CSS 変数参照で登録）/ Streamlit（`config.toml` + `ui/theme.py` 集約）/ Flask・Django ＋ 検証手順（直値の残数を grep で数えて 0 を目標）
-- **注**: PRD の非機能「1スキル ≦ 200行」を大きく超過（`spec/09-findings.md` F-04）
+- **references/frameworks.md**（36行。M17 S12 で縮小）: 出荷物への導線表（tokens / components.css / layout.css / feedback.js / icons.js / tailwind.config.js / streamlit_theme.py / check-design.sh）＋分担表（値＝本スキル / 実装規約＝ECC / 独創的 UI 生成＝`frontend-design` に**起動時トークンを渡す** / ブランド起こし＝`ckm:design` / 検証＝`uiux_review`＋`check-design.sh`）＋共通の落とし穴4点。FW 別の置き場所・読み込み順は `templates/ui/README.md` の1枚表へ移した
+- **注**: PRD の非機能「1スキル ≦ 200行」超過（F-04）は S13 で是正済み。`check-docs.sh` 検査7が NG で監視する
 
 ## nfr-standards（89行）
 

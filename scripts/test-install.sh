@@ -79,6 +79,8 @@ expect_grep "配布先の CLAUDE.md も @AGENTS.md 形式" "@AGENTS.md" "$P/CLAU
 expect_grep "配布先の rules に paths frontmatter が保たれる" "paths:" "$P/.claude/rules/functional-integrity.md"
 if grep -q "<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md" "$P/CLAUDE.md" "$P/AGENTS.md"; then ng "INDEX の絶対参照が残っていない" "残っている"; else ok "INDEX の絶対参照が残っていない"; fi
 expect_grep "hooks の settings.json が相対パス参照" ".claude/hooks/block-gates.py" "$P/.claude/settings.json"
+expect_grep "block-explore.sh が Read|Grep|Glob に配線される（グローバル導入と同じ振る舞い）" ".claude/hooks/block-explore.sh" "$P/.claude/settings.json"
+python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$P/.claude/settings.json" 2>/dev/null && ok "生成した settings.json が JSON として妥当" || ng "生成した settings.json が JSON として妥当" "パース失敗"
 expect_count ".claude/KIT_VERSION が3フィールド" 3 "$(wc -w < "$P/.claude/KIT_VERSION")"
 # 再実行で退避
 OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1)

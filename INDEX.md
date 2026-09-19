@@ -17,15 +17,17 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
 ./scripts/test-hooks.sh                       # hooks の回帰テスト（19ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
-./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（71ケース）
+./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（73ケース）
 ./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./scripts/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。NG=0 が合格）
+./scripts/check-design.sh [対象パス]           # デザイン検査（直値・未定義トークン・外部 CDN・alert()。既定 templates/ui templates/components。NG=0 が合格）
 ./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
 ./scripts/trace-check.sh docs/lifecycle       # 要件→設計→実装→テストの追跡を機械検証（NG=0 で合格）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
-open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
+open docs/userguide.html                      # ユーザーガイド（概要・導入手順。初学者向け）
+open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書（13 章）
 ```
 
 **導入方式は2つ**（併用が前提。`docs/Vision.md` の「配置の2層」参照）:
@@ -59,7 +61,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/frameworks.md に React/Tailwind/Streamlit/Flask 別の当て方とデザイン系スキルの分担 | #ui #design | 465行 |
+| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/ に tokens.md（値の理由）・components.md（部品の使い分けと落とし穴）・frameworks.md（分担）。実物は templates/tokens.css・templates/ui/ | #ui #design | 115行 |
 | `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値 | #nfr #spec | 89行 |
 | `agent-eval` | LLM/RAG/エージェント出力の品質をデータセット＋スコアラーで回帰評価 | #ai #eval | 67行 |
 | `code-doc-search` | 技術ドキュメント検索のクエリ最適化 | #search #docs | 55行 |
@@ -136,18 +138,20 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 184行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 198行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
-| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 76行 |
+| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 78行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
 | `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
 | `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
-| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル） | 1434行 |
+| `docs/userguide.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 952行 |
+| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `userguide.html`・事例・V字章へ導線 | 1443行 |
 
 `docs/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。
+`docs/examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/userguide.html`）。
 
-templates/: `design-system.md`（視覚的指示書）/ `tokens.css`（デザイントークンの実物。ライト＋ダーク）/ `components/`（`feedback.js` `icons.js` `demo.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
+templates/: `design-system.md`（視覚的指示書。チェックリストは機械/目視の別付き）/ `tokens.css`（デザイントークンの実物。**値の唯一の真実源**。ライト＋ダーク）/ `ui/`（`components.css` 部品 / `layout.css` 骨格 / `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `README.md` FW 別1枚表）/ `components/`（`feedback.js` `icons.js` `demo.html` `demo-shell.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md` / `ADR-template.md` / `lessons.md` / `implement-profile.md`
 
 ## templates/lifecycle/ — 工程成果物の雛形（`dev-lifecycle` 用）
 
@@ -169,7 +173,7 @@ templates/: `design-system.md`（視覚的指示書）/ `tokens.css`（デザイ
 ## templates/github/ — GitHub 連携（`--github` で配置）
 
 `ISSUE_TEMPLATE/`（RFD / 要件 / 欠陥）と `pull_request_template.md`（関係 ID とゲートのチェック欄）。
-CI は `github-actions/lifecycle-check.yml`（PR で `trace-check.sh` を実行し、追跡漏れを落とす）。
+CI は `github-actions/lifecycle-check.yml`（手動起動で `trace-check.sh` を実行し、追跡漏れを落とす。自動実行はしない）。
 
 ## 運用原則
 

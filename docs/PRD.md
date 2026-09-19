@@ -46,19 +46,21 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: `./scripts/init-test-docs.sh <対象>` が雛形とゲートスクリプトを配置し、配置直後に `python3 scripts/quality_harness.py` が PASS する（`./scripts/test-quality-harness.sh` で回帰テスト）
 - **FR-09a 機能契約ハーネス**: 機能ごとの UI/route/core・出力・永続化・failure_modes・required_tests を契約として記述し、実行経路の無い implemented・高リスク機能の失敗系テスト欠落・契約未登録モジュール・未実装マーカーをスクリプトで検出する（NG>0 で exit 1）
 - **FR-09b UI 検証マーカー**: E2E 合格時に git hash + UI hash + 時刻を `.ui-verified` に記録し、pre-commit で未検証・期限切れ・検証後変更の UI コミットを止める。刷新期間は `.rebuild-mode` で明示的に免除する
-- **FR-10 デザイントークンの実物と画面の作り方**: `skills/design-system` の値を `templates/tokens.css` として配布し（ライト＋ダーク）、直値禁止・骨格・操作フィードバック・アイコン・文言の規律と、フレームワーク別（単一 HTML / React+Vite / Streamlit / Flask・Django）の適用手順を提供する
+- **FR-10 デザイントークンの実物と画面の作り方**: 値の唯一の真実源を `templates/tokens.css`（ライト＋ダーク）とし、部品 `templates/ui/components.css`・骨格 `templates/ui/layout.css`・フレームワーク別の出荷物（`tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `templates/ui/README.md` の1枚表）を配布する。`skills/design-system` は直値禁止・骨格・操作フィードバック・アイコン・文言の**規律**だけを持つ（≦ 200 行）
   - 検証基準: `tokens.css` の変数名が SKILL.md と一致し、`templates/design-system.md` の再現チェックリストで直値・フィードバック・文言・アイコンが確認できる
 - **FR-11 版の刻印**: `VERSION` を真実源とし、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。配布先がどの版のキットから出たかを判別できる
   - 検証基準: `./scripts/test-install.sh` が KIT_VERSION の3フィールドと VERSION との一致を assert する
 - **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` から**保守者が手動起動したときだけ**実行する（自動実行はしない。ゲートは要求時のみ、の規律と同じ）
   - 検証基準: `./scripts/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec/01 同期）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
+- **FR-13 デザイン検査**: `scripts/check-design.sh` が CSS/HTML/JS の直値（色・余白・角丸・文字サイズ）・未定義トークン・外部 CDN・`alert()`・`tokens.css` 未読込を機械判定する（NG>0 で exit 1）。キットの出荷物自身が NG=0 で通ることを回帰テストに含める。配布先では対象パスを引数で渡す
+  - 検証基準: `templates/design-system.md` 再現チェックリストの「機械」項目が全て `check-design.sh` で判定される
 - **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する
   - 検証基準: 重複定義・未定義参照・所有ファイル違反・追跡表未記載・カバー漏れ・孤立テストの6種別を検出し、NG>0 で exit 1 する（CI から `github-actions/lifecycle-check.yml` で実行できる）
 
 ## 非機能要求（ISO/IEC 25010）
 
 - **互換性（最重要）**: **Claude Code と他エージェント（Codex 等）の双方で動作すること。** 共通規約の本体は `AGENTS.md`（Codex が直接読む）一本とし、`CLAUDE.md` は `@AGENTS.md` の import ＋ Claude Code でしか効かないものだけを持つ（二重管理をしない）。スキル・コマンド本文は特定ツールの内部名に依存せず、固有機能に言及する場合は「汎用表現（Claude Code では X）」の併記形式を守る。加えて、**グローバル導入（`install.sh`）とプロジェクト配布（`export-project.sh`）のどちらでも同一の振る舞いになること**（Vision.md「配置の2層」参照）
-- **使用性**: 新しいセッションが `AGENTS.md` の「読む範囲」表から 1 ファイル以内の参照で作業開始できる（INDEX.md は表に無いときの第2段）。**毎セッション自動読み込みの `rules/`（`paths` 無し）は合計 ≦ 100 行**（`check-docs.sh` が NG で止める）。1スキル ≦ 200行、1コマンド ≦ 40行を目安とする
+- **使用性**: 新しいセッションが `AGENTS.md` の「読む範囲」表から 1 ファイル以内の参照で作業開始できる（INDEX.md は表に無いときの第2段）。**毎セッション自動読み込みの `rules/`（`paths` 無し）は合計 ≦ 100 行**（`check-docs.sh` が NG で止める）。**1スキル ≦ 200行、1コマンド ≦ 40行**（`check-docs.sh` が NG で止める）
 - **性能効率性（トークン）**: 毎回読む層（DAILY）の合計を小さく保つ。詳細は references/・docs/ に逃がし、必要時のみ読む
 - **保守性**: 同一情報の真実源は1箇所（デザイン値は design-system、ECC 対応は ECC-ASSET-MAP）。重複を作る変更は監査（AUDIT）で検出・却下する
 - **信頼性**: verify.sh が資産の欠落を検出する。hooks は入力不正時に無害終了（exit 0）する

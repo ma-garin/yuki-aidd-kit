@@ -1,8 +1,8 @@
 # キット自身の CI
 # ※ github-actions/ 配下の yml は「配布先プロジェクトへ置くサンプル」であり、これとは別物。
 #
-# 回帰テスト（hooks / trace-check / quality_harness / 入口スクリプト / git ゲート / check-docs）と
-# 文書整合検査を、保守者が Actions 画面から手動で起動したときだけ実行する（workflow_dispatch のみ）。
+# 回帰テスト（hooks / trace-check / quality_harness / 入口スクリプト / git ゲート / check-docs / check-design）と
+# 文書整合検査・デザイン検査を、保守者が Actions 画面から手動で起動したときだけ実行する（workflow_dispatch のみ）。
 # PR や push で自動実行しない: ゲートは要求した時だけ動かす（rules/speed-harness.md H-7）という
 # キットの規律を CI にも適用する（保守者決定 2026-09-17「自動処理は認めない」）。
 # 何を検査するかは spec/09-findings.md F-07 / F-09、spec/11 D-2。GATES_REQUESTED=1 を明示する。
@@ -36,6 +36,11 @@ jobs:
         run: bash scripts/test-git-gates.sh
       - name: check-docs の回帰テスト
         run: bash scripts/test-check-docs.sh
+      - name: check-design の回帰テスト
+        run: bash scripts/test-check-design.sh
+
+      - name: デザイン検査（直値・未定義トークン・外部 CDN・alert()）
+        run: bash scripts/check-design.sh -o check-design-report.md
 
       - name: 文書整合検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec 同期）
         id: docs
@@ -46,12 +51,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: check-docs-report
-          path: check-docs-report.md
+          name: check-reports
+          path: |
+            check-docs-report.md
+            check-design-report.md
           if-no-files-found: ignore
       - name: サマリ
         if: always()
         run: |
-          if [ -f check-docs-report.md ]; then
-            cat check-docs-report.md >> "$GITHUB_STEP_SUMMARY"
-          fi
+          for f in check-docs-report.md check-design-report.md; do
+            [ -f "$f" ] && cat "$f" >> "$GITHUB_STEP_SUMMARY"
+          done

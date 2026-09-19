@@ -2,7 +2,7 @@
 
 > 上位: `01-requirements.md`／下位: `03-detailed-design.md`
 > **全 `REQ-F` を1つ以上の `BD` に割り当てる**（未割り当てゼロが出口基準）。
-> 画面の具体値（色・タイポ・余白）は `skills/design-system` が真実源。ここでは参照のみ。
+> 画面の具体値（色・タイポ・余白）は `templates/tokens.css`（規律は `skills/design-system`）が真実源。ここでは参照のみ。
 > 規模が小さく SDD の `plan.md` で足りる場合、本工程は省略して `plan.md` に集約してよい。
 
 **日付**: YYYY-MM-DD ／ **状態**: ドラフト / 確定

@@ -1,4 +1,4 @@
-# 06 — templates（33件）と github-actions（4件）
+# 06 — templates（36件）と github-actions（4件）
 
 配置スクリプトとの対応:
 `init-lifecycle.sh` → `lifecycle/` + `github/`／`init-test-docs.sh` → `test/` + ゲートスクリプト／
@@ -8,7 +8,7 @@
 
 ## 1. 単体テンプレート（7件）
 
-### `tokens.css`（97行）— デザイントークンの実物
+### `tokens.css`（107行）— デザイントークンの実物
 
 `skills/design-system/SKILL.md` を真実源として実体化したもの。**値を変えるときはスキル側を先に直す。**
 
@@ -33,7 +33,7 @@
 
 **出所**: kit design-system（MD3 Light）＋ WebSpec2Doc `static/tokens.css`（on-primary / surface-3 / border-strong / severity-border / motion）＋ UX_Auto_Reviewer `style.css`（本文幅・reduced-motion）。
 
-### `design-system.md`（83行）— 視覚的指示書
+### `design-system.md`（89行）— 視覚的指示書（S14 でチェックリストに機械/目視の別を付与）
 
 コードを一切見なくても同じ見た目を再現するための言語化。**値は再定義せず `skills/design-system` を参照**（AUDIT D-02 対応）。
 
@@ -113,7 +113,7 @@
 
 ---
 
-## 5. `components/`（3件・529行）
+## 5. `components/`（4件・618行）
 
 ### `feedback.js`（282行）
 
@@ -147,21 +147,57 @@
 - viewBox は Material の `0 -960 960 960`・`fill="currentColor"`（線画の Lucide とは前提が違う）
 - `document.readyState === 'loading'` の間は **MutationObserver で組み立てられた端から差し込む**（DOMContentLoaded まで待つと字だけの画面が一瞬映ってちらつく）
 
-### `demo.html`（95行）
+### `demo.html`（113行）
 
-`tokens.css` + `icons.js` + `feedback.js` の実機確認ページ。severity バッジ5種 / ボタン4種＋入力欄 /
-カードと表（等幅数値）/ 空状態 / テーマ切替（`data-theme` をトグル）。
-**デモ用 CSS も含めて値はすべて `var(--*)` 参照で直値なし**。Playwright でライト・ダーク・トースト・確認ダイアログ・空状態を確認済み（2026-08-26）。
+部品の実機確認ページ。`../tokens.css` → `../ui/components.css` の順に読み込み、**デモ固有の体裁（`.page` `.row` `.grid-3` `.theme-btn`）だけ**を `<style>` に持つ。
+severity バッジ6種 / ボタン（primary・ghost・danger・disabled）/ 入力（`.field` `.input.err` `.select`）/ KPI・スコアカード /
+カードと表（`.table-wrap` 横スクロール・列フィルタ・チップ・セグメント・トグル・情報ツールチップ・ページャ・スケルトン）/ コールアウト / モーダル（3経路で閉じる）/ 空状態 / テーマ切替。
+Playwright でライト・ダーク・360px・モーダル・トーストを確認済み（2026-09-17）。
+
+### `demo-shell.html`（71行）
+
+骨格の実機確認ページ。`layout.css` の `.app`（globalbar / sidebar / topbar / content）に KPI 列・フィルタ行・表を載せる。
+サイドバーの折りたたみ（72px）と 768px 以下の off-canvas 開閉（`.open`）を JS 4行で動かす。1366×768 / 1920×1080 / 360×820 とダークで横スクロールなしを確認済み。
 
 ---
 
-## 6. `github-actions/`（4件・177行）— 配布用サンプル
+## 5b. `ui/`（6件・452行）— デザインシステムの実物（M17）
+
+### `components.css`（175行）
+
+`skills/design-system/SKILL.md` の CSS ブロックを **`var(--*)` だけで**1ファイルに実体化。直値は `token-exempt` コメント付きのヘアライン（2〜3px）と部品固有の幅・高さのみ。
+
+- 群: ボタン `.btn .btn--primary .btn--ghost .btn--danger`（`aria-busy` で二重送信対策）/ 入力 `.input .select .textarea .field .field-err-text .banner-err` / バッジ `.badge-*`（medium の文字色は `--color-medium-text`）/ カード `.card .card-grid` / `.score-card` / `.kpi` / 表 `.table .table-wrap .col-filter-btn .col-pop .pagebar .pager` / `.toggle` `.seg` / `.info-ic .tooltip`（`.edge-left/.edge-right`）/ `.modal-backdrop .modal .modal-{head,body,foot}`（`.modal-head .modal-close` に限定して footer のボタンを壊さない）/ `.notif-pop .notif-item.unread` / `.empty-state`（`feedback.js` と同じクラス名。静的マークアップ用）/ `.callout--*` / `.skeleton` / ユーティリティ
+- 含まない: トースト・確認ダイアログ（`feedback.js` が自己注入）
+- ユーティリティに `[hidden] { display:none !important }`（display:flex の部品でも `hidden` 属性が効く。F-16）
+- SKILL.md 側の直値（`#856404` / `#20242B` / `#F2F4F7` / `rgba(8,12,18,.46)` / `#fff`）は `tokens.css` に `--color-medium-text` `--color-tooltip-bg/-text` `--color-scrim` `--color-knob` を追加して解消（真実源も同時更新）
+
+### `layout.css`（99行）
+
+- A) `.app` = `.app-globalbar`（44px 固定・折り返さない）+ `.app-body`（`.sidebar` 240px sticky・本文と別スクロール・`.collapsed` 72px + `.maincol`（`.app-topbar` min 56px sticky + `.app-content` がスクロール））
+- B) `.layout-2pane` + `.sidenav`（軽量ツール）
+- `.kpi-row` `.filter-row` `.chip`、`.app.is-settings` で裏側の地色を変える、`.measure` で本文幅
+- ブレークポイント: ≦1366 sidebar 200px / ≦768 off-canvas（`.open`）・globalbar のラベル非表示 / ≦480 パンくず非表示 / ≦360 見出し縮小・KPI 1列
+- `.app` は `grid-template-columns: minmax(0,1fr)` ＋ `.app > * { min-width:0 }`（globalbar の nowrap な中身が画面幅を押し広げない。F-15）
+
+### フレームワーク別（S12）
+
+| ファイル | 行 | 内容 |
+|---|---|---|
+| `README.md` | 36 | ファイル一覧＋**FW 別1枚表**（置く場所・読み込み順・部品の使い方）＋検証（`check-design.sh` / `uiux_review` / token-exempt の書き方） |
+| `tailwind.config.js` | 48 | `theme.extend` を全て `var(--*)` 参照で登録（colors は severity 名で。`bg-primary/50` の透明度修飾子は効かない旨を明記） |
+| `streamlit-config.toml` | 12 | `[theme] base="light"` + primary / background / secondaryBackground / text / font。tokens.css の写し |
+| `streamlit_theme.py` | 82 | `apply_theme(extra_css)`（tokens.css + components.css を `<style>` 注入。Streamlit の button / input にも最小適用）、`badge(severity, text)` `kpi(label, value, delta, trend)` `empty_state(title, description)` `callout(severity, text)`。severity は列挙で検証、文字列は `html.escape` |
+
+`skills/design-system/references/frameworks.md` は 47行 → 36行に縮小し、散文の手順を上記への導線と分担表に置き換えた。
+
+## 6. `github-actions/`（4件・171行）— 配布用サンプル（**2026-09-17 保守者決定で全て `workflow_dispatch` のみ**。PR / push では自動実行しない）
 
 | ファイル | トリガー | 内容 |
 |---|---|---|
-| `test-gates.yml` | PR / push(main) / dispatch | job `contracts`（`quality_harness.py`）＋ job `unit-integration`。**`hashFiles()` でスタックを自動判定**（pyproject/requirements → pytest --cov-fail-under=80、package.json → npm test。両方無ければ `::warning::` で「未実行」と明示）。`GATES_REQUESTED=1` を付けて実行。L3 はコメントアウトで同梱 |
-| `lifecycle-check.yml` | PR（`docs/lifecycle/**`・`scripts/trace-check.sh`）/ push(main) / dispatch | `trace-check.sh docs/lifecycle -o trace-check-report.md` → **失敗時もレポートを artifact 化**し `$GITHUB_STEP_SUMMARY` へ出力 |
-| `deploy.yml` | push(main) / dispatch | GitHub Pages（`./docs` を公開。ルート公開なら `./` に変更）。`concurrency: pages` |
-| `secret-scan.yml` | push / PR / dispatch | gitleaks（`fetch-depth: 0` で全履歴） |
+| `test-gates.yml` | dispatch（手動のみ） | job `contracts`（`quality_harness.py`）＋ job `unit-integration`。**`hashFiles()` でスタックを自動判定**（pyproject/requirements → pytest --cov-fail-under=80、package.json → npm test。両方無ければ `::warning::` で「未実行」と明示）。`GATES_REQUESTED=1` を付けて実行。L3 はコメントアウトで同梱 |
+| `lifecycle-check.yml` | dispatch（手動のみ） | `trace-check.sh docs/lifecycle -o trace-check-report.md` → **失敗時もレポートを artifact 化**し `$GITHUB_STEP_SUMMARY` へ出力 |
+| `deploy.yml` | dispatch（手動のみ） | GitHub Pages（`./docs` を公開。ルート公開なら `./` に変更）。`concurrency: pages` |
+| `secret-scan.yml` | dispatch（手動のみ。コミット時の即時防止は `scripts/pre-commit`） | gitleaks（`fetch-depth: 0` で全履歴） |
 
 **注**: これらは配布先へ置くサンプル。**キット自身の `.github/workflows/` は存在しない**（`spec/09-findings.md` F-07 / `spec/10-backlog.md` B-01）。

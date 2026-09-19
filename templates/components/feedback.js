@@ -81,7 +81,7 @@
 .confirm-dialog { border: 1px solid var(--color-border, #E0E0E0); border-radius: var(--radius-lg, 12px); padding: var(--space-6, 24px);
   background: var(--color-surface, #fff); color: var(--color-text, #212121); box-shadow: var(--shadow-pop, 0 12px 32px rgba(20,32,50,.14));
   width: min(440px, calc(100vw - var(--space-8, 32px))); font-family: inherit; }
-.confirm-dialog::backdrop { background: rgba(0,0,0,.4); }
+.confirm-dialog::backdrop { background: var(--color-scrim, rgba(0,0,0,.4)); }
 .confirm-title { margin: 0 0 var(--space-2, 8px); font-size: var(--text-lg, 18px); font-weight: 700; }
 .confirm-consequence { margin: 0 0 var(--space-6, 24px); color: var(--color-text-secondary, #616161); }
 .confirm-actions { display: flex; justify-content: flex-end; gap: var(--space-2, 8px); }

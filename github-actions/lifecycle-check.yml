@@ -3,20 +3,14 @@
 # （./scripts/init-lifecycle.sh <target> --github で scripts/trace-check.sh と一緒に自動配置される）
 #
 # docs/lifecycle/ の工程文書について、要件が設計・実装・テストへ紐づいているかを
-# レビュー前に機械検証する。NG があれば PR を落とす。
+# 保守者が手動で起動して機械検証する。NG があれば失敗として止まる。
+# 起動は手動のみ（workflow_dispatch）。PR や push で自動実行しない: ゲートは要求した時だけ動かす（rules/speed-harness.md H-7）。
+# Actions 画面の「Run workflow」から起動する。
 # 検査内容: skills/dev-lifecycle/references/traceability.md
 
 name: Lifecycle Trace Check
 
 on:
-  pull_request:
-    paths:
-      - 'docs/lifecycle/**'
-      - 'scripts/trace-check.sh'
-  push:
-    branches: [main]
-    paths:
-      - 'docs/lifecycle/**'
   workflow_dispatch:
 
 jobs:

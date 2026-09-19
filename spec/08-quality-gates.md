@@ -73,7 +73,7 @@ L4 受入 ─┴─→ ここで初めて「ユーザーが価値を受け取れ
 
 ---
 
-## 5. 機械ゲート（人の注意力に頼らない5つ）
+## 5. 機械ゲート（人の注意力に頼らない6つ）
 
 | ゲート | 何を止めるか | 実装 | 失敗 |
 |---|---|---|---|
@@ -83,6 +83,7 @@ L4 受入 ─┴─→ ここで初めて「ユーザーが価値を受け取れ
 | **UI 検証マーカー** | E2E 未実行・検証後に UI を変更したコミット | `ui-hash.py` + `pre-commit-ui-gate.sh` × `.ui-verified` | exit 1（BLOCKED） |
 | **機能契約ハーネス** | UI だけあって実行経路が無い機能／critical・high に失敗系テストが無い／契約未登録の新モジュール | `quality_harness.py` × `quality/feature_contracts.yml` | exit 1 |
 | **トレーサビリティ** | 要件が設計・テストへ落ちていない | `trace-check.sh` × `traceability-matrix.md` | exit 1 |
+| **デザイン直値** | CSS/JS の色・余白の直値、未定義トークン、外部 CDN、`alert()`、`tokens.css` 未読込（M17 追加） | `check-design.sh` × `templates/tokens.css` | exit 1 |
 
 ### UI 検証マーカーの仕組み
 
