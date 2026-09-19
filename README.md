@@ -6,6 +6,20 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
+## Ver.6.5 での主な更新（2026-09-19）— トークン節約を仕組みに: 散文を hook・設定・検査へ
+
+節約の約束事は前からありましたが、**AI が自分で読んで自分で守る散文**でした（機械が強制していたのは 3 つだけ）。Pro＋Sonnet では上限に直結するので、機械にできるものを全部 hook・設定・検査に落としました。公式の削減策（`code.claude.com/docs/en/costs`）を当日の一次情報で確認して設計しています。
+
+- **`filter-output.py`**（PreToolUse Bash）: テスト・install・build の出力を Claude が読む**前に**失敗行＋集計だけに絞る（`updatedInput`）。`git log` は最新 20 件、`git diff` は `--stat`。**終了コードは元のまま**（偽の pytest で「102 行 → 7 行、exit 1 保持」を実測）。全量は `FULL_OUTPUT=1`
+- **`pre-read-guard.py`**（PreToolUse Read）: ロックファイル・minified・`node_modules`・生成レポートは deny。800 行超を範囲指定なしで読むと先頭 300 行にして「続きは `offset`」を伝える
+- **`context-guard.py` / `pre-compact.py` / `log-instructions.py`**: 55 分超の再開（キャッシュ切れ）と 4 MB 超の会話で `/clear` `/compact` を促す（止めない）／圧縮の「残す・捨てる」を注入／指示ファイルの実ロードを記録（推定を実測に置き換える材料）
+- **設定 3 キー**: `effortLevel: high`（Sonnet 5 / Fable は effort だけが思考量のレバー）／`autoCompactWindow: 200k`（Sonnet 5 の 1M を放置しない）／`BASH_MAX_OUTPUT_LENGTH: 12000`
+- **`scripts/token-audit.sh`**（12 ケースの回帰テスト付き）: 床の推定・実測ログの集計・hook と設定の配線（漏れは NG）・MCP 数・スキル肥大。`/token-check` はこれを回す
+- `check-docs.sh` 検査 9: `CLAUDE.md` ＋ `AGENTS.md` の合計 ≦ 200 行（公式の目安）
+- 散文は「hook が強制する」の導線に置き換え（rules は 87 行 ≦ 100 を維持）。`docs/userguide.html` に「トークンを減らす仕組み」章
+
+**黙って削らない。** 絞ったときは必ず「絞った・全量の取り方」が Claude に伝わります（黙って欠けると探し直して逆に高くつく）。逃がし口は `FULL_OUTPUT=1` と `offset` の明示だけで、恒久バイパスはありません。
+
 ## Ver.6.4 での主な更新（2026-09-19）— 工程承認ゲート: 要求どおり作られているかを工程ごとに止めて確かめる
 
 AIDD では「プロセスが正しく回っているか」を見ても、企業が知りたい「**SDD で要求したものが確実に作られているか**」には答えられません。誤りが成果物として出てから見つかると手戻りが最大になります。各工程の出口に**人間の承認**を置き、**承認を成果物の版に縛る**ことで、誤りの伝播を工程 1 つ分に閉じ込めます。

@@ -1,4 +1,4 @@
-# 04 — コマンド（17）と hooks（8 + settings.json）
+# 04 — コマンド（17）と hooks（13 + settings.json）
 
 ## 1. スラッシュコマンド
 

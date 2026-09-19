@@ -209,6 +209,21 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - 検証記録: test-hooks 32/32・test-install 79/79・test-check-approval 54/54・test-trace-check 15/15・test-quality-harness 11/11・test-git-gates 27/27・test-check-docs 25/25・test-check-design 44/44・`check-docs.sh` NG=0・`check-design.sh` NG=0。配布した実プロジェクトで「未承認→deny／承認→許可／成果物の変更→失効→再び deny」を端から端まで確認
 - 残: 実プロジェクトで 1 工程を実際に承認し、deny の false positive 頻度を `docs/lessons.md` に記録する（保守者）
 
+## M19: トークン節約を仕組みに — 散文を hook・設定・検査へ（完了 2026-09-19）
+
+背景: 節約策のうち機械が強制していたのは 3 つだけで、残りは AI が自分で読んで自分で守る散文だった（F-20）。
+公式の削減策「hook で前処理してから渡す」は未活用（B-15）。保守者決定は Q-12（既定 ON・effort high・再開は警告・Read 切り詰め）。
+
+- [x] `filter-output.py`（S23、B-15）: テスト→失敗行＋集計、install/build→末尾 40 行、git log→-20、git diff→--stat。終了コード保持。`FULL_OUTPUT=1` で全量。自分の回帰テストは絞られない
+- [x] `pre-read-guard.py`（S24）: ロックファイル・minified・node_modules・生成レポートを deny。800 行超は先頭 300 行＋続きの読み方を systemMessage で
+- [x] `context-guard.py` / `pre-compact.py` / `log-instructions.py`（S25）: 55 分超の再開・4 MB 超で `/clear` `/compact` を促す（止めない）／圧縮の残す・捨てる／指示ファイルの実ロードを記録
+- [x] settings 3 キー（S26）: `effortLevel: high` / `autoCompactWindow: 200k` / `BASH_MAX_OUTPUT_LENGTH: 12000`。キット本体・export の両方
+- [x] `token-audit.sh` ＋ `check-docs.sh` 検査 9（S27）: 床の推定・実測ログ集計・配線・MCP 数・スキル肥大。CLAUDE+AGENTS ≦ 200 行。`/token-check` を書き換え
+- [x] 散文の置き換え（S28）: CLAUDE.md.template / model-routing / speed-harness H-7 / context-compression / rules-rationale。rules 87 行 ≦ 100
+- [x] 文書化（S29）: userguide「トークンを減らす仕組み」章（実測の systemMessage 付き）、PRD FR-15、spec/09 F-20・F-21、spec/10 Q-12、spec/11 §2 更新
+- 検証記録: test-hooks 63/63・test-install 82/82・test-check-docs 27/27・test-token-audit 12/12・他 5 スイート PASS・`check-docs.sh` NG=0・`token-audit.sh` NG=0（床 ≒ 6,200 tok 推定）。偽の pytest で「102 行 → 7 行、exit 1 保持」を実測
+- 残: 移行後 1 週間の `/usage`・`/context` 実測で `READ_GUARD_MAX_LINES` / `CONTEXT_GUARD_IDLE_MIN` / `effortLevel` の既定を見直す（保守者）。F-21（警告 hook の stdout）の確認
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。

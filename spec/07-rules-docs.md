@@ -160,8 +160,8 @@ STACK（スキャン結果の要点7行）／**DAILY 15件**（e2e-testing, brow
 
 | ファイル | 要点 |
 |---|---|
-| `README.md`（237行） | 人間向け入口。Ver.6.4→5.0 のリリースノート（新しい順）／導入2方式／取説の開き方／推奨フロー8段／ECC 連携／構成ツリー／**今後の開発時の合言葉9件**（「このプロジェクトに合うECCだけ選んで」→`ecc-daily-router` 等） |
-| `INDEX.md`（190行） | **全資産の入口**。2層の読み方／クイックスタート（11コマンド）／導入方式2種／DAILY スキル表13／LIBRARY スキル表7／rules 表4／hooks 表8／コマンド表17／ECC 連携（MAP 参照1行）／docs 表8／templates 一覧／lifecycle・test・github の説明／**運用原則7項目**。各行に**1行要約・タグ・参照コスト（行数）** |
+| `README.md`（237行） | 人間向け入口。Ver.6.5→5.0 のリリースノート（新しい順）／導入2方式／取説の開き方／推奨フロー8段／ECC 連携／構成ツリー／**今後の開発時の合言葉9件**（「このプロジェクトに合うECCだけ選んで」→`ecc-daily-router` 等） |
+| `INDEX.md`（190行） | **全資産の入口**。2層の読み方／クイックスタート（12コマンド）／導入方式2種／DAILY スキル表13／LIBRARY スキル表7／rules 表4／hooks 表13／コマンド表17／ECC 連携（MAP 参照1行）／docs 表8／templates 一覧／lifecycle・test・github の説明／**運用原則7項目**。各行に**1行要約・タグ・参照コスト（行数）** |
 | `CLAUDE.md.template`（21行） | `@AGENTS.md` ＋ Claude Code 固有のみ（M16）: 実装モード／hooks で強制されるもの／トークン・モデル（`/clear` `/usage` `/context` `rules/model-routing.md`） |
 | `AGENTS.md.template`（74行） | **共通規約の本体**（M16）。Codex は直接、Claude Code は `CLAUDE.md` の `@AGENTS.md` で読む。「読む範囲」はタスク種別→スキル/コマンドのルーティング表。X-5「両ファイル同時更新」は不要になった |
 | `claude-projects-setup.md`（58行） | claude.ai Projects「AIDD Lab」。Project Instructions の全文／ナレッジ5ファイル（INDEX.md・CLAUDE.md.template・sdd-ecc-workflow・qa-review-standards・SDD+ECC ガイド）／Tips（**ナレッジは5ファイル以内・頻繁に変わる情報は入れない**） |

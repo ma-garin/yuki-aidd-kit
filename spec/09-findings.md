@@ -269,15 +269,34 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 - 是正: `covers` はその工程が所有する成果物だけにし、追跡表の整合は `trace-check.sh` が別の機械ゲートとして担保する。
   回帰テストに「後続工程を進めても前工程の承認は失効しない」ケースを追加
 
+## 3e. トークン節約の棚卸しで見つかった finding（2026-09-19「トークンの節約を徹底的に仕組みとして組み込みたい」）
+
+### F-20 — 節約策の大半が散文で、機械が強制しているのは 3 つだけだった ★★ — **是正済み（M19 S23〜S28）**
+
+- evidence: 機械は `block-explore.sh`（実装モードの探索）・`block-gates.py`（ゲートの無断実行）・`check-docs.sh` 検査6（rules ≦ 100 行）のみ。
+  「grep してから読む」「部分読み」「`/clear` の規律」「effort を下げる」「MCP より CLI」は散文で、AI が自分で読んで自分で守る前提。
+  公式の削減策「hook で前処理してから渡す」は B-15 として「移行後」送りになっていた
+- severity: High（Pro＋Sonnet では上限に直結する。散文は人が覚えていないと効かない）
+- 是正: 絞る hook 2 本（`filter-output.py` `pre-read-guard.py`）・寿命 hook 3 本（`context-guard.py` `pre-compact.py` `log-instructions.py`）・
+  設定 3 キー（`effortLevel` `autoCompactWindow` `BASH_MAX_OUTPUT_LENGTH`）・点検 `token-audit.sh`・`check-docs.sh` 検査9。散文は「hook が強制する」の導線に置き換え
+
+### F-21 — 警告系 hook の stdout が Claude に届いていない可能性（未確認・起票のみ）
+
+- evidence: `pre-write-check.sh` `post-write-html.sh` `session-summary.sh` は exit 0 で stdout に警告を出すが、
+  公式 docs では PreToolUse / PostToolUse の exit 0 の stdout は transcript（人）向けで、Claude に渡るのは JSON の `systemMessage` / `additionalContext`。
+  この 3 本の「💡 500 行超は部分編集を」等の警告が AI の行動を変えていない可能性がある
+- severity: Medium（効いていないだけで害は無い）
+- 対応: 次のセッションで hooks docs「exit 0 の stdout はどこに出るか」を確認し、Claude に読ませたい警告は `systemMessage` に載せ替える
+
 ### severity 別サマリ（更新）
 
 | severity | 件数 | ID |
 |---|---|---|
 | Critical | 0 | — |
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
-| Medium | 3 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測） |
+| Medium | 4 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測）／**F-21（警告 hook の stdout。未確認）** |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 17 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／**F-17 F-18 F-19（M18 工程承認ゲート）** |
+| 是正済み | 18 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18 工程承認ゲート）／**F-20（M19 トークン節約の機械化）** |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 
