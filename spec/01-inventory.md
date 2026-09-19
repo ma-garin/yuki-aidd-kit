@@ -11,7 +11,7 @@
 |---|---|---|
 | `README.md` | 252 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
 | `INDEX.md` | 196 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
-| `CLAUDE.md.template` | 26 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
+| `CLAUDE.md.template` | 29 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 74 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
 | `.gitignore` | 28 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
@@ -24,8 +24,8 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `absolute-rules.md` | 19 | **A-1〜A-10** を「発動 / 出力 / 要点」の表で（M16 で 112→19 行）。根拠は `docs/rules-rationale/absolute-rules.md` |
-| `speed-harness.md` | 51 | **H-1〜H-8** の規範だけ（M16 で 115→51 行）。出所・失敗事例・実測記録は `docs/rules-rationale/speed-harness.md` |
-| `model-routing.md` | 15 | **Pro＋Sonnet の規律**（M16 新設）: 既定 Sonnet・Opus 3条件・effort・`/clear`・委譲・上限時・週1 `/usage` |
+| `speed-harness.md` | 52 | **H-1〜H-8** の規範だけ（M16 で 115→51 行）。出所・失敗事例・実測記録は `docs/rules-rationale/speed-harness.md` |
+| `model-routing.md` | 16 | **Pro＋Sonnet の規律**（M16 新設）: 既定 Sonnet・Opus 3条件・effort・`/clear`・委譲・上限時・週1 `/usage` |
 | `functional-integrity.md` | 17 | 実行経路を確認するまで「完了」と言わない。**`paths:` 付き＝コード/UI を触ったときだけ読み込み**（M16） |
 
 ---
@@ -44,7 +44,7 @@
 | `test-strategy/references/feature-contracts.md` | 51 | 機能契約 YAML の項目定義と検証8種・運用 |
 | `test-strategy/references/ui-verified-gate.md` | 45 | `.ui-verified` の仕組み・BLOCKED 条件・`.rebuild-mode`・配置手順 |
 | `e2e-cycle/SKILL.md` | 95 | E2E を5フェーズ（設計→生成→実行→ODC分析修整→コミット）で **1起動1フェーズ**、待機・ポーリング・バックグラウンド完全禁止 |
-| `context-compression/SKILL.md` | 56 | 3層要約（結論/根拠/詳細はファイルへ）・grep優先・決定論的作業のスクリプト化 |
+| `context-compression/SKILL.md` | 59 | 3層要約（結論/根拠/詳細はファイルへ）・grep優先・決定論的作業のスクリプト化 |
 | `ecc-daily-router/SKILL.md` | 57 | ECC 資産を DAILY/LIBRARY/OFF に分類。プリセットは持たず `docs/ECC-ASSET-MAP.md` を参照（AUDIT A-03 で一本化） |
 | `sdd-ecc-workflow/SKILL.md` | 55 | SDD 10ステップ・ガバナンス3パターン・役割分離・トークン規律・cc-sdd |
 | `sdd-ecc-workflow/references/templates.md` | 56 | spec.md / plan.md / tasks.md / implement.md / AGENTS.md の雛形 |
@@ -258,7 +258,7 @@
 | `Vision.md` | 47 | 目的・解決する問題6件・到達点3つ・Non-Goals・配置の2層・価値の判定基準 |
 | `rules-rationale/absolute-rules.md` | 119 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
 | `rules-rationale/speed-harness.md` | 122 | `rules/speed-harness.md` の圧縮前原文（実測・失敗事例）と **H-6 の実測記録の追記先**（M16） |
-| `rules-rationale/model-routing.md` | 27 | `rules/model-routing.md` 各行の根拠（一次情報の出典）と未確認事項（M16） |
+| `rules-rationale/model-routing.md` | 31 | `rules/model-routing.md` 各行の根拠（一次情報の出典）と未確認事項（M16） |
 | `examples/library-loan/README.md` | 36 | 事例の説明（依頼文・中身・開く／作り直す／検査する・確認できたこと・範囲外） |
 | `examples/library-loan/library-loan.html` | 1230 | **事例の完成品**。単一 HTML（tokens / components / layout / icons / feedback を貼り込み）。`build.py` の生成物。5 画面・localStorage |
 | `examples/library-loan/app.css` | 22 | モック固有の配置 CSS（部品・骨格はキットのまま） |

@@ -11,12 +11,15 @@
 ## hooks で機械的に強制されるもの（散文の規約ではない）
 - `block-gates.py`: pytest / make test / verify-ui / lint はユーザー要求時のみ。要求時は `GATES_REQUESTED=1` を付けて実行する
 - `block-explore.sh`: 実装モードの探索ブロック
+- `filter-output.py`: テスト・install・build・`git log`・`git diff` の出力を読む前に絞る。全量は `FULL_OUTPUT=1 <cmd>`
+- `pre-read-guard.py`: ロックファイル・minified・`node_modules`・生成レポートは読めない。800 行超は先頭 300 行（続きは `offset`）
+- `context-guard.py` / `pre-compact.py`: 55 分超の再開・4 MB 超の会話で `/clear` `/compact` を促す／圧縮時に残す・捨てるを注入
 - `progress.py` / `statusline.py`: 1分超の作業は `start / step / done` を bash に連結する（`rules/speed-harness.md` H-8）
 - `pre-write-check.sh` / `post-write-html.sh` / `session-summary.sh`: 警告・通知のみ（ブロックしない）
 
 ## トークン・モデル
-- 無関係なタスクへ移るときは `/clear`。1時間以上離れて再開するときは要約からにする（キャッシュが切れて全履歴を再処理する）
-- モデル・effort の使い分けは `rules/model-routing.md`。`/usage` で消費の内訳、`/context` で載っているファイルを確認する
+- 無関係なタスクへ移るときは `/clear`（1 時間超の再開は `context-guard.py` が警告する。続きなら要約から）
+- effort の既定は settings の `high`。設計判断のときだけ `/effort xhigh`、終わったら戻す。モデルの使い分けは `rules/model-routing.md`。`/usage` で消費の内訳、`/context` で載っているファイルを確認する
 - MCP は必要なものだけ有効化（1MCP ≈ 数千トークン）。同じことが CLI でできるなら CLI を使う
 - 編集後の確認 Read はしない。独立したツール呼び出しは1メッセージにまとめる
 

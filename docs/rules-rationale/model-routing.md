@@ -18,6 +18,10 @@
 | 委譲はの隔離目的のみ | サブエージェントは別コンテキストウィンドウ＝トークン倍増。Agent teams は「通常の約7倍」（`costs` docs「Agent team token costs」）。公式が推奨する用途は「冗長な操作の隔離」（テスト実行・ドキュメント取得・ログ処理） |
 | 上限時の手順 | 「セッション上限」「週次上限」は**全モデル共有**で `/model` では回復しない。「Opus 上限」「Sonnet 上限」は**モデル系列別**で `/model` で別系列に切り替えれば継続できる（`costs` docs「When a developer asks about a limit」）。Pro の具体的な量は未確認（`claude.com/pricing`） |
 | 測る | `/usage` はスキル・サブエージェント・プラグイン・MCP 別の消費割合と、「長コンテキスト」「キャッシュミス」が10%以上を占める場合のフラグを出す。キットに欠けていた実測手段 |
+| effort の既定 `high` | Claude Code の既定は `xhigh`。Sonnet 5 / Fable は adaptive で `MAX_THINKING_TOKENS` が無効なため、思考量のレバーは effort だけ。settings.json の `effortLevel`（`low/medium/high/xhigh`。`max` は保存不可）で固定（保守者決定 2026-09-19、`code.claude.com/docs/en/model-config`） |
+| `autoCompactWindow: 200k` | Sonnet 5 は native 1M。既定では ≒967K まで自動圧縮されず、毎メッセージが巨大なキャッシュ読みになる。200k で従来モデル相当に戻す（同上） |
+| `BASH_MAX_OUTPUT_LENGTH: 12000` | 既定 30,000 文字（最大 150,000）。`filter-output.py` で絞れなかった出力の上限（`code.claude.com/docs/en/env-vars`、2026-09-19） |
+| 絞る hook | PreToolUse は `updatedInput` でツール入力を書き換えられる（公式例: テスト出力を grep で失敗行に絞る）。PostToolUse は出力を書き換えられない。UserPromptSubmit / PreCompact は `additionalContext` を注入できる（`code.claude.com/docs/en/hooks` `costs`、2026-09-19） |
 | Codex | `/model` `/effort` `/usage` は Claude Code のコマンド。Codex 側にはモデル設定と会話の切り方しか無い |
 
 ## 未確認（埋まったら判断表を更新する）
