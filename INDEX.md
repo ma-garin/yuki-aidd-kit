@@ -77,7 +77,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 19行 |
+| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 21行 |
 | `speed-harness` | H-1〜H-8: 着手前3行・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示 | #speed #process | 52行 |
 | `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 16行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
@@ -111,7 +111,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `/trace` | トレーサビリティの更新と `trace-check.sh` による機械検証 | #lifecycle #qa | 22行 |
 | `/test-metrics` | テスト工程の進捗・品質を数字で出し、検知と「人が判定すること」を分けて報告 | #qa #test | 23行 |
 | `/phase-review` | 工程の出口で AI 3 役を順次レビュー。差し戻し事項を出し切って人間の承認へ渡す | #lifecycle #qa | 26行 |
-| `/plan` | 方針を確定し実装モードを解除（探索を許可）。PLAN.md を生成 | #process | 18行 |
+| `/plan` | 方針を確定し実装モードを解除（探索を許可）。PLAN.md を生成 | #process | 19行 |
 | `/implement` | 実装モード開始（plan 必須。Read/Grep/Glob を hook で物理ブロック） | #process | 19行 |
 | `/compact-work` | context-compression 規約で作業（3層要約・スクリプト化） | #token | 13行 |
 | `/ecc-daily` | プロジェクトに合うECC資産の分類を実行 | #ecc | 26行 |
@@ -150,7 +150,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 242行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 256行 |
+| `docs/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 14 項目（複数リポジトリの記録から抽出）と規約・hook・検査への反映先。同じ指摘を 2 回受けたら行を足す | 45行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
 | `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 85行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
