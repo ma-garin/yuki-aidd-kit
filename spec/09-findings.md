@@ -66,7 +66,7 @@ Roadmap M12 でも同じ理由で未計測と記録されている。→ F-06。
 atarimae 71 / test-strategy 105 / e2e-cycle 95 / uiux_review 199 / retro 38 / nfr-standards 89 /
 agent-eval 67 / code-doc-search 55 / single-html-tool 36 / personal-pwa 30 / streamlit-rag-app 32 /
 absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 114 / PROJECT-FIT 48 /
-全16コマンド。
+全17コマンド。
 
 **是正案**: 機械導出に置き換える（`spec/10-backlog.md` B-01）。手で直すだけでは必ず再発する。
 
@@ -208,7 +208,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 **severity: Medium**（Sonnet 基盤では発火の取りこぼしが増える可能性があるが、測れない。`retro` の「発火しなかったスキル→description に言い回し追加」は観測に依存している）
 
-- evidence: `skills/*/evals` が存在しない。19スキルの description は手書きのまま一度も評価されていない
+- evidence: `skills/*/evals` が存在しない。20スキルの description は手書きのまま一度も評価されていない
 - 関連: `spec/11` U-4
 
 **是正案**: 移行後に `/usage` のスキル別内訳で観測する（B-10）。恒久策は `skill-creator` の eval を使った発火テストだが、コストが高いので**移行後の実測で問題が出たスキルだけ**に限定する。
@@ -239,6 +239,36 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 - 是正: ユーティリティに `[hidden] { display: none !important; }` を追加
 
+## 3d. 工程承認ゲートの検討で見つかった finding（2026-09-19「AIDD の SDD で要求したものが確実に作られているか」）
+
+背景: AIDD では「プロセスが正しく回っているか」（QA4AIDD 等が担う領域）を見ても、企業が知りたい
+「**要求したものが確実に作られているか**」には答えられない。誤りが成果物として出てから見つかると手戻りが最大になる。
+
+### F-17 — 工程の承認が 10 工程中 3 つにしか存在しなかった ★★ — **是正済み（M18 S16・S21）**
+
+- evidence: 承認欄があるのは `00-rfd.md` / `01-requirements.md` / `08-acceptance-test.md` のみ。
+  `02`〜`07` と `09` には承認への言及がゼロ。`phase-gates.md` の出口基準は散文のチェックボックスで、
+  誰も押さなくても次工程へ進める
+- severity: High（誤りが下流工程へ無検出で伝播する）
+- 是正: 全 10 工程に承認記録（`docs/lifecycle/approvals/phase-<n>.md`）を用意し、共通出口基準を 3 → 4 項目に
+
+### F-18 — 承認という概念を機械が一切知らなかった ★★ — **是正済み（M18 S17・S18・S19）**
+
+- evidence: `trace-check.sh` は ID の紐づきのみ、`quality_harness.py` は機能契約のみを見る。
+  `commands/lifecycle.md` の「前工程の出口基準が未達なら着手せず差し戻す」は**書いてあるだけ**で、
+  AI が自分で読んで自分で守る前提だった
+- severity: High（承認が形だけになる。判子を押した後に中身が差し替わっても検出できない）
+- 是正: `phase-hash.py`（承認を版に縛る）＋ `check-approval.sh`（exit 0/1/2、判定不能を合格に数えない）
+  ＋ `block-phase.py`（未承認の工程の下流成果物への書き込みを deny）
+
+### F-19 — 承認の covers に追跡表を含めるとゲートが永久に詰まる — **是正済み（S18 の設計時に検出）**
+
+- evidence: 当初 `covers` に `traceability-matrix.md` を含めていたが、追跡表は全工程が書き足す生きた文書で、
+  第3工程の更新が第1・第2工程の承認を毎回失効させる
+- severity: Medium（設計段階で検出。実装には出ていない）
+- 是正: `covers` はその工程が所有する成果物だけにし、追跡表の整合は `trace-check.sh` が別の機械ゲートとして担保する。
+  回帰テストに「後続工程を進めても前工程の承認は失効しない」ケースを追加
+
 ### severity 別サマリ（更新）
 
 | severity | 件数 | ID |
@@ -247,7 +277,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
 | Medium | 3 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測） |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 14 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／**F-14 F-15 F-16（ユースケース検証）** |
+| 是正済み | 17 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／**F-17 F-18 F-19（M18 工程承認ゲート）** |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 

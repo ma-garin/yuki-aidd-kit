@@ -82,7 +82,7 @@
 | **明示呼び出し** | `claude-code/commands/<name>.md` → `/<name>` | コストは呼んだ時だけ発生（INDEX の設計） |
 | **強制（hook）** | `settings.json` の PreToolUse / PostToolUse / Stop / statusLine | 唯一 AI の意思で回避できない層。`block-explore.sh`（exit 2）と `block-gates.py`（deny JSON）が実際にブロックする |
 
-### description の書式パターン（19スキル共通）
+### description の書式パターン（20スキル共通）
 
 ```text
 <何をするスキルか>。<いつ使うか（場面の列挙）>。

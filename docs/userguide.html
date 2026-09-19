@@ -163,6 +163,7 @@
           <li><a href="#phrases">こんな時はこう言う</a></li>
           <li><a href="#gates">品質チェックの回し方（手動）</a></li>
           <li><a href="#vmodel">V字・W字モデルとの対応</a></li>
+          <li><a href="#approval">工程の承認ゲート（要求どおり作られているか）</a></li>
           <li><a href="#pro">Pro プラン・Sonnet で使うコツ</a></li>
           <li><a href="#design">画面の見た目を揃える</a></li>
           <li><a href="#trouble">困ったとき</a></li>
@@ -189,6 +190,7 @@
           <li><a href="#phrases">こんな時はこう言う</a></li>
           <li><a href="#gates">品質チェックの回し方</a></li>
           <li><a href="#vmodel">V字・W字との対応</a></li>
+          <li><a href="#approval">工程の承認ゲート</a></li>
           <li><a href="#pro">Pro・Sonnet で使うコツ</a></li>
           <li><a href="#design">画面の見た目を揃える</a></li>
           <li><a href="#trouble">困ったとき</a></li>
@@ -659,12 +661,13 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
 
         <h3>キット自身を確かめたいとき（更新を取り込んだ後など）</h3>
         <pre><code>./scripts/verify.sh              <span class="c"># 入っているか</span>
-./scripts/test-hooks.sh          <span class="c"># 見張り役が反応するか（19）</span>
-./scripts/test-install.sh        <span class="c"># 導入・配布が正しいか（73）</span>
+./scripts/test-hooks.sh          <span class="c"># 見張り役が反応するか（32）</span>
+./scripts/test-install.sh        <span class="c"># 導入・配布が正しいか（79）</span>
 ./scripts/test-git-gates.sh      <span class="c"># 秘密情報・UI 検証マーカーの検査が正しいか（27）</span>
 ./scripts/check-docs.sh          <span class="c"># 説明書と中身がズレていないか</span>
-./scripts/check-design.sh        <span class="c"># デザイン部品に直値・外部読み込み・alert() が無いか</span></code></pre>
-        <p>ほかに <code>test-trace-check.sh</code>（15）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（25）、<code>test-check-design.sh</code>（36）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
+./scripts/check-design.sh        <span class="c"># デザイン部品に直値・外部読み込み・alert() が無いか</span>
+./scripts/check-approval.sh      <span class="c"># 工程の承認が揃っているか・失効していないか</span></code></pre>
+        <p>ほかに <code>test-trace-check.sh</code>（15）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（25）、<code>test-check-design.sh</code>（44）、<code>test-check-approval.sh</code>（54）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
 
         <h3>自分のプロジェクトで使う検査</h3>
         <table>
@@ -674,6 +677,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
             <tr><td>UI 検証マーカー</td><td>画面テスト（E2E）をしていない、または合格後に画面を変えた状態でコミットする</td><td><code>scripts/pre-commit-ui-gate.sh</code>。E2E 合格時に <code>.ui-verified</code> を作り、それと画面ファイルの指紋を照合</td></tr>
             <tr><td>機能契約ハーネス</td><td>画面だけあって裏の処理が無い「見せかけの機能」、失敗時のテストが無い機能</td><td><code>python3 scripts/quality_harness.py</code></td></tr>
             <tr><td>追跡表の検査</td><td>要件が設計・実装・テストのどこにも落ちていない</td><td><code>./scripts/trace-check.sh docs/lifecycle</code>（工程文書を使う案件のみ）</td></tr>
+            <tr><td>工程の承認ゲート</td><td>前の工程が未承認・失効のまま次の工程へ進む／承認後に成果物が差し替わる</td><td><code>./scripts/check-approval.sh</code>（詳しくは<a href="#approval">工程の承認ゲート</a>）</td></tr>
             <tr><td>デザインの直値検査</td><td>CSS に <code>#1976D2</code> や <code>16px</code> をベタ書き、外部サイトからフォントやアイコンを読む、<code>alert()</code> を使う</td><td><code>./scripts/check-design.sh static src</code>（見たいフォルダを並べる）</td></tr>
           </tbody>
         </table>
@@ -827,6 +831,90 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
           「RFD の決定、要件定義の確定、受け入れテストの合格判定は人間が承認します。AI は承認しません」</p>
         </div>
         <p>より詳しい規約は <code>skills/dev-lifecycle/SKILL.md</code>（10 工程・ID 体系・役割）、<code>references/phase-gates.md</code>（入口出口基準）、<code>references/test-levels.md</code>（レベル別の設計観点）にあります。ISO/IEC/IEEE 29119 の文書一式は <code>templates/test/</code> です。</p>
+      </section>
+
+      <section id="approval">
+        <h2><span class="h2-ic">印</span>工程の承認ゲート（要求どおり作られているかを止めて確かめる）</h2>
+        <p>AI に設計や実装を任せたとき、いちばん不安なのは「<strong>頼んだとおりのものが本当に作られているのか</strong>」です。<br>
+        AI の進め方が正しいか（プロセスが回っているか）を見るサービスはありますが、企業が知りたいのはそこではありません。知りたいのは<strong>中身が要求と合っているか</strong>です。</p>
+
+        <div class="callout danger">
+          <div class="callout-title">手戻りが最大になる壊れ方</div>
+          <p>人が要件定義をして、AI が基本設計から実装・テストまでを担当し、人が受け入れテストで確かめる。この分担自体は正しいのですが、<strong>誤りが見つかるのが最後</strong>になります。<br>
+          要件の取り違えが基本設計に入り込むと、詳細設計も実装も単体テストも結合テストも、全部その間違いの上に積み上がります。受け入れテストで気づいたときには、作り直す量が最大になっています。</p>
+        </div>
+
+        <p>そこで、<strong>工程ごとに人が承認し、承認が取れていない工程の先へは進めない</strong>ようにします。誤りを工程 1 つ分に閉じ込めるための仕組みです。</p>
+
+        <h3>仕組みは 3 段構え</h3>
+        <table>
+          <thead><tr><th>段</th><th>何をするか</th><th>実体</th></tr></thead>
+          <tbody>
+            <tr><td>① 記録を残す</td><td>工程ごとに承認の記録をファイルで残す。判定・根拠・承認者・日時を書く</td><td><code>docs/lifecycle/approvals/phase-0.md</code> 〜 <code>phase-9.md</code></td></tr>
+            <tr><td>② 版に縛る</td><td>承認した瞬間の成果物の<strong>指紋（ハッシュ）</strong>を記録に書く。後から成果物が 1 文字でも変われば<strong>承認は自動で失効</strong>する</td><td><code>./scripts/phase-hash.py</code> ＋ 記録の <code>reviewed_hash</code> 欄</td></tr>
+            <tr><td>③ 物理的に止める</td><td>前の工程が未承認のまま次の工程の文書を書こうとすると、AI の手が<strong>その場で止まる</strong></td><td><code>block-phase.py</code>（見張り役）</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout warn">
+          <div class="callout-title">②が無い承認は形だけになる</div>
+          <p>判子を押した後に中身を差し替えられるなら、その判子には意味がありません。<strong>承認は「この版を承認した」という形でしか有効になりません。</strong>キットはもともと画面テストで同じ考え方（<code>.ui-verified</code>）を使っていて、それを工程承認へ広げたものです。</p>
+        </div>
+
+        <h3>実際にどう止まるか</h3>
+        <p>第 2 工程（基本設計）が未承認のまま、AI が第 3 工程（詳細設計）を書こうとすると、こう出て書き込みが拒否されます。</p>
+        <pre><code>前工程が未承認のため docs/lifecycle/03-detailed-design.md を書けません（工程承認ゲート）。
+❌ 第3工程にはまだ着手できません — 第2工程 基本設計: 未承認
+  - 未承認: 成果物は着手済みですが判定が未記入です。`/phase-review 2` の後、人間が phase-2.md を埋めてください
+  次の行動: /phase-review 2 で指摘を潰し、人間が docs/lifecycle/approvals/phase-2.md を承認する
+誤りの伝播を工程1つ分で止めるための制限です。</code></pre>
+
+        <p>承認を取った後で基本設計を書き換えると、こうなります（②の失効）。</p>
+        <pre><code>=== 工程承認検査: 第2工程 基本設計 ===
+❌ 失効
+  - 失効: 承認後に成果物が変更されています（承認時 dc06593847f5e4d8 / 現在 d3d80f2542dc3083）。
+          承認を取り直してください: ./scripts/phase-hash.py docs/lifecycle/02-basic-design.md</code></pre>
+
+        <h3>使う手順（1 工程ぶん）</h3>
+        <ol>
+          <li><strong>AI に下書きさせる</strong>：<code>/lifecycle 基本設計</code></li>
+          <li><strong>AI に指摘を出し切らせる</strong>：<code>/phase-review 2</code><br>
+            3 つの役（追跡担当 → 仕様一致担当 → リスク担当）が<strong>順番に</strong>レビューし、<code>phase-2-ai.md</code> に申し送りを書きます。<strong>AI は承認しません。</strong>承認欄は空のまま返ってきます</li>
+          <li><strong>指摘を潰す</strong>：差し戻し事項には必ず「解消したことをどう確かめるか」が書いてあります</li>
+          <li><strong>人が承認する</strong>：<code>docs/lifecycle/approvals/phase-2.md</code> に判定・根拠・自分の名前・日時を書き、<code>./scripts/phase-hash.py docs/lifecycle/02-basic-design.md</code> の出力を <code>reviewed_hash</code> に貼る</li>
+          <li><strong>確かめる</strong>：<code>./scripts/check-approval.sh --phase 2</code> が <code>exit 0</code> なら次工程へ進めます</li>
+        </ol>
+
+        <h3>機械が見られること・人にしか見られないこと</h3>
+        <p>ここを曖昧にすると「AI が承認した」ことになり、第三者検証としての価値が消えます。キットはこの線を越えません。</p>
+        <table>
+          <thead><tr><th>機械が判定する（<code>check-approval.sh</code>）</th><th>人にしか判定できない</th></tr></thead>
+          <tbody>
+            <tr><td>承認の記録があるか・必要な欄が埋まっているか</td><td>その設計が<strong>本当にその要件を満たすか</strong></td></tr>
+            <tr><td>承認した版と今の版が一致するか（失効の検出）</td><td>受入基準の解釈が依頼者の意図と合っているか</td></tr>
+            <tr><td>未解消の差し戻しや未確認事項を残したまま「承認」になっていないか</td><td>残っているリスクを受け入れてよいか</td></tr>
+            <tr><td>承認者が人間か（AI の名前が入っていないか）</td><td>条件付き承認の条件が妥当か</td></tr>
+            <tr><td>着手済みの工程の手前に、未承認の工程が無いか</td><td></td></tr>
+          </tbody>
+        </table>
+        <p>判定は 3 つだけです：<strong>承認</strong> / <strong>条件付き承認</strong> / <strong>差し戻し</strong>。空欄は判定ではなく「未承認」という状態として扱われ、合格には数えません。終了コードも <code>0</code>（合格）／<code>1</code>（未承認・失効）／<code>2</code>（記録が壊れていて<strong>判定できない</strong>）の 3 値で、判定できないものを合格に混ぜません。</p>
+
+        <h3>使う・使わないは選べます（既定は無効）</h3>
+        <ul>
+          <li>③の「物理的に止める」は、プロジェクトに <code>.claude/phase-gate</code> という空ファイルを置いたときだけ効きます（<code>touch .claude/phase-gate</code>）</li>
+          <li>個人 PWA や 1 枚の HTML ツールなど、工程分割のコストが見合わない案件では置かないでください</li>
+          <li><strong>一時的に無効にする環境変数はありません。</strong>止めたいときは <code>.claude/phase-gate</code> を消します。消したことが git の差分に残るので、後から「いつ誰が外したか」が分かります</li>
+          <li>承認記録そのもの（<code>approvals/</code> の中）への書き込みは、いつでも許可されます。承認者の手が止まっては意味がないためです</li>
+        </ul>
+
+        <h3>そのまま使える説明の型</h3>
+        <div class="callout">
+          <div class="callout-title">対外説明の 3 文</div>
+          <p>「各工程の出口に人間の承認ゲートを置いています。承認が無い工程の先へは進めません」<br>
+          「承認は成果物の版に紐づいています。承認後に成果物が変われば承認は自動的に失効し、機械が検出します」<br>
+          「AI は承認しません。AI は承認前に指摘を出し切る役で、判定と承認者名は人間が記入します」</p>
+        </div>
+        <p>詳しくは <code>templates/lifecycle/approvals/README.md</code>（運用）、<code>skills/phase-approval/SKILL.md</code>（3 役の回し方）、<code>skills/dev-lifecycle/references/phase-gates.md</code>（工程ごとの出口基準）にあります。</p>
       </section>
 
       <section id="pro">

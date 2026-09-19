@@ -45,9 +45,9 @@
 | 生成物 | 内容 |
 |---|---|
 | `.claude/skills/` | skills フルコピー（DAILY/LIBRARY の絞り込みは INDEX を見て各エージェントが行う） |
-| `.claude/commands/` | 16コマンド |
-| `.claude/hooks/` | sh 4 + py 3（chmod +x） |
-| `.claude/rules/` | 3本（**`speed-harness.md` の H-2 環境チートシートを埋めること**を出力で促す） |
+| `.claude/commands/` | 17コマンド |
+| `.claude/hooks/` | sh 4 + py 4（chmod +x） |
+| `.claude/rules/` | 4本（**`speed-harness.md` の H-2 環境チートシートを埋めること**を出力で促す） |
 | `.claude/templates/` | templates 全体（スキル本文から参照されるため同梱） |
 | `.claude/INDEX.md` | フルコピーなので地図として同梱 |
 | `.claude/KIT_VERSION` | `<VERSION> <commit> <日付>`。配布先がどの版から出たかを判別（S2） |
