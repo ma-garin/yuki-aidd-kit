@@ -279,7 +279,7 @@ Claude Code / Codex
    │
    │  ② あなたの言葉に合わせて開く（必要なときだけ）
    ├─ skills/ …………… 19 の手順書（「設定画面」→ design-system と uiux_review が開く）
-   ├─ commands/ ……… /plan /implement /qa-review のようなスラッシュコマンド 16 個
+   ├─ commands/ ……… /plan /implement /qa-review のようなスラッシュコマンド 17 個
    │
    │  ③ 裏で見張る（機械）
    ├─ hooks/ …………… 7 個（頼んでいないテストを止める、調べ直しを止める、進み具合を表示）
@@ -291,8 +291,8 @@ Claude Code / Codex
         <div class="grid-2">
           <div class="card"><h4>AGENTS.md / CLAUDE.md（共通の約束事）</h4><p>AI が毎回いちばん最初に読む 1 枚。「やりたいこと → 最初に使う手順書」の対応表もここ。CLAUDE.md は AGENTS.md を読み込む 1 行と、Claude Code だけで効く設定を持つ小さなファイルです。</p></div>
           <div class="card"><h4>rules/（規律 4 本）</h4><p>毎回読むのは 3 本だけ（合計 100 行以下に抑えてあります）。4 本目の「機能完全性」は、コードや画面を触ったときだけ読まれます。</p></div>
-          <div class="card"><h4>skills/（19 の手順書）</h4><p>毎日の進め方を決める 12 本と、プロジェクトの種類で選ぶ 7 本。1 本 200 行以下。AI はあなたの言葉で「どれを開くか」を決めます。</p></div>
-          <div class="card"><h4>commands/（16 のコマンド）</h4><p>会話の中で <code>/plan</code> のように打つと決まった手順が走ります。よく使うのは <code>/plan</code> <code>/implement</code> <code>/qa-review</code> <code>/retro</code>。</p></div>
+          <div class="card"><h4>skills/（20 の手順書）</h4><p>毎日の進め方を決める 13 本と、プロジェクトの種類で選ぶ 7 本。1 本 200 行以下。AI はあなたの言葉で「どれを開くか」を決めます。</p></div>
+          <div class="card"><h4>commands/（17 のコマンド）</h4><p>会話の中で <code>/plan</code> のように打つと決まった手順が走ります。よく使うのは <code>/plan</code> <code>/implement</code> <code>/qa-review</code> <code>/retro</code>。</p></div>
           <div class="card"><h4>hooks/（7 の見張り）</h4><p>「頼んでいないテストを拒否」「実装中の調べ直しを拒否」「1 分超の作業の進み具合を表示」など。口約束を機械にしたものです。</p></div>
           <div class="card"><h4>scripts/ と templates/</h4><p>人が使う道具と雛形。導入（install / export）、検査（verify / check-docs / check-design）、雛形（工程文書 11・テスト文書 8・デザインの CSS と部品）。</p></div>
         </div>
@@ -333,8 +333,8 @@ cd yuki-aidd-kit</code></pre>
             <pre><code>./scripts/install.sh</code></pre>
             <p class="expect"></p>
             <pre><code>=== AIDD Kit インストール（版: 6.3.0 xxxxxxx 2026-09-17）===
-✅ スキル: 19個
-✅ コマンド: 16個
+✅ スキル: 20個
+✅ コマンド: 17個
 ✅ Hooks: 7個
 ✅ Rules: 4個（~/.claude/rules/aidd-kit/）
 ✅ KIT_VERSION: 6.3.0 xxxxxxx 2026-09-17
@@ -350,8 +350,8 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 [スキル]
   ✅ agent-eval
   ✅ atarimae-quality-audit
-  ...（19 個）
-[コマンド] ...（16 個）
+  ...（20 個）
+[コマンド] ...（17 個）
 [Hooks] ...（7 個）
 [Rules] ...（4 個）
 
@@ -378,8 +378,8 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ├── CLAUDE.md            ← 「@AGENTS.md を読め」＋ Claude Code だけの設定
 ├── KIT_VERSION          ← どの版のキットを入れたか（版・コミット・日付）
 ├── rules/aidd-kit/      ← 規律 4 本
-├── skills/              ← 手順書 19 本（各フォルダに SKILL.md）
-├── commands/            ← スラッシュコマンド 16 本
+├── skills/              ← 手順書 20 本（各フォルダに SKILL.md）
+├── commands/            ← スラッシュコマンド 17 本
 ├── hooks/               ← 見張り役 7 本
 └── settings.json        ← hooks を Claude Code に登録する設定</code></pre>
         </div>
@@ -395,8 +395,8 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <p class="expect"></p>
             <pre><code>=== AIDD Kit プロジェクト配布（版: 6.3.0 xxxxxxx 2026-09-17）===
 対象: /Users/you/work/my-app
-✅ スキル: 19個
-✅ コマンド: 16個
+✅ スキル: 20個
+✅ コマンド: 17個
 ✅ Hooks: 7個（プロジェクトスコープ・相対パス参照。block-explore.sh も配線済み）
 ✅ Rules: 4個（.claude/rules/）
 ✅ .claude/KIT_VERSION: 6.3.0 xxxxxxx 2026-09-17
@@ -542,7 +542,7 @@ cd ~/work/library-loan &amp;&amp; claude</code></pre>
             <p class="expect"></p>
             <pre><code>✅ 単一HTMLツール スキャフォールド作成
 === AIDD Kit プロジェクト配布（版: 6.3.0 ...）===
-✅ スキル: 19個 ... ✅ .claude/KIT_VERSION: ...</code></pre>
+✅ スキル: 20個 ... ✅ .claude/KIT_VERSION: ...</code></pre>
           </li>
           <li><strong>依頼を 1 行で出す</strong>
             <div class="chat">
@@ -894,7 +894,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
             <tr><td>AGENTS.md / CLAUDE.md</td><td>AI が毎回最初に読む共通の約束事。本体は AGENTS.md 一本。CLAUDE.md は「AGENTS.md を読め」の 1 行 ＋ Claude Code だけで効く設定</td></tr>
             <tr><td>rules（規律）</td><td><code>.claude/rules/</code> に置く短い約束事。<code>paths:</code> 指定が無いものは毎回、有るものは該当ファイルを触ったときだけ読まれる</td></tr>
             <tr><td>スキル（SKILL.md）</td><td>場面別の手順書。先頭の説明文に含まれる言葉で自動的に開く</td></tr>
-            <tr><td>スラッシュコマンド</td><td>会話中に <code>/plan</code> のように打つと決まった手順が走るもの。キットには 16 個</td></tr>
+            <tr><td>スラッシュコマンド</td><td>会話中に <code>/plan</code> のように打つと決まった手順が走るもの。キットには 17 個</td></tr>
             <tr><td>hook（フック）</td><td>AI の操作の直前・直後に自動で走る小さなプログラム。口約束を機械で強制する</td></tr>
             <tr><td>ゲート</td><td>通らないと先に進めない検査。このキットでは人が頼んだときだけ回る</td></tr>
             <tr><td>実装モード</td><td><code>.claude/mode</code> があり、調べ直しが止められている状態。<code>/implement</code> で入り <code>/plan</code> で出る</td></tr>
@@ -919,7 +919,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
       <section id="next">
         <h2><span class="h2-ic">→</span>次に読むもの</h2>
         <ol>
-          <li><a href="yuki-aidd-kit-manual.html">取り扱い説明書</a> — スキル 19 本の選び方・コマンド 16 本の一覧・ECC との関係・プロジェクト別の使い分け・困った時（13 章）</li>
+          <li><a href="yuki-aidd-kit-manual.html">取り扱い説明書</a> — スキル 20 本の選び方・コマンド 17 本の一覧・ECC との関係・プロジェクト別の使い分け・困った時（13 章）</li>
           <li><code>README.md</code> — 版ごとに何が増えたか、フォルダ構成の全体図</li>
           <li><code>INDEX.md</code> — 全ファイルの地図。1 行要約と「読むと何行か」</li>
           <li><code>docs/OPERATING-MODE.md</code> — 日常の標準作業モード（種別判定・読む範囲・実装ループ・完了判定）</li>
