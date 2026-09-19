@@ -142,6 +142,33 @@ OUT=$(HOME="$TMP/nohome" pj "docs/lifecycle/02-basic-design.md" | HOME="$TMP/noh
 expect_contains "判定スクリプトが無ければ deny（導入手順を案内）" "check_approval.py が見つかりません" "$(reason "$OUT")"
 mv "$PG/scripts/check_approval.py.off" "$PG/scripts/check_approval.py"
 
+echo "[context-guard.py / pre-compact.py / log-instructions.py]"
+# 会話の寿命: transcript の mtime でアイドル、サイズで肥大を判定（UserPromptSubmit・警告して通す）
+CG="$TMP/cg"; mkdir -p "$CG"; TR="$CG/transcript.jsonl"
+cgj() { printf '{"hook_event_name":"UserPromptSubmit","transcript_path":"%s","prompt":"x"}' "$1"; }
+cg_ctx() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("additionalContext","") if d.strip() else "")' 2>/dev/null; }
+echo '{}' > "$TR"; touch -d '70 minutes ago' "$TR"
+OUT=$(cgj "$TR" | python3 "$HOOKS/context-guard.py")
+expect_contains "70 分空いたら /clear か要約再開を注入" "/clear" "$(cg_ctx "$OUT")"
+expect_contains "経過分数を含む" "70 分" "$(cg_ctx "$OUT")"
+touch -d '10 minutes ago' "$TR"
+OUT=$(cgj "$TR" | python3 "$HOOKS/context-guard.py"); RC=$?
+expect_empty "10 分なら何も注入しない" "$OUT" "$RC"
+truncate -s 5M "$TR"; touch "$TR"
+OUT=$(cgj "$TR" | python3 "$HOOKS/context-guard.py")
+expect_contains "5 MB 超なら /compact を注入" "/compact" "$(cg_ctx "$OUT")"
+OUT=$(cgj "$CG/none.jsonl" | python3 "$HOOKS/context-guard.py"); RC=$?
+expect_empty "transcript が無ければ何もしない（初回）" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"PreCompact","trigger":"auto"}' | python3 "$HOOKS/pre-compact.py")
+expect_contains "PreCompact に「残す／捨てる」の指示を注入" "決定事項" "$(cg_ctx "$OUT")"
+PL="$TMP/proj-log"; mkdir -p "$PL/.claude"
+printf '{"hook_event_name":"InstructionsLoaded","file_path":"/x/CLAUDE.md","load_reason":"session_start"}' | CLAUDE_PROJECT_DIR="$PL" python3 "$HOOKS/log-instructions.py"; RC=$?
+if [ "$RC" -eq 0 ] && grep -q '"/x/CLAUDE.md"' "$PL/.claude/instructions-loaded.log" 2>/dev/null; then
+  echo "  ✅ InstructionsLoaded を .claude/instructions-loaded.log に追記（Claude には何も返さない）"; PASS=$((PASS+1))
+else
+  echo "  ❌ InstructionsLoaded を .claude/instructions-loaded.log に追記"; FAIL=$((FAIL+1))
+fi
+
 echo "[pre-read-guard.py]"
 # 読む価値の無いファイルを deny、大きすぎるファイルは先頭だけに絞る（PreToolUse Read）
 rg() { python3 "$HOOKS/pre-read-guard.py"; }

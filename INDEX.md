@@ -15,7 +15,7 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
-./scripts/test-hooks.sh                       # hooks の回帰テスト（56ケース）
+./scripts/test-hooks.sh                       # hooks の回帰テスト（63ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
 ./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（79ケース）
 ./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
@@ -91,6 +91,9 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `block-phase.py` | PreToolUse Write/Edit | 前工程が未承認のまま次工程の成果物を書くのを deny（`.claude/phase-gate` あり時のみ）。承認記録への書き込みは常に許可 |
 | `filter-output.py` | PreToolUse Bash | テスト・install・build・`git log`・`git diff` の出力を Claude が読む前に絞る（`updatedInput`）。全量は `FULL_OUTPUT=1` |
 | `block-gates.py` | PreToolUse Bash | pytest / make test / lint をユーザー要求時（`GATES_REQUESTED=1`）以外は deny |
+| `context-guard.py` | UserPromptSubmit | 55 分以上空いた再開・4 MB 超の会話で `/clear` `/compact` を促す注入（止めない） |
+| `pre-compact.py` | PreCompact | 圧縮時に「残す／捨てる」を注入 |
+| `log-instructions.py` | InstructionsLoaded | 指示ファイルの読み込みを `.claude/instructions-loaded.log` に記録（実測用。Claude には返さない） |
 | `progress.py` | 手動（bash に連結） | `start/step/done` で progress.json を管理 |
 | `statusline.py` | statusLine | 進行中タスクの経過/見積/残りを表示。無ければ従来表示へ素通し |
 | `session-summary.sh` | Stop | セッション終了サマリ |

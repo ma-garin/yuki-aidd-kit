@@ -85,7 +85,7 @@ python3 scripts/quality_harness.py                       # 機能契約の検証
 - **hooks 3本追加**: `block-gates.py`（pytest / make test / lint をユーザー要求時以外 deny）/ `progress.py` + `statusline.py`（進行中タスクの経過・見積・残りをステータスラインに表示）
 - **`templates/settings.sandbox.json`**: sandbox・denyRead・network allowlist・permissions deny の雛形
 - `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先」「必須プロセス」「完了条件」で改訂。「指定外ファイルは読まない」「セッション分割を提案」は廃止（AUDIT-2026-07 C-02 / X-4）
-- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 56 ケース）
+- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 63 ケース）
 
 ## Ver.6.0 での主な更新（2026-08）— 開発工程ライフサイクル
 
@@ -127,7 +127,7 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
-./scripts/test-hooks.sh  # hooks の回帰テスト（56ケース）
+./scripts/test-hooks.sh  # hooks の回帰テスト（63ケース）
 ./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（79ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）

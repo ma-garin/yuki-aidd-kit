@@ -10,8 +10,8 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `README.md` | 250 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 192 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
-| `CLAUDE.md.template` | 21 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
+| `INDEX.md` | 195 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `CLAUDE.md.template` | 26 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 74 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
 | `.gitignore` | 26 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
@@ -108,13 +108,16 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `settings.json` | 79 | 配線定義。statusLine ＋ PreToolUse(Write/Edit, Read/Grep/Glob, Bash) ＋ PostToolUse ＋ Stop |
+| `settings.json` | 112 | 配線定義。statusLine ＋ PreToolUse(Write/Edit, Read/Grep/Glob, Bash) ＋ PostToolUse ＋ Stop |
 | `pre-write-check.sh` | 35 | PreToolUse Write/Edit。秘密情報ファイル名・単一HTML の CSS/JS 分割を**警告のみ**（exit 0） |
 | `post-write-html.sh` | 34 | PostToolUse。HTML 保存後に行数/KB を報告、500行超で部分編集を推奨、localStorage 未使用を助言 |
 | `block-explore.sh` | 40 | PreToolUse Read/Grep/Glob。`.claude/mode` 存在時に **exit 2** で探索を物理ブロック |
 | `block-phase.py` | 115 | 未承認の工程の下流成果物への書き込みを deny。`.claude/phase-gate` があるときだけ発動。approvals 配下は常に許可。バイパス無し |
 | `filter-output.py` | 114 | 冗長な出力を絞る書き換え（PreToolUse Bash・updatedInput）。テスト→失敗行＋末尾、install/build→tail、git log→-20、git diff→--stat。終了コード保持。`FULL_OUTPUT=1` で素通り |
 | `pre-read-guard.py` | 98 | Read の前段。読む価値の無いファイルを deny、`READ_GUARD_MAX_LINES`（800）超を `READ_GUARD_LIMIT`（300）に切り詰め。バイナリ・offset/limit 指定ありは素通り |
+| `context-guard.py` | 59 | UserPromptSubmit。transcript の mtime でアイドル（`CONTEXT_GUARD_IDLE_MIN` 55）・サイズで肥大（`CONTEXT_GUARD_MAX_MB` 4）を判定し additionalContext を注入 |
+| `pre-compact.py` | 34 | PreCompact。残す／捨てる／形式の指示を注入 |
+| `log-instructions.py` | 35 | InstructionsLoaded。時刻＋入力 JSON をログへ追記。集計は token-audit.sh |
 | `block-gates.py` | 54 | PreToolUse Bash。pytest / make test・verify-ui・lint 等を JSON で `deny`。ヒアドキュメントと引用文字列を除去してコマンド開始位置だけ照合（誤検知対策） |
 | `progress.py` | 44 | 手動連結。`start/step/done` で `.claude/progress.json` を管理 |
 | `statusline.py` | 63 | statusLine。進行中タスクの経過/見積/残りを表示し、従来表示（`~/.claude/statusline.sh`）へ素通し |
@@ -128,7 +131,7 @@
 |---|---|---|
 | `install.sh` | 69 | `~/.claude` へ配置（CLAUDE.md・skills・commands・hooks・rules）。既存は `.bak` 退避、rules は同名既存をスキップ |
 | `verify.sh` | 55 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
-| `export-project.sh` | 148 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
+| `export-project.sh` | 157 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
 | `check-approval.sh` | 8 | 工程承認検査の薄いラッパ。`--phase N` / `--gate N` / `--quiet`。exit 0/1/2 |
 | `check_approval.py` | 422 | 工程承認の本体。承認記録の必須欄・版の一致（失効）・未解消の差し戻し・未確認事項・approver が人間か・工程順序 |
@@ -142,7 +145,7 @@
 | `pre-commit-ui-gate.sh` | 63 | `.ui-verified` の存在・鮮度（既定7200秒）・UI hash 一致を確認し、UI コミットを BLOCK。`.rebuild-mode` で WARN |
 | `pre-commit` | 21 | 秘密情報スキャン。gitleaks があれば使用、無ければ簡易パターン |
 | `audit-app-workspace.sh` | 55 | アプリ群の棚卸し（トップレベル・manifest・拡張子集計・ECC DAILY 推奨） |
-| `test-hooks.sh` | 257 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
+| `test-hooks.sh` | 284 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 134 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |

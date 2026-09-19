@@ -72,6 +72,15 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
         ]
       }
     ],
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/context-guard.py", "timeout": 5 } ] }
+    ],
+    "PreCompact": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/pre-compact.py", "timeout": 5 } ] }
+    ],
+    "InstructionsLoaded": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/log-instructions.py", "timeout": 5 } ] }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit",
