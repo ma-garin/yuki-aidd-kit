@@ -329,6 +329,15 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
   理由に指示の先頭を載せる）／`reply-language.py`（Stop: 最後の応答に日本語が無ければ続行）／`prompt-priority.py`（UserPromptSubmit: 緊急語に優先の注入）。
   本セッションの実 transcript の応答前断面で deny、応答後で許可を確認。キット自身の開発セッションにも `.claude/settings.json` で配線（file watcher で即時反映）
 
+### F-26 — 「Codex には hook が無い」という前提が古かった — **是正済み（M23）**
+
+- evidence: M22 の残・`spec/10` B-14・`spec/11` D-4・`skills/context-compression`・`docs/userguide.html` が「Codex には強制手段が無い」と断定していた。
+  openai/codex 本体（`codex-rs/hooks`、main 595cc91、2026-09-19）は lifecycle hook を Stable・既定有効で持ち、イベント名・stdin・出力は Claude Code と同じ形
+- severity: Medium（Codex 併用が決定事項なのに、強制層の設計が片側だけの前提で組まれていた）
+- 根本原因: 一次情報（Codex 本体のソース・ドキュメント）を当たらず記憶で書いた（A-5）。外部ツールの能力に依存する記述に確認日と参照元が無く、陳腐化を検出できなかった
+- 是正: `export-project.sh` が `.codex/hooks.json` を生成（stdin の形まで照合できた 4 本だけ。編集系は `tool_input` にパスが無く、transcript は rollout 形式なので配線しない）。
+  5 箇所の記述を修正。外部ツール依存の記述には確認日と参照元（commit）を添える
+
 ### severity 別サマリ（更新）
 
 | severity | 件数 | ID |
@@ -337,7 +346,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
 | Medium | 4 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測）／**F-21（警告 hook の stdout。未確認）** |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 22 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／**F-25（M22 指示優先）** |
+| 是正済み | 23 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／F-25（M22 指示優先）／**F-26（M23 Codex hook）** |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 

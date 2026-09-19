@@ -282,4 +282,14 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 - [x] `test-hooks.sh` 16 ケース追加（63 → 79）。本セッションの実 transcript の応答前断面で deny・応答後で許可を確認
 - [x] `AGENTS.md.template` 必須プロセス・`CLAUDE.md.template` hooks 一覧・INDEX・spec/01・spec/09 F-25・spec/10 Q-16・PRD FR-17・`maintainer-tendencies.md` #31
 - [x] **Claude Code 全体に効かせる導入**（保守者「この環境ではない。claude code 全体全て」）: `scripts/install-guard.sh` / `install_guard.py` が既存 `~/.claude/settings.json` に配線を merge（冪等）。`install.sh` からも自動実行。test-install 84 → 102
-- 残: Codex には hook が無い。`AGENTS.md` の散文のみ（移行後の実測 U-5 で見直す）。Web 環境の Setup script 経由の導入は未検証（非公開リポジトリの clone 可否）
+- 残: Web 環境の Setup script 経由の導入は未検証（非公開リポジトリの clone 可否）。「Codex には hook が無い」は誤りだった → M23 で訂正
+
+## M23: Codex CLI にも hook を効かせる（完了 2026-09-19）
+
+背景: 保守者「codex-5.6-terra や Claude Code Sonnet 5 で使う前提は考慮されているか」「codex でも使うことは決定事項」。キットは「Codex には hook が無い」を前提にしていた（M22 の残・B-14・`spec/11` D-4・`context-compression`・userguide）が、openai/codex 本体（main 595cc91、2026-09-19）の `codex-rs/hooks` で lifecycle hook が Stable・既定有効と確認した。公式ドキュメント（developers.openai.com/codex/hooks）は本セッションの proxy で開けず、ソースを一次情報にした。
+
+- [x] 確認した事実: イベントは PreToolUse / PostToolUse / Stop / UserPromptSubmit / PreCompact / SessionStart / SessionEnd ほか。stdin の `tool_name` `tool_input` `transcript_path` `prompt` `stop_hook_active`、出力の `decision` / `hookSpecificOutput.permissionDecision` / `updatedInput` / `additionalContext` は Claude Code と同じ。設定は `<repo>/.codex/hooks.json` か `~/.codex/hooks.json`（`timeout` `statusMessage` のキーも受理）。hook はプロジェクトルートを cwd に実行。プロジェクトの hook はハッシュで信頼管理され、`/hooks` で承認するまで動かない
+- [x] 違い: Bash の `tool_input` は `{"command"}` で同じ。編集は `apply_patch` で `tool_input` が `{"command": <パッチ本文>}`（`file_path` 無し。`Write|Edit` は matcher の別名として通る）。Read/Grep/Glob ツール・InstructionsLoaded イベント・コマンド式 status line は無い。transcript は Codex 独自の rollout 形式。PreCompact の出力に `additionalContext` が無い。JSON でない標準出力は捨てられる
+- [x] `export-project.sh` が `.codex/hooks.json` を生成。配線は入出力を照合できた 4 本だけ（block-gates / filter-output / prompt-priority / context-guard）。他は理由付きで配線しない（効くふりをしない）。test-install 102 → 115
+- [x] 古い記述の修正: M22 の残・`spec/10` B-14・`spec/11` D-4・`skills/context-compression`・`docs/userguide.html`・`spec/05`・`spec/09` F-26
+- 残: 編集系 3 本（block-phase / pre-write-check / post-write-html）のパッチ本文からのパス抽出、instruction-guard / reply-language の rollout 形式対応、`install.sh` の `~/.codex/hooks.json` 出力、Codex 実機での動作確認（本セッションに Codex CLI は無い）。いずれも B-14

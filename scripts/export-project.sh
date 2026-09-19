@@ -3,8 +3,8 @@
 #
 # scripts/install.sh（~/.claude へのグローバル導入。自分のPC上で複数プロジェクトを
 # 横断する日常運用向け）とは別の用途。こちらは対象プロジェクトの直下に
-# .claude/（skills・commands・hooks・settings.json・INDEX.md）と AGENTS.md・CLAUDE.md
-# を書き出す。生成物は対象プロジェクトのgitにコミットする想定で、Codex・
+# .claude/（skills・commands・hooks・settings.json・INDEX.md）と .codex/hooks.json と
+# AGENTS.md・CLAUDE.md を書き出す。生成物は対象プロジェクトのgitにコミットする想定で、Codex・
 # リモート/エフェメラルなClaude Code環境・teammateのclone先でも
 # install不要でそのまま効く。
 set -e
@@ -108,6 +108,42 @@ JSON
 echo "✅ settings: effortLevel=high / autoCompactWindow=200k / BASH_MAX_OUTPUT_LENGTH=12000（トークン節約の既定。設計判断のときだけ /effort xhigh）"
 echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み: .claude/mode ・ .claude/phase-gate が無ければ何もしない。filter-output.py が冗長な出力を絞る: 全量は FULL_OUTPUT=1）"
 
+# Codex CLI 用 hooks（.codex/hooks.json）。Codex の lifecycle hook は Claude Code と同じイベント名・
+# stdin（tool_name / tool_input / prompt / transcript_path）・出力（decision / hookSpecificOutput）を受け付け、
+# hooks.json のキーも settings.json と同じ形（timeout / statusMessage）で読める。hook はプロジェクトルートを
+# 作業ディレクトリに実行される（openai/codex codex-rs/hooks、2026-09-19 時点。Stable・既定で有効）。
+# 配線するのは入出力を照合済みの 4 本だけ（効くふりをしない）:
+#   Bash の tool_input は {"command": ...} で同じ → block-gates.py / filter-output.py（updatedInput も可）
+#   UserPromptSubmit の prompt / transcript_path → prompt-priority.py / context-guard.py
+# 配線しないもの: 編集系（apply_patch の tool_input は {"command": <パッチ本文>} で file_path が無い）、
+#   instruction-guard / reply-language（transcript が Codex 独自の rollout 形式）、pre-compact（PreCompact の出力に
+#   additionalContext が無い）、pre-read-guard / block-explore（Read/Grep/Glob ツールが無い）、log-instructions
+#   （InstructionsLoaded イベントが無い）、statusline（status line がコマンド式でない）、session-summary（JSON でない
+#   標準出力は Codex 側で捨てられる）。残りは spec/10-backlog.md B-14。
+mkdir -p "$TARGET/.codex"
+backup_if_exists "$TARGET/.codex/hooks.json"
+cat > "$TARGET/.codex/hooks.json" << 'JSON'
+{
+  "description": "AIDD Kit hooks for Codex CLI（.claude/hooks/ のスクリプトを共有。入出力を照合済みの 4 本だけ。残りは spec/10 B-14）",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" },
+          { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/prompt-priority.py", "timeout": 5 },
+                  { "type": "command", "command": "python3 .claude/hooks/context-guard.py", "timeout": 5 } ] }
+    ]
+  }
+}
+JSON
+echo "✅ .codex/hooks.json: Codex CLI 用に 4 hook を配線（block-gates / filter-output / prompt-priority / context-guard。Codex で /hooks を開いて信頼すると有効）"
+
 # Rules（.claude/rules/*.md は Claude Code が常時読み込む。speed-harness.md の H-2 はプロジェクトごとに埋める）
 cp "$KIT_DIR/rules/"*.md "$TARGET/.claude/rules/"
 echo "✅ Rules: $(ls "$KIT_DIR/rules/"*.md | wc -l | tr -d ' ')個（.claude/rules/。speed-harness.md の H-2 環境チートシートを埋めること）"
@@ -156,8 +192,9 @@ echo ""
 echo "=== 完了 ==="
 echo "次にやること:"
 echo "1. $TARGET/AGENTS.md と $TARGET/CLAUDE.md 内の残りの <...> プレースホルダ（GITHUB_OWNER等）を埋める"
-echo "2. $TARGET で: git add .claude AGENTS.md CLAUDE.md scripts/ && git commit"
+echo "2. $TARGET で: git add .claude .codex AGENTS.md CLAUDE.md scripts/ && git commit"
 echo "3. これでCodex・リモート/エフェメラルなClaude Code・teammateのclone先でも自動的に効く"
+echo "   Codex を使う場合: $TARGET で codex を起動し /hooks を開いて .codex/hooks.json を信頼する（ハッシュ管理。内容を変えると再承認）"
 echo "4. 工程（RFD〜保守運用）で進める場合: $KIT_DIR/scripts/init-lifecycle.sh $TARGET --github"
 echo "5. サンドボックス（denyRead / network allowlist / permissions）を使う場合: $KIT_DIR/templates/settings.sandbox.json を .claude/settings.json にマージ"
 echo "6. テスト戦略・DoD・29119 文書・機能契約を置く場合: $KIT_DIR/scripts/init-test-docs.sh $TARGET --ci"

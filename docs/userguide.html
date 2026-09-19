@@ -1048,7 +1048,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
         <p>「床」は毎回のセッション開始で必ず読まれる分の<strong>推定</strong>です。本当の数字は Claude Code で <code>/context</code>（何が載っているか）と <code>/usage</code>（何に使ったか・キャッシュミス）を打つと出ます。週に 1 回、<code>docs/lessons.md</code> の表に 1 行残してください。会話内で <code>/token-check</code> と打つと、AI がこの点検を代行して結果を読み解きます。</p>
 
         <h3>Codex では</h3>
-        <p>hook は Claude Code だけの仕組みです。Codex では <code>AGENTS.md</code> の散文（grep してから読む・出力は 3 層・決定論的な作業はスクリプトに）を AI が自分で守る形になります。設定 3 つと <code>/clear</code> 相当（新しい会話で始める）は同じ考え方で使えます。</p>
+        <p>Codex にも同じ仕組みの hook があります（2026-09 時点）。<code>export-project.sh</code> が <code>.codex/hooks.json</code> を書き出し、「出力を絞る」「長く空いた再開を知らせる」「急ぎの指示を優先する」「ゲートの無断実行を止める」の 4 つが Codex でも動きます。初回は Codex で <code>/hooks</code> を開いて信頼してください（内容を変えると再承認）。「大きいファイルは先頭だけ読む」は Codex にファイルを読む道具が無いため効かず、<code>AGENTS.md</code> の約束事として AI が自分で守る形になります。設定 3 つと <code>/clear</code> 相当（新しい会話で始める）は同じ考え方で使えます。</p>
       </section>
 
       <section id="design">

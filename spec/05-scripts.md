@@ -36,7 +36,7 @@
 - 出力: 項目ごとに `✅`/`❌` ＋ 末尾に `結果: OK=n / NG=n`
 - **終了コード**: NG=0 → 0 ／ NG>0 → 1（S1 で修正。`test-install.sh` が assert）。導入済み版（`KIT_VERSION`）とリポジトリ版を表示
 
-### `export-project.sh`（138行）— プロジェクト配布
+### `export-project.sh`（201行）— プロジェクト配布
 
 ```bash
 ./scripts/export-project.sh <対象プロジェクトのパス>
@@ -51,13 +51,14 @@
 | `.claude/templates/` | templates 全体（スキル本文から参照されるため同梱） |
 | `.claude/INDEX.md` | フルコピーなので地図として同梱 |
 | `.claude/KIT_VERSION` | `<VERSION> <commit> <日付>`。配布先がどの版から出たかを判別（S2） |
-| `.claude/settings.json` | 相対パス版をヒアドキュメントで生成。**block-explore の配線は含まない** |
+| `.claude/settings.json` | 相対パス版をヒアドキュメントで生成（block-explore / block-phase / 指示優先 3 hook を含む全 hook） |
+| `.codex/hooks.json` | Codex CLI 用（M23）。入出力を照合済みの 4 hook（block-gates / filter-output / prompt-priority / context-guard）だけを配線。既存は `.bak`。初回は Codex の `/hooks` で信頼 |
 | `AGENTS.md` / `CLAUDE.md` | template から生成。`sed` で `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md` → `.claude/INDEX.md` に変換 |
 | `scripts/trace-check.sh` | 既存があればスキップ |
 | `scripts/{quality_harness.py,ui-hash.py,pre-commit-ui-gate.sh}` | 既存があればスキップ |
 
-- 既存の `settings.json` / `AGENTS.md` / `CLAUDE.md` は `.bak` に退避
-- 完了後に「次にやること」6項目を出力（プレースホルダを埋める／git add & commit／init-lifecycle／sandbox 設定／init-test-docs）
+- 既存の `settings.json` / `.codex/hooks.json` / `AGENTS.md` / `CLAUDE.md` は `.bak` に退避
+- 完了後に「次にやること」7項目を出力（プレースホルダを埋める／git add & commit（Codex は `/hooks` で信頼）／init-lifecycle／sandbox 設定／init-test-docs／phase-gate）
 - **書き出した時点のスナップショット**。本体更新には自動追従しない
 
 ### `init-project.sh`（102行）— 新規プロジェクト雛形

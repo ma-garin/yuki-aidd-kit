@@ -143,15 +143,17 @@
 
 | 強制手段 | Claude Code | Codex |
 |---|---|---|
-| `block-gates.py`（ゲートの無断実行を止める） | ✅ hook | ❌ 散文の規約のみ |
-| `block-explore.sh`（実装モードの探索ブロック） | ✅ hook | ❌ |
-| `progress.py` / `statusline.py` | ✅ statusLine | ❌ |
+| `block-gates.py`（ゲートの無断実行を止める）／`filter-output.py`／`prompt-priority.py`／`context-guard.py` | ✅ hook | ✅ hook（`.codex/hooks.json`。M23 で stdin の形を照合） |
+| 編集系 `block-phase.py` / `pre-write-check.sh` / `post-write-html.sh` | ✅ hook | ❌（`tool_input` にパスが無い。B-14） |
+| `instruction-guard.py` / `reply-language.py` | ✅ hook | ❌（transcript が rollout 形式。B-14） |
+| `block-explore.sh` / `pre-read-guard.py`（探索ブロック・部分読み） | ✅ hook | ❌（Read/Grep/Glob ツールが無い） |
+| `progress.py` / `statusline.py` | ✅ statusLine | ❌（status line がコマンド式でない） |
 | `pre-commit`（秘密情報） | ✅ git hook | ✅ git hook |
 | `pre-commit-ui-gate.sh`（`.ui-verified`） | ✅ git hook | ✅ git hook |
 | `trace-check.sh` / `quality_harness.py` | ✅ スクリプト | ✅ スクリプト |
 
-**git hook 層とスクリプト層は両対応、Claude Code hook 層は片側だけ。**
-Codex 併用を前提にするなら、**強制したいものは可能な限り git hook かスクリプトへ寄せる**のが正しい方向。
+**git hook 層とスクリプト層は両対応。hook 層は M23 で入出力を照合できた 4 本が Codex でも効く**（2026-09-19 時点の openai/codex `codex-rs/hooks` を一次情報とした。「Codex には hook が無い」という当初の記述は誤り）。
+残り（編集系・transcript 依存・Read 系）は B-14。**強制したいものは可能な限り git hook かスクリプトへ寄せる**方針は変わらない。
 
 ### D-5. 委譲とサブエージェントの採算が変わる
 
