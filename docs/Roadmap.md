@@ -237,6 +237,20 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - 検証記録: test-test-metrics 40/40・test-install 84/84・test-trace-check 15/15・test-check-approval 54/54・他 6 スイート PASS・`check-docs.sh` NG=0
 - 残: 単体テストの結果 XML からの自動転記（`filter-output.py` の集計行から）、Jira / Excel 取り込み（qa-autopilot の mapping 方式）は次の計画
 
+## M21: 保守者の傾向を規約・検査に反映（完了 2026-09-19）
+
+背景: 保守者「他のリポジトリの記録も含め、私の指摘や要望の傾向を分析し、キットに反映して」。
+本セッションの 30 通と qa-autopilot（CLAUDE.md・constitution・PROMPT_FOR_CODEX・IA_DECISION・plan_0909）・
+istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/maintainer-tendencies.md`）。
+
+- [x] `rules/absolute-rules.md` に A-11 止まらない（手段が塞がれたら代替を 1 つ取る）・A-12 基準を緩めない（3 回連続失敗で止まる）。rules 89 行 ≦ 100
+- [x] `AGENTS.md.template`: 報告の型 4 項目（感想・自己評価を書かない）、損益の判断軸と「委ねられたら実行まで」、厳しい評価、利用者向け文言の規約、禁止事項（自動起動・stash/reset/clean・依頼なしのコミット）
+- [x] `/plan`: 見積（分）・推奨モデル・トークン節約を必須項目に
+- [x] `check-docs.sh` 検査 10: 「スキル N・コマンド N・hooks N」の直値を実数と突合（WARN）。導入直後に userguide の hooks 7（実数 13）を検出
+- [x] `docs/rules-rationale/absolute-rules.md` に A-11 / A-12 の出所と「準拠」の扱い
+- 検証記録: test-check-docs 29/29・test-install 84/84・`check-docs.sh` NG=0
+- 運用: 同じ指摘を 2 回受けたら `maintainer-tendencies.md` に行を足し、反映先（hook / 検査 → rules → AGENTS → スキル）を決める。散文に書いて終わりにしない
+
 ## 完了の定義（全マイルストーン共通）
 
 `skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。

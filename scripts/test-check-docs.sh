@@ -106,6 +106,12 @@ OUT=$(run "$C" --skip-tests); RC=$?
 expect_exit "合計が 200 行を超えると exit 1" 1 "$RC"
 expect_out  "種別「常時読込」で検出" "CLAUDE.md.template + AGENTS.md.template" "$OUT"
 
+echo "[ケース11: 件数の直値（検査10・WARN）]"
+C=$(fresh); sed -i '0,/スキル: 20個/s//スキル: 19個/' "$C/docs/userguide.html"
+OUT=$(run "$C" --skip-tests); RC=$?
+expect_exit "件数のズレは WARN なので exit 0" 0 "$RC"
+grep -q "| 件数 | docs/userguide.html" "$TMP/report.md" && ok "種別「件数」で skills 19 / 実数 20 を検出（レポート）" || ng "種別「件数」で検出" "レポートに無い"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

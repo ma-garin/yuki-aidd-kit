@@ -13,6 +13,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   6. 常時読込     rules/*.md で paths: frontmatter の無いものの合計行数 ≦ RULES_ALWAYS_MAX
   7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（docs/PRD.md 使用性）
   9. 常時読込     CLAUDE.md.template ＋ AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
+ 10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
   8. spec 同期    spec/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
 
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
@@ -247,6 +248,33 @@ def check_always_loaded(root: Path, r: Result, strict: bool) -> None:
         r.add(strict, "常時読込", "rules/（paths 無し）", detail)
 
 
+COUNT_PATTERNS = (
+    ("skills", re.compile(r"(?:スキル|skills?/?)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件|の)")),
+    ("commands", re.compile(r"(?:コマンド|commands?/?)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件|の)")),
+    ("hooks", re.compile(r"(?:hooks?|見張り役)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件)")),
+)
+COUNT_DOCS = ("README.md", "INDEX.md", "docs/userguide.html", "docs/yuki-aidd-kit-manual.html")
+
+
+def check_counts(root: Path, r: Result) -> None:
+    """検査10: 資産の件数を直値で書いた箇所が実数とズレていないか（WARN）。"""
+    actual = {
+        "skills": len(list((root / "skills").glob("*/SKILL.md"))),
+        "commands": len(list((root / "claude-code" / "commands").glob("*.md"))),
+        "hooks": len(list((root / "claude-code" / "hooks").glob("*.sh"))) + len(list((root / "claude-code" / "hooks").glob("*.py"))),
+    }
+    for rel in COUNT_DOCS:
+        p = root / rel
+        if not p.is_file():
+            continue
+        for i, line in enumerate(read(p).splitlines(), 1):
+            for key, pat in COUNT_PATTERNS:
+                for m in pat.finditer(line):
+                    n = int(m.group(1))
+                    if n != actual[key] and abs(n - actual[key]) <= 6:
+                        r.add(False, "件数", f"{rel}:{i}", f"{key} を {n} と記載 / 実数 {actual[key]}（直値を書かず実体から出す）")
+
+
 def check_claude_total(root: Path, r: Result) -> None:
     files = [root / "CLAUDE.md.template", root / "AGENTS.md.template"]
     files = [f for f in files if f.is_file()]
@@ -357,6 +385,7 @@ def main() -> int:
     check_frontmatter(root, r)
     check_always_loaded(root, r, a.strict or RULES_STRICT)
     check_claude_total(root, r)
+    check_counts(root, r)
     check_size_targets(root, r, a.strict or SIZE_STRICT)
     check_spec_inventory(root, r)
 

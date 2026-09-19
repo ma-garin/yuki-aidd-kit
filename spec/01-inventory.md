@@ -9,10 +9,10 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 280 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 198 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `README.md` | 282 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `INDEX.md` | 199 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 29 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
-| `AGENTS.md.template` | 74 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
+| `AGENTS.md.template` | 78 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
 | `.gitignore` | 29 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
 | `VERSION` | 1 | 版の真実源（`6.3.0`）。git tag と対応。`install.sh` / `export-project.sh` が導入先の `KIT_VERSION` に刻印 |
@@ -23,7 +23,7 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `absolute-rules.md` | 19 | **A-1〜A-10** を「発動 / 出力 / 要点」の表で（M16 で 112→19 行）。根拠は `docs/rules-rationale/absolute-rules.md` |
+| `absolute-rules.md` | 21 | **A-1〜A-10** を「発動 / 出力 / 要点」の表で（M16 で 112→19 行）。根拠は `docs/rules-rationale/absolute-rules.md` |
 | `speed-harness.md` | 52 | **H-1〜H-8** の規範だけ（M16 で 115→51 行）。出所・失敗事例・実測記録は `docs/rules-rationale/speed-harness.md` |
 | `model-routing.md` | 16 | **Pro＋Sonnet の規律**（M16 新設）: 既定 Sonnet・Opus 3条件・effort・`/clear`・委譲・上限時・週1 `/usage` |
 | `functional-integrity.md` | 17 | 実行経路を確認するまで「完了」と言わない。**`paths:` 付き＝コード/UI を触ったときだけ読み込み**（M16） |
@@ -89,7 +89,7 @@
 | `test-metrics.md` | 23 | test-metrics.sh を回し、数字・検知・「人が判定すること」・次の行動を分けて報告。--gate/--history/--into は要求時のみ |
 | `phase-review.md` | 26 | 3役を順次実行し `phase-N-ai.md` へ追記。承認欄には触れない。最大2ラウンド |
 | `trace.md` | 22 | `trace-check.sh` 実行と NG の分類別対処。**追跡表を埋めるために要件・テストを発明しない** |
-| `plan.md` | 18 | `.claude/mode` を削除して探索許可 → 調査 → 方針合意 → `PLAN.md` 生成 |
+| `plan.md` | 19 | `.claude/mode` を削除して探索許可 → 調査 → 方針合意 → `PLAN.md` 生成 |
 | `implement.md` | 19 | plan の存在確認（無ければ中断）→ `.claude/mode` 作成で探索ブロック ON |
 | `compact-work.md` | 13 | context-compression 規約で作業（3層要約・grep 優先・スクリプト化） |
 | `ecc-daily.md` | 26 | ecc-daily-router で STACK/DAILY/LIBRARY/NEXT を出す |
@@ -157,9 +157,9 @@
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 139 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
-| `check_docs.py` | 385 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
+| `check_docs.py` | 414 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
-| `test-check-docs.sh` | 111 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
+| `test-check-docs.sh` | 117 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
 | `check_design.py` | 247 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |
 | `check-design.sh` | 7 | `check_design.py` の薄いラッパ |
 | `test-check-design.sh` | 145 | **check-design の回帰テスト 36ケース**（出荷物が NG=0 で通ること＋各検査の検出＋除外規則） |
@@ -239,7 +239,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 280 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 282 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
@@ -253,14 +253,15 @@
 |---|---|---|
 | `userguide.html` | 1158 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
 | `yuki-aidd-kit-manual.html` | 1443 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。冒頭に `userguide.html`／事例／V字章への導線（2026-09-18）。**デザイン適用除外ジャンル** |
-| `Roadmap.md` | 242 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
+| `Roadmap.md` | 256 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
+| `maintainer-tendencies.md` | 45 | 保守者の指摘・要望の傾向 14 項目（出典・原文・現状・反映先）と反映しなかったものの理由 |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |
 | `AUDIT-2026-07.md` | 114 | 資産監査の記録。判定軸・監査表3種・指摘 A-01〜A-09（ISTQB severity）・重複マップ D-01〜D-04・適用記録 |
 | `OPERATING-MODE.md` | 78 | 日常の標準作業モード（種別判定・読む範囲・ECC 使い分け・実装ループ・完了判定・クレジット節約） |
 | `PRD.md` | 85 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
 | `PROJECT-FIT-REPORT.md` | 48 | 実プロジェクト群への適合レポート（2026-06 時点）。Summary/Evidence/Recommendation |
 | `Vision.md` | 47 | 目的・解決する問題6件・到達点3つ・Non-Goals・配置の2層・価値の判定基準 |
-| `rules-rationale/absolute-rules.md` | 119 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
+| `rules-rationale/absolute-rules.md` | 145 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
 | `rules-rationale/speed-harness.md` | 122 | `rules/speed-harness.md` の圧縮前原文（実測・失敗事例）と **H-6 の実測記録の追記先**（M16） |
 | `rules-rationale/model-routing.md` | 31 | `rules/model-routing.md` 各行の根拠（一次情報の出典）と未確認事項（M16） |
 | `examples/library-loan/README.md` | 36 | 事例の説明（依頼文・中身・開く／作り直す／検査する・確認できたこと・範囲外） |
