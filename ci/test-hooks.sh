@@ -210,6 +210,19 @@ OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "サブエージェント（isSidechain）は対象外" "$OUT" "$RC"
 OUT=$(igj "$IG/none.jsonl" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "transcript が無ければ許可（fail-open）" "$OUT" "$RC"
+# 機械が書いた本文を指示と誤認すると、応答しても新しいエラー文が湧いて解除されない自己参照ループになる
+{ u_text "構成案を出して"; a_text "案は以下です。"; a_tool; u_text "Error: [instruction-guard] 保守者の指示に未応答: 「構成案を出して」。"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "フック自身のエラー文を指示として読み直さない（自己参照ループ防止）" "$OUT" "$RC"
+{ u_text "調査して"; a_text "調査します。"; a_tool; u_text "<agent-message from=\\\"abc123\\\">[Subagent hand-back] The text below is the final report.</agent-message>"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "サブエージェントの報告（属性付きタグ）は対象外" "$OUT" "$RC"
+{ u_text "調査して"; a_text "調査します。"; a_tool; u_text "<task-notification><status>completed</status></task-notification>"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "バックグラウンド完了通知は対象外" "$OUT" "$RC"
+{ u_text "やって"; a_text "やります。"; a_tool; u_text "Stop hook feedback:[reply-language] 日本語で応答してから終える（A-13）"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "Stop フックの差し戻し文は対象外" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_text "Done."; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
 expect_contains "Stop: 最後の応答に日本語が無ければ block で続行させる" '"decision": "block"' "$OUT"
