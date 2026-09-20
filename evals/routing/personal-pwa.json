@@ -1,0 +1,31 @@
+{
+  "skill": "personal-pwa",
+  "positive": [
+    {
+      "prompt": "家計簿を PWA にしてスマホで使えるようにしたい",
+      "top_k": 1
+    },
+    {
+      "prompt": "personal accounting PWA を GitHub Pages にデプロイして localStorage に永続化",
+      "top_k": 1
+    },
+    {
+      "prompt": "日記アプリを personal PWA として作って",
+      "top_k": 2
+    },
+    {
+      "prompt": "スケジュール管理のアプリをスマホ向け UI で",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "単一 HTML でブラウザで開くだけの社内デモを作って",
+      "owner": "single-html-tool"
+    },
+    {
+      "prompt": "非機能要件を決めて",
+      "owner": "nfr-standards"
+    }
+  ]
+}

@@ -48,6 +48,8 @@ jobs:
         run: bash scripts/test-check-design.sh
       - name: --json 出力契約の回帰テスト
         run: bash scripts/test-json-envelope.sh
+      - name: スキル発火の機械判定（回帰テスト＋本検査。rank-1 率の床 100）
+        run: bash scripts/test-skill-route-check.sh && bash scripts/skill-route-check.sh --min-rank1 100
 
       - name: デザイン検査（直値・未定義トークン・外部 CDN・alert()）
         run: bash scripts/check-design.sh -o check-design-report.md

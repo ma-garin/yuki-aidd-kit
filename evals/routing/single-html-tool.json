@@ -1,0 +1,31 @@
+{
+  "skill": "single-html-tool",
+  "positive": [
+    {
+      "prompt": "単一 HTML でブラウザで開くだけの QA ツールを作って",
+      "top_k": 1
+    },
+    {
+      "prompt": "社内共有用のデモを自己完結の HTML ファイルで作って",
+      "top_k": 1
+    },
+    {
+      "prompt": "QA Lens の HTML ツールを v3 から v4 にバージョンアップして",
+      "top_k": 2
+    },
+    {
+      "prompt": "この HTML ファイルを修正して",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "家計簿を PWA にしてスマホで",
+      "owner": "personal-pwa"
+    },
+    {
+      "prompt": "Streamlit で業務支援エージェントのモジュールを追加して",
+      "owner": "streamlit-rag-app"
+    }
+  ]
+}

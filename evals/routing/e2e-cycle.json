@@ -1,0 +1,31 @@
+{
+  "skill": "e2e-cycle",
+  "positive": [
+    {
+      "prompt": "E2E ワークフローを設計から回したい",
+      "top_k": 1
+    },
+    {
+      "prompt": "システムテストを設計→Playwright 生成→実行→修整のサイクルで進めて",
+      "top_k": 1
+    },
+    {
+      "prompt": "テスト→修整のサイクルを 1 フェーズずつ止めながら回して",
+      "top_k": 2
+    },
+    {
+      "prompt": "E2E のフェーズ 3 を実行して",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "テスト戦略とテストレベルを決めて",
+      "owner": "test-strategy"
+    },
+    {
+      "prompt": "スモークテストを pytest で書いて",
+      "owner": "test-automation"
+    }
+  ]
+}

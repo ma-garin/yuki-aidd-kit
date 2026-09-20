@@ -1,0 +1,31 @@
+{
+  "skill": "atarimae-quality-audit",
+  "positive": [
+    {
+      "prompt": "まだ表示がおかしい箇所がある。徹底的に洗い出して品質を上げて",
+      "top_k": 1
+    },
+    {
+      "prompt": "似たような崩れが大量にある。症状の裏の欠陥クラスを全部列挙して直して",
+      "top_k": 1
+    },
+    {
+      "prompt": "exhaustive review をして当たり前品質を点検して",
+      "top_k": 2
+    },
+    {
+      "prompt": "確認ダイアログや二重送信、ページネーションの欠落を点検して",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "完成したのでリリースしていい？",
+      "owner": "done-gate"
+    },
+    {
+      "prompt": "ISO 準拠の観点でレビューして",
+      "owner": "qa-review-standards"
+    }
+  ]
+}

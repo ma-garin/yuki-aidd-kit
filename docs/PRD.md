@@ -50,7 +50,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: `tokens.css` の変数名が SKILL.md と一致し、`templates/design-system.md` の再現チェックリストで直値・フィードバック・文言・アイコンが確認できる
 - **FR-11 版の刻印**: `VERSION` を真実源とし、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。配布先がどの版のキットから出たかを判別できる
   - 検証基準: `./scripts/test-install.sh` が KIT_VERSION の3フィールドと VERSION との一致を assert する
-- **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` から**保守者が手動起動したときだけ**実行する（自動実行はしない。ゲートは要求時のみ、の規律と同じ）
+- **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）・スキル発火（`skill-route-check.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` から**保守者が手動起動したときだけ**実行する（自動実行はしない。ゲートは要求時のみ、の規律と同じ）
   - 検証基準: `./scripts/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec/01 同期）。コミット前は `--changed` も NG=0（変更を説明する文書が同じ差分で更新されている。`docs-gate.py` が止める）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
 - **FR-13 デザイン検査**: `scripts/check-design.sh` が CSS/HTML/JS の直値（色・余白・角丸・文字サイズ）・未定義トークン・外部 CDN・`alert()`・`tokens.css` 未読込を機械判定する（NG>0 で exit 1）。キットの出荷物自身が NG=0 で通ることを回帰テストに含める。配布先では対象パスを引数で渡す
   - 検証基準: `templates/design-system.md` 再現チェックリストの「機械」項目が全て `check-design.sh` で判定される
@@ -61,6 +61,8 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: `scripts/token-audit.sh` が配線漏れを NG（exit 1）で検出する。絞ったときは必ず `systemMessage` で全量の取り方を伝える（黙って削らない）。逃がし口は `FULL_OUTPUT=1` と `offset`/`limit` の明示だけで、恒久バイパスは作らない。常時読み込みは rules ≦ 100 行・CLAUDE+AGENTS ≦ 200 行を `check-docs.sh` が検査する
 - **FR-17 指示優先の強制**: 保守者の発言（作業の途中で届いたものを含む）に日本語で応答するまで hook が全ツールを止める（`instruction-guard.py`）。最後の応答の言語と型（冒頭の宣言文・末尾の申し出・結論ラベル。A-9）は `reply-language.py` が見る。バイパス無し
 - **FR-18 基準を緩めない強制**: `git commit` の前に `floor-guard.py` が差分から「基準を下げる手」（テストの skip・assert 減・テスト削除・抑止コメント・スタブ・しきい値の緩和・除外リスト追加）を検出して止める（A-12）。Claude Code と Codex の両方に配線（`export-project.sh`）。正当な変更は commit メッセージの `Floor-Guard-Allow: <理由>` で通す（git 履歴に残る。環境変数のバイパスは作らない）。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
+- **FR-19 スキル発火の機械判定**: 20 スキルの `description` が「発火すべき依頼文で上位に来る／他スキルの依頼文で 1 位にならない／互いに似すぎない」ことを、`evals/routing/<skill>.json` の依頼文と `scripts/skill-route-check.sh` で LLM を呼ばずに判定する。落ちたら直すのは description（依頼文を description の写しにしない）
+  - 検証基準: 全スキルにケース（positive ≧ 3・negative ≧ 2）があること。kit-ci が `--min-rank1` の床（初回実測 100）で NG にする。床は下げない
 - **FR-16 テスト工程のメトリクス**: 工程文書 05〜08 のテスト表・欠陥表と `system_test_cases.csv` を真実源に、`scripts/test-metrics.sh` が消化率・合格率・欠陥密度・Critical/High 未解決・滞留・偏り・完了予測（根拠付き）を出す。集計値を文書に手書きしない
   - 検証基準: 結果欄が語彙外の行は分母に含め、1 件でもあれば `--gate` は 2（判定できない）。欠陥表が無ければ密度・未解決は「算出できない」（0 ではない）。基準は `TESTING_STRATEGY.md` §7 の表（しきい値＋出典。出典が空の行は読まない）。`--into` が完了報告書 §2 と基準評価を置き換え、GO/NO-GO は人が書く。配布雛形が status で exit 0 になることを回帰テストに含める
 - **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する

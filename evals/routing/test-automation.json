@@ -1,0 +1,31 @@
+{
+  "skill": "test-automation",
+  "positive": [
+    {
+      "prompt": "動作確認のテストを書いて。Playwright でスモークテスト",
+      "top_k": 1
+    },
+    {
+      "prompt": "pytest で回帰テストを生成して実行して",
+      "top_k": 1
+    },
+    {
+      "prompt": "done-gate の動作確認を人力でなく CI 判定に置き換えたい",
+      "top_k": 2
+    },
+    {
+      "prompt": "E2E のテストコードを書いて実行して",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "LLM 出力の品質を eval で測りたい",
+      "owner": "agent-eval"
+    },
+    {
+      "prompt": "テスト戦略とゲートの実行タイミングを決めて",
+      "owner": "test-strategy"
+    }
+  ]
+}

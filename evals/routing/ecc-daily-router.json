@@ -1,0 +1,31 @@
+{
+  "skill": "ecc-daily-router",
+  "positive": [
+    {
+      "prompt": "このプロジェクトに合う ECC の skills と rules を DAILY と LIBRARY に分類して",
+      "top_k": 1
+    },
+    {
+      "prompt": "React finance PWA に ECC をどう活用するか",
+      "top_k": 1
+    },
+    {
+      "prompt": "QA portal の Django に使う ECC 資産を選んで",
+      "top_k": 2
+    },
+    {
+      "prompt": "ECC 活用の方針を出して",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "仕様駆動で spec.md から作りたい",
+      "owner": "sdd-ecc-workflow"
+    },
+    {
+      "prompt": "Playwright のドキュメントを調べて",
+      "owner": "code-doc-search"
+    }
+  ]
+}

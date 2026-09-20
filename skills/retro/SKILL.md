@@ -29,7 +29,7 @@ templates/lessons.md を使う。1エントリ3-5行。冗長にしない。
 
 ## キットへのフィードバック（重要）
 lessons.mdのProblem/Tryが溜まったら、以下に反映する:
-- 発火しなかったスキル → descriptionに言い回しを追加
+- 発火しなかったスキル → descriptionに言い回しを追加し、その依頼文を `evals/routing/<skill>.json` の positive に足して `./scripts/skill-route-check.sh` を通す（誤発火・衝突・rank-1 率の床が同時に見える）
 - 繰り返した手作業 → スラッシュコマンド化
 - 繰り返したミス → hookで自動検出 or done-gateに項目追加
 - 有効だったプロンプト → スキル本文に定着

@@ -1,0 +1,31 @@
+{
+  "skill": "agent-eval",
+  "positive": [
+    {
+      "prompt": "RAG チャットの回答が根拠に基づいているか、ハルシネーションを検出したい",
+      "top_k": 1
+    },
+    {
+      "prompt": "エスカレーション判定の正確性を測って、プロンプトを変えたときの回帰を見たい",
+      "top_k": 1
+    },
+    {
+      "prompt": "LLM の出力品質を継続的に評価する仕組みを作って",
+      "top_k": 2
+    },
+    {
+      "prompt": "Weave みたいに eval したい",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "Playwright でスモークテストを書いて",
+      "owner": "test-automation"
+    },
+    {
+      "prompt": "テスト戦略を決めたい",
+      "owner": "test-strategy"
+    }
+  ]
+}

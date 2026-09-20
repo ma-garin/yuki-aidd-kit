@@ -33,7 +33,7 @@
 
 1. **エージェント可搬性** — Claude Code でも Codex でも同じファイルで同じ振る舞い。ツール固有名に依存しない（固有機能は「汎用表現（Claude Code では X）」の併記形式）
 2. **ゼロコンテキスト継続性** — 前提知識ゼロのモデルが `INDEX.md` → `docs/Roadmap.md` の順に読むだけでキット開発を続行できる
-3. **自己改善ループ** — retro → `lessons.md` → スキル/コマンド/hook への反映が月次で回る
+3. **自己改善ループ** — retro → `lessons.md` → スキル/コマンド/hook への反映が月次で回る（description の直しは `scripts/skill-route-check.sh` で発火・誤発火・衝突を機械判定。M23）
    → **③は現時点で未達**（`templates/lessons.md` が雛形のまま。`spec/09-findings.md` F-05）
 
 ## やらないこと（Non-Goals）

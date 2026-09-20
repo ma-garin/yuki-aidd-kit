@@ -1,0 +1,31 @@
+{
+  "skill": "nfr-standards",
+  "positive": [
+    {
+      "prompt": "非機能要件はどう決める。パフォーマンスとアクセシビリティ対応を spec.md に書いて",
+      "top_k": 1
+    },
+    {
+      "prompt": "オフラインで使えるか、スマホ対応の要件を決めたい",
+      "top_k": 1
+    },
+    {
+      "prompt": "セキュリティとデバイス対応の NFR を定義して",
+      "top_k": 2
+    },
+    {
+      "prompt": "アクセシビリティ対応の要件を出して",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "家計簿の PWA を GitHub Pages にデプロイして",
+      "owner": "personal-pwa"
+    },
+    {
+      "prompt": "デザイントークンと色を決めて",
+      "owner": "design-system"
+    }
+  ]
+}

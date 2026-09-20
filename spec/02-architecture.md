@@ -79,7 +79,7 @@
 
 | 系統 | 仕組み | 制御点 |
 |---|---|---|
-| **暗黙発火** | `SKILL.md` frontmatter の `description` に「〜への言及があれば必ずこのスキルを使うこと」形式で発火語を列挙 | 発火しなかったスキルは `retro` で description に言い回しを追加する（`skills/retro/SKILL.md`） |
+| **暗黙発火** | `SKILL.md` frontmatter の `description` に「〜への言及があれば必ずこのスキルを使うこと」形式で発火語を列挙 | 発火しなかったスキルは `retro` で description に言い回しを追加する（`skills/retro/SKILL.md`）。直した description は `scripts/skill-route-check.sh` が `evals/routing/` の依頼文で機械判定（発火・誤発火・衝突・rank-1 率の床。M23） |
 | **明示呼び出し** | `claude-code/commands/<name>.md` → `/<name>` | コストは呼んだ時だけ発生（INDEX の設計） |
 | **強制（hook）** | `settings.json` の PreToolUse / PostToolUse / Stop / statusLine | 唯一 AI の意思で回避できない層。`block-explore.sh`（exit 2）と `block-gates.py`（deny JSON）が実際にブロックする |
 

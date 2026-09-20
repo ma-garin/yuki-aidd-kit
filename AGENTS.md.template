@@ -36,7 +36,7 @@
 | 完了と言う前 | `done-gate` |
 | 長い調査・集計 | `context-compression`（`/compact-work`） |
 | 技術ドキュメント検索 | `code-doc-search`（`/doc-search`） |
-| 振り返り | `retro`（`/retro`） |
+| 振り返り | `retro`（`/retro`）。発火しなかったスキルは description を直す（キット側は `skill-route-check.sh` で機械判定） |
 | 種別固有の規約 | `single-html-tool` / `personal-pwa` / `streamlit-rag-app` |
 | 表に無い・迷った | `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md`（全資産の地図。**毎回は読まない**） |
 

@@ -9,8 +9,8 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 328 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 208 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `README.md` | 332 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `INDEX.md` | 210 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 32 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 81 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
@@ -169,6 +169,9 @@
 | `check_docs.py` | 584 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
 | `test-json-envelope.sh` | 107 | 検査スクリプト 6 本の `--json` 出力契約（ok / exit / data / meta / error{type,message,hint,retry_argv}）の回帰テスト 13 ケース |
+| `skill_route_check.py` | 244 | **スキル発火の機械判定の本体**（evals/routing の依頼文で description の 構造／発火／誤発火／衝突／床 を検査。文字 n-gram TF-IDF の余弦。`--explain` `--min-rank1` `--json`） |
+| `skill-route-check.sh` | 5 | `skill_route_check.py` の薄いラッパ |
+| `test-skill-route-check.sh` | 112 | skill_route_check の回帰テスト 20 ケース（複製を壊して 5 検査の検出・`--explain`・`--json`・exit 2） |
 | `test-check-docs.sh` | 160 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
 | `check_design.py` | 301 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |
 | `check-design.sh` | 7 | `check_design.py` の薄いラッパ |
@@ -250,7 +253,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 328 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 332 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
@@ -264,12 +267,12 @@
 |---|---|---|
 | `userguide.html` | 1169 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
 | `yuki-aidd-kit-manual.html` | 1444 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。冒頭に `userguide.html`／事例／V字章への導線（2026-09-18）。**デザイン適用除外ジャンル** |
-| `Roadmap.md` | 300 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
+| `Roadmap.md` | 301 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
 | `maintainer-tendencies.md` | 81 | 保守者の指摘・要望の傾向 14 項目（出典・原文・現状・反映先）と反映しなかったものの理由 |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |
 | `AUDIT-2026-07.md` | 114 | 資産監査の記録。判定軸・監査表3種・指摘 A-01〜A-09（ISTQB severity）・重複マップ D-01〜D-04・適用記録 |
 | `OPERATING-MODE.md` | 80 | 日常の標準作業モード（種別判定・読む範囲・ECC 使い分け・実装ループ・完了判定・クレジット節約） |
-| `PRD.md` | 87 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
+| `PRD.md` | 89 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
 | `PROJECT-FIT-REPORT.md` | 48 | 実プロジェクト群への適合レポート（2026-06 時点）。Summary/Evidence/Recommendation |
 | `Vision.md` | 47 | 目的・解決する問題6件・到達点3つ・Non-Goals・配置の2層・価値の判定基準 |
 | `rules-rationale/absolute-rules.md` | 180 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
@@ -282,6 +285,35 @@
 | `examples/library-loan/build.py` | 178 | app.css / app.js とキットの実物から library-loan.html を組み立てる |
 | `examples/library-loan/spec.md` | 23 | 依頼文から起こした仕様（FR-1〜FR-6・NFR） |
 | `examples/library-loan/CURRENT_STATE.md` | 23 | 引き継ぎメモ（フェーズ・次のタスク・判断待ち・未検証） |
+
+---
+
+## evals/routing/（20件）— スキル発火のケース（2026-09-20 追加・M23）
+
+スキルごとに 1 ファイル `<skill>.json`。`positive`（発火すべき依頼文 4 件＋`top_k`）と `negative`（発火してはいけない依頼文 2 件＋本来の担当 `owner`）。`scripts/skill-route-check.sh` が読む。依頼文を description の写しにしない（写すと検査が何も測らない）。
+
+| ファイル | 役割 |
+|---|---|
+| `evals/routing/agent-eval.json` | スキル `agent-eval` の発火ケース（positive 4・negative 2） |
+| `evals/routing/atarimae-quality-audit.json` | スキル `atarimae-quality-audit` の発火ケース（positive 4・negative 2） |
+| `evals/routing/code-doc-search.json` | スキル `code-doc-search` の発火ケース（positive 4・negative 2） |
+| `evals/routing/context-compression.json` | スキル `context-compression` の発火ケース（positive 4・negative 2） |
+| `evals/routing/design-system.json` | スキル `design-system` の発火ケース（positive 4・negative 2） |
+| `evals/routing/dev-lifecycle.json` | スキル `dev-lifecycle` の発火ケース（positive 4・negative 2） |
+| `evals/routing/done-gate.json` | スキル `done-gate` の発火ケース（positive 4・negative 2） |
+| `evals/routing/e2e-cycle.json` | スキル `e2e-cycle` の発火ケース（positive 4・negative 2） |
+| `evals/routing/ecc-daily-router.json` | スキル `ecc-daily-router` の発火ケース（positive 4・negative 2） |
+| `evals/routing/nfr-standards.json` | スキル `nfr-standards` の発火ケース（positive 4・negative 2） |
+| `evals/routing/personal-pwa.json` | スキル `personal-pwa` の発火ケース（positive 4・negative 2） |
+| `evals/routing/phase-approval.json` | スキル `phase-approval` の発火ケース（positive 4・negative 2） |
+| `evals/routing/qa-review-standards.json` | スキル `qa-review-standards` の発火ケース（positive 4・negative 2） |
+| `evals/routing/retro.json` | スキル `retro` の発火ケース（positive 4・negative 2） |
+| `evals/routing/sdd-ecc-workflow.json` | スキル `sdd-ecc-workflow` の発火ケース（positive 4・negative 2） |
+| `evals/routing/single-html-tool.json` | スキル `single-html-tool` の発火ケース（positive 4・negative 2） |
+| `evals/routing/streamlit-rag-app.json` | スキル `streamlit-rag-app` の発火ケース（positive 4・negative 2） |
+| `evals/routing/test-automation.json` | スキル `test-automation` の発火ケース（positive 4・negative 2） |
+| `evals/routing/test-strategy.json` | スキル `test-strategy` の発火ケース（positive 4・negative 2） |
+| `evals/routing/uiux_review.json` | スキル `uiux_review` の発火ケース（positive 4・negative 2） |
 
 ---
 
@@ -302,4 +334,4 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `.github/workflows/kit-ci.yml` | 79 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |
+| `.github/workflows/kit-ci.yml` | 81 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |

@@ -204,7 +204,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 **是正案**: B-18。`git tag v6.3.0` から始め、`export-project.sh` が `.claude/KIT_VERSION`（tag ＋ commit hash ＋ 日付）を書き、`verify.sh` がそれを表示する。
 
-### F-13 — スキルが意図どおり発火するかを検証する手段が無い
+### F-13 — スキルが意図どおり発火するかを検証する手段が無い — **是正済み（2026-09-20・M23）**
 
 **severity: Medium**（Sonnet 基盤では発火の取りこぼしが増える可能性があるが、測れない。`retro` の「発火しなかったスキル→description に言い回し追加」は観測に依存している）
 
@@ -212,6 +212,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 - 関連: `spec/11` U-4
 
 **是正案**: 移行後に `/usage` のスキル別内訳で観測する（B-10）。恒久策は `skill-creator` の eval を使った発火テストだが、コストが高いので**移行後の実測で問題が出たスキルだけ**に限定する。
+
+**是正（2026-09-20）**: LLM を呼ばない近似で常時回せるようにした。`evals/routing/<skill>.json`（20 本。positive ≧ 3・negative ≧ 2・negative に `owner`）と `scripts/skill_route_check.py`（description に対する依頼文の順位を文字 n-gram TF-IDF の余弦で算出。構造／発火／誤発火／衝突／床の 5 検査）。初回実測 rank-1 率 100%（positive 80 件）を kit-ci の `--min-rank1 100` の床にした。意味の判定は依然できないので `/usage` の観測（B-10）は残す。回帰テスト `test-skill-route-check.sh` 20 ケース。出所: agent-skills の evals Tier 2
 
 ## 3c. ユースケース検証で見つかった finding（2026-09-17「社内図書館の貸出管理を Excel から Web へ。HTML でモック」）
 
@@ -351,9 +353,9 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 |---|---|---|
 | Critical | 0 | — |
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
-| Medium | 4 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測）／**F-21（警告 hook の stdout。未確認）** |
+| Medium | 3 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／**F-21（警告 hook の stdout。未確認）** |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 23 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／F-25（M22 指示優先）／F-26（M23 Codex hook）／**F-27（M23 文書の鮮度）** |
+| 是正済み | 24 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／F-25（M22 指示優先）／F-26（M23 Codex hook）／F-27（M23 文書の鮮度）／**F-13（M23 スキル発火の機械判定）** |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 

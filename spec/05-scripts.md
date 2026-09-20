@@ -268,6 +268,23 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 - 出力は3層、全件は `check-design-report.md`（`.gitignore` 済み）。対象なしは exit 0
 - 配布先では `./scripts/check-design.sh static src` のように対象を渡す（`templates/design-system.md` 再現チェックリストの機械判定分）
 
+## スキル発火の機械判定（2026-09-20 追加・M23。F-13）
+
+`scripts/skill-route-check.sh`（本体 `skill_route_check.py`）。ケースは `evals/routing/<skill>.json`（`positive`: 発火すべき依頼文と `top_k`、`negative`: 発火してはいけない依頼文と本来の担当 `owner`）。
+依頼文と各 `description` を文字 2/3-gram（日本語）＋単語（英数）の TF-IDF ベクトルにして余弦で順位を出す（決定論的・LLM を呼ばない）。
+
+| # | 検査 | NG 条件 |
+|---|---|---|
+| 1 | 構造 | ケースファイルが無い／JSON でない／positive < 3／negative < 2／スキルの無いケース |
+| 2 | 発火 | positive の依頼文でその skill が `top_k`（既定 3）に入らない |
+| 3 | 誤発火 | negative の依頼文でその skill が 1 位、または `owner` がその skill より下・不在 |
+| 4 | 衝突 | description 同士の余弦 ≧ 0.75（≧ 0.50 は WARN） |
+| 5 | 床 | `--min-rank1 N` で positive の rank-1 率が N% 未満（kit-ci は初回実測の 100） |
+
+- 落ちたときに直すのは依頼文ではなく description（発火語を足す／責務分離の一文を足す）。`--explain "<依頼文>"` で上位 5 件を表示
+- exit 0 合格／1 NG／2 判定不能（`skills/` 無し）。`--json` 対応（`error.type` は `routing.failed`）
+- 語彙の近似なので意味は判定できない。`/usage` のスキル別観測（B-10）は残す
+
 ## 回帰テスト（7件・全 green）
 
 | スクリプト | 行 | ケース数 | 2026-09-16 実測 | 特筆 |
@@ -278,6 +295,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | `test-install.sh` | 130 | **73** | PASS=73 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
 | `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
 | `test-check-docs.sh` | 149 | **46** | PASS=46 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
+| `test-skill-route-check.sh` | 112 | **20** | PASS=20 / FAIL=0 | キットの skills/ と evals/routing/ の複製を壊して 5 検査の検出を確認。リポジトリ自身が NG=0 で通ること・`--explain`・`--json`・skills 無し exit 2 |
 | `test-check-design.sh` | 143 | **43** | PASS=43 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス ／ **配布先の形（.claude/templates/tokens.css 自動検出・.claude/ 不走査・貼り込んだ定義行）** |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。

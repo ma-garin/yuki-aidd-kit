@@ -1,0 +1,31 @@
+{
+  "skill": "context-compression",
+  "positive": [
+    {
+      "prompt": "出力が長すぎる。トークンを節約して要約して",
+      "top_k": 1
+    },
+    {
+      "prompt": "コンテキストが長いので圧縮して報告して",
+      "top_k": 1
+    },
+    {
+      "prompt": "大量ファイルの集計をスクリプト化して結果だけ出して",
+      "top_k": 3
+    },
+    {
+      "prompt": "監査結果を 3 層で要約して",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "Playwright のドキュメントを調べて",
+      "owner": "code-doc-search"
+    },
+    {
+      "prompt": "振り返りをして学びをまとめて",
+      "owner": "retro"
+    }
+  ]
+}

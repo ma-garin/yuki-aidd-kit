@@ -29,6 +29,8 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 同日 — **検査スクリプトの `--json` 出力契約**（エージェント向け）: `check-docs` / `check-approval` / `check-design` / `quality_harness` / `test-metrics` / `floor-guard --check` が `--json` で 1 行の `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す。`error.type` は `docs.inconsistent` `approval.undetermined` `design.literal_values` `contract.failed` `gate.not_met` `floor.lowered` など、`hint` は次の一手、`retry_argv` は直した後の再実行コマンド。「エラー文は AI の判断入力になる」（出所: [WeKnora](https://github.com/Tencent/WeKnora) CLI の AGENTS.md）。回帰テスト `scripts/test-json-envelope.sh` 13 ケース
 
+同日 — **スキル発火の機械判定**（`spec/09` F-13 を是正）: `scripts/skill-route-check.sh` が `evals/routing/<skill>.json`（スキルごとに発火すべき依頼文 positive ≧ 3・発火してはいけない依頼文 negative ≧ 2、negative には本来の担当 `owner`）を読み、20 スキルの `description` に対する依頼文の順位を文字 n-gram TF-IDF の余弦で決定論的に出す。検査は 5 つ: 構造（ケース不足）／発火（positive が top_k 外）／誤発火（negative で 1 位・owner より上）／衝突（description 同士の類似 ≧ 0.75 は NG、≧ 0.50 は WARN）／床（`--min-rank1 N`。初回実測 100% を kit-ci の床にした。下げない）。落ちたら直すのは依頼文でなく description（発火語を足す・責務分離の一文を足す）。`--explain "<依頼文>"` で順位を見てから直す。LLM を呼ばないので意味は判定できないが、`retro` の「発火しなかったスキル → description に言い回しを追加」が観測頼みだった点を、変更のたびに機械で確かめられるようにした。出所は [agent-skills](https://github.com/addyosmani/agent-skills) の evals Tier 2。`--json` 対応。回帰テスト `scripts/test-skill-route-check.sh` 20 ケース
+
 ## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22。6.8.1: 全体導入 `install-guard.sh`）
 
 作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。
@@ -205,6 +207,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（116ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
+./scripts/test-skill-route-check.sh && ./scripts/skill-route-check.sh   # スキル発火の機械判定の回帰テスト（20ケース）と本検査
 ./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
 ./scripts/test-token-audit.sh && ./scripts/token-audit.sh         # トークン節約の仕組みの回帰テストと点検
 ./scripts/test-test-metrics.sh && ./scripts/test-metrics.sh       # テストメトリクスの回帰テストと集計（--gate で完了基準の判定）
@@ -285,6 +288,7 @@ yuki-aidd-kit/
 │   ├── install.sh / verify.sh / test-hooks.sh / test-install.sh   # グローバル導入と回帰テスト
 │   ├── check-docs.sh (check_docs.py) / test-check-docs.sh / test-git-gates.sh  # 文書整合・git ゲートの検査
 │   ├── check-design.sh (check_design.py) / test-check-design.sh  # デザイン検査（直値・トークン・CDN・alert()）
+│   ├── skill-route-check.sh (skill_route_check.py) / test-skill-route-check.sh  # スキル発火の機械判定（ケースは evals/routing/）
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
 │   ├── check-approval.sh (check_approval.py) / phase-hash.py / test-check-approval.sh  # 工程承認ゲート

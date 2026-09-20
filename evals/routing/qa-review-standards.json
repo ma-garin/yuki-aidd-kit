@@ -1,0 +1,31 @@
+{
+  "skill": "qa-review-standards",
+  "positive": [
+    {
+      "prompt": "品質観点でレビューして severity を分類して",
+      "top_k": 1
+    },
+    {
+      "prompt": "ISO 準拠 ISTQB 準拠でテスト観点を出して",
+      "top_k": 1
+    },
+    {
+      "prompt": "UX レビューを国際規格の品質スコアリングで",
+      "top_k": 2
+    },
+    {
+      "prompt": "AI レビュープロンプトを作って品質評価に規格を組み込んで",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "画面を実際に開いて全状態を確認して",
+      "owner": "uiux_review"
+    },
+    {
+      "prompt": "まだおかしい所を徹底的に洗い出して",
+      "owner": "atarimae-quality-audit"
+    }
+  ]
+}
