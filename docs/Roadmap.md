@@ -106,7 +106,7 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] `scripts/init-lifecycle.sh` を新設（工程雛形の配置。`--github` で Issue/PR/CI テンプレートも配置。既存ファイルは上書きしない）
 - [x] `scripts/test-trace-check.sh` で回帰テスト化（15ケース PASS）。**雛形が最初から NG=0 で始まること**をテストに含めた（雛形が NG を出すと利用者が検査結果を無視するようになるため）
 - [x] `commands/` に `/rfd`・`/lifecycle`・`/trace` を追加
-- [x] GitHub 連携: `templates/github/`（RFD・要件・欠陥の Issue テンプレート、関係 ID 欄付き PR テンプレート）と `github-actions/lifecycle-check.yml`（PR で trace-check を実行）
+- [x] GitHub 連携: `templates/github/`（RFD・要件・欠陥の Issue テンプレート、関係 ID 欄付き PR テンプレート）と `templates/github/workflows/lifecycle-check.yml`（PR で trace-check を実行）
 - [x] 既存資産との接続: `done-gate` に工程ゲート項目、`sdd-ecc-workflow` に使い分けの導線、`CLAUDE.md.template`・`AGENTS.md.template`・`INDEX.md`・`README.md` に工程の導線を追加。`export-project.sh` が `templates/` と `trace-check.sh` を同梱するよう更新
 - 検証記録: `./scripts/install.sh` → `./scripts/verify.sh` NG=0、`./scripts/test-hooks.sh` 8/8、`./scripts/test-trace-check.sh` 15/15
 
@@ -134,7 +134,7 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] `templates/test/` 8 本（`feature_contracts.yml` は新規プロジェクトで PASS することを回帰テストで保証）
 - [x] `scripts/quality_harness.py`（設定駆動の汎用版）+ `scripts/test-quality-harness.sh`（11 ケース PASS）
 - [x] `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（マーカー不在・期限切れ・hash 不一致で BLOCKED、`.rebuild-mode` で WARN。手動 4 ケース確認）
-- [x] `scripts/init-test-docs.sh`（`--ci` で `github-actions/test-gates.yml` も配置）、`export-project.sh` がゲートスクリプトを同梱
+- [x] `scripts/init-test-docs.sh`（`--ci` で `templates/github/workflows/test-gates.yml` も配置）、`export-project.sh` がゲートスクリプトを同梱
 - [x] `done-gate` / `test-automation` / `qa-review-standards` / `rules/functional-integrity.md` / 両テンプレートに導線を追加
 - [ ] `docs/yuki-aidd-kit-manual.html` の非エンジニア向け説明（テストレベルと「テストが通った≠完了」）は本 PR で最小限。図解は未着手
 - 検証記録: `test-quality-harness.sh` 11/11、`init-test-docs.sh` dry-run で 12 ファイル配置・雛形契約 PASS、`pre-commit-ui-gate.sh` 4 状態確認。AUDIT-2026-07 で指摘された「ISO 29119 が 0 件」を解消
@@ -146,7 +146,7 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] `skills/design-system/references/frameworks.md`（単一 HTML / React+Vite+Tailwind / Streamlit / Flask・Django、デザイン系スキルの分担）
 - [x] `templates/design-system.md` に導線とチェック項目を追加
 - [x] `templates/components/feedback.js` / `icons.js` / `demo.html`（tokens.css 前提に自己完結化。2026-08-26）
-- [x] `github-actions/test-gates.yml` を Python / Node 両対応に（2026-08-26）
+- [x] `templates/github/workflows/test-gates.yml` を Python / Node 両対応に（2026-08-26）
 - [x] 「弱点」表記を「残課題」に変更（A-3。分かっている不足は申告で済ませず対応する）
 - 検証記録: `demo.html` を Playwright でライト／ダーク・トースト・確認ダイアログ・空状態を実機確認（2026-08-26）
 
@@ -161,7 +161,7 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] `scripts/test-install.sh`（S3、66 ケース）: install / verify / export / init-project / init-test-docs を HOME 差し替えで検証。実 `~/.claude` には触らない
 - [x] `scripts/test-git-gates.sh`（S4、27 ケース）: pre-commit（簡易パターン経路）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで検証
 - [x] `scripts/check_docs.py` + `check-docs.sh` + `test-check-docs.sh`（S5）: INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数（WARN）・SKILL 行数目安（WARN）・spec/01 の同期を機械判定
-- [x] `.github/workflows/kit-ci.yml`（S5）: 6 本の回帰テストと check-docs を実行（`github-actions/` の配布用サンプルとは別物）。**2026-09-17 保守者決定で `workflow_dispatch` のみに変更**（PR / push での自動実行はしない。ゲートは要求時だけ、の規律を CI にも適用）
+- [x] `.github/workflows/kit-ci.yml`（S5）: 6 本の回帰テストと check-docs を実行（`templates/github/workflows/` の配布用サンプルとは別物）。**2026-09-17 保守者決定で `workflow_dispatch` のみに変更**（PR / push での自動実行はしない。ゲートは要求時だけ、の規律を CI にも適用）
 - [x] 数値の是正と spec 同期（S6）: check-docs が検出した INDEX 11 件・manual 2 件を是正。`spec/01` を実測に同期
 - 検証記録: test-hooks 19/19・test-trace-check 15/15・test-quality-harness 11/11・test-install 66/66・test-git-gates 27/27・test-check-docs 全 PASS・`check-docs.sh` NG=0（WARN 2: rules 268 行 > 100、design-system 465 行 > 200 — M16 / M17 で解消）
 - 残: `git tag v6.3.0` は main へのマージ時に保守者が打つ

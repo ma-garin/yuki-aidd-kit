@@ -1086,7 +1086,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
             <tr><td>Codex が約束事を読んでいない</td><td><code>~/.codex/AGENTS.md</code> が無い</td><td>導入 A の手順 4（<code>ln -s</code>）を実行</td></tr>
             <tr><td>キットを最新にしたい</td><td>—</td><td>キットのフォルダで <code>git pull</code> → <code>./scripts/install.sh &amp;&amp; ./scripts/verify.sh</code>。配布先は <code>export-project.sh</code> を再実行（既存は <code>.bak</code> に退避）</td></tr>
             <tr><td>どの版を入れたか忘れた</td><td>—</td><td><code>cat ~/.claude/KIT_VERSION</code>（配布先は <code>.claude/KIT_VERSION</code>）。版・コミット・日付が出ます</td></tr>
-            <tr><td>自分のプロジェクトに CI を入れたい</td><td>—</td><td><code>github-actions/</code> の 4 本を <code>.github/workflows/</code> にコピー。どれも手動起動のみ。自動にしたければ自分の判断で <code>on:</code> を書き換える</td></tr>
+            <tr><td>自分のプロジェクトに CI を入れたい</td><td>—</td><td><code>templates/github/workflows/</code> の 4 本を <code>.github/workflows/</code> にコピー。どれも手動起動のみ。自動にしたければ自分の判断で <code>on:</code> を書き換える</td></tr>
           </tbody>
         </table>
       </section>

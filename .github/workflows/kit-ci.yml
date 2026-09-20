@@ -1,5 +1,5 @@
 # キット自身の CI
-# ※ github-actions/ 配下の yml は「配布先プロジェクトへ置くサンプル」であり、これとは別物。
+# ※ templates/github/workflows/ 配下の yml は「配布先プロジェクトへ置くサンプル」であり、これとは別物。
 #
 # 回帰テスト（hooks / trace-check / quality_harness / 入口スクリプト / git ゲート / 工程承認 / check-docs / check-design）と
 # 文書整合検査・デザイン検査を、保守者が Actions 画面から手動で起動したときだけ実行する（workflow_dispatch のみ）。

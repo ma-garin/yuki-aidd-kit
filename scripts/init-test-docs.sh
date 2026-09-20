@@ -28,7 +28,7 @@ for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh test_metrics.py tes
   put "$KIT_DIR/scripts/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"
 done
 mkdir -p "$TARGET/docs/quality/evidence"
-if $CI; then put "$KIT_DIR/github-actions/test-gates.yml" "$TARGET/.github/workflows/test-gates.yml"; fi
+if $CI; then put "$KIT_DIR/templates/github/workflows/test-gates.yml" "$TARGET/.github/workflows/test-gates.yml"; fi
 echo ""
 echo "次にやること:"
 echo "1. docs/test/*.md の <PROJECT> と <...> を埋める（レベル別コマンド・対象/対象外・リスク登録簿）"

@@ -20,7 +20,7 @@
 | 3 | `03-skills.md` | 20スキルの目的・トリガー・要点・委譲先 | 大 |
 | 4 | `04-commands-hooks.md` | 18コマンド・13hooks・settings.json・実装モードの状態機械 | 中 |
 | 5 | `05-scripts.md` | 14スクリプトの仕様（引数・出力・終了コード・回帰テスト） | 中 |
-| 6 | `06-templates.md` | templates 31本 + github-actions 4本 | 中 |
+| 6 | `06-templates.md` | templates 31本 + `templates/github/workflows/` 4本 | 中 |
 | 7 | `07-rules-docs.md` | rules 3本（A/H/機能完全性）・docs 8本・ルート4ファイル | 中 |
 | 8 | `08-quality-gates.md` | 品質ゲートの全体像（L1〜L4・機械ゲート・ID体系・DoD） | 中 |
 | 9 | `09-findings.md` | **現況の残課題**（実測値と証拠つき） | 中 |

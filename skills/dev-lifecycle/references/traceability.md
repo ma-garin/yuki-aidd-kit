@@ -66,4 +66,4 @@
 
 - Issue タイトルの先頭に ID を置く（例: `[REQ-F-012] エクスポート形式に CSV を追加`）
 - PR 本文に `REQ-F-012 / DD-003 / UT-005` のように関係 ID を列挙する。`templates/github/pull_request_template.md` がこの欄を持つ
-- CI で `trace-check.sh` を回す（`github-actions/lifecycle-check.yml`。手動起動のみ）。追跡漏れをレビュー前に落とす
+- CI で `trace-check.sh` を回す（`templates/github/workflows/lifecycle-check.yml`。手動起動のみ）。追跡漏れをレビュー前に落とす

@@ -76,7 +76,7 @@
 | scripts（sh 24 + py 8 + pre-commit） | 33 | 4,734 |
 | templates（lifecycle11 ＋ approvals2 / test8 / github5 / components4 / ui6 / 単体7） | 42 | 2,890 |
 | docs（うち examples/library-loan 7件 1,734行） | 20 | 5,510 |
-| github-actions（配布用サンプル） | 4 | 171 |
+| templates/github/workflows（配布用サンプル） | 4 | 171 |
 | .github/workflows/kit-ci.yml（キット自身の CI） | 1 | 70 |
 | ルート（README / INDEX / 2 template / claude-projects-setup / .gitignore / VERSION） | 7 | 669 |
 | **合計** | **179** | **18,766** |
