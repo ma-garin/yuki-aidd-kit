@@ -3,7 +3,7 @@
 # 検査ロジック（重複定義・未定義参照・所有ファイル違反・追跡表未記載・カバー漏れ・孤立テスト）が
 # 実際に検出できることを、合格ケースと不合格ケースの両方で確認する。
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHECK="$KIT_DIR/scripts/trace-check.sh"
+CHECK="$KIT_DIR/tools/trace-check.sh"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 PASS=0; FAIL=0

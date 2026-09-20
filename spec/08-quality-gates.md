@@ -79,7 +79,7 @@ L4 受入 ─┴─→ ここで初めて「ユーザーが価値を受け取れ
 |---|---|---|---|
 | **探索ブロック** | 実装モード中の再探索（Read/Grep/Glob） | `block-explore.sh` × `.claude/mode` | exit 2 |
 | **ゲートの無断実行** | 要求されていない pytest / make test / verify-ui / lint | `block-gates.py` | `permissionDecision: deny` |
-| **秘密情報** | API キー等の混入 | `scripts/pre-commit`（gitleaks or 簡易パターン） | exit 1 |
+| **秘密情報** | API キー等の混入 | `tools/pre-commit`（gitleaks or 簡易パターン） | exit 1 |
 | **UI 検証マーカー** | E2E 未実行・検証後に UI を変更したコミット | `ui-hash.py` + `pre-commit-ui-gate.sh` × `.ui-verified` | exit 1（BLOCKED） |
 | **機能契約ハーネス** | UI だけあって実行経路が無い機能／critical・high に失敗系テストが無い／契約未登録の新モジュール | `quality_harness.py` × `quality/feature_contracts.yml` | exit 1 |
 | **トレーサビリティ** | 要件が設計・テストへ落ちていない | `trace-check.sh` × `traceability-matrix.md` | exit 1 |
@@ -89,7 +89,7 @@ L4 受入 ─┴─→ ここで初めて「ユーザーが価値を受け取れ
 
 ```text
 make verify-ui（L3 E2E 全 PASS）
-  → printf "%s %s %s\n" "$(git rev-parse HEAD)" "$(python3 scripts/ui-hash.py disk)" "$(date -Iseconds)" > .ui-verified
+  → printf "%s %s %s\n" "$(git rev-parse HEAD)" "$(python3 tools/ui-hash.py disk)" "$(date -Iseconds)" > .ui-verified
 
 git commit（UI ファイルが staged）
   → pre-commit-ui-gate.sh

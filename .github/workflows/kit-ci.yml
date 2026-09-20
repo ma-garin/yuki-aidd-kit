@@ -25,32 +25,32 @@ jobs:
           python-version: "3.12"
 
       - name: hooks（stdin JSON）
-        run: bash scripts/test-hooks.sh
+        run: bash ci/test-hooks.sh
       - name: trace-check（トレーサビリティ）
-        run: bash scripts/test-trace-check.sh
+        run: bash ci/test-trace-check.sh
       - name: quality_harness（機能契約）
-        run: bash scripts/test-quality-harness.sh
+        run: bash ci/test-quality-harness.sh
       - name: 入口スクリプト（install / export / init）
-        run: bash scripts/test-install.sh
+        run: bash ci/test-install.sh
       - name: git ゲート（pre-commit / .ui-verified / ui-hash）
-        run: bash scripts/test-git-gates.sh
+        run: bash ci/test-git-gates.sh
       - name: 工程承認ゲート（check-approval / phase-hash）
-        run: bash scripts/test-check-approval.sh
+        run: bash ci/test-check-approval.sh
       - name: テストメトリクス（test-metrics）
-        run: bash scripts/test-test-metrics.sh
+        run: bash ci/test-test-metrics.sh
       - name: トークン監査（token-audit）
-        run: bash scripts/test-token-audit.sh
+        run: bash ci/test-token-audit.sh
       - name: check-docs の回帰テスト
-        run: bash scripts/test-check-docs.sh
+        run: bash ci/test-check-docs.sh
       - name: check-design の回帰テスト
-        run: bash scripts/test-check-design.sh
+        run: bash ci/test-check-design.sh
 
       - name: デザイン検査（直値・未定義トークン・外部 CDN・alert()）
         run: bash scripts/check-design.sh -o check-design-report.md
 
       - name: 文書整合検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec 同期）
         id: docs
-        run: bash scripts/check-docs.sh -o check-docs-report.md
+        run: bash ci/check-docs.sh -o check-docs-report.md
 
       # 失敗時も詳細レポートを残す（会話・ログには結論だけ、全件はここ）
       - name: レポートを保存

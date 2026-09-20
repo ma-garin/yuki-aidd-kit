@@ -46,7 +46,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
 
 **対応**: F-11
 
-- **対象**: `scripts/test-install.sh`（新規）
+- **対象**: `ci/test-install.sh`（新規）
 - **内容**: `HOME` を一時ディレクトリに差し替えて `install.sh` → `verify.sh` を実行（NG=0・既存 `CLAUDE.md` の `.bak` 退避・`settings.json` 既存時の警告・同名 rules のスキップ）／一時ディレクトリへ `export-project.sh` を実行（生成物の一覧・`.bak` 退避・`INDEX.md` 参照の相対化・`scripts/*` の既存スキップ）／`init-project.sh` の3種別／`init-test-docs.sh --ci` の配置数
 - **完了条件**: 4スクリプト×正常＋異常で 12 ケース以上 PASS。`install.sh` が実 `~/.claude` に触れないことをテスト自体が保証
 - **見積**: 6 往復
@@ -55,7 +55,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
 
 **対応**: F-11
 
-- **対象**: `scripts/test-git-gates.sh`（新規）
+- **対象**: `ci/test-git-gates.sh`（新規）
 - **内容**: 一時 git リポジトリを作り、`pre-commit`（秘密情報パターン検出／`localStorage` 行の除外）と `pre-commit-ui-gate.sh`（マーカー無し BLOCKED／期限切れ BLOCKED／hash 不一致 BLOCKED／一致 PASS／`.rebuild-mode` WARN／`docs/*.html` は対象外）と `ui-hash.py`（`disk`/`staged`・除外接頭辞）を実行して終了コードを assert
 - **完了条件**: README が「手動4ケース確認」と書いている箇所を、このテストのケース数に置き換えられる
 - **見積**: 4 往復
@@ -149,7 +149,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
 |---|---|---|
 | DS-1 | `templates/ui/components.css`（SKILL.md の CSS 17ブロックを実体化） | 5 往復 |
 | DS-2 | `templates/ui/layout.css`（骨格の実体化） | 3 往復 |
-| DS-4 | `scripts/check-design.sh` ＋ `scripts/test-check-design.sh`（直値・未定義トークン・CDN・`alert(` を機械判定） | 5 往復 |
+| DS-4 | `scripts/check-design.sh` ＋ `ci/test-check-design.sh`（直値・未定義トークン・CDN・`alert(` を機械判定） | 5 往復 |
 | DS-3 | FW 別の出荷物（Tailwind config / Streamlit config・theme / `templates/ui/README.md`） | 4 往復 |
 | DS-5 | `SKILL.md` を ≦200行に縮小（references へ分割。**実務知は失わない**） | 4 往復 |
 | DS-6 | `templates/design-system.md` のチェックリストに機械/目視の別を付ける | 1 往復 |
@@ -170,7 +170,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
 
 旧優先度1。目的への寄与は間接的だが、**Sonnet が壊したものを機械で検出する**という意味で移行後はむしろ重要になる。
 
-- **対象**: `scripts/check-docs.sh`（新規）／`.github/workflows/kit-ci.yml`（新規。**キット自身用**。配布用サンプルの `templates/github/workflows/` とは別物であることをファイル冒頭に明記）
+- **対象**: `ci/check-docs.sh`（新規）／`.github/workflows/kit-ci.yml`（新規。**キット自身用**。配布用サンプルの `templates/github/workflows/` とは別物であることをファイル冒頭に明記）
 - **内容**:
   - `check-docs.sh` の検査項目:
     1. `INDEX.md` の参照コスト（行数）が実測と一致するか
@@ -182,8 +182,8 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
     7. PRD の「1スキル ≦ 200行 / 1コマンド ≦ 40行」超過の検出（B-13 DS-5 完了までは WARN）
   - 出力は3層（結論 → 種別ごと → 全件は `check-docs-report.md`）
   - `kit-ci.yml` は workflow_dispatch（手動起動のみ。2026-09-17 決定）で `test-hooks.sh` `test-trace-check.sh` `test-quality-harness.sh` `check-docs.sh` `check-design.sh` を実行。**`GATES_REQUESTED=1` を付ける**
-- **完了条件**: 現状のリポジトリに対して F-01・F-02・F-03 を**先に検出できる**（赤→緑）。`scripts/test-check-docs.sh` が正常ケースと各 NG ケースを両方通す。PR で全ジョブ green
-- **検証**: `bash scripts/check-docs.sh`（NG=0）／`bash scripts/test-check-docs.sh`／PR の Actions
+- **完了条件**: 現状のリポジトリに対して F-01・F-02・F-03 を**先に検出できる**（赤→緑）。`ci/test-check-docs.sh` が正常ケースと各 NG ケースを両方通す。PR で全ジョブ green
+- **検証**: `bash ci/check-docs.sh`（NG=0）／`bash ci/test-check-docs.sh`／PR の Actions
 - **見積**: 自分 8〜12 往復（≒25分）
 
 ### B-14 — 強制層を Codex 側へ寄せる
@@ -211,7 +211,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
   - `filter-test-output.sh`: `pytest` / `npm test` / `go test` の出力を失敗行＋前後5行に絞る
   - **`block-gates.py` と共存させる**（ゲートはユーザー要求時のみ実行、実行したときは出力を絞る）
 - **完了条件**: `test-hooks.sh` にケースを追加し、絞り込みが効くことを assert
-- **検証**: `./scripts/test-hooks.sh` PASS
+- **検証**: `./ci/test-hooks.sh` PASS
 - **見積**: 自分 4 往復（≒10分）
 - **決定**: Q-6（既定 OFF・`FILTER_TEST_OUTPUT=1` で有効化）
 

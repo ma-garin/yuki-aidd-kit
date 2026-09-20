@@ -2,7 +2,7 @@
 # test-quality-harness.sh — quality_harness.py の回帰テスト
 # 一時ディレクトリに最小プロジェクトを組み立て、検出 9 種と「雛形が NG=0 で始まること」を確認する。
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-H="$KIT_DIR/scripts/quality_harness.py"
+H="$KIT_DIR/tools/quality_harness.py"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 PASS=0; FAIL=0
 

@@ -13,7 +13,7 @@ expect_exit() { [ "$2" -eq "$3" ] && ok "$1" || ng "$1" "期待 exit=$2 / 実際
 expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出力に '$2' が無い: $(printf '%s' "$3" | tr '\n' ' ' | cut -c1-200)"; }
 expect_noout(){ printf '%s' "$3" | grep -qF -- "$2" && ng "$1" "出力に '$2' が出た" || ok "$1"; }
 TODAY=2026-09-20
-run() { python3 "$KIT_DIR/scripts/test_metrics.py" --root "$1" --today "$TODAY" -o "$TMP/report.md" "${@:2}" 2>&1; }
+run() { python3 "$KIT_DIR/tools/test_metrics.py" --root "$1" --today "$TODAY" -o "$TMP/report.md" "${@:2}" 2>&1; }
 proj() { local d="$TMP/p$RANDOM$RANDOM"; mkdir -p "$d"; "$KIT_DIR/scripts/init-lifecycle.sh" "$d" >/dev/null; "$KIT_DIR/scripts/init-test-docs.sh" "$d" >/dev/null; echo "$d"; }
 
 # 07/08 の表を実データに置き換えるヘルパ（ST 8 件・UAT 5 件・DEF 3 件。実施日は 3 日に分散）

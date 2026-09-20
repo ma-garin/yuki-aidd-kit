@@ -131,7 +131,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 
 - 出力は3層（結論 NG 件数 → 種別ごと → 全件は `check-design-report.md`）。既存の `trace-check.sh` / `quality_harness.py` と同じ作法
 - NG>0 で exit 1
-- **回帰テスト `scripts/test-check-design.sh`** を付ける。**出荷している `demo.html` と `components.css` 自身が NG=0 で通ること**を必ずテストに入れる（雛形が NG を出すと利用者が検査を無視する、という既存2スクリプトと同じ理由）
+- **回帰テスト `ci/test-check-design.sh`** を付ける。**出荷している `demo.html` と `components.css` 自身が NG=0 で通ること**を必ずテストに入れる（雛形が NG を出すと利用者が検査を無視する、という既存2スクリプトと同じ理由）
 
 ### DS-5. `skills/design-system/SKILL.md` の縮小（≦200行）— **実装済み 2026-09-17: 473 → 115 行**
 

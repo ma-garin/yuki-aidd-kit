@@ -198,6 +198,6 @@ Playwright でライト・ダーク・360px・モーダル・トーストを確�
 | `test-gates.yml` | dispatch（手動のみ） | job `contracts`（`quality_harness.py`）＋ job `unit-integration`。**`hashFiles()` でスタックを自動判定**（pyproject/requirements → pytest --cov-fail-under=80、package.json → npm test。両方無ければ `::warning::` で「未実行」と明示）。`GATES_REQUESTED=1` を付けて実行。L3 はコメントアウトで同梱 |
 | `lifecycle-check.yml` | dispatch（手動のみ） | `trace-check.sh docs/lifecycle -o trace-check-report.md` → **失敗時もレポートを artifact 化**し `$GITHUB_STEP_SUMMARY` へ出力 |
 | `deploy.yml` | dispatch（手動のみ） | GitHub Pages（`./docs` を公開。ルート公開なら `./` に変更）。`concurrency: pages` |
-| `secret-scan.yml` | dispatch（手動のみ。コミット時の即時防止は `scripts/pre-commit`） | gitleaks（`fetch-depth: 0` で全履歴） |
+| `secret-scan.yml` | dispatch（手動のみ。コミット時の即時防止は `tools/pre-commit`） | gitleaks（`fetch-depth: 0` で全履歴） |
 
 **注**: これらは配布先へ置くサンプル。**キット自身の `.github/workflows/` は存在しない**（`spec/09-findings.md` F-07 / `spec/10-backlog.md` B-01）。

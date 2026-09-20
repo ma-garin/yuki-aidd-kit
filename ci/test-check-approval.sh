@@ -64,7 +64,7 @@ else:
 s = re.sub(r"^\| reviewed_hash \| .*? \|$", f"| reviewed_hash | {h} |", s, count=1, flags=re.M)
 p.write_text(s, encoding="utf-8")
 PY
-cp "$KIT_DIR/scripts/phase-hash.py" "$TMP/phase-hash.py"
+cp "$KIT_DIR/tools/phase-hash.py" "$TMP/phase-hash.py"
 
 proj() { # 新しい一時プロジェクトを作って雛形を置く
   local d="$TMP/p$RANDOM$RANDOM"; mkdir -p "$d"
@@ -74,7 +74,7 @@ start() { # 工程 $2 を「着手済み」にする（雛形の日付プレー�
   local f; f=$(ls "$1/docs/lifecycle/0$2-"*.md); sed -i 's/YYYY-MM-DD/2026-09-19/' "$f"
 }
 fill() { python3 "$TMP/fill.py" "$@"; }
-run()  { python3 "$KIT_DIR/scripts/check_approval.py" --root "$1" -o "$TMP/report.md" "${@:2}" 2>&1; }
+run()  { python3 "$KIT_DIR/tools/check_approval.py" --root "$1" -o "$TMP/report.md" "${@:2}" 2>&1; }
 
 echo "=== check-approval.sh 回帰テスト ==="
 

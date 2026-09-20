@@ -130,7 +130,7 @@ mkdir -p "$TARGET/scripts"
 if [ -e "$TARGET/scripts/trace-check.sh" ]; then
   echo "↷ scripts/trace-check.sh は既存のためスキップ"
 else
-  cp "$KIT_DIR/scripts/trace-check.sh" "$TARGET/scripts/trace-check.sh"
+  cp "$KIT_DIR/tools/trace-check.sh" "$TARGET/scripts/trace-check.sh"
   chmod +x "$TARGET/scripts/trace-check.sh"
   echo "✅ scripts/trace-check.sh 同梱"
 fi
@@ -138,7 +138,7 @@ fi
 # テスト活動のゲートスクリプト（機能契約ハーネス・UI 検証マーカー。文書雛形は init-test-docs.sh で配置）
 for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh check_approval.py check-approval.sh phase-hash.py test_metrics.py test-metrics.sh; do
   if [ -e "$TARGET/scripts/$s" ]; then echo "↷ scripts/$s は既存のためスキップ"
-  else cp "$KIT_DIR/scripts/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"; echo "✅ scripts/$s 同梱"; fi
+  else cp "$KIT_DIR/tools/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"; echo "✅ scripts/$s 同梱"; fi
 done
 
 # Codex用 AGENTS.md（INDEX.md参照をプロジェクト相対パスに変換）

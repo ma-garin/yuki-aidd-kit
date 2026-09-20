@@ -21,7 +21,7 @@ fresh() { # 複製を作り直してパスを返す
   (cd "$KIT_DIR" && tar --exclude=.git --exclude=check-docs-report.md -cf - .) | tar -xf - -C "$TMP/copy"
   echo "$TMP/copy"
 }
-run() { python3 "$KIT_DIR/scripts/check_docs.py" --root "$1" -o "$TMP/report.md" "${@:2}" 2>&1; }
+run() { python3 "$KIT_DIR/ci/check_docs.py" --root "$1" -o "$TMP/report.md" "${@:2}" 2>&1; }
 
 echo "=== check-docs.sh 回帰テスト ==="
 

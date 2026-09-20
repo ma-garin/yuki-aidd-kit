@@ -19,7 +19,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
 
-使い方: python3 scripts/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
+使い方: python3 ci/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
   --fix-inventory: spec/01-inventory.md の行数を実測で書き換えてから検査する（網羅性の不足は手で足す）
   環境変数 CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,test-trace-check.sh=15" でテスト実行を代替できる（回帰テスト用）。
 """
@@ -61,7 +61,7 @@ HISTORY_DOCS = {"docs/Roadmap.md", "docs/AUDIT-2026-07.md"}
 
 ID_LINE_RE = re.compile(r"`([^`]+)`（(\d+)行）")           # 散文の「`x`（N行）」
 TABLE_COST_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|.*\|\s*(\d+)行\s*\|\s*$")
-BACKTICK_PATH_RE = re.compile(r"`((?:skills|templates|scripts|docs|rules|hooks|commands)/[A-Za-z0-9_./\-]+)`")
+BACKTICK_PATH_RE = re.compile(r"`((?:skills|templates|scripts|tools|ci|docs|rules|hooks|commands)/[A-Za-z0-9_./\-]+)`")
 CASE_RE = re.compile(r"(\d+)\s*ケース")
 PASS_RE = re.compile(r"PASS=(\d+)")
 
@@ -102,7 +102,7 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
 
 
 INVENTORY_PREFIXES = (
-    "", "rules/", "skills/", "commands/", "hooks/", "scripts/",
+    "", "rules/", "skills/", "commands/", "hooks/", "scripts/", "tools/", "ci/",
     "templates/", "templates/lifecycle/", "templates/test/", "templates/github/",
     "templates/components/", "templates/ui/", "docs/", "templates/github/workflows/",
 )
@@ -164,7 +164,7 @@ def test_totals(root: Path, skip: bool) -> dict[str, int]:
     if skip:
         return {}
     totals = {}
-    for f in sorted((root / "scripts").glob("test-*.sh")):
+    for f in sorted((root / "ci").glob("test-*.sh")):
         if f.name == "test-check-docs.sh":   # 自分自身の回帰テストは再帰になるので除外
             continue
         proc = subprocess.run(["bash", str(f)], cwd=root, capture_output=True, text=True, errors="replace",
@@ -210,6 +210,8 @@ def check_references(root: Path, r: Result) -> None:
                     continue
                 if ref.startswith(TARGET_SIDE_PREFIXES):
                     continue
+                if ref.startswith("scripts/") and (root / "tools" / ref[len("scripts/"):]).is_file():
+                    continue  # 導入先の scripts/ に置かれる道具（キット内の実体は tools/）
                 if not (root / ref).exists():
                     r.add(True, "参照切れ", f"{rel}:{i}", f"`{ref}` が存在しない")
 

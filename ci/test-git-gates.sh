@@ -18,7 +18,7 @@ expect_empty(){ [ -z "$2" ] && ok "$1" || ng "$1" "出力あり: $(printf '%s' "
 R="$TMP/repo"; mkdir -p "$R/scripts" "$R/docs" "$R/static"
 cd "$R"
 git init -q && git config user.email t@example.com && git config user.name t
-cp "$KIT_DIR/scripts/pre-commit" "$KIT_DIR/scripts/pre-commit-ui-gate.sh" "$KIT_DIR/scripts/ui-hash.py" scripts/
+cp "$KIT_DIR/tools/pre-commit" "$KIT_DIR/tools/pre-commit-ui-gate.sh" "$KIT_DIR/tools/ui-hash.py" scripts/
 echo "base" > README.md && git add README.md && git commit -qm init
 
 # gitleaks が入っている環境でもフォールバック経路（簡易パターン）を検証するため PATH を最小にする
