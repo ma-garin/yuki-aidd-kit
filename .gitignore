@@ -27,3 +27,5 @@ check-design-report.md
 check-approval-report.md
 token-audit-report.md
 test-metrics-report.md
+# 応答の盲検対比評価の出力（応答・判定の入出力・report.md。実行ごとに作り直す）
+evals/response/out/

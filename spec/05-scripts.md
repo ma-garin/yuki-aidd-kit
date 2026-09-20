@@ -285,6 +285,18 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 - exit 0 合格／1 NG／2 判定不能（`skills/` 無し）。`--json` 対応（`error.type` は `routing.failed`）
 - 語彙の近似なので意味は判定できない。`/usage` のスキル別観測（B-10）は残す
 
+## 応答の盲検対比評価（2026-09-20 追加・M23）
+
+`scripts/response-eval.sh`（本体 `response_eval.py`）。「規約を変えて応答が良くなったか」を人の印象でなく盲検の判定で決める。出所: i-have-adhd の blind paired eval。
+
+- 入力: A（基準）と B（候補）の system prompt ファイル、`evals/response/cases.jsonl`（依頼文 10 件）、`evals/response/rubric.md`（軸・重み・判定者指示）
+- 盲検: 判定者には X / Y の匿名ラベルだけを渡す（条件名・ファイル名・モデル名を渡さない）。X/Y の割当は案件ごとに seed 付き乱数。既定で順序を入れ替えてもう 1 回判定し平均する（`--single-order` で 1 回）
+- 採点: 軸ごと 0〜10 × 重み（正確性 35・自律 25・行動可能性 20・安全 10・簡潔 10）= 100 点満点。blocker が付いた応答は 0
+- runner: `claude`（`claude -p --setting-sources "" --model <ID> --output-format json --system-prompt-file`。`~/.claude` の hooks / rules を切って比べる system prompt だけを効かせる）か `cmd:<コマンド> {system}`（依頼文は stdin、応答は stdout）。判定者は `--judge-runner`
+- 出力: `evals/response/out/`（`plan.json` 割当・`<id>.A.md` `<id>.B.md` 応答・`<id>.judge.<順序>.txt` 判定の入出力・`records.json`・`report.md`）。`score` で集計だけやり直せる
+- exit 0: B が A より悪くない（平均が下回らず、B に blocker 無し）／1: B が悪い／2: 判定不能（runner 失敗・判定 JSON が読めない）。`--json` 対応（`response.worse` / `response.undetermined`）
+- 未実施: 実 LLM での実行（本セッションに `claude` CLI は無い）。偽 runner の回帰テストで盲検・順序入替・blocker・判定不能の分岐は確認済み
+
 ## 回帰テスト（7件・全 green）
 
 | スクリプト | 行 | ケース数 | 2026-09-16 実測 | 特筆 |
@@ -296,6 +308,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
 | `test-check-docs.sh` | 149 | **46** | PASS=46 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
 | `test-skill-route-check.sh` | 112 | **20** | PASS=20 / FAIL=0 | キットの skills/ と evals/routing/ の複製を壊して 5 検査の検出を確認。リポジトリ自身が NG=0 で通ること・`--explain`・`--json`・skills 無し exit 2 |
+| `test-response-eval.sh` | 129 | **27** | PASS=27 / FAIL=0 | 偽 runner（応答は system prompt で分岐・判定者は GOOD を含む側を高く採点）。validate の壊し方 4 種・盲検（判定者の stdin に条件名が無い）・順序入替 20 回／`--single-order` 10 回・負け・blocker・同点・判定不能・runner 失敗・seed 再現・score |
 | `test-check-design.sh` | 143 | **43** | PASS=43 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス ／ **配布先の形（.claude/templates/tokens.css 自動検出・.claude/ 不走査・貼り込んだ定義行）** |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。

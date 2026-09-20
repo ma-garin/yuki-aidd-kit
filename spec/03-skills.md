@@ -164,6 +164,8 @@
 
 ## agent-eval（67行 + references 184行）
 
+> キット自身の応答（rules / AGENTS / スキル本文の改稿前後）を比べるときは `scripts/response-eval.sh`（盲検の A/B。M23）。本スキルはプロジェクトの LLM 機能の評価。
+
 - **目的**: LLM 出力は非決定性なので pass/fail の単体テストでは測れない。**トレース＋データセット＋スコアラー＋回帰ゲート**の4点で評価（Weave 相当を無料スタックで）
 - **スタック**: DeepEval（pytest-native, MIT）/ Langfuse セルフホスト（MIT）/ judge は**業務＝OpenAI GPT-4o系（精度重視）・個人PWA＝Gemini 無料枠 or Ollama（課金ゼロ）**
 - **システム別スコアラー**: 意思決定支援（判定正確性の混同行列・**FN が業務上 Critical**／根拠の妥当性 G-Eval／JSON 妥当性）/ RAG（**Faithfulness** が主軸・Contextual Precision/Recall・引用提示率）/ マルチエージェント（層別正確性・Tool Correctness・ハンドオフ整合性）

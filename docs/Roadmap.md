@@ -298,4 +298,5 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 - [x] 同日: `templates/implement-profile.md` に「言い訳と事実」表（agent-skills の Common Rationalizations の型）
 - [x] 同日: 検査スクリプト 6 本に `--json`（`{ok, exit, data, meta, error{type, message, hint, retry_argv}}`。WeKnora CLI の出力契約の型）。`test-json-envelope.sh` 13 ケース
 - [x] 同日: スキル発火の機械判定（`spec/09` F-13 を是正）。`evals/routing/<skill>.json` 20 本＋`scripts/skill-route-check.sh`（構造／発火／誤発火／衝突／床。文字 n-gram TF-IDF の余弦。出所: agent-skills の evals Tier 2）。初回実測 rank-1 率 100%（positive 80 件）を kit-ci の床に。`test-skill-route-check.sh` 20 ケース
+- [x] 同日: 応答の盲検対比評価 `scripts/response-eval.sh`（A/B の system prompt に同じ依頼文 10 件、判定者には X/Y の匿名ラベルだけ。順序入替・5 軸の重み・blocker。出所: i-have-adhd の blind paired eval）。`test-response-eval.sh` 27 ケース（偽 runner）。実 LLM での実行は未実施（`claude` CLI 無し）
 - 残: 編集系 3 本（block-phase / pre-write-check / post-write-html）のパッチ本文からのパス抽出、instruction-guard / reply-language の rollout 形式対応、`install.sh` の `~/.codex/hooks.json` 出力、Codex 実機での動作確認（本セッションに Codex CLI は無い）。いずれも B-14

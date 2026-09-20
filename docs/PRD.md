@@ -63,6 +63,8 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 - **FR-18 基準を緩めない強制**: `git commit` の前に `floor-guard.py` が差分から「基準を下げる手」（テストの skip・assert 減・テスト削除・抑止コメント・スタブ・しきい値の緩和・除外リスト追加）を検出して止める（A-12）。Claude Code と Codex の両方に配線（`export-project.sh`）。正当な変更は commit メッセージの `Floor-Guard-Allow: <理由>` で通す（git 履歴に残る。環境変数のバイパスは作らない）。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 - **FR-19 スキル発火の機械判定**: 20 スキルの `description` が「発火すべき依頼文で上位に来る／他スキルの依頼文で 1 位にならない／互いに似すぎない」ことを、`evals/routing/<skill>.json` の依頼文と `scripts/skill-route-check.sh` で LLM を呼ばずに判定する。落ちたら直すのは description（依頼文を description の写しにしない）
   - 検証基準: 全スキルにケース（positive ≧ 3・negative ≧ 2）があること。kit-ci が `--min-rank1` の床（初回実測 100）で NG にする。床は下げない
+- **FR-20 応答の盲検対比評価**: 規約（rules / AGENTS.md / スキル本文）やモデルを変えたとき、応答が良くなったかを `scripts/response-eval.sh` で判定する。判定者には出所を伏せ（X/Y）、順序を入れ替えて 2 回判定し、5 軸の重み（正確性 35・自律 25・行動可能性 20・安全 10・簡潔 10）で 100 点満点、blocker は 0
+  - 検証基準: exit 0 は「B が A より悪くない」（平均が下回らず blocker 無し）。依頼文は `evals/response/cases.jsonl`（保守者の言い方）、重みは `evals/response/rubric.md`（下げない）。runner は `claude -p --setting-sources ""`（比べる system prompt だけを効かせる）
 - **FR-16 テスト工程のメトリクス**: 工程文書 05〜08 のテスト表・欠陥表と `system_test_cases.csv` を真実源に、`scripts/test-metrics.sh` が消化率・合格率・欠陥密度・Critical/High 未解決・滞留・偏り・完了予測（根拠付き）を出す。集計値を文書に手書きしない
   - 検証基準: 結果欄が語彙外の行は分母に含め、1 件でもあれば `--gate` は 2（判定できない）。欠陥表が無ければ密度・未解決は「算出できない」（0 ではない）。基準は `TESTING_STRATEGY.md` §7 の表（しきい値＋出典。出典が空の行は読まない）。`--into` が完了報告書 §2 と基準評価を置き換え、GO/NO-GO は人が書く。配布雛形が status で exit 0 になることを回帰テストに含める
 - **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する

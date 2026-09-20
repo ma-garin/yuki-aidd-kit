@@ -31,6 +31,8 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 同日 — **スキル発火の機械判定**（`spec/09` F-13 を是正）: `scripts/skill-route-check.sh` が `evals/routing/<skill>.json`（スキルごとに発火すべき依頼文 positive ≧ 3・発火してはいけない依頼文 negative ≧ 2、negative には本来の担当 `owner`）を読み、20 スキルの `description` に対する依頼文の順位を文字 n-gram TF-IDF の余弦で決定論的に出す。検査は 5 つ: 構造（ケース不足）／発火（positive が top_k 外）／誤発火（negative で 1 位・owner より上）／衝突（description 同士の類似 ≧ 0.75 は NG、≧ 0.50 は WARN）／床（`--min-rank1 N`。初回実測 100% を kit-ci の床にした。下げない）。落ちたら直すのは依頼文でなく description（発火語を足す・責務分離の一文を足す）。`--explain "<依頼文>"` で順位を見てから直す。LLM を呼ばないので意味は判定できないが、`retro` の「発火しなかったスキル → description に言い回しを追加」が観測頼みだった点を、変更のたびに機械で確かめられるようにした。出所は [agent-skills](https://github.com/addyosmani/agent-skills) の evals Tier 2。`--json` 対応。回帰テスト `scripts/test-skill-route-check.sh` 20 ケース
 
+同日 — **応答の盲検対比評価**: `scripts/response-eval.sh run --a <基準の system prompt> --b <候補>` が `evals/response/cases.jsonl`（保守者の言い方に寄せた依頼文 10 件。「報告して」「判断して」「なぜ最新化されていない」「しきい値を下げてよいか」…）を両方に投げ、判定者（LLM）には **X / Y の匿名ラベルだけ**を渡して `evals/response/rubric.md` の 5 軸（正確性 35・自律 25・行動可能性 20・安全 10・簡潔 10）で 0〜10 を付けさせる。案件ごとに X/Y の割当を seed 付き乱数で決め、順序を入れ替えてもう 1 回判定して位置バイアスを消す。blocker（捏造・言語違反・基準を下げる提案・許可待ちで停止）が付いた応答は合計 0。exit 0 = B が A より悪くない、1 = 悪い、2 = 判定不能。runner は `claude -p --setting-sources ""`（比べる system prompt だけを効かせる）か任意コマンド（`cmd:<コマンド> {system}`）。使い道は rules / AGENTS.md / スキル本文の改稿前後、Sonnet ↔ Codex の切替前後。「良くなった気がする」を数にする。出所は [i-have-adhd](https://github.com/ayghri/i-have-adhd) の blind paired eval。回帰テスト `scripts/test-response-eval.sh` 27 ケース（偽 runner で盲検・順序入替・blocker・判定不能を検証）
+
 ## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22。6.8.1: 全体導入 `install-guard.sh`）
 
 作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。
@@ -208,6 +210,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）
 ./scripts/test-skill-route-check.sh && ./scripts/skill-route-check.sh   # スキル発火の機械判定の回帰テスト（20ケース）と本検査
+./scripts/test-response-eval.sh   # 応答の盲検対比評価の回帰テスト（27ケース。本評価は response-eval.sh run --a 基準 --b 候補）
 ./scripts/test-check-approval.sh && ./scripts/check-approval.sh   # 工程承認ゲートの回帰テストと本検査
 ./scripts/test-token-audit.sh && ./scripts/token-audit.sh         # トークン節約の仕組みの回帰テストと点検
 ./scripts/test-test-metrics.sh && ./scripts/test-metrics.sh       # テストメトリクスの回帰テストと集計（--gate で完了基準の判定）
@@ -289,6 +292,7 @@ yuki-aidd-kit/
 │   ├── check-docs.sh (check_docs.py) / test-check-docs.sh / test-git-gates.sh  # 文書整合・git ゲートの検査
 │   ├── check-design.sh (check_design.py) / test-check-design.sh  # デザイン検査（直値・トークン・CDN・alert()）
 │   ├── skill-route-check.sh (skill_route_check.py) / test-skill-route-check.sh  # スキル発火の機械判定（ケースは evals/routing/）
+│   ├── response-eval.sh (response_eval.py) / test-response-eval.sh  # 応答の盲検対比評価（依頼文・rubric は evals/response/）
 │   ├── export-project.sh                        # プロジェクト配布
 │   ├── init-lifecycle.sh / trace-check.sh / test-trace-check.sh  # 工程ライフサイクル
 │   ├── check-approval.sh (check_approval.py) / phase-hash.py / test-check-approval.sh  # 工程承認ゲート

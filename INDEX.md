@@ -17,6 +17,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
 ./scripts/test-json-envelope.sh               # 検査スクリプトの --json 出力契約の回帰テスト（13ケース）
 ./scripts/test-skill-route-check.sh           # スキル発火の機械判定の回帰テスト（20ケース）
+./scripts/test-response-eval.sh               # 応答の盲検対比評価の回帰テスト（27ケース。LLM は呼ばない）
 ./scripts/test-hooks.sh                       # hooks の回帰テスト（106ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
 ./scripts/install-guard.sh                   # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge・冪等。Claude Code 全体に効く）
@@ -25,6 +26,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。--changed で「変更を説明する文書の未更新」も。NG=0 が合格）
 ./scripts/check-design.sh [対象パス]           # デザイン検査（直値・未定義トークン・外部 CDN・alert()。既定 templates/ui templates/components。NG=0 が合格）
 ./scripts/skill-route-check.sh [--min-rank1 N] # スキル発火の機械判定（evals/routing/ の依頼文で description の発火・誤発火・衝突を検査。--explain "<依頼文>" で順位。NG=0 が合格）
+./scripts/response-eval.sh run --a <基準> --b <候補>  # 応答の盲検対比評価（rules/AGENTS/スキル本文の改稿前後を同じ依頼文で比べ、判定者には出所を伏せる。0=悪くない 1=悪い 2=判定不能）
 ./scripts/export-project.sh <target>          # プロジェクト配布（.claude/ と .codex/hooks.json。Codex・エフェメラル環境・teammate向け）
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
@@ -37,7 +39,7 @@ open docs/userguide.html                      # ユーザーガイド（概要�
 open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書（13 章）
 ```
 
-検査スクリプト（`check-docs` / `check-approval` / `check-design` / `quality_harness` / `test-metrics` / `floor-guard --check` / `skill-route-check`）は `--json` で 1 行の JSON `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（エージェント向け。NG のときは `error.hint` が次の一手、`retry_argv` が直した後の再実行）。
+検査スクリプト（`check-docs` / `check-approval` / `check-design` / `quality_harness` / `test-metrics` / `floor-guard --check` / `skill-route-check` / `response-eval`）は `--json` で 1 行の JSON `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（エージェント向け。NG のときは `error.hint` が次の一手、`retry_argv` が直した後の再実行）。
 
 **導入方式は2つ**（併用が前提。`docs/Vision.md` の「配置の2層」参照）:
 - **グローバル導入**（`install.sh`）: 自分のPC1台で複数プロジェクトを横断する日常運用
@@ -161,10 +163,10 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 301行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 302行 |
 | `docs/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
-| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 89行 |
+| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 91行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
 | `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 80行 |
