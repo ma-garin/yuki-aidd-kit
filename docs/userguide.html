@@ -386,7 +386,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ├── rules/aidd-kit/      ← 規律 4 本
 ├── skills/              ← 手順書 20 本（各フォルダに SKILL.md）
 ├── commands/            ← スラッシュコマンド 18 本
-├── hooks/               ← 見張り役 17 本
+├── hooks/               ← 見張り役 18 本
 └── settings.json        ← hooks を Claude Code に登録する設定</code></pre>
         </div>
       </section>
@@ -405,7 +405,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ✅ コマンド: 18個
 ✅ settings: effortLevel=high / autoCompactWindow=200k / BASH_MAX_OUTPUT_LENGTH=12000
 ✅ Hooks: 16個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み ...）
-✅ .codex/hooks.json: Codex CLI 用に 4 hook を配線（block-gates / filter-output / prompt-priority / context-guard。Codex で /hooks を開いて信頼すると有効）
+✅ .codex/hooks.json: Codex CLI 用に 5 hook を配線（block-gates / filter-output / floor-guard / prompt-priority / context-guard。Codex で /hooks を開いて信頼すると有効）
 ✅ Rules: 4個（.claude/rules/）
 ✅ .claude/KIT_VERSION: 6.9.0 xxxxxxx 2026-09-19
 ✅ INDEX.md 同梱
@@ -428,14 +428,14 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <pre><code>cd ~/work/my-app
 git add .claude .codex AGENTS.md CLAUDE.md scripts
 git commit -m "chore: add AIDD Kit"</code></pre>
-            <p class="why">コミットしておくと、他の人が clone したときも、クラウドの Claude Code が開いたときも、同じ設定が付いてきます。<code>.codex/hooks.json</code> は Codex 用の見張り役の登録（4 つ）です。</p>
+            <p class="why">コミットしておくと、他の人が clone したときも、クラウドの Claude Code が開いたときも、同じ設定が付いてきます。<code>.codex/hooks.json</code> は Codex 用の見張り役の登録（5 つ）です。</p>
           </li>
           <li><strong>（Codex も使う人だけ）見張り役を信頼する</strong>
             <pre><code>cd ~/work/my-app
 codex
 <span class="c"># Codex の中で</span>
 /hooks</code></pre>
-            <p class="why">Codex はプロジェクトに入っている見張り役を、あなたが一度「信頼する」と言うまで動かしません（勝手に仕込まれた hook を防ぐため）。<code>/hooks</code> の画面で <code>.codex/hooks.json</code> を信頼してください。中身を変えたときはもう一度聞かれます。効くのは「出力を絞る」「長く空いた再開を知らせる」「急ぎの指示を優先する」「テストの無断実行を止める」の 4 つで、それ以外（ファイル編集の見張り・指示への応答の見張り）は Claude Code だけです。</p>
+            <p class="why">Codex はプロジェクトに入っている見張り役を、あなたが一度「信頼する」と言うまで動かしません（勝手に仕込まれた hook を防ぐため）。<code>/hooks</code> の画面で <code>.codex/hooks.json</code> を信頼してください。中身を変えたときはもう一度聞かれます。効くのは「出力を絞る」「長く空いた再開を知らせる」「急ぎの指示を優先する」「テストの無断実行を止める」「テストやしきい値を弱める変更を止める」の 5 つで、それ以外（ファイル編集の見張り・指示への応答の見張り）は Claude Code だけです。</p>
           </li>
         </ol>
         <h3>まだプロジェクトが無いとき（ゼロから作る）</h3>
@@ -1058,7 +1058,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
         <p>「床」は毎回のセッション開始で必ず読まれる分の<strong>推定</strong>です。本当の数字は Claude Code で <code>/context</code>（何が載っているか）と <code>/usage</code>（何に使ったか・キャッシュミス）を打つと出ます。週に 1 回、<code>docs/lessons.md</code> の表に 1 行残してください。会話内で <code>/token-check</code> と打つと、AI がこの点検を代行して結果を読み解きます。</p>
 
         <h3>Codex では</h3>
-        <p>Codex にも同じ仕組みの hook があります（2026-09 時点）。<code>export-project.sh</code> が <code>.codex/hooks.json</code> を書き出し、「出力を絞る」「長く空いた再開を知らせる」「急ぎの指示を優先する」「ゲートの無断実行を止める」の 4 つが Codex でも動きます。初回は Codex で <code>/hooks</code> を開いて信頼してください（内容を変えると再承認）。「大きいファイルは先頭だけ読む」は Codex にファイルを読む道具が無いため効かず、<code>AGENTS.md</code> の約束事として AI が自分で守る形になります。設定 3 つと <code>/clear</code> 相当（新しい会話で始める）は同じ考え方で使えます。</p>
+        <p>Codex にも同じ仕組みの hook があります（2026-09 時点）。<code>export-project.sh</code> が <code>.codex/hooks.json</code> を書き出し、「出力を絞る」「長く空いた再開を知らせる」「急ぎの指示を優先する」「ゲートの無断実行を止める」「テストやしきい値を弱める変更を止める」の 5 つが Codex でも動きます。初回は Codex で <code>/hooks</code> を開いて信頼してください（内容を変えると再承認）。「大きいファイルは先頭だけ読む」は Codex にファイルを読む道具が無いため効かず、<code>AGENTS.md</code> の約束事として AI が自分で守る形になります。設定 3 つと <code>/clear</code> 相当（新しい会話で始める）は同じ考え方で使えます。</p>
       </section>
 
       <section id="design">

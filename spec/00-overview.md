@@ -56,7 +56,7 @@
 | 層 | 置き場所 | 導入 | 効く範囲 | 目的 |
 |---|---|---|---|---|
 | **グローバル層** | `~/.claude/` `~/.codex/` | `scripts/install.sh` | 自分の PC 1台・複数プロジェクト横断 | 普段使いの一貫性。キット更新が即座に全プロジェクトへ反映 |
-| **プロジェクト配布層** | 対象プロジェクト直下の `.claude/` `.codex/hooks.json` `AGENTS.md` `CLAUDE.md` | `scripts/export-project.sh <target>` | Codex／リモート・エフェメラルな Claude Code／CI／teammate の clone 先 | install 不要でその場で効く。対象の git にコミットして持ち運ぶ |
+| **プロジェクト配布層** | 対象プロジェクト直下の `.claude/` `.codex/hooks.json`（Codex で効く hook 5 本） `AGENTS.md` `CLAUDE.md` | `scripts/export-project.sh <target>` | Codex／リモート・エフェメラルな Claude Code／CI／teammate の clone 先 | install 不要でその場で効く。対象の git にコミットして持ち運ぶ |
 
 プロジェクト配布層は**書き出した時点のスナップショット**であり、キット本体の更新には自動追従しない（再エクスポートで同期）。
 配布の性質上避けられないトレードオフとして許容している。

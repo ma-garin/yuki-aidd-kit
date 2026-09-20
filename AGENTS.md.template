@@ -8,7 +8,7 @@
 - 既定値で進めて結果を1行で報告する。ただし **100行超のファイル作成・2分超の処理・削除/上書き/push/外部送信** の前は、質問だけ書いて止まる
 
 ## 必須プロセス（`rules/absolute-rules.md` A-1〜A-13）
-- **保守者の発言は進行中の作業より優先**。作業の途中で届いても、次のツール呼び出しより先に日本語で応答する（A-13。Claude Code では `instruction-guard.py` が止める。Codex では `.codex/hooks.json` の 4 本（block-gates / filter-output / prompt-priority / context-guard）だけが効き、指示への応答・編集の見張り・部分読みは散文どおり自分で守る）
+- **保守者の発言は進行中の作業より優先**。作業の途中で届いても、次のツール呼び出しより先に日本語で応答する（A-13。Claude Code では `instruction-guard.py` が止める。Codex では `.codex/hooks.json` の 5 本（block-gates / filter-output / floor-guard / prompt-priority / context-guard）だけが効き、指示への応答・編集の見張り・部分読みは散文どおり自分で守る）
 - 着手前に `目的: ...` と `終了条件: ...`（A-1・H-1。何が満たされたら止まるか）／2分超の作業は見込み・実績・差異を実測（A-2）／提出時に `残課題: ...` を1〜3行（A-3。分かっている不足は申告で済ませず、その場で対応する）／検証していないことを断定しない（A-5）／完了前に変更したファイル名で文書を grep し、言及している文書を同じ差分で更新する（done-gate Type C。検査が緑＝文書が最新ではない。キットでは `docs-gate.py` が commit を止める）
 
 ## 応答スタイル

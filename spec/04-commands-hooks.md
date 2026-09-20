@@ -51,7 +51,7 @@ Codex CLI の lifecycle hook（openai/codex `codex-rs/hooks`、Stable・既定�
 
 | hook | Codex | 判定の根拠 |
 |---|---|---|
-| `block-gates.py` / `filter-output.py` | ✅ | Bash の `tool_input` は `{"command": ...}` で同じ。`updatedInput` も適用される |
+| `block-gates.py` / `filter-output.py` / `floor-guard.py` | ✅ | Bash の `tool_input` は `{"command": ...}` で同じ。`updatedInput` も適用される。floor-guard は差分を git から直接読む |
 | `prompt-priority.py` / `context-guard.py` | ✅ | `prompt` / `transcript_path` があり、`additionalContext` を注入できる |
 | `pre-write-check.sh` / `block-phase.py` / `post-write-html.sh` | ❌ | 編集は `apply_patch` で `tool_input` が `{"command": <パッチ本文>}`。`file_path` が無い（B-14: パッチ本文からパス抽出） |
 | `instruction-guard.py` / `reply-language.py`（言語＋ A-9 の型: 冒頭の宣言文・末尾の申し出・結論ラベル） | ❌ | transcript が Codex 独自の rollout 形式（B-14） |
@@ -69,6 +69,7 @@ Codex CLI の lifecycle hook（openai/codex `codex-rs/hooks`、Stable・既定�
 | `pre-write-check.sh` | PreToolUse Write/Edit | stdin JSON `.tool_input.file_path`（jq → python3 フォールバック） | 秘密情報ファイル名（`.env/.pem/.key/.secret`）警告 / 同階層に `.html` がある `.css`・`.js` 書き込み警告（**「単一HTMLツールのプロジェクトなら規約違反。通常の Web プロジェクトなら無視してよい」と条件を明記**＝AUDIT A-07） | 常に 0（ブロックしない） |
 | `post-write-html.sh` | PostToolUse Write/Edit | 同上 | `.html` のみ反応。行数/KB 報告 / **500行超で部分編集を推奨** / localStorage 未使用の助言 | 常に 0 |
 | `block-explore.sh` | PreToolUse Read/Grep/Glob | stdin JSON `.tool_name` ＋ `CLAUDE_PROJECT_DIR`（既定 `$PWD`） | `.claude/mode` があり tool が Read/Grep/Glob なら stderr に4行の警告 | **exit 2**（ブロック＋Claude へフィードバック）。それ以外 0 |
+| `floor-guard.py` | PreToolUse Bash（`git commit` のみ） | stdin JSON `.tool_input.command` ＋ `git diff HEAD` と未追跡ファイル | skip / assert 減 / テスト削除 / 抑止コメント / スタブ / しきい値の緩和 / 除外リスト追加を検出し deny。`Floor-Guard-Allow: <理由>` で通す（systemMessage）。CLI `--check` は exit 0/1/2 | hook は常に 0 |
 | `block-gates.py` | PreToolUse Bash | stdin JSON `.tool_input.command` | `hookSpecificOutput.permissionDecision = deny` の JSON。理由に H-7 と `GATES_REQUESTED=1` の指示 | 常に 0（判断は JSON で返す） |
 | `progress.py` | 手動（bash に連結） | `start <名> <秒>` / `step <文字列>` / `done` | `.claude/progress.json` の作成・更新・削除 | 0（引数不足で 1） |
 | `statusline.py` | statusLine | stdin（そのまま fallback へ渡す） | `⏱ <task> [<step>] <経過>/<見積> 残り <r> ｜ <従来表示>` | 常に 0 |

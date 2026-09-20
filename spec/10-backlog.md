@@ -199,7 +199,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
   - `pre-compact.py`: Codex の PreCompact 出力に `additionalContext` が無い。`CLAUDE.md.template` の「Compact instructions」を `AGENTS.md` 側にも置く
   - `install.sh`: `~/.codex/hooks.json` へのグローバル配線（`install-guard.sh` と同じ merge 方式）
   - `scripts/install-git-hooks.sh`（新規）: `pre-commit` と `pre-commit-ui-gate.sh` を `.git/hooks/pre-commit` に**1コマンドで配線**する。現在は手順が文章でしか書かれておらず、配線されていない可能性が高い
-- **完了条件**: Codex 実機で `.codex/hooks.json` の 4 本が動く（`GATES_REQUESTED` 無しの pytest が止まる／`git log` が 20 件に絞られる）。一時リポジトリで `install-git-hooks.sh` を実行し、秘密情報コミットと UI 未検証コミットが実際に止まること
+- **完了条件**: Codex 実機で `.codex/hooks.json` の 5 本が動く（`GATES_REQUESTED` 無しの pytest が止まる／`git log` が 20 件に絞られる）。一時リポジトリで `install-git-hooks.sh` を実行し、秘密情報コミットと UI 未検証コミットが実際に止まること
 - **検証**: Codex 実機 2 状態 ＋ git hook 4 状態（秘密情報あり／UI 変更＋マーカー無し／マーカー期限切れ／正常）
 - **見積**: 自分 8 往復（≒20分）
 

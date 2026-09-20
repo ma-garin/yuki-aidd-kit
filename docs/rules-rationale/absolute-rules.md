@@ -144,6 +144,15 @@ qa-autopilot の memory/constitution.md 第 2 条・plan_0909.md 0-2 より。�
 「確認済」とし、原本未照合の状態で「準拠」を主張しない。準拠を主張するときは**範囲を限定**し、対象外を明記する。
 
 
+### A-12 の機械化（2026-09-20）
+
+散文では「通すために弱めない」を守れる保証が無いので、`claude-code/hooks/floor-guard.py` が `git commit` の直前に差分だけを見て
+「基準を下げる手」を検出して止める（出所: agent-skills の constraint-driven-development / floor-guard）。検出するのは
+テストへの skip / only / xfail 追加、テストファイルからの assert / expect の正味減少、テストファイルの削除、lint / 型 / セキュリティの
+抑止コメント、TODO / NotImplementedError / 空 except のスタブ、しきい値ファイル（TESTING_STRATEGY §7・feature_contracts・pyproject・
+coverage・jest / vitest / playwright 設定・check_*.py）の緩む向きの数値変更、除外リストへの追加。**厳しくする変更は黙って通す。**
+正当に緩めるときは commit メッセージに `Floor-Guard-Allow: <理由>` を書く（git 履歴に残る）。環境変数のバイパスは作らない。
+
 ## A-12 補足: 止まるときの報告 5 項目と「止まる条件」（2026-09-19 第 2 回追加）
 
 qa-autopilot `harness/loop.md` §1「止まる。報告: タスク ID、失敗ゲート、3 回の修正内容、推定原因、次に試すべきこと」より。

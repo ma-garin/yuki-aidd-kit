@@ -20,6 +20,12 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR\"/claude-code/hooks/docs-gate.py",
             "timeout": 60,
             "statusMessage": "変更を説明する文書が同じ差分で更新されているか確認中"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/claude-code/hooks/floor-guard.py",
+            "timeout": 20,
+            "statusMessage": "基準を下げる差分が無いか確認中（A-12）"
           }
         ]
       }

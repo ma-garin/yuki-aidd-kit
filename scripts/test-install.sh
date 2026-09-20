@@ -117,7 +117,7 @@ expect_grep "block-phase.py が Write|Edit|MultiEdit に配線される（.claud
 # Codex CLI 用（M23）: 入出力を照合済みの 4 本だけを .codex/hooks.json に配線する。未照合のものは配線しない（効くふりをしない）
 expect_file "生成物: .codex/hooks.json（Codex CLI 用）" "$P/.codex/hooks.json"
 python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$P/.codex/hooks.json" 2>/dev/null && ok "生成した .codex/hooks.json が JSON として妥当" || ng "生成した .codex/hooks.json が JSON として妥当" "パース失敗"
-for h in block-gates.py filter-output.py prompt-priority.py context-guard.py; do
+for h in block-gates.py filter-output.py floor-guard.py prompt-priority.py context-guard.py; do
   expect_grep "Codex に $h が配線される（stdin の形が Claude Code と同じと照合済み）" ".claude/hooks/$h" "$P/.codex/hooks.json"
 done
 for h in instruction-guard.py block-phase.py pre-read-guard.py pre-compact.py session-summary.sh; do

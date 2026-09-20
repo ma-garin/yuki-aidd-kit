@@ -52,7 +52,7 @@
 | `.claude/INDEX.md` | フルコピーなので地図として同梱 |
 | `.claude/KIT_VERSION` | `<VERSION> <commit> <日付>`。配布先がどの版から出たかを判別（S2） |
 | `.claude/settings.json` | 相対パス版をヒアドキュメントで生成（block-explore / block-phase / 指示優先 3 hook を含む全 hook） |
-| `.codex/hooks.json` | Codex CLI 用（M23）。入出力を照合済みの 4 hook（block-gates / filter-output / prompt-priority / context-guard）だけを配線。既存は `.bak`。初回は Codex の `/hooks` で信頼 |
+| `.codex/hooks.json` | Codex CLI 用（M23）。入出力を照合済みの 5 hook（block-gates / filter-output / floor-guard / prompt-priority / context-guard）だけを配線。既存は `.bak`。初回は Codex の `/hooks` で信頼 |
 | `AGENTS.md` / `CLAUDE.md` | template から生成。`sed` で `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md` → `.claude/INDEX.md` に変換 |
 | `scripts/trace-check.sh` | 既存があればスキップ |
 | `scripts/{quality_harness.py,ui-hash.py,pre-commit-ui-gate.sh}` | 既存があればスキップ |

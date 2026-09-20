@@ -294,4 +294,5 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 - [x] 古い記述の修正: M22 の残・`spec/10` B-14・`spec/11` D-4・`skills/context-compression`・`docs/userguide.html`・`spec/05`・`spec/09` F-26
 - [x] 同日追記（保守者「なぜドキュメント類が最新化されていないのか」）: 一次コミットで userguide・PRD・spec/04 が古いまま残った（`spec/09` F-27）。`check-docs.sh --changed` 検査 12（変更を説明する文書が同じ差分に無ければ NG）＋ `docs-gate.py`（`git commit` 前に deny）＋ H-7・done-gate・kit-ci への配線。test-hooks 79 → 85、test-check-docs 32 → 46
 - [x] 翌日追記（2026-09-20。保守者「結論は何か。ダラダラと長すぎる」「くど過ぎて伝わっていない」）: `reply-language.py` が A-9 の型も見る。冒頭の宣言文・末尾の申し出と締め・「結論:」ラベル行を block（出所: i-have-adhd の送信前チェック）。test-hooks 85 → 92。次は floor-guard（agent-skills）→ スキル発火テスト
+- [x] 同日: `floor-guard.py`（A-12 を機械に。skip・assert 減・テスト削除・抑止コメント・スタブ・しきい値の緩和・除外リスト追加を commit 前に deny。Claude Code と Codex 両方に配線。出所: agent-skills floor-guard）。test-hooks 92 → 106、test-install 115 → 116
 - 残: 編集系 3 本（block-phase / pre-write-check / post-write-html）のパッチ本文からのパス抽出、instruction-guard / reply-language の rollout 形式対応、`install.sh` の `~/.codex/hooks.json` 出力、Codex 実機での動作確認（本セッションに Codex CLI は無い）。いずれも B-14

@@ -72,7 +72,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
         "matcher": "Bash",
         "hooks": [
           { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" },
-          { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" }
+          { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" },
+          { "type": "command", "command": "python3 .claude/hooks/floor-guard.py", "timeout": 20, "statusMessage": "基準を下げる差分が無いか確認中（A-12）" }
         ]
       }
     ],
@@ -112,8 +113,8 @@ echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/ho
 # stdin（tool_name / tool_input / prompt / transcript_path）・出力（decision / hookSpecificOutput）を受け付け、
 # hooks.json のキーも settings.json と同じ形（timeout / statusMessage）で読める。hook はプロジェクトルートを
 # 作業ディレクトリに実行される（openai/codex codex-rs/hooks、2026-09-19 時点。Stable・既定で有効）。
-# 配線するのは入出力を照合済みの 4 本だけ（効くふりをしない）:
-#   Bash の tool_input は {"command": ...} で同じ → block-gates.py / filter-output.py（updatedInput も可）
+# 配線するのは入出力を照合済みの 5 本だけ（効くふりをしない）:
+#   Bash の tool_input は {"command": ...} で同じ → block-gates.py / filter-output.py（updatedInput も可）/ floor-guard.py
 #   UserPromptSubmit の prompt / transcript_path → prompt-priority.py / context-guard.py
 # 配線しないもの: 編集系（apply_patch の tool_input は {"command": <パッチ本文>} で file_path が無い）、
 #   instruction-guard / reply-language（transcript が Codex 独自の rollout 形式）、pre-compact（PreCompact の出力に
@@ -124,14 +125,15 @@ mkdir -p "$TARGET/.codex"
 backup_if_exists "$TARGET/.codex/hooks.json"
 cat > "$TARGET/.codex/hooks.json" << 'JSON'
 {
-  "description": "AIDD Kit hooks for Codex CLI（.claude/hooks/ のスクリプトを共有。入出力を照合済みの 4 本だけ。残りは spec/10 B-14）",
+  "description": "AIDD Kit hooks for Codex CLI（.claude/hooks/ のスクリプトを共有。入出力を照合済みの 5 本だけ。残りは spec/10 B-14）",
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "^Bash$",
         "hooks": [
           { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" },
-          { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" }
+          { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" },
+          { "type": "command", "command": "python3 .claude/hooks/floor-guard.py", "timeout": 20, "statusMessage": "基準を下げる差分が無いか確認中（A-12）" }
         ]
       }
     ],
@@ -142,7 +144,7 @@ cat > "$TARGET/.codex/hooks.json" << 'JSON'
   }
 }
 JSON
-echo "✅ .codex/hooks.json: Codex CLI 用に 4 hook を配線（block-gates / filter-output / prompt-priority / context-guard。Codex で /hooks を開いて信頼すると有効）"
+echo "✅ .codex/hooks.json: Codex CLI 用に 5 hook を配線（block-gates / filter-output / floor-guard / prompt-priority / context-guard。Codex で /hooks を開いて信頼すると有効）"
 
 # Rules（.claude/rules/*.md は Claude Code が常時読み込む。speed-harness.md の H-2 はプロジェクトごとに埋める）
 cp "$KIT_DIR/rules/"*.md "$TARGET/.claude/rules/"

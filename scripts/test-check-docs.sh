@@ -14,7 +14,7 @@ expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出�
 expect_noout(){ printf '%s' "$3" | grep -qF -- "$2" && ng "$1" "出力に '$2' が出た" || ok "$1"; }
 
 # テスト実行の代替（各検査の突合に集中するため、実テストの再実行はしない）
-export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=92,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=115,test-git-gates.sh=27"
+export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=106,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=116,test-git-gates.sh=27"
 
 fresh() { # 複製を作り直してパスを返す
   rm -rf "$TMP/copy"; mkdir -p "$TMP/copy"
@@ -150,7 +150,7 @@ expect_exit "台帳（Roadmap）を触っただけでは通らない（説明文
 expect_noout "Roadmap 自体は対象外" "| 変更文書 | docs/Roadmap.md" "$(cat "$TMP/report.md")"
 
 echo "[ケース14: 回帰テストの代替値（CHECK_DOCS_TEST_TOTALS の直値）も突合]"
-C=$(fresh); sed -i 's/test-install.sh=115/test-install.sh=100/' "$C/scripts/test-check-docs.sh"
+C=$(fresh); sed -i 's/test-install.sh=[0-9]*/test-install.sh=100/' "$C/scripts/test-check-docs.sh"
 OUT=$(run "$C"); RC=$?
 expect_exit "test-check-docs.sh の直値が実測とズレれば exit 1" 1 "$RC"
 grep -q "| ケース数 | scripts/test-check-docs.sh" "$TMP/report.md" && ok "対象 scripts/test-check-docs.sh で検出" || ng "対象 scripts/test-check-docs.sh で検出" "レポートに無い"
