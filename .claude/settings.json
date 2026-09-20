@@ -1,12 +1,12 @@
 {
-  "_comment": "キット自身の開発セッション用。2026-09-19 に保守者の指示（日本語で報告／中間報告を今すぐ）を作業中に読み飛ばした事故の再発防止。配布形は claude-code/hooks/settings.json と export-project.sh。2026-09-20: 実体に届かない環境（リモートセッション／ディレクトリ移動の途中）で UserPromptSubmit が起動に失敗し、プロンプト投入ごとブロックされた。以後、実体が無ければ無言で飛ばす（回帰テストは scripts/test-hooks.sh の [.claude/settings.json 配線]）。全プロジェクトに効かせる本命は scripts/install-guard.sh（~/.claude/hooks/ に実体を置く）",
+  "_comment": "キット自身の開発セッション用。2026-09-19 に保守者の指示（日本語で報告／中間報告を今すぐ）を作業中に読み飛ばした事故の再発防止。配布形は hooks/settings.json と export-project.sh。2026-09-20: 実体に届かない環境（リモートセッション／ディレクトリ移動の途中）で UserPromptSubmit が起動に失敗し、プロンプト投入ごとブロックされた。以後、実体が無ければ無言で飛ばす（回帰テストは scripts/test-hooks.sh の [.claude/settings.json 配線]）。全プロジェクトに効かせる本命は scripts/install-guard.sh（~/.claude/hooks/ に実体を置く）",
   "hooks": {
     "PreToolUse": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/claude-code/hooks/instruction-guard.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/hooks/instruction-guard.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
             "timeout": 5,
             "statusMessage": "保守者の指示に応答済みか確認中"
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/claude-code/hooks/prompt-priority.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/hooks/prompt-priority.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
             "timeout": 5
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/claude-code/hooks/reply-language.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/hooks/reply-language.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
             "timeout": 5
           }
         ]

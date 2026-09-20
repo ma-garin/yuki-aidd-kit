@@ -64,7 +64,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 - **承認記録**（`docs/lifecycle/approvals/phase-0..9.md`）: 承認欄があったのは 10 工程中 3 つだけだったのを全工程に。判定は 3 値（承認 / 条件付き承認 / 差し戻し）。差し戻し事項には**解消の検証方法**を必須にし、未確認事項を残したままの「承認」を認めない
 - **版に縛る**（`scripts/phase-hash.py`）: 承認時の成果物のハッシュを記録に残す。**承認後に成果物が 1 文字でも変われば承認は自動失効**する。判子を押した後に中身が差し替わるのと同じ状態を機械が検出する
 - **`scripts/check-approval.sh`**（20 ケース 54 アサーションの回帰テスト付き）: 記録の有無・必須欄・版の一致・未解消の差し戻し・承認者が人間か・工程順序を機械判定。終了コードは 0（合格）／1（未承認・失効）／2（**判定不能**）の 3 値で、判定不能を合格に数えない
-- **`claude-code/hooks/block-phase.py`**: 前工程が未承認のまま次工程の成果物を書こうとすると**その場で止める**。`.claude/phase-gate` を置いたプロジェクトでだけ発動し、承認記録そのものへの書き込みは常に許可。**バイパス用の環境変数は作らない**（止めるなら marker を消す＝git 差分に残る）
+- **`hooks/block-phase.py`**: 前工程が未承認のまま次工程の成果物を書こうとすると**その場で止める**。`.claude/phase-gate` を置いたプロジェクトでだけ発動し、承認記録そのものへの書き込みは常に許可。**バイパス用の環境変数は作らない**（止めるなら marker を消す＝git 差分に残る）
 - **`skills/phase-approval` ＋ `/phase-review`**: 人間が判子を押す前に AI 3 役（追跡・仕様一致・リスク）を**順次**で回して指摘を出し切る。並列委譲はトークンが約 7 倍になるため使わない。**AI は承認しない**（`approver` 欄には触れない）
 - `docs/userguide.html` に「工程の承認ゲート」章（実際に止まったときの画面つき）
 
@@ -256,9 +256,8 @@ yuki-aidd-kit/
 │   ├── e2e-cycle/            # 段階停止型 E2E ワークフロー
 │   ├── design-system/        # デザイン規律（+ references/tokens.md / components.md / frameworks.md）
 │   └── uiux_review/          # UI/UX 実機レビュー（+ references/viewpoints.md）
-├── claude-code/
-│   ├── commands/             # 16スラッシュコマンド
-│   └── hooks/                # 7 hooks（sh 4 + py 3）+ settings.json（statusLine 含む）
+├── commands/                 # スラッシュコマンド（/<name>）
+├── hooks/                    # hooks + settings.json（statusLine 含む）
 ├── scripts/
 │   ├── install.sh / verify.sh / test-hooks.sh / test-install.sh   # グローバル導入と回帰テスト
 │   ├── check-docs.sh (check_docs.py) / test-check-docs.sh / test-git-gates.sh  # 文書整合・git ゲートの検査

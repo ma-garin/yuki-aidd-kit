@@ -25,13 +25,13 @@ for d in "$KIT_DIR/skills/"*/; do
 done
 
 echo "[コマンド]"
-for f in "$KIT_DIR/claude-code/commands/"*.md; do
+for f in "$KIT_DIR/commands/"*.md; do
   c=$(basename "$f" .md)
   check "/$c" "$CLAUDE_DIR/commands/$c.md"
 done
 
 echo "[Hooks]"
-for f in "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py; do
+for f in "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py; do
   h=$(basename "$f")
   check "$h" "$CLAUDE_DIR/hooks/$h"
 done

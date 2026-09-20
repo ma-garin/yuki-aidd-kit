@@ -124,9 +124,9 @@ def check_loaded_log(root: Path, r: Result) -> None:
 
 
 def load_settings(root: Path) -> tuple[dict, Path | None]:
-    # キット本体（claude-code/hooks/settings.json がある形）では配布形の settings を見る。キット自身の .claude/settings.json は
+    # キット本体（hooks/settings.json がある形）では配布形の settings を見る。キット自身の .claude/settings.json は
     # 開発セッション用の一部配線（instruction-guard 等）だけなので、床・配線の判定対象にしない
-    for c in (root / "claude-code/hooks/settings.json", root / ".claude/settings.json", Path.home() / ".claude/settings.json"):
+    for c in (root / "hooks/settings.json", root / ".claude/settings.json", Path.home() / ".claude/settings.json"):
         if c.is_file():
             try:
                 return json.loads(read(c)), c
@@ -138,7 +138,7 @@ def load_settings(root: Path) -> tuple[dict, Path | None]:
 def check_wiring(root: Path, r: Result) -> None:
     s, path = load_settings(root)
     if path is None:
-        r.add(True, "配線", "settings.json", "見つからない（.claude/settings.json / claude-code/hooks/settings.json / ~/.claude/settings.json）")
+        r.add(True, "配線", "settings.json", "見つからない（.claude/settings.json / hooks/settings.json / ~/.claude/settings.json）")
         return
     blob = json.dumps(s, ensure_ascii=False)
     for h in HOOKS_REQUIRED:

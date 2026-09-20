@@ -70,8 +70,8 @@
 | skills（SKILL.md） | 20 | 1,475 |
 | skills/*/references/ | 15 | 1,788 |
 | skills/atarimae-quality-audit/scan.sh | 1 | 77 |
-| claude-code/commands | 18 | 411 |
-| claude-code/hooks（sh 4 + py 9 + settings.json） | 14 | 867 |
+| commands | 18 | 411 |
+| hooks（sh 4 + py 9 + settings.json） | 14 | 867 |
 | rules | 4 | 104 |
 | scripts（sh 24 + py 8 + pre-commit） | 33 | 4,734 |
 | templates（lifecycle11 ＋ approvals2 / test8 / github5 / components4 / ui6 / 単体7） | 42 | 2,890 |

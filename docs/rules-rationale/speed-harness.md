@@ -107,7 +107,7 @@ kill $(lsof -ti:<PORT>) 2>/dev/null
 ## H-7. コミット・プッシュ・マージ
 
 - ゲート（pytest / make test / verify-ui / lint）は**ユーザーが要求した時だけ実行する。**
-  `claude-code/hooks/block-gates.py` が PreToolUse で強制する。要求があった時は `GATES_REQUESTED=1` を付けて実行する。
+  `hooks/block-gates.py` が PreToolUse で強制する。要求があった時は `GATES_REQUESTED=1` を付けて実行する。
 - 手順は一直線: add（パス明示）→ commit → push → PR 作成 → マージ（作成とマージは別コマンド）。
 - コミット前に変更の性質（docs のみ / code / UI）を 1 行で確定させ、フック回避の要否をそこで決める。
 - **ゲートが赤のときの最短手順**: 変更を stash した素の状態で同じ失敗が再現したら main 由来と断定し、
@@ -120,7 +120,7 @@ kill $(lsof -ti:<PORT>) 2>/dev/null
 - **ステップ境界ごとに** `progress.py step "<n/m 名称>"` を既存コマンドへ連結する（専用の往復を作らない）。
 - ツール実行の合間の本文は `[2/5 配線] 経過 1:20 / 見積 4:00・残り 2:40` 形式の 1 行進捗から始める。
 - **完了時に必ず** `progress.py done` を連結する（消し忘れは偽の「実行中」表示になる）。
-- 表示本体は `claude-code/hooks/statusline.py`（settings.json の `statusLine`）。タスクなし時は従来の `~/.claude/statusline.sh` へ素通しする。
+- 表示本体は `hooks/statusline.py`（settings.json の `statusLine`）。タスクなし時は従来の `~/.claude/statusline.sh` へ素通しする。
 
 ## 実測記録（プロジェクトごとに追記）
 

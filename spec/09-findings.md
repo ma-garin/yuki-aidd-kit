@@ -341,8 +341,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
   設計だが、**起動に失敗する経路**が想定外だった
 - 是正: `.claude/settings.json` の 3 本を `sh -c 'f=…; [ -f "$f" ] && exec python3 "$f" || exit 0'` に変更（実体が無ければ無言で飛ばす）。
   回帰テストを `scripts/test-hooks.sh` の `[.claude/settings.json 配線]` に追加（79 → 83 ケース）
-- 残る論点（構成管理）: `claude-code/hooks/` を `hooks/` へ移すとき、この配線と `install_guard.py` の `--hooks-dir` 既定値
-  （`scripts/install-guard.sh` 経由）が同時に参照切れになる。移動とパス更新は同一コミットで行う
+- 残る論点（構成管理）: 旧 `claude-code/hooks/` を `hooks/` へ移すとき、この配線と `install_guard.py` の `--hooks-dir` 既定値
+  （`scripts/install-guard.sh` 経由）が同時に参照切れになる。移動とパス更新は同一コミットで行う → **M23 で実施**
 
 ### severity 別サマリ（更新）
 

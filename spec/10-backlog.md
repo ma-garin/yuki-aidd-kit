@@ -206,7 +206,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
 
 **対応**: `spec/11` §2 の公式トークン削減策（未活用）
 
-- **対象**: `claude-code/hooks/`（新規 hook）／ `claude-code/hooks/settings.json`
+- **対象**: `hooks/`（新規 hook）／ `hooks/settings.json`
 - **内容**: 公式が例示している「テスト出力を grep で絞ってから Claude に渡す」PreToolUse hook をキットの規約に合わせて用意する。
   - `filter-test-output.sh`: `pytest` / `npm test` / `go test` の出力を失敗行＋前後5行に絞る
   - **`block-gates.py` と共存させる**（ゲートはユーザー要求時のみ実行、実行したときは出力を絞る）
