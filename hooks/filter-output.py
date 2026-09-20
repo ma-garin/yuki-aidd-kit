@@ -16,7 +16,7 @@ PostToolUse は出力を書き換えられないため、PreToolUse で **コマ
 絞ったときは必ず systemMessage で「絞った・全量の取り方」を Claude に伝える（黙って欠けると再探索が増えて逆効果）。
 
 `block-gates.py`（ゲートはユーザー要求時のみ）と同じ matcher に後段として並べる。deny が 1 つでもあれば deny が勝つ。
-キット自身の回帰テスト（`bash scripts/test-*.sh`）はテストランナーの形をしていないので絞られない。
+キット自身の回帰テスト（`bash ci/test-*.sh`）はテストランナーの形をしていないので絞られない。
 """
 import json
 import re

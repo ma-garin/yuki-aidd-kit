@@ -164,7 +164,7 @@
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 168 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
-| `check_docs.py` | 436 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
+| `check_docs.py` | 438 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
 | `test-check-docs.sh` | 125 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
 | `check_design.py` | 247 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |

@@ -15,12 +15,12 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
-./scripts/test-hooks.sh                       # hooks の回帰テスト（83ケース）
-./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
+./ci/test-hooks.sh                       # hooks の回帰テスト（83ケース）
+./ci/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
 ./scripts/install-guard.sh                   # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge・冪等。Claude Code 全体に効く）
-./scripts/test-install.sh                     # 導入・配布・初期化の回帰テスト（102ケース）
-./scripts/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
-./scripts/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。NG=0 が合格）
+./ci/test-install.sh                     # 導入・配布・初期化の回帰テスト（102ケース）
+./ci/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
+./ci/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。NG=0 が合格）
 ./scripts/check-design.sh [対象パス]           # デザイン検査（直値・未定義トークン・外部 CDN・alert()。既定 templates/ui templates/components。NG=0 が合格）
 ./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
@@ -104,7 +104,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `statusline.py` | statusLine | 進行中タスクの経過/見積/残りを表示。無ければ従来表示へ素通し |
 | `session-summary.sh` | Stop | セッション終了サマリ |
 
-回帰テスト: `./scripts/test-hooks.sh`
+回帰テスト: `./ci/test-hooks.sh`
 
 ## スラッシュコマンド（呼んだ時だけコストが発生）
 
@@ -184,7 +184,7 @@ templates/: `design-system.md`（視覚的指示書。チェックリストは�
 `TESTING_STRATEGY.md`（レベル・ゲート・実行タイミング）/ `DEFINITION_OF_DONE.md`（変更タイプ別）/
 `iso29119-test-plan.md` / `iso29119-test-design-spec.md` / `iso29119-test-completion-report.md` / `iso29119-incident-report.md` /
 `system_test_cases.csv`（ツアー観点・severity 列）/ `feature_contracts.yml`（機能契約）。
-機械ゲート: `scripts/quality_harness.py`（契約検証・NG>0 で exit 1、回帰テスト `scripts/test-quality-harness.sh`）/ `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（`.ui-verified`）/ CI `templates/github/workflows/test-gates.yml`。
+機械ゲート: `scripts/quality_harness.py`（契約検証・NG>0 で exit 1、回帰テスト `ci/test-quality-harness.sh`）/ `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（`.ui-verified`）/ CI `templates/github/workflows/test-gates.yml`。
 工程文書（`templates/lifecycle/05〜08`）はケースと結果、こちらは計画・完了報告・インシデント。重複させない。
 
 ## templates/github/ — GitHub 連携（`--github` で配置）

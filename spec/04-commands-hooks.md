@@ -84,7 +84,7 @@ JSON が壊れている   → 例外を握って従来表示のみ（表示を�
 
 ---
 
-## 3. 回帰テスト（`scripts/test-hooks.sh` 19ケース）
+## 3. 回帰テスト（`ci/test-hooks.sh` 19ケース）
 
 AUDIT-2026-07 **A-01（Critical）** の再発防止。当時 `settings.json` が
 `$CLAUDE_TOOL_INPUT_PATH` という**実在しない環境変数**を使っており、

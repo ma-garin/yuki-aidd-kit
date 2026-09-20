@@ -58,7 +58,7 @@
 
 ### 更新漏れの検出
 
-`spec/` の数値が実体とズレていないかは、`10-backlog.md` の B-01（`scripts/check-docs.sh`）で機械検証する計画。
+`spec/` の数値が実体とズレていないかは、`10-backlog.md` の B-01（`ci/check-docs.sh`）で機械検証する計画。
 実装されるまでは手動で次を回す。
 
 ```bash

@@ -11,9 +11,9 @@
 
 | 検査 | 結果 |
 |---|---|
-| `./scripts/test-hooks.sh` | **PASS=19 / FAIL=0** |
-| `./scripts/test-trace-check.sh` | **PASS=15 / FAIL=0** |
-| `./scripts/test-quality-harness.sh` | **PASS=11 / FAIL=0** |
+| `./ci/test-hooks.sh` | **PASS=19 / FAIL=0** |
+| `./ci/test-trace-check.sh` | **PASS=15 / FAIL=0** |
+| `./ci/test-quality-harness.sh` | **PASS=11 / FAIL=0** |
 | SKILL.md の frontmatter `name` とディレクトリ名の一致 | 19/19 一致 |
 | INDEX.md へのスキル掲載漏れ | 0 件（19/19） |
 | INDEX.md へのコマンド掲載漏れ | 0 件（16/16） |
@@ -34,11 +34,11 @@ Roadmap M12 でも同じ理由で未計測と記録されている。→ F-06。
 
 | 箇所 | 記載 | 実測 |
 |---|---|---|
-| `README.md:82` | `./scripts/test-hooks.sh  # hooks の回帰テスト（11ケース）` | **19** |
-| `INDEX.md:18` | `./scripts/test-hooks.sh   # hooks の回帰テスト（11ケース）` | **19** |
+| `README.md:82` | `./ci/test-hooks.sh  # hooks の回帰テスト（11ケース）` | **19** |
+| `INDEX.md:18` | `./ci/test-hooks.sh   # hooks の回帰テスト（11ケース）` | **19** |
 | `docs/yuki-aidd-kit-manual.html:792-793` | 「8ケースでテストします」「**PASS=8 / FAIL=0**なら合格です」 | **19** |
 | `docs/Roadmap.md:52` | 「完了確認: 8ケース PASS=8/FAIL=0 で exit 0」 | M6 当時の記録なので**当時の事実として正しい**（履歴） |
-| `docs/PRD.md:30` | 「`./scripts/test-hooks.sh` 19 ケース」 | **正しい** |
+| `docs/PRD.md:30` | 「`./ci/test-hooks.sh` 19 ケース」 | **正しい** |
 | `README.md:42` | 「hooks 回帰テスト 19 ケース」 | **正しい**（同じ README 内で 11 と 19 が併存） |
 
 **是正案**: README:82 / INDEX:18 / manual.html:792-793 を 19 に統一。Roadmap は履歴なので触らない。
@@ -163,7 +163,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 - 一方、INDEX の参照コスト・README のケース数・manual の数値は**すべて手書き**のまま
 - Roadmap M6 で「verify.sh のリスト自動生成化」は完了扱いになっているが、**文書側の数値は対象外**だった
 
-**是正案**: `spec/10-backlog.md` B-01（`scripts/check-docs.sh`）。
+**是正案**: `spec/10-backlog.md` B-01（`ci/check-docs.sh`）。
 
 ### F-10 — Roadmap の未完項目2件
 
@@ -187,7 +187,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 **severity: High**（キットの「導入」と「止める仕組み」そのものが未検証。Sonnet が触ると壊れても気づけない）
 
-- evidence: `scripts/test-*.sh` が参照しているのは `hooks/*`・`trace-check.sh`・`init-lifecycle.sh`・`quality_harness.py`・`templates/test/feature_contracts.yml` のみ
+- evidence: `ci/test-*.sh` が参照しているのは `hooks/*`・`trace-check.sh`・`init-lifecycle.sh`・`quality_harness.py`・`templates/test/feature_contracts.yml` のみ
 - 未テスト（9/15）: **`install.sh`・`export-project.sh`**（キットの入口2本）／**`pre-commit`・`pre-commit-ui-gate.sh`・`ui-hash.py`**（git ゲート。README は「手動4ケース確認」とだけ記載）／`init-project.sh`・`init-test-docs.sh`・`audit-app-workspace.sh`・`verify.sh`
 - `export-project.sh` は Roadmap M8 で「スクラッチへの初回エクスポート・`.bak` 退避・相対パス動作を確認済み」とあるが**手動確認であり再実行できない**
 
@@ -340,7 +340,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
   参照先が欠けると python3 が非 0 で終わり、`UserPromptSubmit` はそれを「投入拒否」として扱う。`prompt-priority.py` 自身は常に 0 を返す
   設計だが、**起動に失敗する経路**が想定外だった
 - 是正: `.claude/settings.json` の 3 本を `sh -c 'f=…; [ -f "$f" ] && exec python3 "$f" || exit 0'` に変更（実体が無ければ無言で飛ばす）。
-  回帰テストを `scripts/test-hooks.sh` の `[.claude/settings.json 配線]` に追加（79 → 83 ケース）
+  回帰テストを `ci/test-hooks.sh` の `[.claude/settings.json 配線]` に追加（79 → 83 ケース）
 - 残る論点（構成管理）: 旧 `claude-code/hooks/` を `hooks/` へ移すとき、この配線と `install_guard.py` の `--hooks-dir` 既定値
   （`scripts/install-guard.sh` 経由）が同時に参照切れになる。移動とパス更新は同一コミットで行う → **M23 で実施**
 

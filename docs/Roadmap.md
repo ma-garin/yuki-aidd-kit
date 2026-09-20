@@ -48,7 +48,7 @@
 ## M6: バックログ（優先度順・未着手）
 
 - [x] hooks の回帰テストをスクリプト化する（完了 2026-07）
-  - 対象: `scripts/test-hooks.sh`（新規）。stdin JSON を3 hook に流し、期待出力（秘密ファイル警告／CSS・JS 警告／HTML レポート）を assert する。M2 A-01 の再発防止を自動化する
+  - 対象: `ci/test-hooks.sh`（新規）。stdin JSON を3 hook に流し、期待出力（秘密ファイル警告／CSS・JS 警告／HTML レポート）を assert する。M2 A-01 の再発防止を自動化する
   - 完了確認: 8ケース PASS=8/FAIL=0 で exit 0。INDEX.md クイックスタートから辿れる
 - [x] `verify.sh` のリスト自動生成化（完了 2026-07。保守者が「自動導出化」を選択）
   - 適用: verify.sh がリポジトリ実体（skills/ commands/ hooks/）からチェックリストを導出して `~/.claude` と突合する方式に変更。資産追加時の verify.sh 更新が不要になった。欠落検知（NG カウント）の動作確認済み
@@ -102,13 +102,13 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] `skills/dev-lifecycle/` を新設（SKILL.md ＋ references: `phase-gates.md` / `traceability.md` / `test-levels.md`）
   - 適用判断（軽量 SDD との使い分け）・10工程の成果物と ID・V字の対応・工程ゲート・役割・他スキルへの委譲表を規定
 - [x] `templates/lifecycle/` に工程成果物の雛形11本を新設（RFD／要件定義／基本設計／詳細設計／実装記録／単体・結合・システム・受け入れテスト／保守運用／追跡表）
-- [x] `scripts/trace-check.sh` を新設。要件→設計→実装→テストの追跡を機械検証する（重複定義／未定義参照／所有ファイル違反／追跡表未記載／カバー漏れ／孤立テストの6種別）。出力は context-compression の3層要約に従い、全件は詳細レポートへ書き出す
+- [x] `tools/trace-check.sh` を新設。要件→設計→実装→テストの追跡を機械検証する（重複定義／未定義参照／所有ファイル違反／追跡表未記載／カバー漏れ／孤立テストの6種別）。出力は context-compression の3層要約に従い、全件は詳細レポートへ書き出す
 - [x] `scripts/init-lifecycle.sh` を新設（工程雛形の配置。`--github` で Issue/PR/CI テンプレートも配置。既存ファイルは上書きしない）
-- [x] `scripts/test-trace-check.sh` で回帰テスト化（15ケース PASS）。**雛形が最初から NG=0 で始まること**をテストに含めた（雛形が NG を出すと利用者が検査結果を無視するようになるため）
+- [x] `ci/test-trace-check.sh` で回帰テスト化（15ケース PASS）。**雛形が最初から NG=0 で始まること**をテストに含めた（雛形が NG を出すと利用者が検査結果を無視するようになるため）
 - [x] `commands/` に `/rfd`・`/lifecycle`・`/trace` を追加
 - [x] GitHub 連携: `templates/github/`（RFD・要件・欠陥の Issue テンプレート、関係 ID 欄付き PR テンプレート）と `templates/github/workflows/lifecycle-check.yml`（PR で trace-check を実行）
 - [x] 既存資産との接続: `done-gate` に工程ゲート項目、`sdd-ecc-workflow` に使い分けの導線、`CLAUDE.md.template`・`AGENTS.md.template`・`INDEX.md`・`README.md` に工程の導線を追加。`export-project.sh` が `templates/` と `trace-check.sh` を同梱するよう更新
-- 検証記録: `./scripts/install.sh` → `./scripts/verify.sh` NG=0、`./scripts/test-hooks.sh` 8/8、`./scripts/test-trace-check.sh` 15/15
+- 検証記録: `./scripts/install.sh` → `./scripts/verify.sh` NG=0、`./ci/test-hooks.sh` 8/8、`./ci/test-trace-check.sh` 15/15
 
 ## M12: 実プロジェクト運用の還流（完了 2026-08-25）
 
@@ -123,7 +123,7 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] `docs/yuki-aidd-kit-manual.html` に「速度と完了のルール」節・uiux_review / atarimae 行・用語 rules を追加
 - [x] `docs/OPERATING-MODE.md` §4〜6 に H-1 着手前3行・H-3 バッチ検証・functional-integrity・progress.py を反映
 - [x] `docs/PRD.md` FR-03 を 7 hook に更新し FR-03a（rules 供給）を追加。`claude-projects-setup.md` の「指定外ファイルを読まない」を速度・完了条件の記述に置換
-- 検証記録: `./scripts/test-hooks.sh`（実行結果は PR 本文に記載）。`install.sh` はグローバル環境を上書きするため本作業では未実行（`verify.sh` 未計測）
+- 検証記録: `./ci/test-hooks.sh`（実行結果は PR 本文に記載）。`install.sh` はグローバル環境を上書きするため本作業では未実行（`verify.sh` 未計測）
 
 ## M13: テスト活動の設計と機械ゲート（完了 2026-08-25）
 
@@ -132,8 +132,8 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] `skills/test-strategy/`（SKILL.md + references: `feature-contracts.md` / `ui-verified-gate.md`）
 - [x] `skills/e2e-cycle/` と `/e2e-cycle`（`help` 引数で使い方を表示）
 - [x] `templates/test/` 8 本（`feature_contracts.yml` は新規プロジェクトで PASS することを回帰テストで保証）
-- [x] `scripts/quality_harness.py`（設定駆動の汎用版）+ `scripts/test-quality-harness.sh`（11 ケース PASS）
-- [x] `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（マーカー不在・期限切れ・hash 不一致で BLOCKED、`.rebuild-mode` で WARN。手動 4 ケース確認）
+- [x] `tools/quality_harness.py`（設定駆動の汎用版）+ `ci/test-quality-harness.sh`（11 ケース PASS）
+- [x] `tools/ui-hash.py` + `tools/pre-commit-ui-gate.sh`（マーカー不在・期限切れ・hash 不一致で BLOCKED、`.rebuild-mode` で WARN。手動 4 ケース確認）
 - [x] `scripts/init-test-docs.sh`（`--ci` で `templates/github/workflows/test-gates.yml` も配置）、`export-project.sh` がゲートスクリプトを同梱
 - [x] `done-gate` / `test-automation` / `qa-review-standards` / `rules/functional-integrity.md` / 両テンプレートに導線を追加
 - [ ] `docs/yuki-aidd-kit-manual.html` の非エンジニア向け説明（テストレベルと「テストが通った≠完了」）は本 PR で最小限。図解は未着手
@@ -158,9 +158,9 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 
 - [x] `scripts/verify.sh` が NG>0 で exit 1 を返す（S1。CI・テストから合否を機械判定できる）
 - [x] 版の刻印（S2）: `VERSION` を新設し、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。`verify.sh` が表示
-- [x] `scripts/test-install.sh`（S3、66 ケース）: install / verify / export / init-project / init-test-docs を HOME 差し替えで検証。実 `~/.claude` には触らない
-- [x] `scripts/test-git-gates.sh`（S4、27 ケース）: pre-commit（簡易パターン経路）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで検証
-- [x] `scripts/check_docs.py` + `check-docs.sh` + `test-check-docs.sh`（S5）: INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数（WARN）・SKILL 行数目安（WARN）・spec/01 の同期を機械判定
+- [x] `ci/test-install.sh`（S3、66 ケース）: install / verify / export / init-project / init-test-docs を HOME 差し替えで検証。実 `~/.claude` には触らない
+- [x] `ci/test-git-gates.sh`（S4、27 ケース）: pre-commit（簡易パターン経路）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで検証
+- [x] `ci/check_docs.py` + `check-docs.sh` + `test-check-docs.sh`（S5）: INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数（WARN）・SKILL 行数目安（WARN）・spec/01 の同期を機械判定
 - [x] `.github/workflows/kit-ci.yml`（S5）: 6 本の回帰テストと check-docs を実行（`templates/github/workflows/` の配布用サンプルとは別物）。**2026-09-17 保守者決定で `workflow_dispatch` のみに変更**（PR / push での自動実行はしない。ゲートは要求時だけ、の規律を CI にも適用）
 - [x] 数値の是正と spec 同期（S6）: check-docs が検出した INDEX 11 件・manual 2 件を是正。`spec/01` を実測に同期
 - 検証記録: test-hooks 19/19・test-trace-check 15/15・test-quality-harness 11/11・test-install 66/66・test-git-gates 27/27・test-check-docs 全 PASS・`check-docs.sh` NG=0（WARN 2: rules 268 行 > 100、design-system 465 行 > 200 — M16 / M17 で解消）
@@ -200,8 +200,8 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 承認という概念を機械が一切知らなかった（F-18）。保守者決定は Q-11（hook で物理的に止める／AI レビューは 3 役を順次）。
 
 - [x] 承認記録の雛形と配置（S16）: `templates/lifecycle/approvals/{phase-approval.md,README.md}`。`init-lifecycle.sh` が `phase-0..9.md` を工程名・covers を差し込んで生成
-- [x] `scripts/phase-hash.py`（S17）: 承認を版に縛る。対象0件は `empty`（対象なしを「一致」にしない）。`ui-hash.py` は UI 専用版として据え置き
-- [x] `scripts/check-approval.sh` ＋ `check_approval.py` ＋ `test-check-approval.sh`（S18、20 ケース 54 アサーション）: exit 0/1/2 の 3 値契約、判定不能を合格に数えない、工程順序の検出（省略された工程は飛ばす）。`covers` に追跡表を入れない設計へ修正（F-19）
+- [x] `tools/phase-hash.py`（S17）: 承認を版に縛る。対象0件は `empty`（対象なしを「一致」にしない）。`ui-hash.py` は UI 専用版として据え置き
+- [x] `tools/check-approval.sh` ＋ `check_approval.py` ＋ `test-check-approval.sh`（S18、20 ケース 54 アサーション）: exit 0/1/2 の 3 値契約、判定不能を合格に数えない、工程順序の検出（省略された工程は飛ばす）。`covers` に追跡表を入れない設計へ修正（F-19）
 - [x] `hooks/block-phase.py`（S19）: `.claude/phase-gate` オプトイン。未承認・失効・判定不能で deny、承認済み工程の成果物の書き換えも deny、`approvals/` は常に許可、バイパス用の環境変数は作らない。settings.json / export-project.sh / install.sh に配線
 - [x] `skills/phase-approval` ＋ `/phase-review`（S20）: 3 役を**順次**（追跡・仕様一致・リスク）。Agent 並列はトークン約 7 倍で使わない。AI は `approver` を埋めない
 - [x] 既存資産への配線（S21）: 全 10 工程テンプレートに「## 承認」節、`phase-gates.md` に承認ゲート節と機械／人間の境界表、共通出口基準 3→4、`dev-lifecycle/SKILL.md`・`/lifecycle`・`done-gate`・`verify.sh`・`kit-ci.yml`
@@ -269,7 +269,7 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 
 ## 完了の定義（全マイルストーン共通）
 
-`skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./scripts/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。
+`skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./ci/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。
 
 ## M22: 指示優先を hook で強制（完了 2026-09-19）
 

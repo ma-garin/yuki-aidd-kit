@@ -86,7 +86,7 @@ echo "[block-phase.py]"
 # 工程承認ゲート。.claude/phase-gate がある時だけ発動し、前工程が未承認なら下流成果物への書き込みを deny する
 PG="$TMP/proj-phase"; mkdir -p "$PG/scripts" "$PG/.claude"
 "$KIT_DIR/scripts/init-lifecycle.sh" "$PG" >/dev/null
-cp "$KIT_DIR/scripts/check_approval.py" "$KIT_DIR/scripts/phase-hash.py" "$PG/scripts/"
+cp "$KIT_DIR/tools/check_approval.py" "$KIT_DIR/tools/phase-hash.py" "$PG/scripts/"
 pj() { printf '{"tool_name":"%s","tool_input":{"file_path":"%s"}}' "${2:-Write}" "$PG/$1"; }
 ph() { CLAUDE_PROJECT_DIR="$PG" python3 "$HOOKS/block-phase.py" 2>&1; }
 reason() { printf '%s' "$1" | python3 -c 'import json,sys;print(json.load(sys.stdin)["hookSpecificOutput"]["permissionDecisionReason"])' 2>/dev/null; }
@@ -266,8 +266,8 @@ expect_contains "元の終了コードで終える" 'exit $__rc' "$(fo_cmd "$OUT
 expect_contains "systemMessage で全量の取り方を伝える" "FULL_OUTPUT=1" "$(fo_msg "$OUT")"
 OUT=$(bash_json "FULL_OUTPUT=1 GATES_REQUESTED=1 pytest tests/" | fo); RC=$?
 expect_empty "FULL_OUTPUT=1 なら触らない" "$OUT" "$RC"
-OUT=$(bash_json "bash scripts/test-hooks.sh" | fo); RC=$?
-expect_empty "キット自身の回帰テスト（bash scripts/test-*.sh）は絞らない" "$OUT" "$RC"
+OUT=$(bash_json "bash ci/test-hooks.sh" | fo); RC=$?
+expect_empty "キット自身の回帰テスト（bash ci/test-*.sh）は絞らない" "$OUT" "$RC"
 OUT=$(printf '{"tool_name":"Bash","tool_input":{"command":"cat <<EOF > a.md\\npytest を実行する手順\\nEOF"}}' | fo); RC=$?
 expect_empty "ヒアドキュメント内の pytest は触らない" "$OUT" "$RC"
 OUT=$(bash_json "git log" | fo)

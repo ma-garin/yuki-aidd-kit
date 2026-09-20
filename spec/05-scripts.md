@@ -53,7 +53,7 @@
 | `.claude/KIT_VERSION` | `<VERSION> <commit> <日付>`。配布先がどの版から出たかを判別（S2） |
 | `.claude/settings.json` | 相対パス版をヒアドキュメントで生成。**block-explore の配線は含まない** |
 | `AGENTS.md` / `CLAUDE.md` | template から生成。`sed` で `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md` → `.claude/INDEX.md` に変換 |
-| `scripts/trace-check.sh` | 既存があればスキップ |
+| `tools/trace-check.sh` | 既存があればスキップ |
 | `scripts/{quality_harness.py,ui-hash.py,pre-commit-ui-gate.sh}` | 既存があればスキップ |
 
 - 既存の `settings.json` / `AGENTS.md` / `CLAUDE.md` は `.bak` に退避
@@ -82,7 +82,7 @@
 ```
 
 - `templates/lifecycle/*.md` 11本 → `<target>/docs/lifecycle/`。**既存は上書きせずスキップして報告**
-- `--github` で追加: `.github/ISSUE_TEMPLATE/`（3本）/ `.github/pull_request_template.md` / `.github/workflows/lifecycle-check.yml` / `scripts/trace-check.sh`
+- `--github` で追加: `.github/ISSUE_TEMPLATE/`（3本）/ `.github/pull_request_template.md` / `.github/workflows/lifecycle-check.yml` / `tools/trace-check.sh`
 - 出力: `工程文書: 新規 n / スキップ n` ＋ 次にやること3項目
 - 終了コード: 0（引数不正は 1）
 
@@ -141,7 +141,7 @@
 ### `quality_harness.py`（204行）— 機能契約ハーネス ★
 
 ```bash
-python3 scripts/quality_harness.py [--root DIR] [--contract PATH]
+python3 tools/quality_harness.py [--root DIR] [--contract PATH]
 # 既定: --root . --contract quality/feature_contracts.yml
 ```
 
@@ -168,8 +168,8 @@ python3 scripts/quality_harness.py [--root DIR] [--contract PATH]
 ### `ui-hash.py`（66行）
 
 ```bash
-python3 scripts/ui-hash.py disk     # git 管理対象の UI ファイル全体
-python3 scripts/ui-hash.py staged   # git staged の UI ファイル
+python3 tools/ui-hash.py disk     # git 管理対象の UI ファイル全体
+python3 tools/ui-hash.py staged   # git staged の UI ファイル
 ```
 
 - 対象拡張子 `.html/.js/.css`。除外ディレクトリ `.git venv node_modules output __pycache__ dist test-results`
@@ -181,7 +181,7 @@ python3 scripts/ui-hash.py staged   # git staged の UI ファイル
 
 ```bash
 # <project>/.git/hooks/pre-commit から
-bash scripts/pre-commit-ui-gate.sh || exit 1
+bash tools/pre-commit-ui-gate.sh || exit 1
 ```
 
 ```text
@@ -227,7 +227,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 ### `check-docs.sh` → `check_docs.py`
 
 ```bash
-./scripts/check-docs.sh [--root DIR] [-o REPORT] [--strict] [--skip-tests]
+./ci/check-docs.sh [--root DIR] [-o REPORT] [--strict] [--skip-tests]
 ```
 
 | # | 検査 | 内容 | 既定 |

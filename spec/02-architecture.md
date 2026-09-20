@@ -110,7 +110,7 @@
         │                                            │         └── dev-lifecycle/refs/test-levels
   dev-lifecycle ◄──入れ子── sdd-ecc-workflow         │
    ├→ refs/phase-gates                         uiux_review ── atarimae-quality-audit
-   ├→ refs/traceability → scripts/trace-check.sh      │              └→ scan.sh
+   ├→ refs/traceability → tools/trace-check.sh      │              └→ scan.sh
    ├→ refs/test-levels                          design-system ─┬→ templates/tokens.css
    └→ templates/lifecycle/                            │        ├→ refs/frameworks.md
                                                       │        └→ templates/components/
@@ -182,7 +182,7 @@ settings.json の statusLine → statusline.py
 |---|---|---|---|
 | 探索ブロック | Read/Grep/Glob 呼び出し前 | `block-explore.sh` | exit 2（Claude にフィードバック） |
 | ゲートの無断実行 | Bash 呼び出し前 | `block-gates.py` | `permissionDecision: deny` |
-| 秘密情報 | `git commit` | `scripts/pre-commit` | exit 1 |
+| 秘密情報 | `git commit` | `tools/pre-commit` | exit 1 |
 | UI 検証マーカー | `git commit`（UI ファイル staged 時） | `pre-commit-ui-gate.sh` + `ui-hash.py` | exit 1（BLOCKED） |
 | 機能契約 | マイルストーン / CI | `quality_harness.py` | exit 1 |
 | トレーサビリティ | マイルストーン / PR | `trace-check.sh` | exit 1 |

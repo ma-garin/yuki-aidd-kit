@@ -9,7 +9,7 @@
 |---|---|
 | `quality/feature_contracts.yml` | 機能ごとの契約（JSON 互換 YAML）。雛形: `templates/test/feature_contracts.yml` |
 | `scripts/quality_harness.py` | 契約を検証し PASS/FAIL を返す（NG>0 で exit 1。CI でそのまま落とせる） |
-| `scripts/test-quality-harness.sh` | ハーネス自身の回帰テスト（キット側） |
+| `ci/test-quality-harness.sh` | ハーネス自身の回帰テスト（キット側） |
 
 ## 契約の項目
 

@@ -25,7 +25,7 @@ done
 put "$KIT_DIR/templates/test/system_test_cases.csv" "$TARGET/docs/system_test_cases.csv"
 put "$KIT_DIR/templates/test/feature_contracts.yml" "$TARGET/quality/feature_contracts.yml"
 for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh test_metrics.py test-metrics.sh; do
-  put "$KIT_DIR/scripts/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"
+  put "$KIT_DIR/tools/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"
 done
 mkdir -p "$TARGET/docs/quality/evidence"
 if $CI; then put "$KIT_DIR/templates/github/workflows/test-gates.yml" "$TARGET/.github/workflows/test-gates.yml"; fi
