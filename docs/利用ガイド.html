@@ -371,10 +371,10 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <p class="why">Claude Code は <code>CLAUDE.md</code> を通して、Codex は <code>AGENTS.md</code> を直接読みます。この 1 行で、両方が同じ本体を読むようになります。</p>
           </li>
           <li><strong>（任意）壊れていないことを機械で確かめる</strong>
-            <pre><code>./ci/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。83 ケース</span>
+            <pre><code>./ci/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。88 ケース</span>
 ./ci/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。102 ケース。本物の ~/.claude には触りません</span></code></pre>
             <p class="expect"></p>
-            <pre><code>結果: PASS=83 / FAIL=0
+            <pre><code>結果: PASS=88 / FAIL=0
 ✅ 全て正常</code></pre>
           </li>
         </ol>
