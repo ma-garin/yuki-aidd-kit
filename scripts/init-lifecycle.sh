@@ -97,7 +97,7 @@ if [ "$WITH_GITHUB" -eq 1 ]; then
   mkdir -p "$TARGET/.github/workflows"
   dest="$TARGET/.github/workflows/lifecycle-check.yml"
   if [ -e "$dest" ]; then echo "  ↷ スキップ（既存）: workflows/lifecycle-check.yml"
-  else cp "$KIT_DIR/github-actions/lifecycle-check.yml" "$dest"; echo "  ✅ workflows/lifecycle-check.yml"; fi
+  else cp "$KIT_DIR/templates/github/workflows/lifecycle-check.yml" "$dest"; echo "  ✅ workflows/lifecycle-check.yml"; fi
 
   mkdir -p "$TARGET/scripts"
   dest="$TARGET/scripts/trace-check.sh"

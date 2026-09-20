@@ -47,5 +47,5 @@
 
 - 機能を追加したら契約を同じ PR で追加する。ハーネスが #7 で止めてくれる。
 - 基盤部品（設定・認証・型定義など）は `unregistered_allowlist` に **「なぜ機能ではないか」の理由付き**で登録する。
-- 実行はマイルストーンとユーザー要求時（`rules/speed-harness.md` H-7）。CI では `github-actions/test-gates.yml`。
+- 実行はマイルストーンとユーザー要求時（`rules/speed-harness.md` H-7）。CI では `templates/github/workflows/test-gates.yml`。
 - `python3 scripts/quality_harness.py --root . --contract quality/feature_contracts.yml`

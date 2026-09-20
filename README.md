@@ -77,7 +77,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 - **`scripts/test-install.sh`**（102 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`scripts/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
 - **`scripts/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
-- **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`github-actions/` の配布用サンプルとは別物）
+- **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`templates/github/workflows/` の配布用サンプルとは別物）
 - `verify.sh` が NG>0 で exit 1 を返す。`VERSION` と `KIT_VERSION`（導入先への刻印）で版を追跡できる
 
 **Pro 移行準備（M16）— 常時読み込み層のダイエットとモデル規律**
@@ -108,7 +108,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 - **`design-system/references/frameworks.md`**: 出荷物への導線と、ECC `frontend-patterns`・`frontend-design`・`ckm:design`・`uiux_review` との分担表（Ver.6.4 で FW 別の置き場所は `templates/ui/README.md` へ移動）
 - `templates/design-system.md` の再現チェックリストに直値・フィードバック・文言・アイコンの項目を追加
 - **`templates/components/`**: `feedback.js`（トースト／消えない失敗＋次の行動／処理中／空状態／確認ダイアログ。自己完結）、`icons.js`（Material Symbols 同梱）、`demo.html`（ライト／ダークの実機確認ページ。Playwright で確認済み）
-- `github-actions/test-gates.yml` を Python / Node 両対応（ファイルの有無で自動判定）
+- `templates/github/workflows/test-gates.yml` を Python / Node 両対応（ファイルの有無で自動判定）
 
 ## Ver.6.2 での主な更新（2026-08-25）— テスト活動の設計と機械ゲート
 
@@ -119,7 +119,7 @@ WebSpec2Doc で運用してきたテスト活動（テスト戦略・DoD・ISO/I
 - **`templates/test/`**（8 本）: `TESTING_STRATEGY` / `DEFINITION_OF_DONE` / 29119 の計画・設計仕様・完了報告・インシデント / `system_test_cases.csv`（Whittaker ツアー観点・severity 列）/ `feature_contracts.yml`
 - **`scripts/quality_harness.py`**: 機能契約を検証（実行経路の無い implemented、critical/high の失敗系テスト欠落、契約未登録モジュール、未実装マーカーなど 9 種。NG>0 で exit 1）。回帰テスト `scripts/test-quality-harness.sh` 11 ケース。**雛形が新規プロジェクトで PASS することもテスト**
 - **`scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`**: E2E 合格時に git hash + UI hash + 時刻を `.ui-verified` に記録し、未検証・検証後変更の UI コミットを止める。刷新期間は `.rebuild-mode` で明示的に免除
-- `scripts/init-test-docs.sh <対象> [--ci]` で一式を配置、`github-actions/test-gates.yml` で CI 実行（手動起動のみ）
+- `scripts/init-test-docs.sh <対象> [--ci]` で一式を配置、`templates/github/workflows/test-gates.yml` で CI 実行（手動起動のみ）
 - `done-gate`（変更タイプ別・ゲート実行の明記）/ `test-automation` / `qa-review-standards`（29119 導線）/ `rules/functional-integrity.md`（機械検証への導線）を更新
 
 ```bash
@@ -280,7 +280,7 @@ yuki-aidd-kit/
 │   ├── test/                 # テスト戦略・DoD・29119 文書・テストケース CSV・機能契約の雛形8本
 │   ├── github/               # Issue（RFD/要件/欠陥）・PR テンプレート
 │   └── CURRENT_STATE.md / ADR-template.md / lessons.md / implement-profile.md
-├── github-actions/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates。いずれも手動起動のみ）
+├── templates/github/workflows/           # 配布用サンプル（deploy / secret-scan / lifecycle-check / test-gates。いずれも手動起動のみ）
 ├── .github/workflows/kit-ci.yml  # キット自身の CI（手動起動のみ）
 ├── VERSION                   # 版（git tag と対応）
 └── spec/                     # 現況仕様・運用条件・作り込み計画（キット自体を触るならまずここ）

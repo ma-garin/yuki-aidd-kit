@@ -184,13 +184,13 @@ templates/: `design-system.md`（視覚的指示書。チェックリストは�
 `TESTING_STRATEGY.md`（レベル・ゲート・実行タイミング）/ `DEFINITION_OF_DONE.md`（変更タイプ別）/
 `iso29119-test-plan.md` / `iso29119-test-design-spec.md` / `iso29119-test-completion-report.md` / `iso29119-incident-report.md` /
 `system_test_cases.csv`（ツアー観点・severity 列）/ `feature_contracts.yml`（機能契約）。
-機械ゲート: `scripts/quality_harness.py`（契約検証・NG>0 で exit 1、回帰テスト `scripts/test-quality-harness.sh`）/ `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（`.ui-verified`）/ CI `github-actions/test-gates.yml`。
+機械ゲート: `scripts/quality_harness.py`（契約検証・NG>0 で exit 1、回帰テスト `scripts/test-quality-harness.sh`）/ `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（`.ui-verified`）/ CI `templates/github/workflows/test-gates.yml`。
 工程文書（`templates/lifecycle/05〜08`）はケースと結果、こちらは計画・完了報告・インシデント。重複させない。
 
 ## templates/github/ — GitHub 連携（`--github` で配置）
 
 `ISSUE_TEMPLATE/`（RFD / 要件 / 欠陥）と `pull_request_template.md`（関係 ID とゲートのチェック欄）。
-CI は `github-actions/lifecycle-check.yml`（手動起動で `trace-check.sh` を実行し、追跡漏れを落とす。自動実行はしない）。
+CI は `templates/github/workflows/lifecycle-check.yml`（手動起動で `trace-check.sh` を実行し、追跡漏れを落とす。自動実行はしない）。
 
 ## 運用原則
 

@@ -134,7 +134,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 **severity: High**（回帰テストが3本あるのに、PR で自動実行されない。F-01/F-02 の陳腐化もこれが原因）
 
 - evidence: `.github/` ディレクトリが存在しない（`find . -name ".github" -type d` が 0 件）
-- evidence: `github-actions/` の4本はすべて**配布先プロジェクトへ置くサンプル**（各ファイル冒頭に「`.github/workflows/xxx.yml` に配置」と明記）
+- evidence: `templates/github/workflows/` の4本はすべて**配布先プロジェクトへ置くサンプル**（各ファイル冒頭に「`.github/workflows/xxx.yml` に配置」と明記）
 - 結果: `test-hooks.sh` 19 / `test-trace-check.sh` 15 / `test-quality-harness.sh` 11 の計45ケースが、手で実行しない限り回らない
 
 **是正案**: `spec/10-backlog.md` B-01。

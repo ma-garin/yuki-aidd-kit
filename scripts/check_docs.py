@@ -61,7 +61,7 @@ HISTORY_DOCS = {"docs/Roadmap.md", "docs/AUDIT-2026-07.md"}
 
 ID_LINE_RE = re.compile(r"`([^`]+)`（(\d+)行）")           # 散文の「`x`（N行）」
 TABLE_COST_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|.*\|\s*(\d+)行\s*\|\s*$")
-BACKTICK_PATH_RE = re.compile(r"`((?:skills|templates|scripts|docs|rules|hooks|commands|github-actions)/[A-Za-z0-9_./\-]+)`")
+BACKTICK_PATH_RE = re.compile(r"`((?:skills|templates|scripts|docs|rules|hooks|commands)/[A-Za-z0-9_./\-]+)`")
 CASE_RE = re.compile(r"(\d+)\s*ケース")
 PASS_RE = re.compile(r"PASS=(\d+)")
 
@@ -104,7 +104,7 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
 INVENTORY_PREFIXES = (
     "", "rules/", "skills/", "commands/", "hooks/", "scripts/",
     "templates/", "templates/lifecycle/", "templates/test/", "templates/github/",
-    "templates/components/", "templates/ui/", "docs/", "github-actions/",
+    "templates/components/", "templates/ui/", "docs/", "templates/github/workflows/",
 )
 
 

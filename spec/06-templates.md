@@ -1,4 +1,4 @@
-# 06 — templates（36件）と github-actions（4件）
+# 06 — templates（36件）と github/workflows（4件・旧 github-actions/）
 
 配置スクリプトとの対応:
 `init-lifecycle.sh` → `lifecycle/` + `github/`／`init-test-docs.sh` → `test/` + ゲートスクリプト／
@@ -191,7 +191,7 @@ Playwright でライト・ダーク・360px・モーダル・トーストを確�
 
 `skills/design-system/references/frameworks.md` は 47行 → 36行に縮小し、散文の手順を上記への導線と分担表に置き換えた。
 
-## 6. `github-actions/`（4件・171行）— 配布用サンプル（**2026-09-17 保守者決定で全て `workflow_dispatch` のみ**。PR / push では自動実行しない）
+## 6. `templates/github/workflows/`（4件・171行）— 配布用サンプル（**2026-09-17 保守者決定で全て `workflow_dispatch` のみ**。PR / push では自動実行しない）
 
 | ファイル | トリガー | 内容 |
 |---|---|---|
