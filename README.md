@@ -27,6 +27,8 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 同日 — `templates/implement-profile.md` に**「言い訳と事実」表**（8 行）: 止まる条件を飛ばすときに頭に浮かぶ言葉（「小さい変更だからテストは後で」「少し下げれば通る」「テストが通った＝動いている」「検査が緑だから文書も最新」…）と、その反証を並べた。出所は agent-skills の Common Rationalizations
 
+同日 — **検査スクリプトの `--json` 出力契約**（エージェント向け）: `check-docs` / `check-approval` / `check-design` / `quality_harness` / `test-metrics` / `floor-guard --check` が `--json` で 1 行の `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す。`error.type` は `docs.inconsistent` `approval.undetermined` `design.literal_values` `contract.failed` `gate.not_met` `floor.lowered` など、`hint` は次の一手、`retry_argv` は直した後の再実行コマンド。「エラー文は AI の判断入力になる」（出所: [WeKnora](https://github.com/Tencent/WeKnora) CLI の AGENTS.md）。回帰テスト `scripts/test-json-envelope.sh` 13 ケース
+
 ## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22。6.8.1: 全体導入 `install-guard.sh`）
 
 作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。

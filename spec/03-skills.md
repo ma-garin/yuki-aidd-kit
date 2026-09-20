@@ -102,7 +102,7 @@
 ## done-gate（56行）
 
 - **目的**: 「動いた」と「完了」は別物。クローズ前に機械的に確認
-- **全種別共通8項目**: spec の FR 検証基準 / 自己レビュー Critical・High 残ゼロ / **テストが pass**（人力の「動作確認した」を置換）/ 秘密情報なし / CURRENT_STATE 更新 / implement.md 追記 / コミット済み / `quality_harness.py` PASS
+- **全種別共通8項目**: spec の FR 検証基準 / 自己レビュー Critical・High 残ゼロ / **テストが pass**（人力の「動作確認した」を置換）/ 秘密情報なし / CURRENT_STATE 更新 / implement.md 追記 / コミット済み / `quality_harness.py` PASS。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 - **変更タイプ別**: Type B（HTML/JS/CSS）は L3 全 PASS + `.ui-verified` 更新 + 実操作 + コンソールエラーなし + `uiux_review` 全状態。**pytest PASS だけで完了としない**
 - **工程ライフサイクル併用時**: 出口基準充足 / `trace-check.sh` NG=0 / TBD 残ゼロ / **人間の承認3点を取得済み**
 - **追加項目**: AI/LLM（agent-eval がベースライン以上・Faithfulness ゲート）/ PWA（360px・export/import・SW キャッシュ版・オフライン・Lighthouse 80+）/ 単一HTML / Streamlit

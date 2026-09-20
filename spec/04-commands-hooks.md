@@ -51,7 +51,7 @@ Codex CLI の lifecycle hook（openai/codex `codex-rs/hooks`、Stable・既定�
 
 | hook | Codex | 判定の根拠 |
 |---|---|---|
-| `block-gates.py` / `filter-output.py` / `floor-guard.py` | ✅ | Bash の `tool_input` は `{"command": ...}` で同じ。`updatedInput` も適用される。floor-guard は差分を git から直接読む |
+| `block-gates.py` / `filter-output.py` / `floor-guard.py` | ✅ | Bash の `tool_input` は `{"command": ...}` で同じ。`updatedInput` も適用される。floor-guard は差分を git から直接読む。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 | `prompt-priority.py` / `context-guard.py` | ✅ | `prompt` / `transcript_path` があり、`additionalContext` を注入できる |
 | `pre-write-check.sh` / `block-phase.py` / `post-write-html.sh` | ❌ | 編集は `apply_patch` で `tool_input` が `{"command": <パッチ本文>}`。`file_path` が無い（B-14: パッチ本文からパス抽出） |
 | `instruction-guard.py` / `reply-language.py`（言語＋ A-9 の型: 冒頭の宣言文・末尾の申し出・結論ラベル） | ❌ | transcript が Codex 独自の rollout 形式（B-14） |

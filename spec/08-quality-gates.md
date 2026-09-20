@@ -51,7 +51,7 @@ L4 受入 ─┴─→ ここで初めて「ユーザーが価値を受け取れ
 | タイミング | 実行するもの | 根拠 |
 |---|---|---|
 | 日常のコミット | **実行しない**（`block-gates.py` が無断実行を止める） | `rules/speed-harness.md` H-7（速度） |
-| **マイルストーン**（機能の区切り・PR マージ前・リリース判断） | **フルゲート**: L1/L2 + L3 + lint + security + `quality_harness.py`。結果を `docs/quality/evidence/` へ保存 | `test-strategy` |
+| **マイルストーン**（機能の区切り・PR マージ前・リリース判断） | **フルゲート**: L1/L2 + L3 + lint + security + `quality_harness.py`。結果を `docs/quality/evidence/` へ保存 | `test-strategy`。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 | ユーザーが要求した時 | 要求されたもの（`GATES_REQUESTED=1` を付ける） | H-7 |
 | コミット前（文書の鮮度） | `check-docs.sh --only-changed`（変更を説明する文書が同じ差分に無ければ NG。キットでは `docs-gate.py` が commit を止める） | H-7・done-gate Type C（M23。検査 1〜11 は行数・件数の突合で鮮度を見ない） |
 

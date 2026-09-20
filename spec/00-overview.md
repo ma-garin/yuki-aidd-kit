@@ -93,7 +93,7 @@
 | Ver.5.0 | 2026-07 | コンテキスト圧縮・資産監査・自己文書化 | `context-compression` / `/compact-work` / `docs/AUDIT-2026-07.md` / Vision・PRD・Roadmap / `templates/design-system.md` / INDEX 2層化 |
 | Ver.6.0 | 2026-08 | 開発工程ライフサイクル | `dev-lifecycle`(+3 refs) / `templates/lifecycle/` 11本 / `trace-check.sh` / `/rfd` `/lifecycle` `/trace` / GitHub テンプレート / `lifecycle-check.yml` |
 | Ver.6.1 | 2026-08-25 | 速度ハーネス・機能完全性・UI/UX 実機レビュー | `rules/` 3本 / `uiux_review`(+viewpoints) / `block-gates.py` `progress.py` `statusline.py` / `templates/settings.sandbox.json` |
-| Ver.6.2 | 2026-08-25 | テスト活動の設計と機械ゲート | `test-strategy`(+2 refs) / `e2e-cycle` / `templates/test/` 8本 / `quality_harness.py` / `ui-hash.py` + `pre-commit-ui-gate.sh` / `init-test-docs.sh` / `test-gates.yml` |
+| Ver.6.2 | 2026-08-25 | テスト活動の設計と機械ゲート | `test-strategy`(+2 refs) / `e2e-cycle` / `templates/test/` 8本 / `quality_harness.py` / `ui-hash.py` + `pre-commit-ui-gate.sh` / `init-test-docs.sh` / `test-gates.yml`。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 | Ver.6.3 | 2026-08-25〜26 | デザイン: トークン実物・画面の作り方・FW 別適用 | `templates/tokens.css` / `design-system` 「画面の作り方」+ `references/frameworks.md` / `templates/components/` 3本 |
 
 Ver.6.1 以降は、実プロジェクト（WebSpec2Doc / UX_Auto_Reviewer / my_forward）で育った運用を

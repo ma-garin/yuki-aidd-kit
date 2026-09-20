@@ -55,7 +55,7 @@
 | `.codex/hooks.json` | Codex CLI 用（M23）。入出力を照合済みの 5 hook（block-gates / filter-output / floor-guard / prompt-priority / context-guard）だけを配線。既存は `.bak`。初回は Codex の `/hooks` で信頼 |
 | `AGENTS.md` / `CLAUDE.md` | template から生成。`sed` で `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md` → `.claude/INDEX.md` に変換 |
 | `scripts/trace-check.sh` | 既存があればスキップ |
-| `scripts/{quality_harness.py,ui-hash.py,pre-commit-ui-gate.sh}` | 既存があればスキップ |
+| `scripts/{quality_harness.py,ui-hash.py,pre-commit-ui-gate.sh}` | 既存があればスキップ。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 
 - 既存の `settings.json` / `.codex/hooks.json` / `AGENTS.md` / `CLAUDE.md` は `.bak` に退避
 - 完了後に「次にやること」7項目を出力（プレースホルダを埋める／git add & commit（Codex は `/hooks` で信頼）／init-lifecycle／sandbox 設定／init-test-docs／phase-gate）
@@ -225,7 +225,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 
 ## 文書整合検査（2026-09-17 追加・S5）
 
-### `check-docs.sh` → `check_docs.py`
+### `check-docs.sh` → `check_docs.py`。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 
 ```bash
 ./scripts/check-docs.sh [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--changed [--base REF] [--only-changed]]
@@ -249,7 +249,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 
 ## デザイン検査（2026-09-17 追加・S11）
 
-### `check-design.sh` → `check_design.py`
+### `check-design.sh` → `check_design.py`。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 
 ```bash
 ./scripts/check-design.sh [--root DIR] [--tokens FILE] [-o REPORT] [PATH ...]   # PATH 省略時 templates/ui templates/components。--tokens 省略時は templates/tokens.css → .claude/templates/tokens.css

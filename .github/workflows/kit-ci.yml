@@ -46,6 +46,8 @@ jobs:
         run: bash scripts/test-check-docs.sh
       - name: check-design の回帰テスト
         run: bash scripts/test-check-design.sh
+      - name: --json 出力契約の回帰テスト
+        run: bash scripts/test-json-envelope.sh
 
       - name: デザイン検査（直値・未定義トークン・外部 CDN・alert()）
         run: bash scripts/check-design.sh -o check-design-report.md

@@ -151,7 +151,7 @@
 | `progress.py` / `statusline.py` | ✅ statusLine | ❌（status line がコマンド式でない） |
 | `pre-commit`（秘密情報） | ✅ git hook | ✅ git hook |
 | `pre-commit-ui-gate.sh`（`.ui-verified`） | ✅ git hook | ✅ git hook |
-| `trace-check.sh` / `quality_harness.py` | ✅ スクリプト | ✅ スクリプト |
+| `trace-check.sh` / `quality_harness.py` | ✅ スクリプト | ✅ スクリプト。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 
 **git hook 層とスクリプト層は両対応。hook 層は M23 で入出力を照合できた 5 本（floor-guard を含む）が Codex でも効く**（2026-09-19 時点の openai/codex `codex-rs/hooks` を一次情報とした。「Codex には hook が無い」という当初の記述は誤り）。
 残り（編集系・transcript 依存・Read 系）は B-14。**強制したいものは可能な限り git hook かスクリプトへ寄せる**方針は変わらない。

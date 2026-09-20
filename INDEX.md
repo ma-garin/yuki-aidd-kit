@@ -15,6 +15,7 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
+./scripts/test-json-envelope.sh               # 検査スクリプトの --json 出力契約の回帰テスト（13ケース）
 ./scripts/test-hooks.sh                       # hooks の回帰テスト（106ケース）
 ./scripts/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
 ./scripts/install-guard.sh                   # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge・冪等。Claude Code 全体に効く）
@@ -33,6 +34,8 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 open docs/userguide.html                      # ユーザーガイド（概要・導入手順。初学者向け）
 open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書（13 章）
 ```
+
+検査スクリプト（`check-docs` / `check-approval` / `check-design` / `quality_harness` / `test-metrics` / `floor-guard --check`）は `--json` で 1 行の JSON `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（エージェント向け。NG のときは `error.hint` が次の一手、`retry_argv` が直した後の再実行）。
 
 **導入方式は2つ**（併用が前提。`docs/Vision.md` の「配置の2層」参照）:
 - **グローバル導入**（`install.sh`）: 自分のPC1台で複数プロジェクトを横断する日常運用
@@ -156,7 +159,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 299行 |
+| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 300行 |
 | `docs/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
 | `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
 | `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 87行 |

@@ -116,7 +116,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 
 - **完了条件**: `frameworks.md` が「値の説明」でなく「出荷物への導線＋分担表」に縮む
 
-### DS-4. `scripts/check-design.sh`（新規）— **実装済み 2026-09-17**（`check_design.py` 236行 ＋ `test-check-design.sh` 36ケース。実装時の判定範囲は `spec/05-scripts.md`「デザイン検査」が正）
+### DS-4. `scripts/check-design.sh`（新規）— **実装済み 2026-09-17**（`check_design.py` 236行 ＋ `test-check-design.sh` 36ケース。実装時の判定範囲は `spec/05-scripts.md`「デザイン検査」が正）。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 
 `templates/design-system.md` の再現チェックリストのうち**機械判定できるものを実行する**。
 

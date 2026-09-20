@@ -11,7 +11,7 @@
 ## hooks で機械的に強制されるもの（散文の規約ではない）
 - `instruction-guard.py` / `reply-language.py` / `prompt-priority.py`: 保守者の発言（途中で届いたものを含む）に日本語で応答するまで**全ツールを deny**／最後の応答に日本語が無い、または冒頭の宣言文・末尾の申し出・「結論:」ラベルがあれば続行させて出し直させる（A-13・A-9）／「今すぐ・報告・説明」を含む発言に優先の注入
 - `block-gates.py`: pytest / make test / verify-ui / lint はユーザー要求時のみ。要求時は `GATES_REQUESTED=1` を付けて実行する
-- `floor-guard.py`: `git commit` の前に基準を下げる差分（テストの skip・assert 減・テスト削除・抑止コメント・スタブ・しきい値の緩和・除外リスト追加）を deny（A-12）。正当な変更は commit メッセージに `Floor-Guard-Allow: <理由>`
+- `floor-guard.py`: `git commit` の前に基準を下げる差分（テストの skip・assert 減・テスト削除・抑止コメント・スタブ・しきい値の緩和・除外リスト追加）を deny（A-12）。正当な変更は commit メッセージに `Floor-Guard-Allow: <理由>`。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 - `block-explore.sh`: 実装モードの探索ブロック
 - `filter-output.py`: テスト・install・build・`git log`・`git diff` の出力を読む前に絞る。全量は `FULL_OUTPUT=1 <cmd>`
 - `pre-read-guard.py`: ロックファイル・minified・`node_modules`・生成レポートは読めない。800 行超は先頭 300 行（続きは `offset`）

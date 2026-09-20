@@ -9,10 +9,10 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 326 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 205 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `README.md` | 328 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `INDEX.md` | 208 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 32 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
-| `AGENTS.md.template` | 80 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
+| `AGENTS.md.template` | 81 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
 | `.gitignore` | 29 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
 | `.claude/settings.json` | 56 | キット自身の開発セッション用の hooks 配線（instruction-guard / prompt-priority / reply-language を `$CLAUDE_PROJECT_DIR` 参照で）。配布形は `claude-code/hooks/settings.json`（M22） |
@@ -125,7 +125,7 @@
 | `pre-compact.py` | 34 | PreCompact。残す／捨てる／形式の指示を注入 |
 | `log-instructions.py` | 35 | InstructionsLoaded。時刻＋入力 JSON をログへ追記。集計は token-audit.sh |
 | `docs-gate.py` | 64 | PreToolUse Bash（キット開発用。`.claude/settings.json` のみ配線）。`git commit` の前に `check_docs.py --only-changed` を回し、変更を説明する文書が同じ差分に無ければ `deny`。`scripts/check_docs.py` の無いプロジェクトでは何もしない |
-| `floor-guard.py` | 262 | PreToolUse Bash（Claude Code・Codex 両方に配線）。`git commit` 前に「基準を下げる差分」を deny（A-12）。CLI `--check` は exit 0/1/2。`Floor-Guard-Allow: <理由>` で通す |
+| `floor-guard.py` | 318 | PreToolUse Bash（Claude Code・Codex 両方に配線）。`git commit` 前に「基準を下げる差分」を deny（A-12）。CLI `--check` は exit 0/1/2。`Floor-Guard-Allow: <理由>` で通す |
 | `block-gates.py` | 54 | PreToolUse Bash。pytest / make test・verify-ui・lint 等を JSON で `deny`。ヒアドキュメントと引用文字列を除去してコマンド開始位置だけ照合（誤検知対策） |
 | `progress.py` | 44 | 手動連結。`start/step/done` で `.claude/progress.json` を管理 |
 | `statusline.py` | 63 | statusLine。進行中タスクの経過/見積/残りを表示し、従来表示（`~/.claude/statusline.sh`）へ素通し |
@@ -144,19 +144,19 @@
 | `export-project.sh` | 203 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
 | `test-metrics.sh` | 7 | テストメトリクスの薄いラッパ。status / --gate / --history / --into |
-| `test_metrics.py` | 597 | 05〜08 の表と CSV から消化率・合格率・欠陥密度・Critical/High 残・偏り・滞留・完了予測（根拠付き）。§7 の基準表で exit 0/1/2。unread は分母に入れ、欠陥表なしは None |
+| `test_metrics.py` | 651 | 05〜08 の表と CSV から消化率・合格率・欠陥密度・Critical/High 残・偏り・滞留・完了予測（根拠付き）。§7 の基準表で exit 0/1/2。unread は分母に入れ、欠陥表なしは None |
 | `test-test-metrics.sh` | 173 | test-metrics の回帰テスト（雛形・実データ・unread・欠陥表なし・基準表・偏り・履歴・報告書置換・CSV） |
 | `token-audit.sh` | 7 | トークン監査の薄いラッパ |
 | `token_audit.py` | 236 | 床（常時読み込み）の推定 tok・実測ログ集計・hook/設定の配線・MCP 数・スキル肥大。配線漏れは NG |
 | `test-token-audit.sh` | 56 | token-audit の回帰テスト（キット自身 NG=0・配布先・配線漏れ・ログ集計・MCP 過多） |
 | `check-approval.sh` | 8 | 工程承認検査の薄いラッパ。`--phase N` / `--gate N` / `--quiet`。exit 0/1/2 |
-| `check_approval.py` | 422 | 工程承認の本体。承認記録の必須欄・版の一致（失効）・未解消の差し戻し・未確認事項・approver が人間か・工程順序 |
+| `check_approval.py` | 476 | 工程承認の本体。承認記録の必須欄・版の一致（失効）・未解消の差し戻し・未確認事項・approver が人間か・工程順序 |
 | `test-check-approval.sh` | 239 | check-approval の回帰テスト。配布雛形 NG=0 と各検査の NG ケース |
 | `phase-hash.py` | 79 | 工程成果物のコンテンツハッシュ（承認を版に縛る）。対象0件は `empty`。`--staged` あり |
 | `init-lifecycle.sh` | 117 | 工程文書11本を `docs/lifecycle/` へ。`--github` で Issue/PR/CI も。既存は上書きしない |
 | `init-test-docs.sh` | 37 | テスト文書6本＋CSV＋機能契約＋ゲートスクリプト3本を配置。`--ci` で `test-gates.yml` |
 | `trace-check.sh` | 247 | **トレーサビリティの機械検証**。6種別（重複定義/未定義参照/所有ファイル違反/追跡表未記載/カバー漏れ/孤立テスト）。NG>0 で exit 1 |
-| `quality_harness.py` | 204 | **機能契約ハーネス**。8種の検証（統制文書/列挙値/参照パス/実行経路/失敗系/シンボル/未登録モジュール/未実装マーカー）。NG>0 で exit 1 |
+| `quality_harness.py` | 259 | **機能契約ハーネス**。8種の検証（統制文書/列挙値/参照パス/実行経路/失敗系/シンボル/未登録モジュール/未実装マーカー）。NG>0 で exit 1 |
 | `ui-hash.py` | 66 | git 管理対象の `.html/.js/.css` の sha256 先頭16桁。`disk` / `staged`。`docs/` は既定で除外 |
 | `pre-commit-ui-gate.sh` | 63 | `.ui-verified` の存在・鮮度（既定7200秒）・UI hash 一致を確認し、UI コミットを BLOCK。`.rebuild-mode` で WARN |
 | `pre-commit` | 21 | 秘密情報スキャン。gitleaks があれば使用、無ければ簡易パターン |
@@ -166,10 +166,11 @@
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 179 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
-| `check_docs.py` | 530 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
+| `check_docs.py` | 584 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
+| `test-json-envelope.sh` | 107 | 検査スクリプト 6 本の `--json` 出力契約（ok / exit / data / meta / error{type,message,hint,retry_argv}）の回帰テスト 13 ケース |
 | `test-check-docs.sh` | 160 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
-| `check_design.py` | 247 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |
+| `check_design.py` | 301 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |
 | `check-design.sh` | 7 | `check_design.py` の薄いラッパ |
 | `test-check-design.sh` | 145 | **check-design の回帰テスト 36ケース**（出荷物が NG=0 で通ること＋各検査の検出＋除外規則） |
 
@@ -249,7 +250,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 326 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 328 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
@@ -263,7 +264,7 @@
 |---|---|---|
 | `userguide.html` | 1169 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
 | `yuki-aidd-kit-manual.html` | 1444 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。冒頭に `userguide.html`／事例／V字章への導線（2026-09-18）。**デザイン適用除外ジャンル** |
-| `Roadmap.md` | 299 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
+| `Roadmap.md` | 300 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
 | `maintainer-tendencies.md` | 81 | 保守者の指摘・要望の傾向 14 項目（出典・原文・現状・反映先）と反映しなかったものの理由 |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |
 | `AUDIT-2026-07.md` | 114 | 資産監査の記録。判定軸・監査表3種・指摘 A-01〜A-09（ISTQB severity）・重複マップ D-01〜D-04・適用記録 |
@@ -301,4 +302,4 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `.github/workflows/kit-ci.yml` | 77 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |
+| `.github/workflows/kit-ci.yml` | 79 | **workflow_dispatch のみ**（手動起動。PR / push では動かない）で 7 本の回帰テスト（hooks / trace-check / quality_harness / install / git-gates / check-docs / check-design）と `check-docs.sh` `check-design.sh` を `GATES_REQUESTED=1` で実行。レポートを artifact と step summary へ（M15 S5） |

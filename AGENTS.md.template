@@ -41,6 +41,7 @@
 | 表に無い・迷った | `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md`（全資産の地図。**毎回は読まない**） |
 
 - grep/glob で絞ってから読む。ただし変更対象の依存先・呼び出し元は読む（不整合な修正の方が高くつく）
+- 検査スクリプト（check-docs / check-approval / check-design / quality_harness / test-metrics / floor-guard --check）は `--json` で回し、`ok=false` なら `error.hint` に従って直し `error.retry_argv` で再実行する。`exit 2`（判定不能）を合格に数えない
 - 指示された範囲はマージまで完遂する。セッション分割は提案しない
 
 ## 完了条件

@@ -146,7 +146,7 @@ qa-autopilot の memory/constitution.md 第 2 条・plan_0909.md 0-2 より。�
 
 ### A-12 の機械化（2026-09-20）
 
-散文では「通すために弱めない」を守れる保証が無いので、`claude-code/hooks/floor-guard.py` が `git commit` の直前に差分だけを見て
+散文では「通すために弱めない」を守れる保証が無いので、`claude-code/hooks/floor-guard.py` が `git commit` の直前に差分だけを見て。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 「基準を下げる手」を検出して止める（出所: agent-skills の constraint-driven-development / floor-guard）。検出するのは
 テストへの skip / only / xfail 追加、テストファイルからの assert / expect の正味減少、テストファイルの削除、lint / 型 / セキュリティの
 抑止コメント、TODO / NotImplementedError / 空 except のスタブ、しきい値ファイル（TESTING_STRATEGY §7・feature_contracts・pyproject・

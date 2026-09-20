@@ -487,6 +487,7 @@ def main() -> int:
     a = ap.parse_args()
     root = Path(a.root).resolve()
     r = Result()
+    LAST.update(ng=r.ng, warn=r.warn, report=a.report)
     if a.fix_inventory:
         print(f"spec/01-inventory.md: {fix_spec_inventory(root)} 行の行数を実測に更新")
 
@@ -526,5 +527,58 @@ def main() -> int:
     return 1 if r.ng else 0
 
 
+
+
+# ---- --json: エージェント向け出力契約（WeKnora CLI の AGENTS.md の型） ------------------------
+# {"ok": bool, "exit": 0|1|2, "data": {...}, "meta": {...}, "error": {"type", "message", "hint", "retry_argv"}}
+# 「エラー文は AI の判断入力になる」。hint は次の一手、retry_argv は直した後に再実行するコマンド。
+LAST: dict = {}
+JSON_ERROR_TYPES = {1: 'docs.inconsistent', 2: 'docs.undetermined'}
+JSON_HINTS = {1: 'check-docs-report.md の NG を直す。種別「変更文書」は変更を説明する文書を同じコミットで更新する', 2: 'git リポジトリの中で実行する'}
+JSON_RETRY_ARGV = ['./scripts/check-docs.sh']
+
+
+def _jsonable(x):
+    import dataclasses
+    from pathlib import Path as _P
+    if dataclasses.is_dataclass(x) and not isinstance(x, type):
+        return {k: _jsonable(v) for k, v in dataclasses.asdict(x).items()}
+    if isinstance(x, dict):
+        return {str(k): _jsonable(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple, set)):
+        return [_jsonable(v) for v in x]
+    if isinstance(x, _P):
+        return str(x)
+    if isinstance(x, float) and x != x:
+        return None
+    return x
+
+
+def _run_json(fn) -> int:
+    import contextlib
+    import io
+    import json as _json
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        try:
+            code = int(fn() or 0)
+        except SystemExit as e:  # argparse のエラー等
+            code = int(e.code or 0) if isinstance(e.code, int) else 2
+    text = buf.getvalue().rstrip().splitlines()
+    env = {"ok": code == 0, "exit": code, "data": _jsonable(dict(LAST)), "meta": {"stdout": text}}
+    if code != 0:
+        env["error"] = {
+            "type": JSON_ERROR_TYPES.get(code, "unknown"),
+            "message": next((ln for ln in reversed(text) if ln.strip()), f"exit {code}"),
+            "hint": JSON_HINTS.get(code, ""),
+            "retry_argv": JSON_RETRY_ARGV,
+        }
+    print(_json.dumps(env, ensure_ascii=False))
+    return code
+
+
 if __name__ == "__main__":
+    if "--json" in sys.argv:
+        sys.argv.remove("--json")
+        sys.exit(_run_json(main))
     sys.exit(main())
