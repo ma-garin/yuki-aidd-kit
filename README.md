@@ -21,6 +21,8 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - **`docs-gate.py`**（PreToolUse Bash・キット開発用）: `git commit` の前に検査 12 を回し、NG なら deny。理由に未更新の文書名を載せる。バイパス無し。`rules/speed-harness.md` H-7 と `done-gate` Type C にも配線
 - 入れた直後に自分の差分で 7 文書（INDEX・README・PRD・userguide・spec/03・05・README）の未更新を拾った。hooks 回帰テスト 79 → 85、check-docs 回帰テスト 32 → 46
 
+翌日追記（2026-09-20）— **応答の型を hook で止める**（保守者「結論は何か。ダラダラと長すぎる」「説明がくど過ぎて伝わっていない」）: `reply-language.py`（Stop）が日本語の最終応答の冒頭の宣言文（承知しました・まず・以下に）、末尾の申し出と締め（必要であれば・以上です）、「結論:」「要約:」のラベル行を検出して block し、出し直させる（A-9）。「はい／いいえ」で始まる答えと「〜しますか」で終わる閉じた問いは通す。出所は [i-have-adhd](https://github.com/ayghri/i-have-adhd) の送信前チェック。hooks 回帰テスト 85 → 92
+
 ## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22。6.8.1: 全体導入 `install-guard.sh`）
 
 作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。
@@ -150,7 +152,7 @@ python3 scripts/quality_harness.py                       # 機能契約の検証
 - **hooks 3本追加**: `block-gates.py`（pytest / make test / lint をユーザー要求時以外 deny）/ `progress.py` + `statusline.py`（進行中タスクの経過・見積・残りをステータスラインに表示）
 - **`templates/settings.sandbox.json`**: sandbox・denyRead・network allowlist・permissions deny の雛形
 - `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先」「必須プロセス」「完了条件」で改訂。「指定外ファイルは読まない」「セッション分割を提案」は廃止（AUDIT-2026-07 C-02 / X-4）
-- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 85 ケース）
+- `install.sh` / `export-project.sh` / `verify.sh` / `test-hooks.sh` が rules と `.py` hooks を扱うよう更新（hooks 回帰テスト 92 ケース）
 
 ## Ver.6.0 での主な更新（2026-08）— 開発工程ライフサイクル
 
@@ -193,7 +195,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh     # ~/.claude へ配置
 ./scripts/install-guard.sh   # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge。Claude Code 全体に効く）
 ./scripts/verify.sh      # 配置確認（リストは自動導出。NG>0 で exit 1）
-./scripts/test-hooks.sh  # hooks の回帰テスト（85ケース）
+./scripts/test-hooks.sh  # hooks の回帰テスト（92ケース）
 ./scripts/test-install.sh    # 導入・配布・初期化スクリプトの回帰テスト（115ケース。実 ~/.claude には触らない）
 ./scripts/test-check-design.sh && ./scripts/check-design.sh   # デザイン検査（直値・未定義トークン・CDN・alert()）の回帰テストと本検査
 ./scripts/test-git-gates.sh  # 秘密情報スキャン・.ui-verified・UI hash の回帰テスト（27ケース）

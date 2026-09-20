@@ -146,7 +146,7 @@
 |---|---|---|
 | `block-gates.py`（ゲートの無断実行を止める）／`filter-output.py`／`prompt-priority.py`／`context-guard.py` | ✅ hook | ✅ hook（`.codex/hooks.json`。M23 で stdin の形を照合） |
 | 編集系 `block-phase.py` / `pre-write-check.sh` / `post-write-html.sh` | ✅ hook | ❌（`tool_input` にパスが無い。B-14） |
-| `instruction-guard.py` / `reply-language.py` | ✅ hook | ❌（transcript が rollout 形式。B-14） |
+| `instruction-guard.py` / `reply-language.py`（言語＋ A-9 の型） | ✅ hook | ❌（transcript が rollout 形式。B-14） |
 | `block-explore.sh` / `pre-read-guard.py`（探索ブロック・部分読み） | ✅ hook | ❌（Read/Grep/Glob ツールが無い） |
 | `progress.py` / `statusline.py` | ✅ statusLine | ❌（status line がコマンド式でない） |
 | `pre-commit`（秘密情報） | ✅ git hook | ✅ git hook |

@@ -218,6 +218,23 @@ expect_empty "Stop: stop_hook_active なら何もしない（無限ループ防�
 { u_text "日本語で報告しなさい"; a_text "報告します。"; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 日本語で応答していれば何もしない" "$OUT" "$RC"
+# 型（A-9）: 冒頭の宣言文・末尾の申し出・結論ラベルを止める（i-have-adhd の送信前チェック）
+rl() { printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"; }
+rl_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d).get("reason","") if d.strip() else "")' 2>/dev/null; }
+{ u_text "調べて"; a_text "承知しました。Codex の hook を確認します。"; } > "$TRJ"
+OUT=$(rl); expect_contains "Stop: 冒頭の宣言文（承知しました）は block" "冒頭の宣言文「承知しました」" "$(rl_reason "$OUT")"
+{ u_text "調べて"; a_text "hook はあります。設定は .codex/hooks.json です。\\n\\n必要であれば配線します。"; } > "$TRJ"
+OUT=$(rl); expect_contains "Stop: 末尾の申し出（必要であれば）は block" "末尾の申し出・締め「必要であれば」" "$(rl_reason "$OUT")"
+{ u_text "調べて"; a_text "結論: hook はあります。\\n根拠: codex-rs/hooks。"; } > "$TRJ"
+OUT=$(rl); expect_contains "Stop: 「結論:」のラベル行は block" "ラベル行「結論:」" "$(rl_reason "$OUT")"
+{ u_text "調べて"; a_text "hook はあります（codex-rs/hooks、Stable・既定有効）。\\n\\n配線を export-project.sh に足しますか。推奨は「はい」です。"; } > "$TRJ"
+OUT=$(rl); RC=$?; expect_empty "Stop: 結論から始まり閉じた質問で終わる応答は通す" "$OUT" "$RC"
+{ u_text "着手して"; a_text "目的: hook の配線\\n終了条件: test-hooks PASS\\n見積: 8 往復\\n検証: 1 周"; } > "$TRJ"
+OUT=$(rl); RC=$?; expect_empty "Stop: H-1 の 4 行（目的: 〜）は通す" "$OUT" "$RC"
+{ u_text "はい"; a_text "はい、その指示に対する実装です。"; } > "$TRJ"
+OUT=$(rl); RC=$?; expect_empty "Stop: 「はい」で始まる答えは通す（閉じた質問への回答）" "$OUT" "$RC"
+{ u_text "Please check"; a_text "Sure! Let me check. Hope this helps."; } > "$TRJ"
+OUT=$(rl); RC=$?; expect_empty "Stop: 日本語でない応答は型の判定対象外（言語判定のみ）" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?

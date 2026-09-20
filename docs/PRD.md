@@ -59,7 +59,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 境界: 機械が判定するのは「承認記録の形式的な健全性と版の一致」まで。**その設計が本当に要件を満たすかは人間しか判定できない**。AI は承認しない（`/phase-review` は指摘の申し送りまで）
 - **FR-15 トークン節約の機械化**: 節約策を散文でなく hook・設定・検査で強制する。出力の絞り込み（`filter-output.py`）・読む価値の無いファイルの deny と大ファイルの切り詰め（`pre-read-guard.py`）・会話の寿命の警告（`context-guard.py`）・圧縮指示（`pre-compact.py`）・`effortLevel` `autoCompactWindow` `BASH_MAX_OUTPUT_LENGTH` の既定
   - 検証基準: `scripts/token-audit.sh` が配線漏れを NG（exit 1）で検出する。絞ったときは必ず `systemMessage` で全量の取り方を伝える（黙って削らない）。逃がし口は `FULL_OUTPUT=1` と `offset`/`limit` の明示だけで、恒久バイパスは作らない。常時読み込みは rules ≦ 100 行・CLAUDE+AGENTS ≦ 200 行を `check-docs.sh` が検査する
-- **FR-17 指示優先の強制**: 保守者の発言（作業の途中で届いたものを含む）に日本語で応答するまで hook が全ツールを止める（`instruction-guard.py`）。最後の応答の言語は `reply-language.py` が見る。バイパス無し
+- **FR-17 指示優先の強制**: 保守者の発言（作業の途中で届いたものを含む）に日本語で応答するまで hook が全ツールを止める（`instruction-guard.py`）。最後の応答の言語と型（冒頭の宣言文・末尾の申し出・結論ラベル。A-9）は `reply-language.py` が見る。バイパス無し
 - **FR-16 テスト工程のメトリクス**: 工程文書 05〜08 のテスト表・欠陥表と `system_test_cases.csv` を真実源に、`scripts/test-metrics.sh` が消化率・合格率・欠陥密度・Critical/High 未解決・滞留・偏り・完了予測（根拠付き）を出す。集計値を文書に手書きしない
   - 検証基準: 結果欄が語彙外の行は分母に含め、1 件でもあれば `--gate` は 2（判定できない）。欠陥表が無ければ密度・未解決は「算出できない」（0 ではない）。基準は `TESTING_STRATEGY.md` §7 の表（しきい値＋出典。出典が空の行は読まない）。`--into` が完了報告書 §2 と基準評価を置き換え、GO/NO-GO は人が書く。配布雛形が status で exit 0 になることを回帰テストに含める
 - **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する

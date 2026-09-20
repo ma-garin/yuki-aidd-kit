@@ -9,7 +9,7 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 320 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `README.md` | 322 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
 | `INDEX.md` | 204 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 31 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 80 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
@@ -119,7 +119,7 @@
 | `filter-output.py` | 114 | 冗長な出力を絞る書き換え（PreToolUse Bash・updatedInput）。テスト→失敗行＋末尾、install/build→tail、git log→-20、git diff→--stat。終了コード保持。`FULL_OUTPUT=1` で素通り |
 | `pre-read-guard.py` | 98 | Read の前段。読む価値の無いファイルを deny、`READ_GUARD_MAX_LINES`（800）超を `READ_GUARD_LIMIT`（300）に切り詰め。バイナリ・offset/limit 指定ありは素通り |
 | `instruction-guard.py` | 146 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無ければ deny、日本語の発言に日本語が無い応答なら deny。サブエージェント・機械由来タグ・transcript 無しは許可 |
-| `reply-language.py` | 53 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
+| `reply-language.py` | 128 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
 | `prompt-priority.py` | 32 | UserPromptSubmit。緊急語を含む発言に「作業より優先」を additionalContext で注入 |
 | `context-guard.py` | 59 | UserPromptSubmit。transcript の mtime でアイドル（`CONTEXT_GUARD_IDLE_MIN` 55）・サイズで肥大（`CONTEXT_GUARD_MAX_MB` 4）を判定し additionalContext を注入 |
 | `pre-compact.py` | 34 | PreCompact。残す／捨てる／形式の指示を注入 |
@@ -160,7 +160,7 @@
 | `pre-commit-ui-gate.sh` | 63 | `.ui-verified` の存在・鮮度（既定7200秒）・UI hash 一致を確認し、UI コミットを BLOCK。`.rebuild-mode` で WARN |
 | `pre-commit` | 21 | 秘密情報スキャン。gitleaks があれば使用、無ければ簡易パターン |
 | `audit-app-workspace.sh` | 55 | アプリ群の棚卸し（トップレベル・manifest・拡張子集計・ECC DAILY 推奨） |
-| `test-hooks.sh` | 358 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
+| `test-hooks.sh` | 375 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 179 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
@@ -248,7 +248,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 320 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 322 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
@@ -262,15 +262,15 @@
 |---|---|---|
 | `userguide.html` | 1169 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
 | `yuki-aidd-kit-manual.html` | 1444 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。冒頭に `userguide.html`／事例／V字章への導線（2026-09-18）。**デザイン適用除外ジャンル** |
-| `Roadmap.md` | 296 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
+| `Roadmap.md` | 297 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
 | `maintainer-tendencies.md` | 81 | 保守者の指摘・要望の傾向 14 項目（出典・原文・現状・反映先）と反映しなかったものの理由 |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |
 | `AUDIT-2026-07.md` | 114 | 資産監査の記録。判定軸・監査表3種・指摘 A-01〜A-09（ISTQB severity）・重複マップ D-01〜D-04・適用記録 |
-| `OPERATING-MODE.md` | 78 | 日常の標準作業モード（種別判定・読む範囲・ECC 使い分け・実装ループ・完了判定・クレジット節約） |
+| `OPERATING-MODE.md` | 79 | 日常の標準作業モード（種別判定・読む範囲・ECC 使い分け・実装ループ・完了判定・クレジット節約） |
 | `PRD.md` | 86 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
 | `PROJECT-FIT-REPORT.md` | 48 | 実プロジェクト群への適合レポート（2026-06 時点）。Summary/Evidence/Recommendation |
 | `Vision.md` | 47 | 目的・解決する問題6件・到達点3つ・Non-Goals・配置の2層・価値の判定基準 |
-| `rules-rationale/absolute-rules.md` | 165 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
+| `rules-rationale/absolute-rules.md` | 171 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
 | `rules-rationale/speed-harness.md` | 130 | `rules/speed-harness.md` の圧縮前原文（実測・失敗事例）と **H-6 の実測記録の追記先**（M16） |
 | `rules-rationale/model-routing.md` | 31 | `rules/model-routing.md` 各行の根拠（一次情報の出典）と未確認事項（M16） |
 | `examples/library-loan/README.md` | 36 | 事例の説明（依頼文・中身・開く／作り直す／検査する・確認できたこと・範囲外） |

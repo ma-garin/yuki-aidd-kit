@@ -54,7 +54,7 @@ Codex CLI の lifecycle hook（openai/codex `codex-rs/hooks`、Stable・既定�
 | `block-gates.py` / `filter-output.py` | ✅ | Bash の `tool_input` は `{"command": ...}` で同じ。`updatedInput` も適用される |
 | `prompt-priority.py` / `context-guard.py` | ✅ | `prompt` / `transcript_path` があり、`additionalContext` を注入できる |
 | `pre-write-check.sh` / `block-phase.py` / `post-write-html.sh` | ❌ | 編集は `apply_patch` で `tool_input` が `{"command": <パッチ本文>}`。`file_path` が無い（B-14: パッチ本文からパス抽出） |
-| `instruction-guard.py` / `reply-language.py` | ❌ | transcript が Codex 独自の rollout 形式（B-14） |
+| `instruction-guard.py` / `reply-language.py`（言語＋ A-9 の型: 冒頭の宣言文・末尾の申し出・結論ラベル） | ❌ | transcript が Codex 独自の rollout 形式（B-14） |
 | `pre-compact.py` | ❌ | PreCompact の出力に `additionalContext` が無い |
 | `pre-read-guard.py` / `block-explore.sh` | ❌ | Read/Grep/Glob ツールが無い（読み取りは shell 経由） |
 | `log-instructions.py` | ❌ | InstructionsLoaded イベントが無い |
