@@ -22,11 +22,29 @@ from pathlib import Path
 
 TAIL_KB = int(os.environ.get("INSTRUCTION_GUARD_TAIL_KB", "512"))
 JA_RE = re.compile(r"[぀-ヿ一-鿿]")
-TAG_BLOCK_RE = re.compile(r"<([a-zA-Z][\w-]*)>.*?</\1>", re.S)
+TAG_BLOCK_RE = re.compile(r"<([a-zA-Z][\w-]*)(?:\s[^>]*)?>.*?</\1>", re.S)
+
+# 人ではなく機械（サブエージェント・ハーネス・このフック自身）が書いた本文の印。
+# これを含む user エントリは保守者の指示として扱わない。フック自身のエラー文を
+# 次の「未応答の指示」として読み直す自己参照ループを防ぐ。
+MACHINE_MARKERS = (
+    "[instruction-guard]",
+    "[reply-language]",
+    "[Subagent hand-back]",
+    "<task-notification>",
+    "<agent-message",
+    "Stop hook feedback:",
+    "hook success:",
+    "[SYSTEM NOTIFICATION - NOT USER INPUT]",
+)
 
 
 def has_ja(s: str) -> bool:
     return bool(JA_RE.search(s or ""))
+
+
+def is_machine_text(s: str) -> bool:
+    return any(m in (s or "") for m in MACHINE_MARKERS)
 
 
 def visible_text(s: str) -> str:
@@ -51,16 +69,25 @@ def instruction_of(entry: dict) -> str | None:
         content = (entry.get("message") or {}).get("content")
         if isinstance(content, list) and any(isinstance(b, dict) and b.get("type") == "tool_result" for b in content):
             return None
-        s = visible_text(text_of(content))
+        raw = text_of(content)
+        if is_machine_text(raw):
+            return None
+        s = visible_text(raw)
         return s or None
     if t == "attachment":
         att = entry.get("attachment") or {}
         if att.get("type") == "queued_command":
-            s = visible_text(text_of(att.get("prompt")))
+            raw = text_of(att.get("prompt"))
+            if is_machine_text(raw):
+                return None
+            s = visible_text(raw)
             return s or None
         return None
     if t == "queue-operation" and entry.get("operation") == "enqueue":
-        s = visible_text(text_of(entry.get("content")))
+        raw = text_of(entry.get("content"))
+        if is_machine_text(raw):
+            return None
+        s = visible_text(raw)
         return s or None
     return None
 
