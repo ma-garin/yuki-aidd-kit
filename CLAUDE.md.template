@@ -6,7 +6,7 @@
 
 ## 実装モード（探索ブロック）
 - `.claude/mode` の有無で切り替える（**存在＝実装モード＝ Read/Grep/Glob を hook がブロック**）
-- `/plan` で解除して調査 → `PLAN.md` に方針・対象ファイル・検証手順 → `/implement` で開始（plan 未作成なら中断）。実装モード中は再探索しない。行動規範は `templates/implement-profile.md`
+- `/plan` で解除して調査 → `PLAN.md` に方針・対象ファイル・検証手順 → `/implement` で開始（plan 未作成なら中断）。実装モード中は再探索しない。行動規範は `templates/implement-profile.md`（止まる条件・言い訳と事実の表）
 
 ## hooks で機械的に強制されるもの（散文の規約ではない）
 - `instruction-guard.py` / `reply-language.py` / `prompt-priority.py`: 保守者の発言（途中で届いたものを含む）に日本語で応答するまで**全ツールを deny**／最後の応答に日本語が無い、または冒頭の宣言文・末尾の申し出・「結論:」ラベルがあれば続行させて出し直させる（A-13・A-9）／「今すぐ・報告・説明」を含む発言に優先の注入

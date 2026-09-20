@@ -60,7 +60,7 @@
 | `CURRENT_STATE.md` | 今どこまで進んだか（フェーズ・直近完了・次タスク・判断待ち・既知の問題・設計決定メモ）＋セッション開始時の指示テンプレート | ADR / lessons |
 | `ADR-template.md` | なぜその設計にしたか（背景・選択肢比較表・決定・結果影響・関連） | CURRENT_STATE / lessons |
 | `lessons.md` | **AIDD の進め方の知見**（Keep/Problem/Try、1エントリ3-5行）。記入例がコメントで同梱 | CURRENT_STATE / ADR |
-| `implement-profile.md` | 実装モードの行動規範（再探索しない・plan 準拠・小さく実装→軽量テスト・done-gate・逸脱時の4手順）＋止まる条件の表（同じゲート 3 回・plan に無い判断・基準を弱めないと通らない＝`floor-guard.py` が commit を止める） | — |
+| `implement-profile.md` | 実装モードの行動規範（再探索しない・plan 準拠・小さく実装→軽量テスト・done-gate・逸脱時の4手順）＋止まる条件の表（同じゲート 3 回・plan に無い判断・基準を弱めないと通らない＝`floor-guard.py` が commit を止める）＋「言い訳と事実」表 8 行（止まる条件を飛ばすときの言葉と反証。出所: agent-skills の Common Rationalizations） | — |
 
 **`lessons.md` は現在エントリ0件**（雛形のまま）。Vision の到達点③「自己改善ループ」が未稼働である証拠。
 

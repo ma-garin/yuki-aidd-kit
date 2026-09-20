@@ -59,7 +59,7 @@
 | 機能契約の項目定義 | `skills/test-strategy/references/feature-contracts.md` | `quality_harness.py` / `templates/test/feature_contracts.yml` |
 | `.ui-verified` の仕様 | `skills/test-strategy/references/ui-verified-gate.md` | `pre-commit-ui-gate.sh` / `ui-hash.py` / `done-gate` |
 | 速度の規律 | `rules/speed-harness.md` | `CLAUDE.md.template` / `AGENTS.md.template` / `OPERATING-MODE.md` / `docs-gate.py`（H-7 の文書更新確認を commit 前に強制） |
-| 基準を緩めない（A-12） | `rules/absolute-rules.md` | `claude-code/hooks/floor-guard.py`（commit 前に差分を検査。`settings.json` と `.codex/hooks.json` の両方に配線） / `templates/implement-profile.md`（止まる条件） |
+| 基準を緩めない（A-12） | `rules/absolute-rules.md` | `claude-code/hooks/floor-guard.py`（commit 前に差分を検査。`settings.json` と `.codex/hooks.json` の両方に配線） / `templates/implement-profile.md`（止まる条件・言い訳と事実の表） |
 | キット自体の要求 | `docs/PRD.md` | `docs/Roadmap.md`（各項目の完了条件） |
 | **現況の事実・残課題** | `spec/`（本ディレクトリ） | — |
 
