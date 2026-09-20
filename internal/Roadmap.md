@@ -5,7 +5,7 @@
 ## 作業ルール（毎回ここから）
 
 1. まず `INDEX.md` を読み、次に本ファイルの未完了項目（先頭の `[ ]`）だけを見る。他ファイルは各項目の「対象」に書かれたものだけ開く
-2. 上位文書: 目的は `docs/Vision.md`、要求と非機能制約は `docs/PRD.md`。迷ったら PRD の非機能要求（特に「Claude Code と他エージェント双方で動作」）に反しないか確認する
+2. 上位文書: 目的は `internal/Vision.md`、要求と非機能制約は `internal/PRD.md`。迷ったら PRD の非機能要求（特に「Claude Code と他エージェント双方で動作」）に反しないか確認する
 3. 1項目完了ごとに: `./scripts/install.sh` → `./scripts/verify.sh` が NG=0 → 完了条件を確認 → チェックを付け本ファイルを更新 → Conventional Commits で個別コミット
 4. 禁止: 実在しないファイル・ECC 資産への参照の新規作成／真実源の重複（デザイン値は `skills/design-system`、ECC 対応は `docs/ECC-ASSET-MAP.md`）／承認なしの大規模リファクタ
 5. 設計判断に迷ったら選択肢を提示して保守者の確認を取る（勝手に決めない）
@@ -18,19 +18,19 @@
 
 ## M2: 資産監査と修正（完了 2026-07）
 
-- [x] 全資産（skills 14 / commands 10 / hooks 4）の監査表を `docs/AUDIT-2026-07.md` に出力
+- [x] 全資産（skills 14 / commands 10 / hooks 4）の監査表を `internal/AUDIT-2026-07.md` に出力
 - [x] 承認済み修正の適用（hooks の stdin JSON 化＝A-01、端末幅 360×820 統一＝A-02、ECC プリセットの MAP 一本化＝A-03、ほか A-05〜A-09。詳細は AUDIT の適用記録）
 
 ## M3: 自己文書化（完了 2026-07）
 
-- [x] `docs/Vision.md` / `docs/PRD.md` / `docs/Roadmap.md`（本ファイル）を新設
+- [x] `internal/Vision.md` / `internal/PRD.md` / `internal/Roadmap.md`（本ファイル）を新設
 
 ## M4: デザインシステム指示書（完了 2026-07）
 
 - [x] `templates/design-system.md` を新設する
-  - 対象: `templates/design-system.md`（新規）。参照してよいもの: `skills/design-system/SKILL.md`（トークンの真実源）、`docs/yuki-aidd-kit-manual.html`（既存スタイルの実例）
+  - 対象: `templates/design-system.md`（新規）。参照してよいもの: `skills/design-system/SKILL.md`（トークンの真実源）、`docs/操作マニュアル.html`（既存スタイルの実例）
   - 内容: 基準トークン（primary `#1976D2`、Noto Sans JP + JetBrains Mono、MD3 light）を前提に、①Web アプリ ②HTML スライド ③管理画面 の3パターンを、コード無しでも他モデルが再現できる「視覚的指示書」（配置・比率・余白・階層・状態の言葉による指定）で記述する
-  - 制約: `skills/design-system/SKILL.md` の CSS 変数値と矛盾させない（値の再定義はせず参照する。AUDIT の D-02 を悪化させない）。`docs/yuki-aidd-kit-manual.html` の見た目とも矛盾しないこと
+  - 制約: `skills/design-system/SKILL.md` の CSS 変数値と矛盾させない（値の再定義はせず参照する。AUDIT の D-02 を悪化させない）。`docs/操作マニュアル.html` の見た目とも矛盾しないこと
   - 完了条件: 3パターンそれぞれに「レイアウト構造」「タイポグラフィ階層」「色の役割」「余白・密度」「状態表現（hover/選択/エラー）」の指定があり、具体値は design-system スキルへの参照で解決できる
   - 検証: `./scripts/verify.sh` NG=0（このファイル自体は verify 対象外なので、目視で完了条件を確認して記録する）
 
@@ -72,8 +72,8 @@
 
 - [x] `scripts/export-project.sh <target>` を新設。対象プロジェクト直下に `.claude/skills,commands,hooks,settings.json,INDEX.md` を全コピーし、`AGENTS.md`・`CLAUDE.md` を生成する（INDEX.md 参照は `.claude/INDEX.md` の相対パスに変換）
   - 検証: スクラッチディレクトリへの初回エクスポート・再実行時の `.bak` 退避・hooks の相対パス動作（cwd=プロジェクトルート想定）を確認済み
-- [x] `docs/Vision.md` に「配置の2層」節を追加し、Non-Goals を「不特定多数へのOSS公開はしない」に意味を限定
-- [x] `docs/PRD.md` に FR-04a（プロジェクト配布）を追加し、互換性NFRに「グローバル導入とプロジェクト配布のどちらでも同一の振る舞い」を追記
+- [x] `internal/Vision.md` に「配置の2層」節を追加し、Non-Goals を「不特定多数へのOSS公開はしない」に意味を限定
+- [x] `internal/PRD.md` に FR-04a（プロジェクト配布）を追加し、互換性NFRに「グローバル導入とプロジェクト配布のどちらでも同一の振る舞い」を追記
 
 ## M9: デザインシステムのダーク対応・是正（完了 2026-07）
 
@@ -120,9 +120,9 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] `templates/settings.sandbox.json` を追加
 - [x] `CLAUDE.md.template` / `AGENTS.md.template` を「速度最優先・必須プロセス・完了条件」で改訂（両ファイル同時、X-5）。C-02「指定外は読まない」と X-4「セッション分割」を廃止
 - [x] `install.sh`（rules → `~/.claude/rules/aidd-kit/`、同名既存はスキップ）/ `export-project.sh`（rules → `.claude/rules/`、py hooks、statusLine）/ `verify.sh` / `test-hooks.sh`（+8 ケース）
-- [x] `docs/yuki-aidd-kit-manual.html` に「速度と完了のルール」節・uiux_review / atarimae 行・用語 rules を追加
+- [x] `docs/操作マニュアル.html` に「速度と完了のルール」節・uiux_review / atarimae 行・用語 rules を追加
 - [x] `docs/OPERATING-MODE.md` §4〜6 に H-1 着手前3行・H-3 バッチ検証・functional-integrity・progress.py を反映
-- [x] `docs/PRD.md` FR-03 を 7 hook に更新し FR-03a（rules 供給）を追加。`claude-projects-setup.md` の「指定外ファイルを読まない」を速度・完了条件の記述に置換
+- [x] `internal/PRD.md` FR-03 を 7 hook に更新し FR-03a（rules 供給）を追加。`docs/claude-projects-setup.md` の「指定外ファイルを読まない」を速度・完了条件の記述に置換
 - 検証記録: `./ci/test-hooks.sh`（実行結果は PR 本文に記載）。`install.sh` はグローバル環境を上書きするため本作業では未実行（`verify.sh` 未計測）
 
 ## M13: テスト活動の設計と機械ゲート（完了 2026-08-25）
@@ -136,7 +136,7 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] `tools/ui-hash.py` + `tools/pre-commit-ui-gate.sh`（マーカー不在・期限切れ・hash 不一致で BLOCKED、`.rebuild-mode` で WARN。手動 4 ケース確認）
 - [x] `scripts/init-test-docs.sh`（`--ci` で `templates/github/workflows/test-gates.yml` も配置）、`export-project.sh` がゲートスクリプトを同梱
 - [x] `done-gate` / `test-automation` / `qa-review-standards` / `rules/functional-integrity.md` / 両テンプレートに導線を追加
-- [ ] `docs/yuki-aidd-kit-manual.html` の非エンジニア向け説明（テストレベルと「テストが通った≠完了」）は本 PR で最小限。図解は未着手
+- [ ] `docs/操作マニュアル.html` の非エンジニア向け説明（テストレベルと「テストが通った≠完了」）は本 PR で最小限。図解は未着手
 - 検証記録: `test-quality-harness.sh` 11/11、`init-test-docs.sh` dry-run で 12 ファイル配置・雛形契約 PASS、`pre-commit-ui-gate.sh` 4 状態確認。AUDIT-2026-07 で指摘された「ISO 29119 が 0 件」を解消
 
 ## M14: デザイン — トークン実物・画面の作り方・フレームワーク別適用（完了 2026-08-25）
@@ -152,36 +152,36 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 
 ## M15: 土台 — Sonnet が壊しても機械が気づける状態にする（完了 2026-09-17）
 
-背景: 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行を前に、`spec/`（全 126 ファイル読解の記録）で
+背景: 2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行を前に、`internal/spec/`（全 126 ファイル読解の記録）で
 入口スクリプトと git ゲートが未テスト・CI 不在・版の刻印なし・文書の数値が実体とズレる（F-01〜F-03, F-06, F-07, F-09, F-11, F-12）
-ことが分かった。運用条件と設計含意は `spec/11-target-operating-model.md`、実行順は `spec/10-backlog.md`。
+ことが分かった。運用条件と設計含意は `internal/spec/11-target-operating-model.md`、実行順は `internal/spec/10-backlog.md`。
 
 - [x] `scripts/verify.sh` が NG>0 で exit 1 を返す（S1。CI・テストから合否を機械判定できる）
 - [x] 版の刻印（S2）: `VERSION` を新設し、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。`verify.sh` が表示
 - [x] `ci/test-install.sh`（S3、66 ケース）: install / verify / export / init-project / init-test-docs を HOME 差し替えで検証。実 `~/.claude` には触らない
 - [x] `ci/test-git-gates.sh`（S4、27 ケース）: pre-commit（簡易パターン経路）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで検証
-- [x] `ci/check_docs.py` + `check-docs.sh` + `test-check-docs.sh`（S5）: INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数（WARN）・SKILL 行数目安（WARN）・spec/01 の同期を機械判定
+- [x] `ci/check_docs.py` + `check-docs.sh` + `test-check-docs.sh`（S5）: INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数（WARN）・SKILL 行数目安（WARN）・internal/spec/01 の同期を機械判定
 - [x] `.github/workflows/kit-ci.yml`（S5）: 6 本の回帰テストと check-docs を実行（`templates/github/workflows/` の配布用サンプルとは別物）。**2026-09-17 保守者決定で `workflow_dispatch` のみに変更**（PR / push での自動実行はしない。ゲートは要求時だけ、の規律を CI にも適用）
-- [x] 数値の是正と spec 同期（S6）: check-docs が検出した INDEX 11 件・manual 2 件を是正。`spec/01` を実測に同期
+- [x] 数値の是正と spec 同期（S6）: check-docs が検出した INDEX 11 件・manual 2 件を是正。`internal/spec/01` を実測に同期
 - 検証記録: test-hooks 19/19・test-trace-check 15/15・test-quality-harness 11/11・test-install 66/66・test-git-gates 27/27・test-check-docs 全 PASS・`check-docs.sh` NG=0（WARN 2: rules 268 行 > 100、design-system 465 行 > 200 — M16 / M17 で解消）
 - 残: `git tag v6.3.0` は main へのマージ時に保守者が打つ
 
 ## M16: Pro 移行準備 — 常時読み込み層のダイエットとモデル規律（完了 2026-09-17）
 
-条件: `spec/11-target-operating-model.md`（Pro ＋ Sonnet ＋ Codex 併用）。一次情報: Claude Code `memory` docs（`paths` 付き rules は該当ファイルを触ったときだけ読み込まれる／`@AGENTS.md` import／`rules/` は再帰的に自動ロード）。
+条件: `internal/spec/11-target-operating-model.md`（Pro ＋ Sonnet ＋ Codex 併用）。一次情報: Claude Code `memory` docs（`paths` 付き rules は該当ファイルを触ったときだけ読み込まれる／`@AGENTS.md` import／`rules/` は再帰的に自動ロード）。
 
-- [x] `rules/absolute-rules.md` を表形式に圧縮（112→19行）、`rules/speed-harness.md` を規範だけに（115→51行）。根拠・失敗事例・原文と H-6 の実測記録は `docs/rules-rationale/` へ（S7a）
+- [x] `rules/absolute-rules.md` を表形式に圧縮（112→19行）、`rules/speed-harness.md` を規範だけに（115→51行）。根拠・失敗事例・原文と H-6 の実測記録は `internal/rules-rationale/` へ（S7a）
 - [x] `rules/functional-integrity.md` に `paths:` frontmatter（コード/UI 編集時のみ読み込み。17行）（S7a）
 - [x] `AGENTS.md.template` を共通規約の本体にし、「読む範囲」を **タスク種別 → 最初に使うスキル/コマンド** の表に。`INDEX.md` は「表に無い・迷ったときだけ」に降格（S7b）
 - [x] `CLAUDE.md.template` を `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks・トークン）の 21 行に。`install.sh` が `~/.claude/AGENTS.md` も配置、`verify.sh` が確認。二重管理のルール（M12 の X-5）は廃止（S7c）
-- [x] `rules/model-routing.md`（15行）: 既定 Sonnet／Opus へ上げる3条件（暫定）／effort／`/clear`／委譲は隔離目的のみ／上限時の手順／週1で `/usage`。根拠は `docs/rules-rationale/model-routing.md`（S8）
+- [x] `rules/model-routing.md`（15行）: 既定 Sonnet／Opus へ上げる3条件（暫定）／effort／`/clear`／委譲は隔離目的のみ／上限時の手順／週1で `/usage`。根拠は `internal/rules-rationale/model-routing.md`（S8）
 - [x] `check_docs.py` の検査6（`paths` 無し rules ≦ 100 行）を NG に昇格。`test-install.sh` に AGENTS.md・`@AGENTS.md`・`paths` の保持を追加（71 ケース）
-- 実測（文字数からの推定）: 常時の床 10,810 → **5,028 tok**（rules 2本 2,511 ＋ CLAUDE.md/AGENTS.md 2,518）。INDEX 4,456 は必要時のみ。**実トークンは保守者が `/context` で計測し `spec/11` U-2 に記録する**
+- 実測（文字数からの推定）: 常時の床 10,810 → **5,028 tok**（rules 2本 2,511 ＋ CLAUDE.md/AGENTS.md 2,518）。INDEX 4,456 は必要時のみ。**実トークンは保守者が `/context` で計測し `internal/spec/11` U-2 に記録する**
 - 残: Opus へ上げる3条件は暫定。移行後1週間の `/usage` 実測で見直す（Q-7）
 
 ## M17: デザイン出荷物 — 散文を減らし、出荷物を増やす（完了 2026-09-17）
 
-計画: `spec/12-design-framework.md`（DS-1〜DS-6、受け入れ条件 A-1〜A-4）。判断軸は「Sonnet に書かせず、読ませる形になっているか」。
+計画: `internal/spec/12-design-framework.md`（DS-1〜DS-6、受け入れ条件 A-1〜A-4）。判断軸は「Sonnet に書かせず、読ませる形になっているか」。
 
 - [x] `templates/ui/components.css`（S9、DS-1）: SKILL.md の CSS 17 ブロックを `var(--*)` だけで実体化。直値解消のため `tokens.css` に `--color-medium-text` / `--color-scrim` / `--color-tooltip-bg/-text` / `--color-knob` を追加。`demo.html` を読み込み形式に変更
 - [x] `templates/ui/layout.css`（S10、DS-2）: `.app` 骨格（globalbar / sidebar 折りたたみ・off-canvas / topbar / content）と `.layout-2pane`、ブレークポイント 1366 / 768 / 360。`demo-shell.html` を追加し Playwright でライト／ダーク／360px／1920px を確認
@@ -189,7 +189,7 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] フレームワーク別の出荷物（S12、DS-3）: `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `templates/ui/README.md`（1枚表）。`references/frameworks.md` は 47→36 行の導線に
 - [x] `skills/design-system/SKILL.md` を 473 → 115 行（S13、DS-5、F-04）: 値の唯一の真実源を `templates/tokens.css` に一本化（Q-9）。`references/tokens.md`（理由）/ `references/components.md`（使い分けと落とし穴・実不具合 7 件を保持）。`check_docs.py` 検査7を NG に昇格
 - [x] `templates/design-system.md` のチェックリストに機械 5 / 目視 9 の別（S14、DS-6）
-- [x] `docs/lessons.md` 新設（S15、B-05、F-05）: 本セッションが最初のエントリ。`export-project.sh` に `block-explore.sh` を配線し `/implement` の非対称を解消（B-06、F-08、Q-3）。`test-install.sh` 73 ケース
+- [x] `internal/lessons.md` 新設（S15、B-05、F-05）: 本セッションが最初のエントリ。`export-project.sh` に `block-explore.sh` を配線し `/implement` の非対称を解消（B-06、F-08、Q-3）。`test-install.sh` 73 ケース
 - 検証記録: test-check-design 36/36・test-install 73/73・test-check-docs 25/25・`check-design.sh` NG=0（WARN 6: 未使用トークン `--color-medium` `--leading-loose` `--motion-slow` `--radius-xl` `--shadow-md` `--shadow-lg`）・`check-docs.sh` NG=0 WARN=0
 - 残: A-4（`design-system` 発火時コストが半分以下）は保守者が `/context` で実測（推定: 473→115 行なので 1/4 程度）
 
@@ -205,9 +205,9 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] `hooks/block-phase.py`（S19）: `.claude/phase-gate` オプトイン。未承認・失効・判定不能で deny、承認済み工程の成果物の書き換えも deny、`approvals/` は常に許可、バイパス用の環境変数は作らない。settings.json / export-project.sh / install.sh に配線
 - [x] `skills/phase-approval` ＋ `/phase-review`（S20）: 3 役を**順次**（追跡・仕様一致・リスク）。Agent 並列はトークン約 7 倍で使わない。AI は `approver` を埋めない
 - [x] 既存資産への配線（S21）: 全 10 工程テンプレートに「## 承認」節、`phase-gates.md` に承認ゲート節と機械／人間の境界表、共通出口基準 3→4、`dev-lifecycle/SKILL.md`・`/lifecycle`・`done-gate`・`verify.sh`・`kit-ci.yml`
-- [x] 文書化（S22）: `docs/userguide.html` に「工程の承認ゲート」章（実測した deny メッセージ付き）、PRD FR-14、`spec/09` F-17〜F-19、`spec/10` Q-11
+- [x] 文書化（S22）: `docs/利用ガイド.html` に「工程の承認ゲート」章（実測した deny メッセージ付き）、PRD FR-14、`internal/spec/09` F-17〜F-19、`internal/spec/10` Q-11
 - 検証記録: test-hooks 32/32・test-install 79/79・test-check-approval 54/54・test-trace-check 15/15・test-quality-harness 11/11・test-git-gates 27/27・test-check-docs 25/25・test-check-design 44/44・`check-docs.sh` NG=0・`check-design.sh` NG=0。配布した実プロジェクトで「未承認→deny／承認→許可／成果物の変更→失効→再び deny」を端から端まで確認
-- 残: 実プロジェクトで 1 工程を実際に承認し、deny の false positive 頻度を `docs/lessons.md` に記録する（保守者）
+- 残: 実プロジェクトで 1 工程を実際に承認し、deny の false positive 頻度を `internal/lessons.md` に記録する（保守者）
 
 ## M19: トークン節約を仕組みに — 散文を hook・設定・検査へ（完了 2026-09-19）
 
@@ -220,7 +220,7 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] settings 3 キー（S26）: `effortLevel: high` / `autoCompactWindow: 200k` / `BASH_MAX_OUTPUT_LENGTH: 12000`。キット本体・export の両方
 - [x] `token-audit.sh` ＋ `check-docs.sh` 検査 9（S27）: 床の推定・実測ログ集計・配線・MCP 数・スキル肥大。CLAUDE+AGENTS ≦ 200 行。`/token-check` を書き換え
 - [x] 散文の置き換え（S28）: CLAUDE.md.template / model-routing / speed-harness H-7 / context-compression / rules-rationale。rules 87 行 ≦ 100
-- [x] 文書化（S29）: userguide「トークンを減らす仕組み」章（実測の systemMessage 付き）、PRD FR-15、spec/09 F-20・F-21、spec/10 Q-12、spec/11 §2 更新
+- [x] 文書化（S29）: userguide「トークンを減らす仕組み」章（実測の systemMessage 付き）、PRD FR-15、internal/spec/09 F-20・F-21、internal/spec/10 Q-12、internal/spec/11 §2 更新
 - 検証記録: test-hooks 63/63・test-install 82/82・test-check-docs 27/27・test-token-audit 12/12・他 5 スイート PASS・`check-docs.sh` NG=0・`token-audit.sh` NG=0（床 ≒ 6,200 tok 推定）。偽の pytest で「102 行 → 7 行、exit 1 保持」を実測
 - 残: 移行後 1 週間の `/usage`・`/context` 実測で `READ_GUARD_MAX_LINES` / `CONTEXT_GUARD_IDLE_MIN` / `effortLevel` の既定を見直す（保守者）。F-21（警告 hook の stdout）の確認
 
@@ -233,7 +233,7 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] `test-metrics.sh` ＋ `test_metrics.py` ＋ `test-test-metrics.sh`（S31、10 ケース 40 アサーション）: レベル別＋全体の指標、検知（unread / severe / stale / bias / duplicate / forecast）、status（常に 0）/ `--gate`（0/1/2）/ `--history` / `--into`
 - [x] 配線（S32）: `/test-metrics`、`/lifecycle status`、done-gate、phase-approval 役 3、test-strategy「測る」、test-levels の語彙表、CI（手動）、INDEX / README。test-install のスキル・コマンド個数をリポジトリ実体から導出
 - [x] 事例で実測（S33）: 図書館貸出の ST 8 / UAT 5 / DEF 3 で status → history × 2 → gate → into を端から端まで。配布スクリプトの同梱漏れ（F-23）を検出して是正
-- [x] 文書化（S34）: userguide「テストの進みと品質を数字で見る」章（実測付き）、PRD FR-16、spec/09 F-22・F-23、spec/10 Q-13
+- [x] 文書化（S34）: userguide「テストの進みと品質を数字で見る」章（実測付き）、PRD FR-16、internal/spec/09 F-22・F-23、internal/spec/10 Q-13
 - 検証記録: test-test-metrics 40/40・test-install 84/84・test-trace-check 15/15・test-check-approval 54/54・他 6 スイート PASS・`check-docs.sh` NG=0
 - 残: 単体テストの結果 XML からの自動転記（`filter-output.py` の集計行から）、Jira / Excel 取り込み（qa-autopilot の mapping 方式）は次の計画
 
@@ -241,13 +241,13 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 
 背景: 保守者「他のリポジトリの記録も含め、私の指摘や要望の傾向を分析し、キットに反映して」。
 本セッションの 30 通と qa-autopilot（CLAUDE.md・constitution・PROMPT_FOR_CODEX・IA_DECISION・plan_0909）・
-istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/maintainer-tendencies.md`）。
+istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`internal/maintainer-tendencies.md`）。
 
 - [x] `rules/absolute-rules.md` に A-11 止まらない（手段が塞がれたら代替を 1 つ取る）・A-12 基準を緩めない（3 回連続失敗で止まる）。rules 89 行 ≦ 100
 - [x] `AGENTS.md.template`: 報告の型 4 項目（感想・自己評価を書かない）、損益の判断軸と「委ねられたら実行まで」、厳しい評価、利用者向け文言の規約、禁止事項（自動起動・stash/reset/clean・依頼なしのコミット）
 - [x] `/plan`: 見積（分）・推奨モデル・トークン節約を必須項目に
 - [x] `check-docs.sh` 検査 10: 「スキル N・コマンド N・hooks N」の直値を実数と突合（WARN）。導入直後に userguide の hooks 7（実数 13）を検出
-- [x] `docs/rules-rationale/absolute-rules.md` に A-11 / A-12 の出所と「準拠」の扱い
+- [x] `internal/rules-rationale/absolute-rules.md` に A-11 / A-12 の出所と「準拠」の扱い
 - 検証記録: test-check-docs 29/29・test-install 84/84・`check-docs.sh` NG=0
 - 運用: 同じ指摘を 2 回受けたら `maintainer-tendencies.md` に行を足し、反映先（hook / 検査 → rules → AGENTS → スキル）を決める。散文に書いて終わりにしない
 
@@ -265,21 +265,21 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 - [x] `skills/design-system`: 並びは利用者の目的順。`skills/retro`: 反映候補は Vision の 3 基準に照らす
 - [x] `check-docs.sh` 検査 11: 利用者向け文書・雛形の絶対パス（WARN）。userguide の `/Users/you/...` 5 箇所を修正
 - 検証記録: test-hooks 63 / trace-check 15 / quality-harness 11 / install 84 / git-gates 27 / check-docs 32 / check-design 44 / check-approval 54 / token-audit 12 / test-metrics 40 すべて PASS・`check-docs.sh` NG=0 WARN=0
-- 残: 検査 11 は WARN（配布先の文書は対象外）。`/qa-review` のペルソナ順次実行を実プロジェクトで 1 回回して所要往復数を `docs/lessons.md` に記録する
+- 残: 検査 11 は WARN（配布先の文書は対象外）。`/qa-review` のペルソナ順次実行を実プロジェクトで 1 回回して所要往復数を `internal/lessons.md` に記録する
 
 ## 完了の定義（全マイルストーン共通）
 
-`skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./ci/check-docs.sh` NG=0（M15 以降）⑤`spec/` を同じコミットで更新済み。
+`skills/done-gate/SKILL.md` の全種別共通チェックに加え、本キット固有の条件: ①verify.sh NG=0 ②真実源の重複を新設していない ③本ファイルのチェック状態を更新済み ④`./ci/check-docs.sh` NG=0（M15 以降）⑤`internal/spec/` を同じコミットで更新済み。
 
 ## M22: 指示優先を hook で強制（完了 2026-09-19）
 
-背景: 作業中に届いた保守者の指示を読み飛ばし、英語で途中報告を続けた（`spec/09` F-25、Critical）。保守者「仕組みで改善しなさい」。
+背景: 作業中に届いた保守者の指示を読み飛ばし、英語で途中報告を続けた（`internal/spec/09` F-25、Critical）。保守者「仕組みで改善しなさい」。
 
 - [x] `rules/absolute-rules.md` A-13 指示優先（指示 ＞ 計画 ＞ 自分の規範）。rules 91 行 ≦ 100
 - [x] `hooks/instruction-guard.py`（PreToolUse 全ツール）: transcript 末尾を後ろから走査。発言の後に日本語の応答が無ければ deny、理由に指示の先頭。サブエージェント・機械由来タグ・transcript 無しは fail-open
 - [x] `reply-language.py`（Stop、判定を共有）／`prompt-priority.py`（UserPromptSubmit、緊急語に注入）
 - [x] 配線: `hooks/settings.json`・`export-project.sh` ヒアドキュメント・キット自身の `.claude/settings.json`（`$CLAUDE_PROJECT_DIR` 参照）
 - [x] `test-hooks.sh` 16 ケース追加（63 → 79）。本セッションの実 transcript の応答前断面で deny・応答後で許可を確認
-- [x] `AGENTS.md.template` 必須プロセス・`CLAUDE.md.template` hooks 一覧・INDEX・spec/01・spec/09 F-25・spec/10 Q-16・PRD FR-17・`maintainer-tendencies.md` #31
+- [x] `AGENTS.md.template` 必須プロセス・`CLAUDE.md.template` hooks 一覧・INDEX・internal/spec/01・internal/spec/09 F-25・internal/spec/10 Q-16・PRD FR-17・`maintainer-tendencies.md` #31
 - [x] **Claude Code 全体に効かせる導入**（保守者「この環境ではない。claude code 全体全て」）: `scripts/install-guard.sh` / `install_guard.py` が既存 `~/.claude/settings.json` に配線を merge（冪等）。`install.sh` からも自動実行。test-install 84 → 102
 - 残: Codex には hook が無い。`AGENTS.md` の散文のみ（移行後の実測 U-5 で見直す）。Web 環境の Setup script 経由の導入は未検証（非公開リポジトリの clone 可否）

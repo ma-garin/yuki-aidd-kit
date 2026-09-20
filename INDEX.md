@@ -30,11 +30,11 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/token-audit.sh                      # トークン節約の仕組みの点検（床の推定・hook と設定の配線・MCP 数。実測は /context /usage）
 ./scripts/check-approval.sh                   # 工程承認の機械検査（記録の有無・版の一致=失効・工程順序。0=合格 1=未承認 2=判定不能）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
-open docs/userguide.html                      # ユーザーガイド（概要・導入手順。初学者向け）
-open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書（13 章）
+open docs/利用ガイド.html                      # ユーザーガイド（概要・導入手順。初学者向け）
+open docs/操作マニュアル.html           # HTML版の取り扱い説明書（13 章）
 ```
 
-**導入方式は2つ**（併用が前提。`docs/Vision.md` の「配置の2層」参照）:
+**導入方式は2つ**（併用が前提。`internal/Vision.md` の「配置の2層」参照）:
 - **グローバル導入**（`install.sh`）: 自分のPC1台で複数プロジェクトを横断する日常運用
 - **プロジェクト配布**（`export-project.sh`）: 対象プロジェクト直下に `.claude/` と `AGENTS.md`/`CLAUDE.md` を書き出し、そのプロジェクトの git にコミット。Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先でも install 不要でそのまま効く
 
@@ -74,7 +74,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `personal-pwa` | GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約 | #pwa #mobile | 30行 |
 | `streamlit-rag-app` | Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約 | #streamlit #rag | 32行 |
 
-## rules/（規律。`paths` 無し＝毎セッション自動読み込み／`paths` 付き＝該当ファイルを触ったときだけ。install で `~/.claude/rules/aidd-kit/`、export で `.claude/rules/` へ。根拠と原文は `docs/rules-rationale/`）
+## rules/（規律。`paths` 無し＝毎セッション自動読み込み／`paths` 付き＝該当ファイルを触ったときだけ。install で `~/.claude/rules/aidd-kit/`、export で `.claude/rules/` へ。根拠と原文は `internal/rules-rationale/`）
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
@@ -135,38 +135,38 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 ## spec/（キット現況の仕様書）— 本体を触る前にここ
 
-全 126 ファイルを読み切った記録。**キット自体を作り込むセッションは `spec/README.md` から始める**。
+全 126 ファイルを読み切った記録。**キット自体を作り込むセッションは `internal/spec/README.md` から始める**。
 設計値の再定義はせず、現況の事実・残課題・バックログだけを持つ（真実源の重複を作らない）。
 
 | ファイル | 1行要約 |
 |---|---|
-| `spec/README.md` | 読む順序・位置づけ・更新規約 |
-| `spec/00-overview.md` | 目的・思想・配置の2層・規模・版歴 |
-| `spec/01-inventory.md` | 全 126 ファイルの目録（行数・役割） |
-| `spec/02-architecture.md` | 読み込み経路・真実源マップ・発火機構・依存 |
-| `spec/03-skills.md` 〜 `08-quality-gates.md` | 資産別の詳細（スキル/コマンド・hooks/スクリプト/テンプレート/rules・docs/品質ゲート） |
-| `spec/09-findings.md` | 現況の残課題（severity・evidence つき） |
-| `spec/10-backlog.md` | 作り込みバックログ（完了条件・検証手順つき） |
+| `internal/spec/README.md` | 読む順序・位置づけ・更新規約 |
+| `internal/spec/00-overview.md` | 目的・思想・配置の2層・規模・版歴 |
+| `internal/spec/01-inventory.md` | 全 126 ファイルの目録（行数・役割） |
+| `internal/spec/02-architecture.md` | 読み込み経路・真実源マップ・発火機構・依存 |
+| `internal/spec/03-skills.md` 〜 `08-quality-gates.md` | 資産別の詳細（スキル/コマンド・hooks/スクリプト/テンプレート/rules・docs/品質ゲート） |
+| `internal/spec/09-findings.md` | 現況の残課題（severity・evidence つき） |
+| `internal/spec/10-backlog.md` | 作り込みバックログ（完了条件・検証手順つき） |
 
-**本体を変更したら同じコミットで `spec/` を更新する。**
+**本体を変更したら同じコミットで `internal/spec/` を更新する。**
 
 ## docs/（キット自体の文書）
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `docs/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 285行 |
-| `docs/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
-| `docs/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
-| `docs/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |
+| `internal/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 285行 |
+| `internal/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
+| `internal/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
+| `internal/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
-| `docs/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
+| `internal/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
-| `docs/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
-| `docs/userguide.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1158行 |
-| `docs/yuki-aidd-kit-manual.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `userguide.html`・事例・V字章へ導線 | 1443行 |
+| `internal/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
+| `docs/利用ガイド.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1158行 |
+| `docs/操作マニュアル.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `利用ガイド.html`・事例・V字章へ導線 | 1443行 |
 
-`docs/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。
-`docs/examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/userguide.html`）。
+`internal/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。
+`docs/examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/利用ガイド.html`）。
 
 templates/: `design-system.md`（視覚的指示書。チェックリストは機械/目視の別付き）/ `tokens.css`（デザイントークンの実物。**値の唯一の真実源**。ライト＋ダーク）/ `ui/`（`components.css` 部品 / `layout.css` 骨格 / `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `README.md` FW 別1枚表）/ `components/`（`feedback.js` `icons.js` `demo.html` `demo-shell.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md`（決まっていること・未検証の確かめ方・最初の 5 分つき）/ `ADR-template.md`（判断基準を規格名で・捨てた案）/ `lessons.md` / `implement-profile.md`（止まる条件つき）/ `work-order.md`（別モデルへ渡す作業指示書: 守ること表・Step 完了条件・止まる条件・質問節）
 

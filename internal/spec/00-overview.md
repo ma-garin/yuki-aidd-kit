@@ -1,6 +1,6 @@
 # 00 — 全体像
 
-> **2026-10 からの運用条件（Claude Pro ＋ Sonnet 基盤 ＋ Codex 併用）が最上位の制約。** 詳細と設計含意は `spec/11-target-operating-model.md`。以下は「キットが何か」の説明で、その条件に照らした優先順位は `spec/10-backlog.md` にある。
+> **2026-10 からの運用条件（Claude Pro ＋ Sonnet 基盤 ＋ Codex 併用）が最上位の制約。** 詳細と設計含意は `internal/spec/11-target-operating-model.md`。以下は「キットが何か」の説明で、その条件に照らした優先順位は `internal/spec/10-backlog.md` にある。
 
 ## 一文
 
@@ -13,12 +13,12 @@
 
 | 読み手 | 入口 | 何をする |
 |---|---|---|
-| 保守者（人間） | `README.md` → `docs/Roadmap.md` | キットの導入・更新・レトロ反映。QA エンジニアで ISTQB/ISO 用語は説明不要 |
+| 保守者（人間） | `README.md` → `internal/Roadmap.md` | キットの導入・更新・レトロ反映。QA エンジニアで ISTQB/ISO 用語は説明不要 |
 | Claude Code | `~/.claude/` 配下（install 後） | スキル・コマンド・hooks・rules として自動読み込み、日常開発で発火 |
 | 他エージェント（Codex 等） | `AGENTS.md` + スキル本文 | 文書として読み込み、同じ規約で動作 |
-| ゼロコンテキストのモデル | `INDEX.md` → `docs/Roadmap.md`（今後は `spec/`） | キット自体の開発を継続 |
+| ゼロコンテキストのモデル | `INDEX.md` → `internal/Roadmap.md`（今後は `internal/spec/`） | キット自体の開発を継続 |
 
-## 解いている6つの問題（`docs/Vision.md`）
+## 解いている6つの問題（`internal/Vision.md`）
 
 | 問題 | キットの答え |
 |---|---|
@@ -32,9 +32,9 @@
 ## 到達点3つ（Vision の KPI 相当）
 
 1. **エージェント可搬性** — Claude Code でも Codex でも同じファイルで同じ振る舞い。ツール固有名に依存しない（固有機能は「汎用表現（Claude Code では X）」の併記形式）
-2. **ゼロコンテキスト継続性** — 前提知識ゼロのモデルが `INDEX.md` → `docs/Roadmap.md` の順に読むだけでキット開発を続行できる
+2. **ゼロコンテキスト継続性** — 前提知識ゼロのモデルが `INDEX.md` → `internal/Roadmap.md` の順に読むだけでキット開発を続行できる
 3. **自己改善ループ** — retro → `lessons.md` → スキル/コマンド/hook への反映が月次で回る
-   → **③は現時点で未達**（`templates/lessons.md` が雛形のまま。`spec/09-findings.md` F-05）
+   → **③は現時点で未達**（`templates/lessons.md` が雛形のまま。`internal/spec/09-findings.md` F-05）
 
 ## やらないこと（Non-Goals）
 
@@ -81,8 +81,8 @@
 | ルート（README / INDEX / 2 template / claude-projects-setup / .gitignore / VERSION） | 7 | 669 |
 | **合計** | **179** | **18,766** |
 
-うち最大は `docs/examples/library-loan/library-loan.html`（生成物）、`docs/yuki-aidd-kit-manual.html`、
-`docs/userguide.html`、`skills/uiux_review/references/viewpoints.md`。
+うち最大は `docs/examples/library-loan/library-loan.html`（生成物）、`docs/操作マニュアル.html`、
+`docs/利用ガイド.html`、`skills/uiux_review/references/viewpoints.md`。
 
 ---
 
@@ -90,7 +90,7 @@
 
 | 版 | 時期 | 主題 | 追加された主な資産 |
 |---|---|---|---|
-| Ver.5.0 | 2026-07 | コンテキスト圧縮・資産監査・自己文書化 | `context-compression` / `/compact-work` / `docs/AUDIT-2026-07.md` / Vision・PRD・Roadmap / `templates/design-system.md` / INDEX 2層化 |
+| Ver.5.0 | 2026-07 | コンテキスト圧縮・資産監査・自己文書化 | `context-compression` / `/compact-work` / `internal/AUDIT-2026-07.md` / Vision・PRD・Roadmap / `templates/design-system.md` / INDEX 2層化 |
 | Ver.6.0 | 2026-08 | 開発工程ライフサイクル | `dev-lifecycle`(+3 refs) / `templates/lifecycle/` 11本 / `trace-check.sh` / `/rfd` `/lifecycle` `/trace` / GitHub テンプレート / `lifecycle-check.yml` |
 | Ver.6.1 | 2026-08-25 | 速度ハーネス・機能完全性・UI/UX 実機レビュー | `rules/` 3本 / `uiux_review`(+viewpoints) / `block-gates.py` `progress.py` `statusline.py` / `templates/settings.sandbox.json` |
 | Ver.6.2 | 2026-08-25 | テスト活動の設計と機械ゲート | `test-strategy`(+2 refs) / `e2e-cycle` / `templates/test/` 8本 / `quality_harness.py` / `ui-hash.py` + `pre-commit-ui-gate.sh` / `init-test-docs.sh` / `test-gates.yml` |

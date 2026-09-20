@@ -376,6 +376,6 @@ if [ "$FAIL" -eq 0 ]; then
   echo "✅ 全て正常"
   exit 0
 else
-  echo "⚠ 失敗あり。hooks/ と docs/AUDIT-2026-07.md A-01 を確認してください"
+  echo "⚠ 失敗あり。hooks/ と internal/AUDIT-2026-07.md A-01 を確認してください"
   exit 1
 fi

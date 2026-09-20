@@ -2,25 +2,25 @@
 
 AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツールに最適化するための個人用キットです。
 
-**全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。キット自体の目的・要求・開発継続手順は `docs/Vision.md`・`docs/PRD.md`・`docs/Roadmap.md` にあります。
+**全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。キット自体の目的・要求・開発継続手順は `internal/Vision.md`・`internal/PRD.md`・`internal/Roadmap.md` にあります。
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
 ## Ver.6.8 での主な更新（2026-09-19）— 指示優先を hook で強制（M22。6.8.1: 全体導入 `install-guard.sh`／6.8.2: 配線の耐障害化）
 
-作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。
+作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を AI が読み飛ばし、英語で途中報告を続けた事故（`internal/spec/09` F-25）への対処です。「指示 ＞ 計画 ＞ 自分の規範」を散文で約束しても作業の連鎖の中では読み返されないので、機械が止めます。
 
 - **A-13 指示優先**（`rules/absolute-rules.md`）: 保守者の発言が届いたら、次のツール呼び出しより前に日本語で応答する。「今すぐ・報告・説明」は切り分けの途中でも止める
 - **`instruction-guard.py`**（PreToolUse・全ツール）: 会話記録の末尾を見て、発言（ターン冒頭・途中で届いた queued_command・キュー投入）の後に日本語の応答が無ければ **deny**。理由に指示の先頭を載せるので読み飛ばせない。バイパス用の環境変数は作らない
 - **`reply-language.py`**（Stop）: 最後の応答に日本語が無い／未応答のまま終わろうとしたら続行させて出し直させる。**`prompt-priority.py`**（UserPromptSubmit）: 緊急語を含む発言に「作業より優先」を注入
 - 本セッションの実際の会話記録で検証: 指示に応答する前の断面では deny、応答後は許可。キット自身の開発セッションにも `.claude/settings.json` で配線（hooks は file watcher で即時反映）
 - **Claude Code 全体に効かせる**: `./scripts/install-guard.sh` が 3 hook を `~/.claude/hooks/` に置き、既存の `~/.claude/settings.json` に**配線だけを merge** する（他の hook・キーはそのまま。冪等。変更時は `.bak`）。`install.sh` も既存 settings に対してこれを自動で行う（手動マージ待ちにしない）。Web 環境（claude.ai/code）は環境の Setup script に `git clone <このリポジトリ> /tmp/kit && bash /tmp/kit/scripts/install-guard.sh` を 1 行（未検証: 非公開リポジトリの clone 可否は環境の設定による）
-- **6.8.2 配線の耐障害化**: hook の実体に届かない環境（リモートセッション／ディレクトリ移動の途中）で `UserPromptSubmit` の起動が失敗すると、保守者のプロンプトが丸ごとブロックされた（`spec/09` F-26）。キット自身の `.claude/settings.json` の 3 本を `sh -c 'f=…; [ -f "$f" ] && exec python3 "$f" || exit 0'` に変更し、実体が無ければ無言で飛ばす。配布形（`~/.claude/hooks/` と `<target>/.claude/hooks/`）は実体を置いてから参照するので元から影響なし
+- **6.8.2 配線の耐障害化**: hook の実体に届かない環境（リモートセッション／ディレクトリ移動の途中）で `UserPromptSubmit` の起動が失敗すると、保守者のプロンプトが丸ごとブロックされた（`internal/spec/09` F-26）。キット自身の `.claude/settings.json` の 3 本を `sh -c 'f=…; [ -f "$f" ] && exec python3 "$f" || exit 0'` に変更し、実体が無ければ無言で飛ばす。配布形（`~/.claude/hooks/` と `<target>/.claude/hooks/`）は実体を置いてから参照するので元から影響なし
 - hooks 回帰テスト 63 → 79 → 83 ケース、導入テスト 84 → 102 ケース
 
 ## Ver.6.7 での主な更新（2026-09-19）— 保守者の傾向を「手順が走る場所」に埋める（M21 第 2 回）
 
-保守者が別リポジトリで実装者（Sonnet / Haiku / Codex）に毎回課している**手順の型**を読み直し、16 傾向を追加しました（`docs/maintainer-tendencies.md` #15〜#30。第 1 回の 14 件と合わせて 30 件、すべて原文つき）。今回は規約の散文でなく、**手順が実際に走る場所**に入れています。
+保守者が別リポジトリで実装者（Sonnet / Haiku / Codex）に毎回課している**手順の型**を読み直し、16 傾向を追加しました（`internal/maintainer-tendencies.md` #15〜#30。第 1 回の 14 件と合わせて 30 件、すべて原文つき）。今回は規約の散文でなく、**手順が実際に走る場所**に入れています。
 
 - **着手前 4 行**（`rules/speed-harness.md` H-1 に `終了条件:`）と **`/plan` の「5 つの質問」**（選択肢 3 つ／リスク／レビュアーが突く点／往復数／成功しない箇所。答えられなければ `/implement` に入らない）
 - **止まる条件の表**（`templates/implement-profile.md`）と **止まるときの報告 5 項目**（A-12: 対象・失敗したゲート・3 回の修正内容・推定原因・次に試すこと）。止まるのは失敗ではなく規約どおりの動作
@@ -37,11 +37,11 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - **`scripts/test-metrics.sh`**（40 アサーションの回帰テスト付き）: レベル別＋全体の消化率・合格率・欠陥密度・Critical/High 未解決と、検知（語彙外の行・重大欠陥・5 日以上の滞留・区分の偏り・**完了予測は根拠付き**）。**語彙外の行は分母に残し、欠陥表が無ければ「算出できない」**（0 と言わない）
 - **`--gate`**: `TESTING_STRATEGY.md` §7 を機械が読める表（しきい値＋出典必須）にし、基準ごとに ✓/✗。終了コードは 0 進める / 1 進めない / **2 判定できない**（語彙外の行が 1 件でもあれば 2）。GO/NO-GO は人が書く
 - **`--history`** で `metrics-history.tsv` に時系列、**`--into`** で完了報告書 §2 と基準評価を置き換え（マーカー外は触らない）
-- `/test-metrics` コマンド、`/lifecycle status`・done-gate・phase-approval への配線。図書館貸出の事例で端から端まで実測し `docs/userguide.html` に章を追加
+- `/test-metrics` コマンド、`/lifecycle status`・done-gate・phase-approval への配線。図書館貸出の事例で端から端まで実測し `docs/利用ガイド.html` に章を追加
 
 **機械が数える。人が判定する。** 判定できない状態を合格に数えないのは、工程承認ゲートと同じ線です。
 
-同日追記（M21）: 保守者の指摘・要望の傾向を複数リポジトリの記録から 14 項目抽出し（`docs/maintainer-tendencies.md`）、`rules/absolute-rules.md` に **A-11 止まらない**（手段が塞がれたら代替を 1 つ取る）・**A-12 基準を緩めない**（3 回連続失敗で止まる）、`AGENTS.md.template` に報告の型・損益の判断軸・厳しい評価・文言規約・禁止事項、`check-docs.sh` に検査 10（件数の直値）を反映しました。
+同日追記（M21）: 保守者の指摘・要望の傾向を複数リポジトリの記録から 14 項目抽出し（`internal/maintainer-tendencies.md`）、`rules/absolute-rules.md` に **A-11 止まらない**（手段が塞がれたら代替を 1 つ取る）・**A-12 基準を緩めない**（3 回連続失敗で止まる）、`AGENTS.md.template` に報告の型・損益の判断軸・厳しい評価・文言規約・禁止事項、`check-docs.sh` に検査 10（件数の直値）を反映しました。
 
 ## Ver.6.5 での主な更新（2026-09-19）— トークン節約を仕組みに: 散文を hook・設定・検査へ
 
@@ -53,7 +53,7 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 - **設定 3 キー**: `effortLevel: high`（Sonnet 5 / Fable は effort だけが思考量のレバー）／`autoCompactWindow: 200k`（Sonnet 5 の 1M を放置しない）／`BASH_MAX_OUTPUT_LENGTH: 12000`
 - **`scripts/token-audit.sh`**（12 ケースの回帰テスト付き）: 床の推定・実測ログの集計・hook と設定の配線（漏れは NG）・MCP 数・スキル肥大。`/token-check` はこれを回す
 - `check-docs.sh` 検査 9: `CLAUDE.md` ＋ `AGENTS.md` の合計 ≦ 200 行（公式の目安）
-- 散文は「hook が強制する」の導線に置き換え（rules は 87 行 ≦ 100 を維持）。`docs/userguide.html` に「トークンを減らす仕組み」章
+- 散文は「hook が強制する」の導線に置き換え（rules は 87 行 ≦ 100 を維持）。`docs/利用ガイド.html` に「トークンを減らす仕組み」章
 
 **黙って削らない。** 絞ったときは必ず「絞った・全量の取り方」が Claude に伝わります（黙って欠けると探し直して逆に高くつく）。逃がし口は `FULL_OUTPUT=1` と `offset` の明示だけで、恒久バイパスはありません。
 
@@ -66,24 +66,24 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 - **`scripts/check-approval.sh`**（20 ケース 54 アサーションの回帰テスト付き）: 記録の有無・必須欄・版の一致・未解消の差し戻し・承認者が人間か・工程順序を機械判定。終了コードは 0（合格）／1（未承認・失効）／2（**判定不能**）の 3 値で、判定不能を合格に数えない
 - **`hooks/block-phase.py`**: 前工程が未承認のまま次工程の成果物を書こうとすると**その場で止める**。`.claude/phase-gate` を置いたプロジェクトでだけ発動し、承認記録そのものへの書き込みは常に許可。**バイパス用の環境変数は作らない**（止めるなら marker を消す＝git 差分に残る）
 - **`skills/phase-approval` ＋ `/phase-review`**: 人間が判子を押す前に AI 3 役（追跡・仕様一致・リスク）を**順次**で回して指摘を出し切る。並列委譲はトークンが約 7 倍になるため使わない。**AI は承認しない**（`approver` 欄には触れない）
-- `docs/userguide.html` に「工程の承認ゲート」章（実際に止まったときの画面つき）
+- `docs/利用ガイド.html` に「工程の承認ゲート」章（実際に止まったときの画面つき）
 
 **機械が見るのは「承認記録の形式的な健全性と版の一致」まで。その設計が本当に要件を満たすかは人間しか判定できません。** この線を曖昧にすると「AI が承認した」ことになり、第三者検証としての価値が消えます。
 
 ## Ver.6.4 での主な更新（2026-09-17）— 土台: 回帰テスト・CI・版の刻印・文書整合
 
-2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `spec/`（入口は `spec/README.md`）。
+2026-10 の Claude Pro（Sonnet 基盤・Codex 併用）への移行に備え、**Sonnet が触って壊しても機械が気づける状態**を先に作りました。全 126 ファイルの読解記録と運用条件・作り込み計画は `internal/spec/`（入口は `internal/spec/README.md`）。
 
 - **`ci/test-install.sh`**（102 ケース）: `install.sh` / `verify.sh` / `export-project.sh` / `init-project.sh` / `init-test-docs.sh` を HOME 差し替えで検証。キットの「入口」が初めてテストされた
 - **`ci/test-git-gates.sh`**（27 ケース）: 秘密情報スキャン・`.ui-verified`・UI hash の全分岐を一時 git リポジトリで検証（従来は手動確認のみ）
-- **`ci/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
+- **`ci/check-docs.sh`**: INDEX の参照コスト・掲載漏れ・回帰テストのケース数・キット内参照切れ・SKILL frontmatter・`internal/spec/01` の同期を機械判定（NG>0 で exit 1）。手書きの数値が実体とズレる問題（AUDIT 以来の再発）を検査で止める
 - **`.github/workflows/kit-ci.yml`**: 上記と既存3本の回帰テストを **Actions 画面から手動起動したときだけ**実行（`workflow_dispatch` のみ。PR や push では自動実行しない。`templates/github/workflows/` の配布用サンプルとは別物）
 - `verify.sh` が NG>0 で exit 1 を返す。`VERSION` と `KIT_VERSION`（導入先への刻印）で版を追跡できる
 
 **Pro 移行準備（M16）— 常時読み込み層のダイエットとモデル規律**
 
 - **`CLAUDE.md = @AGENTS.md + Claude Code 固有`** に変更。共通規約の本体は `AGENTS.md.template` 一本になり、Claude Code は import で、Codex は直接読む。「両テンプレを同時に更新する」ルールは不要になった（`install.sh` は `~/.claude/AGENTS.md` も配置）
-- **`rules/` を規範だけに圧縮**: `absolute-rules` 112→19行（表形式）、`speed-harness` 115→51行。根拠・失敗事例・原文と H-6 の実測記録は `docs/rules-rationale/` へ（`rules/` 配下は再帰的に自動ロードされるため外に置く）
+- **`rules/` を規範だけに圧縮**: `absolute-rules` 112→19行（表形式）、`speed-harness` 115→51行。根拠・失敗事例・原文と H-6 の実測記録は `internal/rules-rationale/` へ（`rules/` 配下は再帰的に自動ロードされるため外に置く）
 - **`functional-integrity` に `paths:` frontmatter**: コード/UI（`.py .js .ts .tsx .jsx .html .css .vue .svelte`）を触ったときだけ読み込まれる
 - **`INDEX.md` を毎回読むのをやめた**: `AGENTS.md` の「読む範囲」表（タスク種別 → 最初に使うスキル/コマンド）から直行し、表に無いときだけ INDEX を開く
 - **`rules/model-routing.md`（新設）**: 既定 Sonnet、Opus へ上げる3条件、effort、`/clear`、委譲は隔離目的のみ、上限時の手順、週1で `/usage`
@@ -97,8 +97,8 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 - **`scripts/check-design.sh`**（36 ケースの回帰テスト付き）: 直値（色は全域・px は余白角丸文字サイズ系）・未定義トークン・未使用トークン(WARN)・外部 CDN・`alert()`・`tokens.css` 未読込を機械判定。`templates/design-system.md` の再現チェックリストは機械 5 項目／目視 9 項目に分けた。CI に追加
 - **`skills/design-system/SKILL.md` を 473 → 115 行に**: 値の唯一の真実源を `templates/tokens.css` に一本化し、決めの理由は `references/tokens.md`、部品の使い分けと落とし穴（実不具合由来 7 件）は `references/components.md` へ。`check-docs.sh` の「SKILL ≦ 200 行」を **NG に昇格**
 - `tokens.css` に `--color-medium-text` / `--color-scrim` / `--color-tooltip-bg/-text` / `--color-knob` を追加（直値解消のため）
-- **`docs/lessons.md`**（新設）: キット自身の改善ログ。本セッションと移行準備が最初のエントリ。移行後の週次 `/usage` 記録欄付き
-- **`docs/examples/library-loan/`**（新設）: 事例「社内図書館の貸出管理を Excel から Web へ。HTML でモック」。依頼文 1 行からキットの手順だけで作った完成品・ソース・仕様・引き継ぎメモ。`docs/userguide.html` の「ハンズオン」章の教材。この検証でキットの欠陥 3 件（F-14〜F-16）を見つけて是正
+- **`internal/lessons.md`**（新設）: キット自身の改善ログ。本セッションと移行準備が最初のエントリ。移行後の週次 `/usage` 記録欄付き
+- **`docs/examples/library-loan/`**（新設）: 事例「社内図書館の貸出管理を Excel から Web へ。HTML でモック」。依頼文 1 行からキットの手順だけで作った完成品・ソース・仕様・引き継ぎメモ。`docs/利用ガイド.html` の「ハンズオン」章の教材。この検証でキットの欠陥 3 件（F-14〜F-16）を見つけて是正
 - `export-project.sh` の settings.json に `block-explore.sh`（Read/Grep/Glob）を配線。グローバル導入と配布先で `/implement` の振る舞いが同じになった
 
 ## Ver.6.3 での主な更新（2026-08-25）— デザイン: トークン実物・画面の作り方・フレームワーク別適用
@@ -164,8 +164,8 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 ## Ver.5.0 での主な更新（2026-07）
 
 - `context-compression` スキルと `/compact-work` コマンドを追加（3層要約・grep/glob優先・決定論的作業のスクリプト化）
-- 全資産を監査し修正を適用（`docs/AUDIT-2026-07.md`）。特に **hooks が入力を受け取れず無言で機能停止していた不具合を修復**し、`ci/test-hooks.sh` で回帰テスト化
-- キット自体の自己文書化: `docs/Vision.md` / `docs/PRD.md` / `docs/Roadmap.md`（前提知識ゼロのモデルが開発を継続できる作業台帳）
+- 全資産を監査し修正を適用（`internal/AUDIT-2026-07.md`）。特に **hooks が入力を受け取れず無言で機能停止していた不具合を修復**し、`ci/test-hooks.sh` で回帰テスト化
+- キット自体の自己文書化: `internal/Vision.md` / `internal/PRD.md` / `internal/Roadmap.md`（前提知識ゼロのモデルが開発を継続できる作業台帳）
 - `templates/design-system.md`: コード無しで見た目を再現するための視覚的指示書（Webアプリ／HTMLスライド／管理画面）
 - `INDEX.md` を2層＋タグ＋参照コストで再構成。ECC 対応表の真実源を `docs/ECC-ASSET-MAP.md` に一本化
 - `verify.sh` のチェックリストをリポジトリ実体からの自動導出に変更（資産追加時の更新不要）
@@ -195,15 +195,15 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 cd <対象プロジェクトのパス> && git add .claude AGENTS.md CLAUDE.md && git commit -m "chore: add AIDD Kit"
 ```
 
-Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md`）。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。claude.ai の Projects で使う場合は `claude-projects-setup.md` を参照。
+Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md`）。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。claude.ai の Projects で使う場合は `docs/claude-projects-setup.md` を参照。
 
 ## 取り扱い説明書
 
-HTML 版のガイドを 2 冊同梱しています。**初めて導入するなら `userguide.html`**（概要・導入手順・最初のセッション・毎日の流れ・品質チェック・Pro/Sonnet のコツ）、使い始めてからは `yuki-aidd-kit-manual.html`（スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時）。
+HTML 版のガイドを 2 冊同梱しています。**初めて導入するなら `利用ガイド.html`**（概要・導入手順・最初のセッション・毎日の流れ・品質チェック・Pro/Sonnet のコツ）、使い始めてからは `操作マニュアル.html`（スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時）。
 
 ```bash
-open docs/userguide.html             # 概要と導入（初学者向け・Ver.6.4）
-open docs/yuki-aidd-kit-manual.html  # 取り扱い説明書（13 章）
+open docs/利用ガイド.html             # 概要と導入（初学者向け・Ver.6.4）
+open docs/操作マニュアル.html  # 取り扱い説明書（13 章）
 ```
 
 ## 推奨する使い方
@@ -247,8 +247,8 @@ yuki-aidd-kit/
 │   ├── rules-rationale/                  # rules の根拠・原文・実測記録（毎回は読まない）
 │   ├── lessons.md                        # キット自身の改善ログ（Keep / Problem / Try、週次 /usage）
 │   ├── examples/library-loan/            # 事例: 貸出管理モック（完成品・app.css/js・build.py・spec・CURRENT_STATE）
-│   ├── userguide.html                    # ユーザーガイド（概要・導入。初学者向け）
-│   └── yuki-aidd-kit-manual.html         # HTML 取説（13 章）
+│   ├── 利用ガイド.html                    # ユーザーガイド（概要・導入。初学者向け）
+│   └── 操作マニュアル.html         # HTML 取説（13 章）
 ├── rules/                    # 規律 4本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
 ├── skills/                   # 19スキル（各 SKILL.md、一部 references/ 付き）
 │   ├── dev-lifecycle/        # 工程ライフサイクル（+ phase-gates / traceability / test-levels）
@@ -288,9 +288,9 @@ yuki-aidd-kit/
 
 ## キット自体を作り込むとき
 
-`spec/` に全資産を読み切った現況仕様がある。**まず `spec/README.md` を読む**（読む順序・更新規約）。
-現況の残課題は `spec/09-findings.md`、次にやることは `spec/10-backlog.md`。
-本体を変更したら同じコミットで `spec/` を更新する。
+`internal/spec/` に全資産を読み切った現況仕様がある。**まず `internal/spec/README.md` を読む**（読む順序・更新規約）。
+現況の残課題は `internal/spec/09-findings.md`、次にやることは `internal/spec/10-backlog.md`。
+本体を変更したら同じコミットで `internal/spec/` を更新する。
 
 ## 今後の開発時の合言葉
 
@@ -302,4 +302,4 @@ yuki-aidd-kit/
 - 「UI/UXを見て」 → `qa-review-standards` + ECC `browser-qa`
 - 「E2E/動作確認」 → `test-automation` + ECC `e2e-testing`
 - 「完成判定」 → `done-gate` + ECC `verification-loop`
-- 「キット自体を直したい」 → `docs/Roadmap.md` の作業ルールに従う
+- 「キット自体を直したい」 → `internal/Roadmap.md` の作業ルールに従う

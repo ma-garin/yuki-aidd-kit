@@ -5,7 +5,7 @@
 # 1. rules/ — 規律（M16 後: 4本・102行。`paths` 無し 85行が毎セッション）
 
 install で `~/.claude/rules/aidd-kit/`、export で `<target>/.claude/rules/` へ。`paths` 無し（absolute / speed / model-routing）は**読まない選択肢が無い層**、`functional-integrity` は `paths` 付きでコード/UI を触ったときだけ載る。
-**以下の A-1〜A-10・H-1〜H-8 の解説は M16 で `docs/rules-rationale/` に退避した原文の要約**であり、現行 `rules/` は表形式の規範のみ。`rules/model-routing.md` は `spec/11` D-6 の実装。
+**以下の A-1〜A-10・H-1〜H-8 の解説は M16 で `internal/rules-rationale/` に退避した原文の要約**であり、現行 `rules/` は表形式の規範のみ。`rules/model-routing.md` は `internal/spec/11` D-6 の実装。
 
 ## `absolute-rules.md`（112行）— A-1〜A-10
 
@@ -61,7 +61,7 @@ install で `~/.claude/rules/aidd-kit/`、export で `<target>/.claude/rules/` �
 # 2. docs/（2,096行）
 
 ## `Vision.md`（47行）
-目的・解決したい問題6件・到達点3つ・Non-Goals・**配置の2層**・価値の判定基準。→ `spec/00-overview.md` に要約済み。
+目的・解決したい問題6件・到達点3つ・Non-Goals・**配置の2層**・価値の判定基準。→ `internal/spec/00-overview.md` に要約済み。
 
 ## `PRD.md`（72行）— キット自体の要求文書
 
@@ -131,7 +131,7 @@ STACK（スキャン結果の要点7行）／**DAILY 15件**（e2e-testing, brow
 ## `PROJECT-FIT-REPORT.md`（48行）
 2026-06-23 時点の適合レポート。Summary（親和性の高い7領域）／Evidence（拡張子傾向・代表7プロジェクト）／Recommendation 5項目。**現況の参考資料であり規約ではない**。
 
-## `userguide.html`（778行・2026-09-17 新設）
+## `利用ガイド.html`（778行・2026-09-17 新設）
 
 初学者向けの入口。manual.html が「使い方の百科」なのに対し、こちらは「概要と導入」に絞る（18 章（ハンズオンと V字・W字章を追加）・読む 20 分・952 行）。保守者の「とことん噛み砕いて」を受け、たとえ話（新人に渡す手引き・チェックリスト・道具箱）から入り、専門用語は使う前に 8 つだけ定義し、導入は 1 コマンドごとに「なぜ」「うまくいくとこう見える（実際の出力）」を付け、対話例で「目的:／残課題:／未検証」の見え方を示す構成にした。
 
@@ -145,9 +145,9 @@ STACK（スキャン結果の要点7行）／**DAILY 15件**（e2e-testing, brow
 
 ## `examples/library-loan/`（7件・2026-09-17 新設）
 
-保守者から受け取った実際の依頼文「社内図書館の貸出管理を Excel から Web システムにする。HTML でモックを作ってください」を、キットの手順どおりに通した記録と成果物。完成品はキットの CSS/JS を貼り込んだ単一 HTML で、`build.py` が実物から再生成する（複製の乖離を防ぐ）。`docs/userguide.html` の「ハンズオン」章（30〜40 分・進行役メモ付き）の教材。この検証で F-14〜F-16 を発見・是正した。
+保守者から受け取った実際の依頼文「社内図書館の貸出管理を Excel から Web システムにする。HTML でモックを作ってください」を、キットの手順どおりに通した記録と成果物。完成品はキットの CSS/JS を貼り込んだ単一 HTML で、`build.py` が実物から再生成する（複製の乖離を防ぐ）。`docs/利用ガイド.html` の「ハンズオン」章（30〜40 分・進行役メモ付き）の教材。この検証で F-14〜F-16 を発見・是正した。
 
-## `yuki-aidd-kit-manual.html`（1,434行）
+## `操作マニュアル.html`（1,434行）
 非エンジニア向け HTML 取説。単一 HTML（外部 CSS/JS 依存なし）・Qiita 風（緑 `#55c500` 系）・
 サイドメニュー追従（`IntersectionObserver` でなく scroll + `getBoundingClientRect` で `is-active` を切替）・
 用語ツールチップ（`.term > .term-tip`）・モバイルは `<details>` の目次に切替。
@@ -164,5 +164,5 @@ STACK（スキャン結果の要点7行）／**DAILY 15件**（e2e-testing, brow
 | `INDEX.md`（190行） | **全資産の入口**。2層の読み方／クイックスタート（12コマンド）／導入方式2種／DAILY スキル表13／LIBRARY スキル表7／rules 表4／hooks 表13／コマンド表17／ECC 連携（MAP 参照1行）／docs 表8／templates 一覧／lifecycle・test・github の説明／**運用原則7項目**。各行に**1行要約・タグ・参照コスト（行数）** |
 | `CLAUDE.md.template`（21行） | `@AGENTS.md` ＋ Claude Code 固有のみ（M16）: 実装モード／hooks で強制されるもの／トークン・モデル（`/clear` `/usage` `/context` `rules/model-routing.md`） |
 | `AGENTS.md.template`（74行） | **共通規約の本体**（M16）。Codex は直接、Claude Code は `CLAUDE.md` の `@AGENTS.md` で読む。「読む範囲」はタスク種別→スキル/コマンドのルーティング表。X-5「両ファイル同時更新」は不要になった |
-| `claude-projects-setup.md`（58行） | claude.ai Projects「AIDD Lab」。Project Instructions の全文／ナレッジ5ファイル（INDEX.md・CLAUDE.md.template・sdd-ecc-workflow・qa-review-standards・SDD+ECC ガイド）／Tips（**ナレッジは5ファイル以内・頻繁に変わる情報は入れない**） |
+| `docs/claude-projects-setup.md`（58行） | claude.ai Projects「AIDD Lab」。Project Instructions の全文／ナレッジ5ファイル（INDEX.md・CLAUDE.md.template・sdd-ecc-workflow・qa-review-standards・SDD+ECC ガイド）／Tips（**ナレッジは5ファイル以内・頻繁に変わる情報は入れない**） |
 | `.gitignore`（21行） | OS/依存/ビルド/カバレッジ/キャッシュ/テスト出力/ログ/`.env*`（`!.env.example` は例外）/`.playwright-mcp/` |

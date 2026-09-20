@@ -12,9 +12,9 @@
 | qa-autopilot の CLAUDE.md・memory/constitution.md・PROMPT_FOR_CODEX.md・IA_DECISION.md・plan_0909.md | 別環境の AI に毎回貼る規約＝**保守者が譲らない線** |
 | istqb_genai_study の CLAUDE.md・HANDOFF.md | コンテキスト節約と引き継ぎの型 |
 | qa_viewpoint の CHANGELOG.md | 変更履歴の型（Keep a Changelog・技術的決定の節） |
-| キット自身: `docs/rules-rationale/*`・`docs/AUDIT-2026-07.md`・`docs/lessons.md`・`spec/10` 決定事項 | 既に規約化されているもの |
+| キット自身: `internal/rules-rationale/*`・`internal/AUDIT-2026-07.md`・`internal/lessons.md`・`internal/spec/10` 決定事項 | 既に規約化されているもの |
 | **第 2 回で追加**: qa-autopilot の harness/loop.md・docs/HANDOVER.md・VERIFICATION_REPORT.md（30 ペルソナ）・WORK_ORDER_UI_REDESIGN.md・personas/P1〜P5・docs/standards/README.md・specs/006 | 実装者に守らせている**ループの型・止まる条件・検証の型・指示書の型・準拠主張の線** |
-| **第 2 回で追加**: キット自身の `docs/OPERATING-MODE.md`・`docs/Vision.md`・`docs/AUDIT-2026-07.md`、istqb_genai_study の HANDOFF.md、docreview の README | 保守者が自分の手で書いた型（引き継ぎ・監査・価値判定） |
+| **第 2 回で追加**: キット自身の `docs/OPERATING-MODE.md`・`internal/Vision.md`・`internal/AUDIT-2026-07.md`、istqb_genai_study の HANDOFF.md、docreview の README | 保守者が自分の手で書いた型（引き継ぎ・監査・価値判定） |
 
 ## 傾向 — 第 1 回（頻度と根拠の強い順）
 
@@ -27,13 +27,13 @@
 | 5 | **基準を緩めて通さない。同じゲートが 3 回失敗したら止まる** | PROMPT_FOR_CODEX「評価や検査の基準を、合格させるために緩めない」／constitution 第 10 条「同じゲートが 3 回連続で失敗したとき止まる」 | H-3 は UI の 2 周まで。**ゲート全般の規範が無い** | **A-12 基準を緩めない**（3 回連続失敗で止まって報告。しきい値・語彙・テストを通すために変えない） |
 | 6 | **数値は実体から算出。直値を書かない** | qa-autopilot「本数は registry から数える。文章にもテストにも直値を書かない」／本セッションでスキル・コマンド数を 7 箇所手で直した | `check-docs.sh` は行数・ケース数を検査。**件数（スキル N 本等）は検査外**。`test-install.sh` は M19/M20 で導出に変更 | `check-docs.sh` **検査 10**: README / INDEX / userguide の「スキル N・コマンド N・hooks N」を実数と突合（WARN） |
 | 7 | **厳しく評価する。褒めない** | 「厳しく評価してください」／constitution「根拠のない生成物を出さない」 | qa-review-standards は evidence-only。**評価を求められたときの姿勢が未記載** | 応答スタイルに「評価を求められたら欠点と根拠を先に。褒め言葉を書かない」 |
-| 8 | **とことん噛み砕く。事例とハンズオンが欲しい。説明性** | 「とことん噛み砕いてわかりやすくして欲しい」「事例があると後続が対応しやすく、ハンズオンにも使える」「説明性です」 | userguide・事例・「対外説明の 3 文」は各章にある | 反映済み。新機能の章には**実測の出力と対外説明の 3 文**を必ず付ける（`docs/userguide.html` の型として維持） |
+| 8 | **とことん噛み砕く。事例とハンズオンが欲しい。説明性** | 「とことん噛み砕いてわかりやすくして欲しい」「事例があると後続が対応しやすく、ハンズオンにも使える」「説明性です」 | userguide・事例・「対外説明の 3 文」は各章にある | 反映済み。新機能の章には**実測の出力と対外説明の 3 文**を必ず付ける（`docs/利用ガイド.html` の型として維持） |
 | 9 | **見積は分で。モデル配分とトークン節約を計画に含める** | 「何分でかつ、haikuやsonnetで対応できる物ですか？トークン節約も」 | 計画には毎回付けている。**`/plan` の出力要件に無い** | `/plan` に「見積（分）・推奨モデル・トークン節約の手」を必須項目として追加 |
-| 10 | **省略しない。全部読む・全部記録する。次回はそこから始める** | 「一切の省略を認めません」「specフォルダを作り把握した内容を一切合切全て記録。次回以降そこを読み取り更新しながら進める」 | `spec/` と「同じコミットで spec を更新」の横断ルール | 反映済み |
+| 10 | **省略しない。全部読む・全部記録する。次回はそこから始める** | 「一切の省略を認めません」「specフォルダを作り把握した内容を一切合切全て記録。次回以降そこを読み取り更新しながら進める」 | `internal/spec/` と「同じコミットで spec を更新」の横断ルール | 反映済み |
 | 11 | **文言の規約**（「（任意）」を書かない・実装語と絶対パスを利用者向けに出さない・エラー文に次の行動） | qa-autopilot「文言」節・PROMPT_FOR_CODEX | `design-system` `uiux_review` に一部。**共通規約として無い** | 応答スタイルに 1 行（利用者向けの文言・エラー文の規約） |
 | 12 | **git の禁止操作**（`add -A`・stash / checkout / reset / clean・依頼なしのコミット） | qa-autopilot「禁止」節 | `add -A` 禁止は H-2 にある。**stash / reset / clean が無い** | 禁止事項に追加 |
 | 13 | **判定は規則が行い、LLM は説明と次の一手だけ。判定を覆さない** | PROMPT_FOR_CODEX「判定の思想」／constitution 第 6 条「検証はハーネスが行う」 | 承認ゲート・`test-metrics --gate`・`check-*.sh` が同じ線 | 反映済み（機械が判定・人が決める・AI は申し送り） |
-| 14 | **準拠の主張範囲を限定する。規格を推測で補わない** | constitution 第 2 条／plan_0909「準拠の主張の範囲」 | A-4・A-5 が近い。qa-review-standards | A-5 の根拠（`docs/rules-rationale/absolute-rules.md`）に「準拠」の扱いを追記 |
+| 14 | **準拠の主張範囲を限定する。規格を推測で補わない** | constitution 第 2 条／plan_0909「準拠の主張の範囲」 | A-4・A-5 が近い。qa-review-standards | A-5 の根拠（`internal/rules-rationale/absolute-rules.md`）に「準拠」の扱いを追記 |
 
 
 ## 傾向 — 第 2 回（深掘り。保守者「浅すぎる」を受けて、実装者に毎回課している型を読み直した）
@@ -75,7 +75,7 @@
 
 ## 使い方
 
-- キットへの反映候補は `docs/Vision.md` の価値判定基準（立ち上がり速度／トークンあたり成果／品質判定の再現性）のどれに寄与するかを 1 行で書く。書けなければ採用しない
+- キットへの反映候補は `internal/Vision.md` の価値判定基準（立ち上がり速度／トークンあたり成果／品質判定の再現性）のどれに寄与するかを 1 行で書く。書けなければ採用しない
 - 手順の傾向（着手前・止まる・検証の型）は `rules/` に書かない。手順が走る場所（コマンド・雛形・スキル）に埋める
 - 保守者から同じ指摘を 2 回受けたら、この表に行を足し、反映先（規約 / hook / 検査）を決める。**散文に書いて終わりにしない**（M19 の教訓）
 - 反映先の優先順: hook や検査で機械が止められるもの → `rules/`（常時、≦ 100 行）→ `AGENTS.md.template`（Codex も読む）→ スキル（発火時のみ）

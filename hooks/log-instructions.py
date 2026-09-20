@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """どの指示ファイル（CLAUDE.md / rules / skills）がいつ・なぜ読み込まれたかを記録する InstructionsLoaded フック。
 
-目的: 常時読み込み層の「推定」を「実測」に置き換える材料（spec/11 U-2 / U-3）。
+目的: 常時読み込み層の「推定」を「実測」に置き換える材料（internal/spec/11 U-2 / U-3）。
 Claude には何も返さない（コンテキストを増やさない）。集計は scripts/token-audit.sh。
 
 出力先: $CLAUDE_PROJECT_DIR/.claude/instructions-loaded.log（.claude/ が無ければ ~/.claude/）。

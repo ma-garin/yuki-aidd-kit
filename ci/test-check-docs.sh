@@ -62,7 +62,7 @@ C=$(fresh); printf '\n参照: `skills/does-not-exist/SKILL.md` を見る\n' >> "
 OUT=$(run "$C"); RC=$?
 expect_exit "存在しないキット内パスで exit 1" 1 "$RC"
 expect_out  "種別「参照切れ」で検出" "参照切れ" "$OUT"
-# 行数を変えない（spec/01 の同期検査に引っかからない）よう 1 行目の末尾に追記する
+# 行数を変えない（internal/spec/01 の同期検査に引っかからない）よう 1 行目の末尾に追記する
 C=$(fresh); sed -i '1s/$/ ECC: `skills\/e2e-testing` と `docs\/lifecycle\/00-rfd.md` は除外/' "$C/README.md"
 OUT=$(run "$C"); RC=$?
 expect_exit "ECC スキル名と配布先の生成パスは参照切れにしない" 0 "$RC"
@@ -83,7 +83,7 @@ C=$(fresh); { printf -- '---\npaths:\n  - "src/**/*.py"\n---\n'; seq 1 300 | sed
 printf '| `zz-scoped` | テスト用 | #test | 304行 |\n' >> "$C/INDEX.md"
 OUT=$(run "$C" --strict); RC=$?
 if grep "| 常時読込 |" "$TMP/report.md" | grep -q "zz-scoped"; then ng "paths 付きの rules は常時読込に数えない" "常時読込の内訳に zz-scoped が出た"; else ok "paths 付きの rules は常時読込に数えない"; fi
-grep -q "rules/zz-scoped.md.*目録に無い" "$TMP/report.md" && ok "新規ファイルが spec/01 に無いことを検出（網羅性）" || ng "新規ファイルが spec/01 に無いことを検出（網羅性）" "検出されない"
+grep -q "rules/zz-scoped.md.*目録に無い" "$TMP/report.md" && ok "新規ファイルが internal/spec/01 に無いことを検出（網羅性）" || ng "新規ファイルが internal/spec/01 に無いことを検出（網羅性）" "検出されない"
 
 echo "[ケース8: 行数目安]"
 C=$(fresh); seq 1 250 | sed 's/^/- 行 /' >> "$C/skills/retro/SKILL.md"
@@ -95,9 +95,9 @@ OUT=$(run "$C" --strict); RC=$?
 expect_exit "--strict でも exit 1" 1 "$RC"
 
 echo "[ケース9: spec 同期]"
-C=$(fresh); sed -i 's/^| `verify.sh` | [0-9]* |/| `verify.sh` | 1 |/' "$C/spec/01-inventory.md"
+C=$(fresh); sed -i 's/^| `verify.sh` | [0-9]* |/| `verify.sh` | 1 |/' "$C/internal/spec/01-inventory.md"
 OUT=$(run "$C"); RC=$?
-expect_exit "spec/01 の行数がズレると exit 1" 1 "$RC"
+expect_exit "internal/spec/01 の行数がズレると exit 1" 1 "$RC"
 expect_out  "種別「spec同期」で検出" "spec同期" "$OUT"
 
 echo "[ケース10: CLAUDE.md.template ＋ AGENTS.md.template の合計 ≦ 200 行]"
@@ -107,10 +107,10 @@ expect_exit "合計が 200 行を超えると exit 1" 1 "$RC"
 expect_out  "種別「常時読込」で検出" "CLAUDE.md.template + AGENTS.md.template" "$OUT"
 
 echo "[ケース11: 件数の直値（検査10・WARN）]"
-C=$(fresh); sed -i '0,/スキル: 20個/s//スキル: 19個/' "$C/docs/userguide.html"
+C=$(fresh); sed -i '0,/スキル: 20個/s//スキル: 19個/' "$C/docs/利用ガイド.html"
 OUT=$(run "$C" --skip-tests); RC=$?
 expect_exit "件数のズレは WARN なので exit 0" 0 "$RC"
-grep -q "| 件数 | docs/userguide.html" "$TMP/report.md" && ok "種別「件数」で skills 19 / 実数 20 を検出（レポート）" || ng "種別「件数」で検出" "レポートに無い"
+grep -q "| 件数 | docs/利用ガイド.html" "$TMP/report.md" && ok "種別「件数」で skills 19 / 実数 20 を検出（レポート）" || ng "種別「件数」で検出" "レポートに無い"
 
 echo "[ケース12: 絶対パス（検査11・WARN）]"
 C=$(fresh); sed -i 's|^- 1. <作業>.*|- 1. /Users/you/work/app を開く|' "$C/templates/CURRENT_STATE.md"   # 行数を変えない（spec 同期を崩さない）

@@ -1,6 +1,6 @@
 # PRD — yuki-aidd-kit
 
-このキット自体を1つのプロダクトとして定義する要求文書。形式はキット自身の spec テンプレート（`skills/sdd-ecc-workflow/references/templates.md`）に従う。上位文書: `docs/Vision.md`、実行計画: `docs/Roadmap.md`。
+このキット自体を1つのプロダクトとして定義する要求文書。形式はキット自身の spec テンプレート（`skills/sdd-ecc-workflow/references/templates.md`）に従う。上位文書: `internal/Vision.md`、実行計画: `internal/Roadmap.md`。
 
 ## 目的（1〜2文）
 
@@ -13,7 +13,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 | 保守者（人間） | キットの導入・更新・レトロ反映。QA エンジニア。ISTQB/ISO 用語は説明不要 |
 | Claude Code | `~/.claude/` 配下のスキル・コマンド・hooks として読み込み、日常開発で発火 |
 | 他エージェント（Codex 等） | `AGENTS.md.template` とスキル本文を文書として読み込み、同じ規約で動作 |
-| ゼロコンテキストのモデル | `INDEX.md` → `docs/Roadmap.md` を読んでキット自体の開発を継続 |
+| ゼロコンテキストのモデル | `INDEX.md` → `internal/Roadmap.md` を読んでキット自体の開発を継続 |
 
 ## スコープ / 対象外
 
@@ -27,8 +27,8 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 - **FR-02 コマンド供給**: `commands/<name>.md` 形式で、対応スキルを呼び出すスラッシュコマンドを提供する
   - 検証基準: 各コマンドが「引数」「実行内容」を持ち、参照先スキルが実在する
 - **FR-03 hooks 供給**: 書き込み前チェック・HTML 保存後チェック・セッション終了時リマインド・実装モードの探索ブロック・ゲート実行の要求時限定（`block-gates.py`）・進捗表示（`progress.py` / `statusline.py`）の7 hook と、それらを配線した `settings.json` を提供する
-  - 検証基準: stdin に Claude Code hooks 形式の JSON を渡すと期待出力を返す（`./ci/test-hooks.sh` 19 ケース。`docs/AUDIT-2026-07.md` A-01 の再発防止）
-- **FR-03a ルール供給**: `rules/<name>.md` 形式で規律を提供する。`paths:` frontmatter の無いもの（`absolute-rules` / `speed-harness` / `model-routing`）は毎セッション、`paths:` 付き（`functional-integrity`）は該当ファイルを触ったときだけ読み込まれる。根拠・原文は `docs/rules-rationale/`（自動ロードされない場所）に置く。`install.sh` は `~/.claude/rules/aidd-kit/` へ、`export-project.sh` は `.claude/rules/` へ配置する
+  - 検証基準: stdin に Claude Code hooks 形式の JSON を渡すと期待出力を返す（`./ci/test-hooks.sh` 19 ケース。`internal/AUDIT-2026-07.md` A-01 の再発防止）
+- **FR-03a ルール供給**: `rules/<name>.md` 形式で規律を提供する。`paths:` frontmatter の無いもの（`absolute-rules` / `speed-harness` / `model-routing`）は毎セッション、`paths:` 付き（`functional-integrity`）は該当ファイルを触ったときだけ読み込まれる。根拠・原文は `internal/rules-rationale/`（自動ロードされない場所）に置く。`install.sh` は `~/.claude/rules/aidd-kit/` へ、`export-project.sh` は `.claude/rules/` へ配置する
   - 検証基準: `verify.sh` が rules の配置を OK/NG で報告する。同名ファイルが利用者の `~/.claude/rules` 配下に既にある場合は上書きせずスキップする
 - **FR-04 導入・検証スクリプト**: `install.sh` が `~/.claude/` へ配置し、`verify.sh` が全資産の配置を OK/NG で報告し、NG>0 で exit 1 を返す
   - 検証基準: クリーン環境で install → verify が NG=0・exit 0 で完了する（`./ci/test-install.sh` が HOME 差し替えで検証）
@@ -38,7 +38,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: 全スキル・コマンドが INDEX.md に1行要約＋参照コスト付きで掲載されている
 - **FR-06 ECC ルーティング**: プロジェクトに応じた ECC 資産の絞り込みを提供する。真実源は `docs/ECC-ASSET-MAP.md` のみ（複製禁止）
   - 検証基準: プリセット情報が MAP 以外に重複して存在しない
-- **FR-07 自己文書化**: キット自体の開発が `docs/Vision.md`・`docs/PRD.md`・`docs/Roadmap.md` で継続可能である
+- **FR-07 自己文書化**: キット自体の開発が `internal/Vision.md`・`internal/PRD.md`・`internal/Roadmap.md` で継続可能である
   - 検証基準: Roadmap の未完了項目に対象ファイル・完了条件・検証手順が明記されている
 - **FR-08 開発工程ライフサイクル**: RFD →要件定義→基本設計→詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用の10工程を、成果物雛形（`templates/lifecycle/`）・入口出口基準（`skills/dev-lifecycle/references/phase-gates.md`）・ID 体系の3点で提供する
   - 検証基準: `./scripts/init-lifecycle.sh <対象>` が11ファイルを配置し、`./scripts/trace-check.sh` が NG=0 を返す（`./ci/test-trace-check.sh` で回帰テスト）
@@ -51,7 +51,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 - **FR-11 版の刻印**: `VERSION` を真実源とし、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。配布先がどの版のキットから出たかを判別できる
   - 検証基準: `./ci/test-install.sh` が KIT_VERSION の3フィールドと VERSION との一致を assert する
 - **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` から**保守者が手動起動したときだけ**実行する（自動実行はしない。ゲートは要求時のみ、の規律と同じ）
-  - 検証基準: `./ci/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec/01 同期）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
+  - 検証基準: `./ci/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・internal/spec/01 同期）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
 - **FR-13 デザイン検査**: `scripts/check-design.sh` が CSS/HTML/JS の直値（色・余白・角丸・文字サイズ）・未定義トークン・外部 CDN・`alert()`・`tokens.css` 未読込を機械判定する（NG>0 で exit 1）。キットの出荷物自身が NG=0 で通ることを回帰テストに含める。配布先では対象パスを引数で渡す
   - 検証基準: `templates/design-system.md` 再現チェックリストの「機械」項目が全て `check-design.sh` で判定される
 - **FR-14 工程承認ゲート**: 各工程の出口に**人間の承認**を置き、その承認を**承認時の成果物の版に縛る**。承認後に成果物が変われば承認は自動失効する。`tools/check-approval.sh` が記録の有無・必須欄・版の一致・未解消の差し戻し・未確認事項・承認者が人間か・工程順序を機械判定する

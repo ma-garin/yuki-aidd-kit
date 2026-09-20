@@ -38,7 +38,7 @@
 6. INDEX.md                  表に無い・迷ったときだけ       — 全資産の地図（M16 で毎回読むのをやめた）
 ```
 
-`INDEX.md` の**参照コスト（行数）**は、6 で開くかどうかを数値で判断させるため。M16 前は「セッション開始時に INDEX を読む」設計だったが、推定 4,456 トークンを毎回払っていたので `AGENTS.md` の表に置き換えた（`spec/11` D-1）。
+`INDEX.md` の**参照コスト（行数）**は、6 で開くかどうかを数値で判断させるため。M16 前は「セッション開始時に INDEX を読む」設計だったが、推定 4,456 トークンを毎回払っていたので `AGENTS.md` の表に置き換えた（`internal/spec/11` D-1）。
 
 ---
 
@@ -59,8 +59,8 @@
 | 機能契約の項目定義 | `skills/test-strategy/references/feature-contracts.md` | `quality_harness.py` / `templates/test/feature_contracts.yml` |
 | `.ui-verified` の仕様 | `skills/test-strategy/references/ui-verified-gate.md` | `pre-commit-ui-gate.sh` / `ui-hash.py` / `done-gate` |
 | 速度の規律 | `rules/speed-harness.md` | `CLAUDE.md.template` / `AGENTS.md.template` / `OPERATING-MODE.md` |
-| キット自体の要求 | `docs/PRD.md` | `docs/Roadmap.md`（各項目の完了条件） |
-| **現況の事実・残課題** | `spec/`（本ディレクトリ） | — |
+| キット自体の要求 | `internal/PRD.md` | `internal/Roadmap.md`（各項目の完了条件） |
+| **現況の事実・残課題** | `internal/spec/`（本ディレクトリ） | — |
 
 ### 過去に重複して是正された例（AUDIT-2026-07）
 
@@ -153,7 +153,7 @@
 
 **注意点**: `export-project.sh` が生成する `.claude/settings.json` には
 `block-explore.sh` の PreToolUse(Read|Grep|Glob) 配線が**含まれていない**。
-配布先で `/implement` を使う場合は手で追記する必要がある（`spec/09-findings.md` F-08）。
+配布先で `/implement` を使う場合は手で追記する必要がある（`internal/spec/09-findings.md` F-08）。
 
 ---
 
@@ -189,4 +189,4 @@ settings.json の statusLine → statusline.py
 | 書き込み警告 | Write/Edit 前後 | `pre-write-check.sh` / `post-write-html.sh` | exit 0（警告のみ） |
 | セッション終了 | Stop | `session-summary.sh` | exit 0（通知のみ） |
 
-詳細は `spec/08-quality-gates.md`。
+詳細は `internal/spec/08-quality-gates.md`。

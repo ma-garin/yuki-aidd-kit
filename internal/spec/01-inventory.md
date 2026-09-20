@@ -1,6 +1,6 @@
 # 01 — 全ファイル目録（133件・11,645行）
 
-行数はすべて 2026-09-16 の実測（`wc -l`）。`spec/` 自身は対象外。
+行数はすべて 2026-09-16 の実測（`wc -l`）。`internal/spec/` 自身は対象外。
 「役割」は1行要約。詳細は各章（`03`〜`07`）を参照。
 
 ---
@@ -13,7 +13,7 @@
 | `INDEX.md` | 203 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 30 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 80 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
-| `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
+| `docs/claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
 | `.gitignore` | 29 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
 | `.claude/settings.json` | 39 | キット自身の開発セッション用の hooks 配線（instruction-guard / prompt-priority / reply-language を `$CLAUDE_PROJECT_DIR` 参照で）。実体が無ければ無言で飛ばす（`sh -c` の存在確認つき。F-26）。配布形は `hooks/settings.json`（M22） |
 | `VERSION` | 1 | 版の真実源（`6.3.0`）。git tag と対応。`install.sh` / `export-project.sh` が導入先の `KIT_VERSION` に刻印 |
@@ -24,8 +24,8 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `absolute-rules.md` | 22 | **A-1〜A-10** を「発動 / 出力 / 要点」の表で（M16 で 112→19 行）。根拠は `docs/rules-rationale/absolute-rules.md` |
-| `speed-harness.md` | 53 | **H-1〜H-8** の規範だけ（M16 で 115→51 行）。出所・失敗事例・実測記録は `docs/rules-rationale/speed-harness.md` |
+| `absolute-rules.md` | 22 | **A-1〜A-10** を「発動 / 出力 / 要点」の表で（M16 で 112→19 行）。根拠は `internal/rules-rationale/absolute-rules.md` |
+| `speed-harness.md` | 53 | **H-1〜H-8** の規範だけ（M16 で 115→51 行）。出所・失敗事例・実測記録は `internal/rules-rationale/speed-harness.md` |
 | `model-routing.md` | 16 | **Pro＋Sonnet の規律**（M16 新設）: 既定 Sonnet・Opus 3条件・effort・`/clear`・委譲・上限時・週1 `/usage` |
 | `functional-integrity.md` | 17 | 実行経路を確認するまで「完了」と言わない。**`paths:` 付き＝コード/UI を触ったときだけ読み込み**（M16） |
 
@@ -164,7 +164,7 @@
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 168 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
-| `check_docs.py` | 438 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
+| `check_docs.py` | 441 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
 | `test-check-docs.sh` | 125 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
 | `check_design.py` | 247 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |
@@ -259,8 +259,8 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `userguide.html` | 1158 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
-| `yuki-aidd-kit-manual.html` | 1443 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。冒頭に `userguide.html`／事例／V字章への導線（2026-09-18）。**デザイン適用除外ジャンル** |
+| `利用ガイド.html` | 1158 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
+| `操作マニュアル.html` | 1443 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。冒頭に `利用ガイド.html`／事例／V字章への導線（2026-09-18）。**デザイン適用除外ジャンル** |
 | `Roadmap.md` | 285 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
 | `maintainer-tendencies.md` | 81 | 保守者の指摘・要望の傾向 14 項目（出典・原文・現状・反映先）と反映しなかったものの理由 |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |

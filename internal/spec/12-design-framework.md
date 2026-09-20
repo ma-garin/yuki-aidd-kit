@@ -1,7 +1,7 @@
 # 12 — デザインシステム／デザインフレームワークの現状と作り込み計画
 
 **保守者の要求（2026-09-17）**: 「デザインシステム・デザインフレームワークをちゃんと作り込んで入れておきたい」
-**制約**: `spec/11-target-operating-model.md`（Pro ＋ Sonnet ＋ Codex 併用）
+**制約**: `internal/spec/11-target-operating-model.md`（Pro ＋ Sonnet ＋ Codex 併用）
 
 ---
 
@@ -52,7 +52,7 @@ Opus ＋ Max なら成立する。**Sonnet ＋ Pro では二重に損**:
 
 > **散文を減らし、出荷物を増やす。モデルには「書かせる」のでなく「貼らせる／読み込ませる」。**
 
-これは `spec/11` の D-3 の直接の帰結であり、デザインの一貫性とトークン削減が同じ方向を向いている。
+これは `internal/spec/11` の D-3 の直接の帰結であり、デザインの一貫性とトークン削減が同じ方向を向いている。
 
 | | 今 | 目標 |
 |---|---|---|
@@ -95,7 +95,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 
 ### DS-2. `templates/ui/layout.css`（新規）— **実装済み 2026-09-17**（クラス名は `.shell` でなく `.app`。`demo-shell.html` で確認）
 
-骨格（`spec/03-skills.md` と SKILL.md が言う globalbar / sidebar / topbar / content）を実体化。
+骨格（`internal/spec/03-skills.md` と SKILL.md が言う globalbar / sidebar / topbar / content）を実体化。
 
 - `.shell` / `.sidebar` / `.sidebar.collapsed`（72px・ラベル `display:none`）/ `.maincol` / `.app-globalbar` / `.app-topbar` / `.app-content`
 - サイドバーは画面最上部から独立（ヘッダーをサイドバーの上に横断させない）
@@ -116,7 +116,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 
 - **完了条件**: `frameworks.md` が「値の説明」でなく「出荷物への導線＋分担表」に縮む
 
-### DS-4. `scripts/check-design.sh`（新規）— **実装済み 2026-09-17**（`check_design.py` 236行 ＋ `test-check-design.sh` 36ケース。実装時の判定範囲は `spec/05-scripts.md`「デザイン検査」が正）
+### DS-4. `scripts/check-design.sh`（新規）— **実装済み 2026-09-17**（`check_design.py` 236行 ＋ `test-check-design.sh` 36ケース。実装時の判定範囲は `internal/spec/05-scripts.md`「デザイン検査」が正）
 
 `templates/design-system.md` の再現チェックリストのうち**機械判定できるものを実行する**。
 
@@ -137,7 +137,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 
 実装時の決定（計画からの変更）: `references/tokens.md` に hex を**複製しない**。値の唯一の真実源は `templates/tokens.css`（`check-design.sh` が読む実ファイル）とし、tokens.md は役割と理由だけを持つ。SKILL.md と tokens.css の二重管理（乖離の温床）を廃止した。`templates/design-system.md` / `templates/ui/*` / `frameworks.md` / `templates/lifecycle/02-basic-design.md` のポインタも tokens.css に向け直した。7項目は grep で references に残っていることを確認済み。
 
-`spec/09-findings.md` F-04（PRD の「1スキル ≦ 200行」違反）と同時に解決する。
+`internal/spec/09-findings.md` F-04（PRD の「1スキル ≦ 200行」違反）と同時に解決する。
 
 | 移す先 | 内容 |
 |---|---|
@@ -173,7 +173,7 @@ SKILL.md の CSS コードブロック17個を、**トークン参照だけで�
 | A-3 | `check-design.sh` が直値の混入を検出して止める |
 | A-4 | `design-system` スキルの発火時コストが現在の推定 8,187 トークンから**半分以下**になる |
 
-A-4 は `spec/11` の U-2 と同じく **`/context` での実測**で確認する（推定のままにしない）。
+A-4 は `internal/spec/11` の U-2 と同じく **`/context` での実測**で確認する（推定のままにしない）。
 
 実装状況（2026-09-17）: DS-1〜DS-6 すべて実装済み。A-1 / A-2 / A-3 は出荷物とテストで満たした（`demo-shell.html` が読み込み指示だけで骨格を出す／`templates/ui/README.md` の1枚表／`check-design.sh` が直値を NG にする）。A-4 は保守者の `/context` 実測待ち。
 
@@ -186,4 +186,4 @@ A-4 は `spec/11` の U-2 と同じく **`/context` での実測**で確認す�
 | 新しいブランド・ロゴ・三層トークン設計 | `frameworks.md` の分担表どおり `ckm:design` 等の領分。既存 AIDD ツール群には使わない |
 | CSS フレームワーク（Bootstrap 等）の採用 | 単一 HTML ツールの「外部依存なし」制約と衝突する |
 | コンポーネントの JS フレームワーク化（Web Components 等） | 単一 HTML・React・Streamlit・Django を横断する必要があり、CSS ＋ 素の JS が最小公倍数 |
-| `docs/yuki-aidd-kit-manual.html` へのデザイン適用 | `templates/design-system.md` が「読み物は適用除外」と明示的に宣言済み（意図的な別ジャンル） |
+| `docs/操作マニュアル.html` へのデザイン適用 | `templates/design-system.md` が「読み物は適用除外」と明示的に宣言済み（意図的な別ジャンル） |
