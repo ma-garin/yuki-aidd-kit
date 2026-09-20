@@ -33,8 +33,8 @@ lessons.mdのProblem/Tryが溜まったら、以下に反映する:
 - 繰り返した手作業 → スラッシュコマンド化
 - 繰り返したミス → hookで自動検出 or done-gateに項目追加
 - 有効だったプロンプト → スキル本文に定着
-- 保守者から同じ指摘を 2 回受けた → `docs/maintainer-tendencies.md` に行を足し、反映先（hook / 検査 → rules → AGENTS → スキル）を決める
-- 反映候補は `docs/Vision.md` の価値判定基準（立ち上がり速度／トークンあたり成果／品質判定の再現性）のどれに寄与するかを 1 行で書く。書けなければ採用しない
+- 保守者から同じ指摘を 2 回受けた → `internal/maintainer-tendencies.md` に行を足し、反映先（hook / 検査 → rules → AGENTS → スキル）を決める
+- 反映候補は `internal/Vision.md` の価値判定基準（立ち上がり速度／トークンあたり成果／品質判定の再現性）のどれに寄与するかを 1 行で書く。書けなければ採用しない
 
 ## 出力
 レトロ実行時は、Keep/Problem/Try を整理し、lessons.mdへの追記内容と、キットへの反映候補（あれば）を提示する。

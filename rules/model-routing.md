@@ -1,6 +1,6 @@
 # モデル／effort ルーティング（Pro ＋ Sonnet 基盤の規律）
 
-既定は Sonnet。「上げる・下げる・切る・分ける」の判断だけをここに置く。根拠（5時間窓・週次窓・キャッシュ寿命1時間・Agent teams ≒ 7倍）: `docs/rules-rationale/model-routing.md`（毎回は読まない）。
+既定は Sonnet。「上げる・下げる・切る・分ける」の判断だけをここに置く。根拠（5時間窓・週次窓・キャッシュ寿命1時間・Agent teams ≒ 7倍）: `internal/rules-rationale/model-routing.md`（毎回は読まない）。
 
 | 場面 | 決め |
 |---|---|

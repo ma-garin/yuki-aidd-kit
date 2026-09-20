@@ -1,7 +1,7 @@
 #!/bin/bash
 # test-git-gates.sh — git ゲート（秘密情報スキャン・UI 検証マーカー・UI hash）の回帰テスト
 # 対象: scripts/pre-commit / scripts/pre-commit-ui-gate.sh / scripts/ui-hash.py
-# 「手動 4 ケース確認」のみで再実行できなかった（spec/09-findings.md F-11）ことへの対処。
+# 「手動 4 ケース確認」のみで再実行できなかった（internal/spec/09-findings.md F-11）ことへの対処。
 # 一時 git リポジトリを組み立て、各ゲートの終了コードと出力を assert する。
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP=$(mktemp -d)

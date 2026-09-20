@@ -2,7 +2,7 @@
 """check_docs.py — キット文書の整合をリポジトリ実体と突合する（キット自身用）。
 
 verify.sh は「配置」だけを自動導出していたが、INDEX の参照コスト・README のケース数・
-manual の数値は手書きのままで、10 箇所以上が実体からズレていた（spec/09-findings.md F-01〜F-03, F-09）。
+manual の数値は手書きのままで、10 箇所以上が実体からズレていた（internal/spec/09-findings.md F-01〜F-03, F-09）。
 本スクリプトは次を機械判定する。NG>0 で exit 1（CI でそのまま落とせる）。
 
   1. 参照コスト   INDEX.md 等の「N行」表記 ↔ 実測 wc -l
@@ -11,16 +11,16 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   4. 参照切れ     `skills/...` 等のキット内相対パス参照が実在するか（ECC 外部・配布先の生成パスは除外）
   5. frontmatter  SKILL.md の name ↔ ディレクトリ名
   6. 常時読込     rules/*.md で paths: frontmatter の無いものの合計行数 ≦ RULES_ALWAYS_MAX
-  7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（docs/PRD.md 使用性）
+  7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（internal/PRD.md 使用性）
   9. 常時読込     CLAUDE.md.template ＋ AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
-  8. spec 同期    spec/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
+  8. spec 同期    internal/spec/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
 
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
 
 使い方: python3 ci/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
-  --fix-inventory: spec/01-inventory.md の行数を実測で書き換えてから検査する（網羅性の不足は手で足す）
+  --fix-inventory: internal/spec/01-inventory.md の行数を実測で書き換えてから検査する（網羅性の不足は手で足す）
   環境変数 CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,test-trace-check.sh=15" でテスト実行を代替できる（回帰テスト用）。
 """
 from __future__ import annotations
@@ -42,7 +42,7 @@ RULES_STRICT = True     # 検査6: S7（M16）で NG に昇格
 SIZE_STRICT = True      # 検査7: S13（M17）で NG に昇格済み
 
 # ---- 参照切れ検査の除外 ----------------------------------------------------------------
-# ECC（外部キット）のスキル名。実在はこのリポジトリから検証不能（docs/PRD.md 制約・AUDIT A-08）
+# ECC（外部キット）のスキル名。実在はこのリポジトリから検証不能（internal/PRD.md 制約・AUDIT A-08）
 ECC_SKILLS = {
     "accessibility", "backend-patterns", "browser-qa", "deep-research", "django-patterns",
     "e2e-testing", "eval-harness", "frontend-patterns", "python-patterns", "python-testing",
@@ -54,10 +54,12 @@ TARGET_SIDE_PREFIXES = (
     "docs/plan.md", "docs/index.html", "docs/manifest.json", "docs/lessons.md", "docs/文言変更表.md",
     "quality/", "scripts/pre-commit",  # scripts/pre-commit は実在するが「<project>/scripts/pre-commit」の言及も多い
 )
-# 参照切れ検査の対象から外すディレクトリ（spec/ は計画中の未作成ファイルを正当に参照する）
-REF_SCAN_EXCLUDE_DIRS = ("spec", ".git")
+# 参照切れ検査の対象から外すディレクトリ（internal/spec/ は計画中の未作成ファイルを正当に参照する）
+GENERATED_REPORTS = ("check-docs-report.md", "trace-check-report.md", "check-design-report.md",
+                     "check-approval-report.md", "token-audit-report.md", "test-metrics-report.md")
+REF_SCAN_EXCLUDE_PREFIXES = ("internal/spec/", ".git/") + GENERATED_REPORTS
 # 履歴文書（当時の事実を記録しているので数値の突合対象にしない）
-HISTORY_DOCS = {"docs/Roadmap.md", "docs/AUDIT-2026-07.md"}
+HISTORY_DOCS = {"internal/Roadmap.md", "internal/AUDIT-2026-07.md"}
 
 ID_LINE_RE = re.compile(r"`([^`]+)`（(\d+)行）")           # 散文の「`x`（N行）」
 TABLE_COST_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|.*\|\s*(\d+)行\s*\|\s*$")
@@ -104,7 +106,8 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
 INVENTORY_PREFIXES = (
     "", "rules/", "skills/", "commands/", "hooks/", "scripts/", "tools/", "ci/",
     "templates/", "templates/lifecycle/", "templates/test/", "templates/github/",
-    "templates/components/", "templates/ui/", "docs/", "templates/github/workflows/",
+    "templates/components/", "templates/ui/", "docs/", "docs/examples/library-loan/", "templates/github/workflows/",
+    "internal/", "internal/rules-rationale/",
 )
 
 
@@ -179,7 +182,7 @@ def check_case_counts(root: Path, r: Result, totals: dict[str, int]) -> None:
     if not totals:
         r.add(False, "ケース数", "-", "テスト未実行のため突合をスキップ（--skip-tests）")
         return
-    for rel in ("README.md", "INDEX.md", "docs/yuki-aidd-kit-manual.html"):
+    for rel in ("README.md", "INDEX.md", "docs/操作マニュアル.html"):
         p = root / rel
         if not p.is_file():
             continue
@@ -202,7 +205,7 @@ def check_case_counts(root: Path, r: Result, totals: dict[str, int]) -> None:
 def check_references(root: Path, r: Result) -> None:
     for p in sorted(root.rglob("*.md")):
         rel = p.relative_to(root).as_posix()
-        if rel.split("/")[0] in REF_SCAN_EXCLUDE_DIRS:
+        if rel.startswith(REF_SCAN_EXCLUDE_PREFIXES):
             continue
         for i, line in enumerate(read(p).splitlines(), 1):
             for ref in BACKTICK_PATH_RE.findall(line):
@@ -255,7 +258,7 @@ COUNT_PATTERNS = (
     ("commands", re.compile(r"(?:コマンド|commands?/?)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件|の)")),
     ("hooks", re.compile(r"(?:hooks?|見張り役)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件)")),
 )
-COUNT_DOCS = ("README.md", "INDEX.md", "docs/userguide.html", "docs/yuki-aidd-kit-manual.html")
+COUNT_DOCS = ("README.md", "INDEX.md", "docs/利用ガイド.html", "docs/操作マニュアル.html")
 
 
 def check_counts(root: Path, r: Result) -> None:
@@ -278,14 +281,14 @@ def check_counts(root: Path, r: Result) -> None:
 
 
 ABS_PATH_RE = re.compile(r"(?<![\w<])(/Users/|/home/|/root/)")
-ABS_PATH_DOCS = ("README.md", "docs/userguide.html", "docs/yuki-aidd-kit-manual.html")
+ABS_PATH_DOCS = ("README.md", "docs/利用ガイド.html", "docs/操作マニュアル.html")
 
 
 def check_absolute_paths(root: Path, r: Result) -> None:
     """検査11: 利用者向け文書・雛形に絶対パス（/Users/ /home/ /root/）が無いか（WARN）。
 
     利用者は CLI の知識が無い前提。文書のコマンドは貼れば動く形にし、環境依存のパスは <対象ディレクトリ> のような
-    プレースホルダにする（docs/maintainer-tendencies.md #22）。
+    プレースホルダにする（internal/maintainer-tendencies.md #22）。
     """
     files = [root / rel for rel in ABS_PATH_DOCS] + sorted((root / "templates").rglob("*.md"))
     for p in files:
@@ -324,8 +327,8 @@ INVENTORY_ROW_RE = re.compile(r"^(\|\s*`([^`]+)`\s*\|\s*)(\d+)(\s*\|.*)$")
 
 
 def fix_spec_inventory(root: Path) -> int:
-    """spec/01-inventory.md の行数セルを実測で書き換える。書き換えた行数を返す。"""
-    p = root / "spec" / "01-inventory.md"
+    """internal/spec/01-inventory.md の行数セルを実測で書き換える。書き換えた行数を返す。"""
+    p = root / "internal" / "spec" / "01-inventory.md"
     if not p.is_file():
         return 0
     out, changed = [], 0
@@ -342,7 +345,7 @@ def fix_spec_inventory(root: Path) -> int:
 
 
 def check_spec_inventory(root: Path, r: Result) -> None:
-    p = root / "spec" / "01-inventory.md"
+    p = root / "internal" / "spec" / "01-inventory.md"
     if not p.is_file():
         return
     row = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|")
@@ -353,29 +356,29 @@ def check_spec_inventory(root: Path, r: Result) -> None:
         name, n = m.group(1), int(m.group(2))
         f = resolve_inventory_name(root, name)
         if f is None:
-            r.add(True, "spec同期", f"spec/01-inventory.md:{i}", f"`{name}` が実在しない")
+            r.add(True, "spec同期", f"internal/spec/01-inventory.md:{i}", f"`{name}` が実在しない")
             continue
         actual = wc_l(f)
         if actual != n:
-            r.add(True, "spec同期", f"spec/01-inventory.md:{i}", f"`{name}` 記載 {n}行 / 実測 {actual}行")
-    # 網羅性: リポジトリの実ファイル（spec/ と生成物を除く）が目録に載っているか
+            r.add(True, "spec同期", f"internal/spec/01-inventory.md:{i}", f"`{name}` 記載 {n}行 / 実測 {actual}行")
+    # 網羅性: リポジトリの実ファイル（internal/spec/ と生成物を除く）が目録に載っているか
     text = read(p)
     for f in sorted(root.rglob("*")):
         if not f.is_file():
             continue
         rel = f.relative_to(root).as_posix()
-        if rel.split("/")[0] in (".git", "spec") or rel in ("check-docs-report.md", "trace-check-report.md", "check-design-report.md", "check-approval-report.md", "token-audit-report.md", "test-metrics-report.md"):
+        if rel.startswith((".git/", "internal/spec/")) or rel in GENERATED_REPORTS:
             continue
         names = {rel} | {rel[len(pre):] for pre in INVENTORY_PREFIXES if pre and rel.startswith(pre)}
         if not any(f"`{n}`" in text for n in names):
-            r.add(True, "spec同期", "spec/01-inventory.md", f"`{rel}` が目録に無い")
+            r.add(True, "spec同期", "internal/spec/01-inventory.md", f"`{rel}` が目録に無い")
 
 
 # ---- 出力 ---------------------------------------------------------------------------------
 
 def write_report(path: Path, root: Path, r: Result) -> None:
     lines = ["# 文書整合検査レポート", "", f"- 対象: `{root}`", f"- NG: {len(r.ng)} 件 ／ 警告: {len(r.warn)} 件",
-             "- 規約: `docs/PRD.md`（FR-05 検索構造・使用性）／ `spec/09-findings.md`", "", "## NG 一覧", ""]
+             "- 規約: `internal/PRD.md`（FR-05 検索構造・使用性）／ `internal/spec/09-findings.md`", "", "## NG 一覧", ""]
     if r.ng:
         lines += ["| 種別 | 対象 | 内容 |", "|---|---|---|"] + [f"| {k} | {t} | {d} |" for k, t, d in r.ng]
     else:
@@ -394,12 +397,12 @@ def main() -> int:
     ap.add_argument("-o", "--report", default="check-docs-report.md")
     ap.add_argument("--strict", action="store_true", help="検査 6・7 を WARN でなく NG にする")
     ap.add_argument("--skip-tests", action="store_true", help="検査 3 のテスト実行を省く")
-    ap.add_argument("--fix-inventory", action="store_true", help="spec/01-inventory.md の行数を実測で書き換えてから検査する")
+    ap.add_argument("--fix-inventory", action="store_true", help="internal/spec/01-inventory.md の行数を実測で書き換えてから検査する")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     r = Result()
     if a.fix_inventory:
-        print(f"spec/01-inventory.md: {fix_spec_inventory(root)} 行の行数を実測に更新")
+        print(f"internal/spec/01-inventory.md: {fix_spec_inventory(root)} 行の行数を実測に更新")
 
     check_costs(root, r)
     check_index_coverage(root, r)

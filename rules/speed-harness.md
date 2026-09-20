@@ -1,6 +1,6 @@
 # 開発速度ハーネス（H-1〜H-8）
 所要時間 ≒ 往復回数 × 12秒。速度は「工程を削る」でなく「往復を削る」で作る。ゲート（pre-commit / verify-ui / 破壊操作の確認）は削らない。
-モデル・effort・委譲の採算は `rules/model-routing.md`。各 H の出所となった実測・失敗事例と、H-6 の実測記録: `docs/rules-rationale/speed-harness.md`（毎回は読まない）。
+モデル・effort・委譲の採算は `rules/model-routing.md`。各 H の出所となった実測・失敗事例と、H-6 の実測記録: `internal/rules-rationale/speed-harness.md`（毎回は読まない）。
 ## H-1. 着手前4行（必須出力。最初のツール実行より前）
 ```
 目的: <1行>
@@ -39,7 +39,7 @@ kill $(lsof -ti:<PORT>) 2>/dev/null                                            #
 | 共有ファイル（複数画面から参照される資産）への変更 | +15分（回帰洗い出し1本 + 検証1本 + 修正パス） |
 | 検証の既定 | 代表画面のサンプリング。残りは「未検証」と明記 |
 ## H-6. 違反時
-見積の1.5倍を超えたら、原因1行を `docs/rules-rationale/speed-harness.md` の実測記録に追記してから完了報告する。ルールを新設せず、H-1〜H-5 のどこで落ちたかを特定する。
+見積の1.5倍を超えたら、原因1行を `internal/rules-rationale/speed-harness.md` の実測記録に追記してから完了報告する。ルールを新設せず、H-1〜H-5 のどこで落ちたかを特定する。
 ## H-7. コミット・プッシュ・マージ
 - ゲート（pytest / make test / verify-ui / lint）は**ユーザーが要求した時だけ実行する**（Claude Code では `block-gates.py` が強制。要求時は `GATES_REQUESTED=1` を付ける）
 - 実行したときの出力は `filter-output.py` が失敗行＋集計に絞る（全量は `FULL_OUTPUT=1`）。絞られた結果で判断できないときだけ全量を取る

@@ -2,7 +2,7 @@
 """check_design.py — デザイン出荷物と画面ファイルの「直値禁止」をリポジトリ実体で機械判定する。
 
 templates/design-system.md の再現チェックリストは「CSS に直値が残っていない」「アイコンは同梱で外部 CDN を
-読まない」「alert() を使わない」を要求していたが、判定する手段が無かった（spec/12-design-framework.md DS-4）。
+読まない」「alert() を使わない」を要求していたが、判定する手段が無かった（internal/spec/12-design-framework.md DS-4）。
 本スクリプトは次を検査する。NG>0 で exit 1、対象ファイルなしは exit 0。
 
   1. 直値        色（#hex / rgb() / hsl()）はどこでも NG。px は padding / margin / gap / border-radius /

@@ -5,7 +5,7 @@
 NG>0 で exit 1、WARN のみは exit 0。
 
   1. 床（常時読み込み）  rules/*.md（paths 無し）＋ CLAUDE.md（@AGENTS.md 展開）の文字数と推定トークン。
-                          換算は spec/11 D-1（日本語 1.0 tok/char・ASCII 0.27 tok/char）。**推定**であり実測は /context
+                          換算は internal/spec/11 D-1（日本語 1.0 tok/char・ASCII 0.27 tok/char）。**推定**であり実測は /context
   2. 実測ログ            .claude/instructions-loaded.log（log-instructions.py）があればファイル別の読み込み回数
   3. 仕組みの配線        settings.json に filter-output / pre-read-guard / context-guard / pre-compact が配線されているか、
                           effortLevel / autoCompactWindow / BASH_MAX_OUTPUT_LENGTH があるか（無ければ NG）
@@ -27,7 +27,7 @@ from pathlib import Path
 HOOKS_REQUIRED = ("filter-output.py", "pre-read-guard.py", "context-guard.py", "pre-compact.py")
 SETTINGS_REQUIRED = ("effortLevel", "autoCompactWindow")
 ENV_REQUIRED = ("BASH_MAX_OUTPUT_LENGTH",)
-FLOOR_WARN_TOKENS = 8000        # spec/11 D-1: M16 後の床 ≒ 5,400。超えたら WARN
+FLOOR_WARN_TOKENS = 8000        # internal/spec/11 D-1: M16 後の床 ≒ 5,400。超えたら WARN
 MCP_WARN_COUNT = 3
 SKILL_WARN_LINES = 150
 IMPORT_RE = re.compile(r"^@(\S+)\s*$", re.M)
@@ -181,7 +181,7 @@ def check_skills(root: Path, r: Result) -> None:
 
 def write_report(path: Path, root: Path, r: Result) -> None:
     lines = ["# トークン監査レポート", "", f"- 対象: `{root}`", f"- NG: {len(r.ng)} 件 ／ 警告: {len(r.warn)} 件",
-             "- 規約: `rules/model-routing.md` ／ 根拠: `docs/rules-rationale/model-routing.md` ／ 一次情報: `spec/11` §2", "",
+             "- 規約: `rules/model-routing.md` ／ 根拠: `internal/rules-rationale/model-routing.md` ／ 一次情報: `internal/spec/11` §2", "",
              "## 計測", ""] + [f"- {i}" for i in r.info]
     lines += ["", "## NG 一覧", ""]
     lines += (["| 種別 | 対象 | 内容 |", "|---|---|---|"] + [f"| {k} | {t} | {d} |" for k, t, d in r.ng]) if r.ng else ["なし。"]

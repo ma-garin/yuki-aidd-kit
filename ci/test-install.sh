@@ -1,7 +1,7 @@
 #!/bin/bash
 # test-install.sh — 導入・配布・初期化スクリプトの回帰テスト
 # 対象: install.sh / verify.sh / export-project.sh / init-project.sh / init-test-docs.sh
-# キットの「入口」がテストされていなかった（spec/09-findings.md F-11）ことへの対処。
+# キットの「入口」がテストされていなかった（internal/spec/09-findings.md F-11）ことへの対処。
 #
 # 実 ~/.claude には一切触らない: HOME を一時ディレクトリに差し替えて実行し、冒頭のガードで保証する。
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
