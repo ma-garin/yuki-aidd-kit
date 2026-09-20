@@ -17,7 +17,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 
 ## スコープ / 対象外
 
-- スコープ: `skills/`・`commands/`・`hooks/`・`scripts/`・`templates/`・`docs/`・`INDEX.md`・`*.template`
+- スコープ: `skills/`・`commands/`・`hooks/`・`rules/`・`templates/`・`tools/`（導入先で動く道具）・`scripts/`（キットから実行する入口）・`docs/`・`INDEX.md`・`*.template`。`internal/` と `ci/` は配布しない（7.0.0）
 - 対象外: ECC 本体（外部参照のみ）、実プロジェクトのコード、CI/CD 基盤（`templates/github/workflows/` は配布用サンプル）
 
 ## 機能要求（FR）

@@ -1,26 +1,26 @@
-# 01 — 全ファイル目録（133件・11,645行）
+# 01 — 全ファイル目録（189件・19,901行）
 
-行数はすべて 2026-09-16 の実測（`wc -l`）。`internal/spec/` 自身は対象外。
+行数はすべて 2026-09-20 の実測（7.0.0 構成変更後）（`wc -l`）。`internal/spec/` 自身は対象外。
 「役割」は1行要約。詳細は各章（`03`〜`07`）を参照。
 
 ---
 
-## ルート（7件・594行）
+## ルート（8件・711行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 305 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
-| `INDEX.md` | 203 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `README.md` | 124 | 人間向けの入口（7.0.0 で導入に絞った）: 導入2方式・取り扱い説明書・推奨フロー・ECC 連携・構成ツリー・作り込みの入口・合言葉。版歴は `CHANGELOG.md` |
+| `CHANGELOG.md` | 182 | 版ごとの変更内容（Ver.5.0〜7.0.0。7.0.0 で README から分離）。版の真実源は `VERSION` |
+| `INDEX.md` | 226 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 30 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 80 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
-| `docs/claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
 | `.gitignore` | 29 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
 | `.claude/settings.json` | 39 | キット自身の開発セッション用の hooks 配線（instruction-guard / prompt-priority / reply-language を `$CLAUDE_PROJECT_DIR` 参照で）。実体が無ければ無言で飛ばす（`sh -c` の存在確認つき。F-26）。配布形は `hooks/settings.json`（M22） |
-| `VERSION` | 1 | 版の真実源（`6.3.0`）。git tag と対応。`install.sh` / `export-project.sh` が導入先の `KIT_VERSION` に刻印 |
+| `VERSION` | 1 | 版の真実源（`7.0.0`）。git tag と対応。`install.sh` / `export-project.sh` が導入先の `KIT_VERSION` に刻印 |
 
 ---
 
-## rules/（4件・102行）— 規律（`paths` 無し3本＝毎セッション 85行、`paths` 付き1本＝条件付き）
+## rules/（4件・108行）— 規律（`paths` 無し3本＝毎セッション 85行、`paths` 付き1本＝条件付き）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -82,7 +82,7 @@
 
 ---
 
-## commands/（18件・411行）
+## commands/（18件・416行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -107,7 +107,7 @@
 
 ---
 
-## hooks/（8件・356行）
+## hooks/（17件・1,118行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -131,7 +131,7 @@
 
 ---
 
-## scripts/（33件・4,734行）
+## scripts/（13件・1,201行）— キットの checkout から実行する入口（配らない。`./scripts/<名前>`）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -141,24 +141,40 @@
 | `verify.sh` | 55 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
 | `export-project.sh` | 164 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
-| `test-metrics.sh` | 7 | テストメトリクスの薄いラッパ。status / --gate / --history / --into |
-| `test_metrics.py` | 597 | 05〜08 の表と CSV から消化率・合格率・欠陥密度・Critical/High 残・偏り・滞留・完了予測（根拠付き）。§7 の基準表で exit 0/1/2。unread は分母に入れ、欠陥表なしは None |
-| `test-test-metrics.sh` | 173 | test-metrics の回帰テスト（雛形・実データ・unread・欠陥表なし・基準表・偏り・履歴・報告書置換・CSV） |
 | `token-audit.sh` | 7 | トークン監査の薄いラッパ |
 | `token_audit.py` | 236 | 床（常時読み込み）の推定 tok・実測ログ集計・hook/設定の配線・MCP 数・スキル肥大。配線漏れは NG |
-| `test-token-audit.sh` | 56 | token-audit の回帰テスト（キット自身 NG=0・配布先・配線漏れ・ログ集計・MCP 過多） |
-| `check-approval.sh` | 8 | 工程承認検査の薄いラッパ。`--phase N` / `--gate N` / `--quiet`。exit 0/1/2 |
-| `check_approval.py` | 422 | 工程承認の本体。承認記録の必須欄・版の一致（失効）・未解消の差し戻し・未確認事項・approver が人間か・工程順序 |
-| `test-check-approval.sh` | 239 | check-approval の回帰テスト。配布雛形 NG=0 と各検査の NG ケース |
-| `phase-hash.py` | 79 | 工程成果物のコンテンツハッシュ（承認を版に縛る）。対象0件は `empty`。`--staged` あり |
 | `init-lifecycle.sh` | 117 | 工程文書11本を `docs/lifecycle/` へ。`--github` で Issue/PR/CI も。既存は上書きしない |
 | `init-test-docs.sh` | 37 | テスト文書6本＋CSV＋機能契約＋ゲートスクリプト3本を配置。`--ci` で `test-gates.yml` |
+| `audit-app-workspace.sh` | 55 | アプリ群の棚卸し（トップレベル・manifest・拡張子集計・ECC DAILY 推奨） |
+| `check_design.py` | 247 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |
+| `check-design.sh` | 7 | `check_design.py` の薄いラッパ |
+
+---
+
+## tools/（10件・1,714行）— 導入先の `scripts/` に置かれて動く道具（export-project / init-lifecycle / init-test-docs がコピー。install は check_approval と phase-hash を `~/.claude/scripts/` へ）
+
+| ファイル | 行 | 役割 |
+|---|---|---|
+| `test-metrics.sh` | 7 | テストメトリクスの薄いラッパ。status / --gate / --history / --into |
+| `test_metrics.py` | 597 | 05〜08 の表と CSV から消化率・合格率・欠陥密度・Critical/High 残・偏り・滞留・完了予測（根拠付き）。§7 の基準表で exit 0/1/2。unread は分母に入れ、欠陥表なしは None |
+| `check-approval.sh` | 8 | 工程承認検査の薄いラッパ。`--phase N` / `--gate N` / `--quiet`。exit 0/1/2 |
+| `check_approval.py` | 422 | 工程承認の本体。承認記録の必須欄・版の一致（失効）・未解消の差し戻し・未確認事項・approver が人間か・工程順序 |
+| `phase-hash.py` | 79 | 工程成果物のコンテンツハッシュ（承認を版に縛る）。対象0件は `empty`。`--staged` あり |
 | `trace-check.sh` | 247 | **トレーサビリティの機械検証**。6種別（重複定義/未定義参照/所有ファイル違反/追跡表未記載/カバー漏れ/孤立テスト）。NG>0 で exit 1 |
 | `quality_harness.py` | 204 | **機能契約ハーネス**。8種の検証（統制文書/列挙値/参照パス/実行経路/失敗系/シンボル/未登録モジュール/未実装マーカー）。NG>0 で exit 1 |
 | `ui-hash.py` | 66 | git 管理対象の `.html/.js/.css` の sha256 先頭16桁。`disk` / `staged`。`docs/` は既定で除外 |
 | `pre-commit-ui-gate.sh` | 63 | `.ui-verified` の存在・鮮度（既定7200秒）・UI hash 一致を確認し、UI コミットを BLOCK。`.rebuild-mode` で WARN |
 | `pre-commit` | 21 | 秘密情報スキャン。gitleaks があれば使用、無ければ簡易パターン |
-| `audit-app-workspace.sh` | 55 | アプリ群の棚卸し（トップレベル・manifest・拡張子集計・ECC DAILY 推奨） |
+
+---
+
+## ci/（12件・2,107行）— 保守者専用: 回帰テストと文書整合検査（配らない。`.github/workflows/kit-ci.yml` が呼ぶ）
+
+| ファイル | 行 | 役割 |
+|---|---|---|
+| `test-test-metrics.sh` | 173 | test-metrics の回帰テスト（雛形・実データ・unread・欠陥表なし・基準表・偏り・履歴・報告書置換・CSV） |
+| `test-token-audit.sh` | 56 | token-audit の回帰テスト（キット自身 NG=0・配布先・配線漏れ・ログ集計・MCP 過多） |
+| `test-check-approval.sh` | 239 | check-approval の回帰テスト。配布雛形 NG=0 と各検査の NG ケース |
 | `test-hooks.sh` | 363 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
@@ -167,13 +183,11 @@
 | `check_docs.py` | 441 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
 | `test-check-docs.sh` | 125 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
-| `check_design.py` | 247 | **デザイン検査の本体**（6検査: 直値・未定義トークン・未使用トークン(WARN)・外部 CDN・alert()・tokens.css 読込）。NG>0 で exit 1。対象は引数（既定 `templates/ui templates/components`） |
-| `check-design.sh` | 7 | `check_design.py` の薄いラッパ |
 | `test-check-design.sh` | 145 | **check-design の回帰テスト 36ケース**（出荷物が NG=0 で通ること＋各検査の検出＋除外規則） |
 
 ---
 
-## templates/（33件・2,119行）
+## templates/（47件・3,251行）
 
 ### 単体（7件）
 
@@ -188,7 +202,7 @@
 | `implement-profile.md` | 34 | 実装モードの行動規範（再探索しない・plan 準拠・小さく実装→軽量テスト・止まる条件・逸脱時の手順） |
 | `work-order.md` | 61 | 別モデル（Sonnet / Haiku / Codex）へ渡す作業指示書の雛形（守ること表・Step ごとの完了条件・止まる条件・質問節） |
 
-### lifecycle/（11件・587行）— 工程成果物の雛形
+### lifecycle/（13件・776行）— 工程成果物の雛形
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -211,7 +225,7 @@
 | `approvals/phase-approval.md` | 59 | 1工程分の承認記録。covers / reviewed_hash / approver のメタ表・3値判定・条件・根拠・差し戻し事項（解消の検証方法必須）・未確認事項 |
 | `approvals/README.md` | 60 | 承認記録の運用。機械と人間の境界表・3値判定・着手判定（`YYYY-MM-DD` の有無）・`.claude/phase-gate` による強制 |
 
-### test/（8件・435行）— テスト活動の雛形
+### test/（8件・454行）— テスト活動の雛形
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -224,7 +238,7 @@
 | `system_test_cases.csv` | 7 | システムテストケース。列＝ID/ロール/機能/**ツアー観点**/目的/前提/手順/期待結果/severity。6行の記入例 |
 | `feature_contracts.yml` | 31 | 機能契約の雛形（JSON 互換 YAML）。harness 設定＋`example_feature`（status: planned） |
 
-### github/（4件・181行）
+### github/（8件・352行）— Issue・PR テンプレートと配布用 CI サンプル `workflows/`（全て手動起動のみ。旧 github-actions/）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -232,6 +246,10 @@
 | `ISSUE_TEMPLATE/02-requirement.md` | 42 | 要件 Issue。種別/優先度・受入基準・由来 RFD・工程の進捗チェック8項目 |
 | `ISSUE_TEMPLATE/03-defect.md` | 51 | 欠陥 Issue。検出工程・対象 ID・ISTQB severity・再現手順・**evidence（空なら起票しない）** |
 | `pull_request_template.md` | 48 | PR。関係 ID 表・工程・検証結果 evidence・チェック6項目・影響範囲 |
+| `workflows/test-gates.yml` | 72 | 機能契約ハーネス＋L1/L2。**Python/Node をファイルの有無で自動判定**、カバレッジ80%ゲート、L3 はコメントアウト |
+| `workflows/lifecycle-check.yml` | 42 | 手動起動で `trace-check.sh` を実行。レポートを artifact とジョブサマリへ |
+| `workflows/deploy.yml` | 34 | GitHub Pages デプロイ（`docs/` 配下を公開。手動起動） |
+| `workflows/secret-scan.yml` | 23 | gitleaks による秘密情報スキャン（全履歴） |
 
 ### components/（4件・618行）
 
@@ -242,12 +260,12 @@
 | `demo.html` | 113 | 部品の実機確認ページ。`../ui/components.css` を読み込み、デモ固有 CSS だけ持つ（バッジ／ボタン／入力／KPI／表＋ページャ／トグル／ツールチップ／モーダル／コールアウト／空状態／テーマ切替）。Playwright 確認済み（2026-09-17） |
 | `demo-shell.html` | 71 | 骨格の実機確認ページ。`../ui/layout.css` の app 骨格（globalbar / sidebar 折りたたみ・off-canvas / topbar / content）。1366・1920・360px と ダークで確認済み |
 
-### ui/（6件・452行）— デザインシステムの実物（M17 で追加）
+### ui/（6件・546行）— デザインシステムの実物（M17 で追加）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 305 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 124 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
@@ -255,23 +273,15 @@
 
 ---
 
-## docs/（17件・4,400行）
+## docs/（12件・4,620行）— 利用者向け文書（読むもの。配布はしない）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `利用ガイド.html` | 1158 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
+| `利用ガイド.html` | 1159 | **初学者向けユーザーガイド**（2026-09-17 新設、同日に「とことん噛み砕く」方針で全面改稿。2026-09-18 に V字・W字章を追加）。18 章: たとえ話と Before/After・先に知る言葉 8 つ・箱の中身・導入前の確認（命令と期待出力）・導入 A / B（1 手順ごとに「なぜ」と「うまくいくとこう見える」）・はじめての会話（対話例 4 つ）・AI との 3 つの約束（ゲートは要求時のみ／未検証を完了と言わない／実装モード）・ハンズオン（事例を通しで・進行役メモ付き）・1 日の流れ・言い方表・品質チェック（**全て手動起動**）・**V字/W字との対応**（インライン SVG 2 枚・工程別の成果物と機械検証の表・W字の未対応 3 点・対外説明の 3 文）・Pro/Sonnet のコツ・見た目・困ったとき（症状→原因→対処）・用語集・次に読むもの。Qiita 風・外部 CDN なし。**デザイン適用除外ジャンル** |
 | `操作マニュアル.html` | 1443 | 非エンジニア向け HTML 取説。Qiita 風・サイドメニュー追従・用語ツールチップ・13章。冒頭に `利用ガイド.html`／事例／V字章への導線（2026-09-18）。**デザイン適用除外ジャンル** |
-| `Roadmap.md` | 285 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
-| `maintainer-tendencies.md` | 81 | 保守者の指摘・要望の傾向 14 項目（出典・原文・現状・反映先）と反映しなかったものの理由 |
+| `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
 | `ECC-ASSET-MAP.md` | 148 | **ECC 対応表の真実源**。STACK・DAILY 15件・LIBRARY・プロジェクト別 Mapping 5件・install ガイダンス |
-| `AUDIT-2026-07.md` | 114 | 資産監査の記録。判定軸・監査表3種・指摘 A-01〜A-09（ISTQB severity）・重複マップ D-01〜D-04・適用記録 |
 | `OPERATING-MODE.md` | 78 | 日常の標準作業モード（種別判定・読む範囲・ECC 使い分け・実装ループ・完了判定・クレジット節約） |
-| `PRD.md` | 86 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
-| `PROJECT-FIT-REPORT.md` | 48 | 実プロジェクト群への適合レポート（2026-06 時点）。Summary/Evidence/Recommendation |
-| `Vision.md` | 47 | 目的・解決する問題6件・到達点3つ・Non-Goals・配置の2層・価値の判定基準 |
-| `rules-rationale/absolute-rules.md` | 165 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
-| `rules-rationale/speed-harness.md` | 127 | `rules/speed-harness.md` の圧縮前原文（実測・失敗事例）と **H-6 の実測記録の追記先**（M16） |
-| `rules-rationale/model-routing.md` | 31 | `rules/model-routing.md` 各行の根拠（一次情報の出典）と未確認事項（M16） |
 | `examples/library-loan/README.md` | 36 | 事例の説明（依頼文・中身・開く／作り直す／検査する・確認できたこと・範囲外） |
 | `examples/library-loan/library-loan.html` | 1230 | **事例の完成品**。単一 HTML（tokens / components / layout / icons / feedback を貼り込み）。`build.py` の生成物。5 画面・localStorage |
 | `examples/library-loan/app.css` | 22 | モック固有の配置 CSS（部品・骨格はキットのまま） |
@@ -282,20 +292,24 @@
 
 ---
 
-## templates/github/workflows/（4件・171行）— 配布用サンプル（全て手動起動のみ。2026-09-17 決定 Q-10）
+## internal/（10件・1,180行）— 保守者専用（配布しない）。`internal/spec/` は本目録の対象外
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `test-gates.yml` | 72 | 機能契約ハーネス＋L1/L2。**Python/Node をファイルの有無で自動判定**、カバレッジ80%ゲート、L3 はコメントアウト |
-| `lifecycle-check.yml` | 42 | 手動起動で `trace-check.sh` を実行。レポートを artifact とジョブサマリへ |
-| `deploy.yml` | 34 | GitHub Pages デプロイ（`docs/` 配下を公開。手動起動） |
-| `secret-scan.yml` | 23 | gitleaks による秘密情報スキャン（全履歴） |
-
-**注**: これらは配布先プロジェクトへ置くサンプル。キット自身の CI は下記。
+| `Roadmap.md` | 298 | **キット開発の作業台帳**。作業ルール5条と M1〜M14。未完チェック2件 |
+| `maintainer-tendencies.md` | 81 | 保守者の指摘・要望の傾向 14 項目（出典・原文・現状・反映先）と反映しなかったものの理由 |
+| `AUDIT-2026-07.md` | 114 | 資産監査の記録。判定軸・監査表3種・指摘 A-01〜A-09（ISTQB severity）・重複マップ D-01〜D-04・適用記録 |
+| `PRD.md` | 86 | キット自体の要求文書。FR-01〜FR-10（+04a/08a/09a/09b/03a）と非機能（**互換性が最重要**） |
+| `PROJECT-FIT-REPORT.md` | 48 | 実プロジェクト群への適合レポート（2026-06 時点）。Summary/Evidence/Recommendation |
+| `Vision.md` | 47 | 目的・解決する問題6件・到達点3つ・Non-Goals・配置の2層・価値の判定基準 |
+| `rules-rationale/absolute-rules.md` | 165 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
+| `rules-rationale/speed-harness.md` | 127 | `rules/speed-harness.md` の圧縮前原文（実測・失敗事例）と **H-6 の実測記録の追記先**（M16） |
+| `rules-rationale/model-routing.md` | 31 | `rules/model-routing.md` 各行の根拠（一次情報の出典）と未確認事項（M16） |
+| `internal/lessons.md` | 183 | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。`templates/lessons.md` は配布雛形で別物） |
 
 ---
 
-## .github/workflows/（1件・66行）— キット自身の CI
+## .github/workflows/（1件・70行）— キット自身の CI
 
 | ファイル | 行 | 役割 |
 |---|---|---|

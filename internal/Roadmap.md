@@ -283,3 +283,16 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`intern
 - [x] `AGENTS.md.template` 必須プロセス・`CLAUDE.md.template` hooks 一覧・INDEX・internal/spec/01・internal/spec/09 F-25・internal/spec/10 Q-16・PRD FR-17・`maintainer-tendencies.md` #31
 - [x] **Claude Code 全体に効かせる導入**（保守者「この環境ではない。claude code 全体全て」）: `scripts/install-guard.sh` / `install_guard.py` が既存 `~/.claude/settings.json` に配線を merge（冪等）。`install.sh` からも自動実行。test-install 84 → 102
 - 残: Codex には hook が無い。`AGENTS.md` の散文のみ（移行後の実測 U-5 で見直す）。Web 環境の Setup script 経由の導入は未検証（非公開リポジトリの clone 可否）
+
+## M23: 構成管理 — 配布物と保守者専用を分ける（完了 2026-09-20・Ver.7.0.0）
+
+背景: 直下に「配る／配らない／キットから実行する」の別が無く、hook の配線がディレクトリ移動で止まる事故（`internal/spec/09` F-26）の温床だった。保守者が To-Be の木を提示。事実と衝突する 2 点だけ修正した（`.github/` は GitHub が直下しか読まない／`github-actions/` は導入先へ置く配布用サンプルで CI ではない）。
+
+- [x] `claude-code/commands/` → `commands/`、`claude-code/hooks/` → `hooks/`（Claude Code の規約に揃える）。`install_guard.py --hooks-dir` 既定値・`.claude/settings.json` を同一コミットで更新
+- [x] `github-actions/` → `templates/github/workflows/`（`init-lifecycle.sh --github` / `init-test-docs.sh --ci` が参照）
+- [x] `scripts/` を `scripts/`（入口 13）／`tools/`（導入先で動く 10）／`ci/`（回帰テスト 10 ＋ check-docs）に三分割。導入先の置き場所は `<対象>/scripts/` のまま
+- [x] `spec/` → `internal/spec/`。docs/ の根拠・台帳・PRD・Roadmap・Vision・監査/適合・lessons・maintainer-tendencies → `internal/`。docs/ は利用者向けだけ（`利用ガイド.html`・`操作マニュアル.html`・`claude-projects-setup.md`・OPERATING-MODE・ECC-ASSET-MAP・examples）
+- [x] README を導入の入口に絞り、版歴を `CHANGELOG.md` へ。INDEX に「配置（何を配り何を配らないか）」表とクイックスタートの「キットで実行／導入先で実行」の区分
+- [x] `ci/check_docs.py`: 新ディレクトリの参照切れ・目録解決、`scripts/<道具>`＝導入先パスの判定、生成レポート 6 種の一元除外
+- [x] 各段で回帰テスト 10 本（PASS 420）と `ci/check-docs.sh` NG=0。`git mv` で履歴保持
+- 残: `agents/` は定義が無いため未作成。日本語ファイル名（`利用ガイド.html`）は macOS の NFD 正規化差分に注意（git の `core.precomposeunicode` は macOS 既定 true）。README の利用節（推奨する使い方・ECC 連携・合言葉）を INDEX／利用ガイドへ寄せるかは保守者判断

@@ -10,38 +10,52 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 | **DAILY** | どのプロジェクトでも進め方を制御する横断資産 | セッション開始時・作業の節目に該当スキルを読む |
 | **LIBRARY** | 特定のプロジェクト種別・場面でだけ効く資産 | タグが今の作業に一致した時だけ開く |
 
+## 配置（7.0.0 — 何を配り、何を配らないか）
+
+| ディレクトリ | 中身 | 導入先へ |
+|---|---|---|
+| `skills/` `commands/` `hooks/` `rules/` `templates/` | 規約固定の配布物（install で `~/.claude/`、export で `<対象>/.claude/`） | 配る |
+| `tools/` | 導入先の `scripts/` に置かれて動く道具（trace-check・quality_harness・check-approval・test-metrics …） | 配る |
+| `scripts/` | キットの checkout から実行する入口（install / export / init-* / verify / check-design / token-audit） | 実行元 |
+| `docs/` | 利用者向け文書（利用ガイド・操作マニュアル・事例） | 読む |
+| `internal/` | 保守者専用（spec・rules の根拠・作業台帳・PRD・Vision・lessons） | 配らない |
+| `ci/` | 回帰テスト 10 本と check-docs（文書整合） | 配らない |
+
 ## クイックスタート
 
 ```bash
+# キットの checkout で実行（導入・配布・保守）
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./scripts/install.sh && ./scripts/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
-./ci/test-hooks.sh                       # hooks の回帰テスト（83ケース）
-./ci/test-trace-check.sh                 # トレーサビリティ検査の回帰テスト（15ケース）
-./scripts/install-guard.sh                   # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge・冪等。Claude Code 全体に効く）
-./ci/test-install.sh                     # 導入・配布・初期化の回帰テスト（102ケース）
-./ci/test-git-gates.sh                   # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
-./ci/check-docs.sh                       # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ。NG=0 が合格）
-./scripts/check-design.sh [対象パス]           # デザイン検査（直値・未定義トークン・外部 CDN・alert()。既定 templates/ui templates/components。NG=0 が合格）
-./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）
+./scripts/install-guard.sh                    # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge・冪等。Claude Code 全体に効く）
+./scripts/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）。道具は <target>/scripts/ へ
 ./scripts/init-project.sh my-app pwa          # 新規プロジェクト（pwa | html | streamlit）
 ./scripts/init-lifecycle.sh <target> --github # 工程文書一式＋GitHub Issue/PR/CI テンプレートを配置
-./scripts/trace-check.sh docs/lifecycle       # 要件→設計→実装→テストの追跡を機械検証（NG=0 で合格）
-./scripts/test-metrics.sh [--gate]           # テスト工程の消化率・合格率・欠陥密度・滞留・完了予測を表から集計（--gate は §7 の基準で 0/1/2）
-./scripts/token-audit.sh                      # トークン節約の仕組みの点検（床の推定・hook と設定の配線・MCP 数。実測は /context /usage）
-./scripts/check-approval.sh                   # 工程承認の機械検査（記録の有無・版の一致=失効・工程順序。0=合格 1=未承認 2=判定不能）
+./scripts/init-test-docs.sh <target> --ci     # テスト活動の雛形（戦略・DoD・29119 文書・機能契約・UI 検証ゲート）＋CI サンプル
+./scripts/check-design.sh [対象パス]           # デザイン検査（直値・未定義トークン・外部 CDN・alert()。既定 templates/ui templates/components。NG=0 が合格）
+./scripts/token-audit.sh [--root <target>]    # トークン節約の仕組みの点検（床の推定・hook と設定の配線・MCP 数。実測は /context /usage）
 ./scripts/audit-app-workspace.sh <APP_WORKSPACE>  # アプリ群の棚卸し
 open docs/利用ガイド.html                      # ユーザーガイド（概要・導入手順。初学者向け）
-open docs/操作マニュアル.html           # HTML版の取り扱い説明書（13 章）
+open docs/操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
+
+# 保守者だけ（ci/ は配布しない）
+./ci/test-hooks.sh                            # hooks の回帰テスト（83ケース）
+./ci/test-install.sh                          # 導入・配布・初期化の回帰テスト（102ケース）
+./ci/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
+./ci/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
+./ci/check-docs.sh                            # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
 ```
 
 **導入方式は2つ**（併用が前提。`internal/Vision.md` の「配置の2層」参照）:
 - **グローバル導入**（`install.sh`）: 自分のPC1台で複数プロジェクトを横断する日常運用
-- **プロジェクト配布**（`export-project.sh`）: 対象プロジェクト直下に `.claude/` と `AGENTS.md`/`CLAUDE.md` を書き出し、そのプロジェクトの git にコミット。Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先でも install 不要でそのまま効く
-
-テスト活動の雛形（戦略・DoD・29119 文書・機能契約・UI 検証ゲート）:
+- **プロジェクト配布**（`export-project.sh`）: 対象プロジェクト直下に `.claude/` と `AGENTS.md`/`CLAUDE.md`、道具を `scripts/` に書き出し、そのプロジェクトの git にコミット。Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先でも install 不要でそのまま効く
 
 ```bash
-./scripts/init-test-docs.sh <対象プロジェクト> --ci
+# 導入先プロジェクトで実行（export / init-* が <target>/scripts/ に置いた道具。キット内の実体は tools/）
+./scripts/trace-check.sh docs/lifecycle       # 要件→設計→実装→テストの追跡を機械検証（NG=0 で合格）
+./scripts/check-approval.sh                   # 工程承認の機械検査（記録の有無・版の一致=失効・工程順序。0=合格 1=未承認 2=判定不能）
+./scripts/test-metrics.sh [--gate]            # テスト工程の消化率・合格率・欠陥密度・滞留・完了予測を表から集計（--gate は §7 の基準で 0/1/2）
+python3 scripts/quality_harness.py            # 機能契約ハーネス（契約に沿って実装・テストが揃っているか。NG>0 で exit 1）
 ```
 
 ## DAILY スキル（進め方の制御）
@@ -133,7 +147,7 @@ open docs/操作マニュアル.html           # HTML版の取り扱い説明書
 
 ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP.md`（148行）が唯一の真実源**。ここには複製しない。
 
-## spec/（キット現況の仕様書）— 本体を触る前にここ
+## internal/spec/（キット現況の仕様書。配布しない）— 本体を触る前にここ
 
 全 126 ファイルを読み切った記録。**キット自体を作り込むセッションは `internal/spec/README.md` から始める**。
 設計値の再定義はせず、現況の事実・残課題・バックログだけを持つ（真実源の重複を作らない）。
@@ -150,23 +164,32 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 **本体を変更したら同じコミットで `internal/spec/` を更新する。**
 
-## docs/（キット自体の文書）
+## docs/（利用者向け文書）
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `internal/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 285行 |
+| `docs/利用ガイド.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1159行 |
+| `docs/操作マニュアル.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `利用ガイド.html`・事例・V字章へ導線 | 1443行 |
+| `docs/claude-projects-setup.md` | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ） | 58行 |
+| `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
+| `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
+
+`docs/examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/利用ガイド.html`）。
+
+## internal/（保守者専用。配布しない）
+
+| ファイル | 1行要約 | コスト |
+|---|---|---|
+| `internal/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 298行 |
 | `internal/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
 | `internal/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
 | `internal/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |
-| `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
+| `internal/lessons.md` | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。数値は実測だけ） | 183行 |
 | `internal/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
-| `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
 | `internal/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
-| `docs/利用ガイド.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1158行 |
-| `docs/操作マニュアル.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `利用ガイド.html`・事例・V字章へ導線 | 1443行 |
 
 `internal/rules-rationale/`（3本）: rules の根拠・失敗事例・原文と、H-6 の実測記録の追記先。毎回は読まない。
-`docs/examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/利用ガイド.html`）。
+`internal/spec/`（14本）: 現況仕様。上記「internal/spec/」節。
 
 templates/: `design-system.md`（視覚的指示書。チェックリストは機械/目視の別付き）/ `tokens.css`（デザイントークンの実物。**値の唯一の真実源**。ライト＋ダーク）/ `ui/`（`components.css` 部品 / `layout.css` 骨格 / `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `README.md` FW 別1枚表）/ `components/`（`feedback.js` `icons.js` `demo.html` `demo-shell.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md`（決まっていること・未検証の確かめ方・最初の 5 分つき）/ `ADR-template.md`（判断基準を規格名で・捨てた案）/ `lessons.md` / `implement-profile.md`（止まる条件つき）/ `work-order.md`（別モデルへ渡す作業指示書: 守ること表・Step 完了条件・止まる条件・質問節）
 
@@ -184,7 +207,7 @@ templates/: `design-system.md`（視覚的指示書。チェックリストは�
 `TESTING_STRATEGY.md`（レベル・ゲート・実行タイミング）/ `DEFINITION_OF_DONE.md`（変更タイプ別）/
 `iso29119-test-plan.md` / `iso29119-test-design-spec.md` / `iso29119-test-completion-report.md` / `iso29119-incident-report.md` /
 `system_test_cases.csv`（ツアー観点・severity 列）/ `feature_contracts.yml`（機能契約）。
-機械ゲート: `scripts/quality_harness.py`（契約検証・NG>0 で exit 1、回帰テスト `ci/test-quality-harness.sh`）/ `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（`.ui-verified`）/ CI `templates/github/workflows/test-gates.yml`。
+機械ゲート（導入先の `scripts/` に置かれる。キット内の実体は `tools/`）: `tools/quality_harness.py`（契約検証・NG>0 で exit 1、回帰テスト `ci/test-quality-harness.sh`）/ `tools/ui-hash.py` + `tools/pre-commit-ui-gate.sh`（`.ui-verified`）/ CI `templates/github/workflows/test-gates.yml`。
 工程文書（`templates/lifecycle/05〜08`）はケースと結果、こちらは計画・完了報告・インシデント。重複させない。
 
 ## templates/github/ — GitHub 連携（`--github` で配置）
