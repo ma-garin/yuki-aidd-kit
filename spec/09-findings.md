@@ -329,6 +329,21 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
   理由に指示の先頭を載せる）／`reply-language.py`（Stop: 最後の応答に日本語が無ければ続行）／`prompt-priority.py`（UserPromptSubmit: 緊急語に優先の注入）。
   本セッションの実 transcript の応答前断面で deny、応答後で許可を確認。キット自身の開発セッションにも `.claude/settings.json` で配線（file watcher で即時反映）
 
+### F-26 — 開発用 hook 配線が実体に届かず、保守者のプロンプトが投入ごとブロックされた — **是正済み（6.8.2）**
+
+- evidence: 2026-09-20、リモートセッション（作業ディレクトリ `/home/user/yuki-aidd-kit`）で `UserPromptSubmit` の
+  `python3 "$CLAUDE_PROJECT_DIR"/claude-code/hooks/prompt-priority.py` が `[Errno 2] No such file or directory` で失敗し、
+  保守者の発言が丸ごとブロックされた。`$CLAUDE_PROJECT_DIR` はローカル側の `/Users/.../yuki-aidd-kit` に解決され、そこに実体が無かった
+- severity: **High**（保守者が発言できない。セッションが成立しない）
+- 根本原因: 配線は 3 形あり、`~/.claude/settings.json`（`install_guard.py`）と `<target>/.claude/settings.json`（`export-project.sh`）は
+  **実体を配置してから参照する**のに対し、キット自身の `.claude/settings.json` だけが**リポジトリ内の実体を直接参照**していた。
+  参照先が欠けると python3 が非 0 で終わり、`UserPromptSubmit` はそれを「投入拒否」として扱う。`prompt-priority.py` 自身は常に 0 を返す
+  設計だが、**起動に失敗する経路**が想定外だった
+- 是正: `.claude/settings.json` の 3 本を `sh -c 'f=…; [ -f "$f" ] && exec python3 "$f" || exit 0'` に変更（実体が無ければ無言で飛ばす）。
+  回帰テストを `scripts/test-hooks.sh` の `[.claude/settings.json 配線]` に追加（79 → 83 ケース）
+- 残る論点（構成管理）: `claude-code/hooks/` を `hooks/` へ移すとき、この配線と `install_guard.py` の `--hooks-dir` 既定値
+  （`scripts/install-guard.sh` 経由）が同時に参照切れになる。移動とパス更新は同一コミットで行う
+
 ### severity 別サマリ（更新）
 
 | severity | 件数 | ID |
@@ -337,7 +352,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
 | Medium | 4 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測）／**F-21（警告 hook の stdout。未確認）** |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 22 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／**F-25（M22 指示優先）** |
+| 是正済み | 23 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／**F-25（M22 指示優先）** F-26（6.8.2 配線の耐障害化） |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 
