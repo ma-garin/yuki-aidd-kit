@@ -61,7 +61,7 @@ HISTORY_DOCS = {"docs/Roadmap.md", "docs/AUDIT-2026-07.md"}
 
 ID_LINE_RE = re.compile(r"`([^`]+)`（(\d+)行）")           # 散文の「`x`（N行）」
 TABLE_COST_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|.*\|\s*(\d+)行\s*\|\s*$")
-BACKTICK_PATH_RE = re.compile(r"`((?:skills|templates|scripts|docs|rules|claude-code|github-actions)/[A-Za-z0-9_./\-]+)`")
+BACKTICK_PATH_RE = re.compile(r"`((?:skills|templates|scripts|docs|rules|hooks|commands|github-actions)/[A-Za-z0-9_./\-]+)`")
 CASE_RE = re.compile(r"(\d+)\s*ケース")
 PASS_RE = re.compile(r"PASS=(\d+)")
 
@@ -88,12 +88,12 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
     """INDEX の表・散文に出る名前を実ファイルへ解決する。"""
     cands = []
     if name.startswith("/"):
-        cands.append(root / "claude-code" / "commands" / f"{name[1:]}.md")
+        cands.append(root / "commands" / f"{name[1:]}.md")
     cands += [
         root / name,
         root / "skills" / name / "SKILL.md",
         root / "rules" / f"{name}.md",
-        root / "claude-code" / "hooks" / name,
+        root / "hooks" / name,
     ]
     for c in cands:
         if c.is_file():
@@ -102,7 +102,7 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
 
 
 INVENTORY_PREFIXES = (
-    "", "rules/", "skills/", "claude-code/commands/", "claude-code/hooks/", "scripts/",
+    "", "rules/", "skills/", "commands/", "hooks/", "scripts/",
     "templates/", "templates/lifecycle/", "templates/test/", "templates/github/",
     "templates/components/", "templates/ui/", "docs/", "github-actions/",
 )
@@ -142,15 +142,15 @@ def check_index_coverage(root: Path, r: Result) -> None:
     for d in sorted((root / "skills").glob("*/")):
         if (d / "SKILL.md").is_file() and not listed(d.name):
             r.add(True, "掲載漏れ", f"skills/{d.name}", "INDEX.md に無い")
-    for f in sorted((root / "claude-code" / "commands").glob("*.md")):
+    for f in sorted((root / "commands").glob("*.md")):
         if not listed(f"/{f.stem}"):
-            r.add(True, "掲載漏れ", f"claude-code/commands/{f.name}", "INDEX.md に無い")
+            r.add(True, "掲載漏れ", f"commands/{f.name}", "INDEX.md に無い")
     for f in sorted((root / "rules").glob("*.md")):
         if not listed(f.stem):
             r.add(True, "掲載漏れ", f"rules/{f.name}", "INDEX.md に無い")
-    for f in sorted(list((root / "claude-code" / "hooks").glob("*.sh")) + list((root / "claude-code" / "hooks").glob("*.py"))):
+    for f in sorted(list((root / "hooks").glob("*.sh")) + list((root / "hooks").glob("*.py"))):
         if not listed(f.name):
-            r.add(True, "掲載漏れ", f"claude-code/hooks/{f.name}", "INDEX.md に無い")
+            r.add(True, "掲載漏れ", f"hooks/{f.name}", "INDEX.md に無い")
 
 
 def test_totals(root: Path, skip: bool) -> dict[str, int]:
@@ -260,8 +260,8 @@ def check_counts(root: Path, r: Result) -> None:
     """検査10: 資産の件数を直値で書いた箇所が実数とズレていないか（WARN）。"""
     actual = {
         "skills": len(list((root / "skills").glob("*/SKILL.md"))),
-        "commands": len(list((root / "claude-code" / "commands").glob("*.md"))),
-        "hooks": len(list((root / "claude-code" / "hooks").glob("*.sh"))) + len(list((root / "claude-code" / "hooks").glob("*.py"))),
+        "commands": len(list((root / "commands").glob("*.md"))),
+        "hooks": len(list((root / "hooks").glob("*.sh"))) + len(list((root / "hooks").glob("*.py"))),
     }
     for rel in COUNT_DOCS:
         p = root / rel
@@ -312,10 +312,10 @@ def check_size_targets(root: Path, r: Result, strict: bool) -> None:
         n = wc_l(f)
         if n > SKILL_MAX:
             r.add(strict, "行数目安", f"skills/{f.parent.name}/SKILL.md", f"{n}行 > {SKILL_MAX}")
-    for f in sorted((root / "claude-code" / "commands").glob("*.md")):
+    for f in sorted((root / "commands").glob("*.md")):
         n = wc_l(f)
         if n > COMMAND_MAX:
-            r.add(strict, "行数目安", f"claude-code/commands/{f.name}", f"{n}行 > {COMMAND_MAX}")
+            r.add(strict, "行数目安", f"commands/{f.name}", f"{n}行 > {COMMAND_MAX}")
 
 
 INVENTORY_ROW_RE = re.compile(r"^(\|\s*`([^`]+)`\s*\|\s*)(\d+)(\s*\|.*)$")

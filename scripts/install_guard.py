@@ -34,7 +34,7 @@ def already_wired(entries: list, name: str) -> bool:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--home", default=os.environ.get("HOME", str(Path.home())))
-    ap.add_argument("--hooks-dir", default=str(Path(__file__).resolve().parent.parent / "claude-code" / "hooks"))
+    ap.add_argument("--hooks-dir", default=str(Path(__file__).resolve().parent.parent / "hooks"))
     a = ap.parse_args()
     home = Path(a.home)
     claude = home / ".claude"
@@ -46,7 +46,7 @@ def main() -> int:
     for name, *_ in GUARDS:
         src = hooks_src / name
         if not src.is_file():
-            print(f"❌ {src} が無い（キットの claude-code/hooks を指定する）")
+            print(f"❌ {src} が無い（キットの hooks を指定する）")
             return 1
         shutil.copy2(src, hooks_dst / name)
         (hooks_dst / name).chmod(0o755)

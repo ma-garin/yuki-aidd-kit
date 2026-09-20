@@ -16,9 +16,9 @@
 |---|---|---|
 | `CLAUDE.md.template` | `~/.claude/CLAUDE.md` | `CLAUDE.md.bak` に退避して上書き（手動マージ推奨） |
 | `skills/*` | `~/.claude/skills/` | 上書き |
-| `claude-code/commands/*.md` | `~/.claude/commands/` | 上書き |
-| `claude-code/hooks/*.sh,*.py` | `~/.claude/hooks/`（chmod +x） | 上書き |
-| `claude-code/hooks/settings.json` | `~/.claude/settings.json` | **上書きせず警告**（手動マージを促す） |
+| `commands/*.md` | `~/.claude/commands/` | 上書き |
+| `hooks/*.sh,*.py` | `~/.claude/hooks/`（chmod +x） | 上書き |
+| `hooks/settings.json` | `~/.claude/settings.json` | **上書きせず警告**（手動マージを促す） |
 | `rules/*.md` | `~/.claude/rules/aidd-kit/` | **`~/.claude/rules` 配下に同名があればスキップ**（aidd-kit ディレクトリ自身は prune） |
 | `VERSION` + commit + 日付 | `~/.claude/KIT_VERSION` | 上書き（S2） |
 

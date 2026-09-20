@@ -13,7 +13,7 @@
 ## M1: コンテキスト圧縮（完了 2026-07）
 
 - [x] `skills/context-compression/SKILL.md` 新設（3層要約規約／grep・glob 優先／決定論的作業のスクリプト化）
-- [x] `claude-code/commands/compact-work.md` 追加（スキル呼び出し）
+- [x] `commands/compact-work.md` 追加（スキル呼び出し）
 - [x] `scripts/verify.sh` の確認リストに両者を追加
 
 ## M2: 資産監査と修正（完了 2026-07）
@@ -37,7 +37,7 @@
 ## M5: 検索構造の再設計（完了 2026-07）
 
 - [x] `INDEX.md` を DAILY／LIBRARY の2層＋タグで再構成する
-  - 対象: `INDEX.md`。参照: 全 `skills/*/SKILL.md` の frontmatter と `claude-code/commands/*.md` の1行目、各ファイルの行数（`wc -l`）
+  - 対象: `INDEX.md`。参照: 全 `skills/*/SKILL.md` の frontmatter と `commands/*.md` の1行目、各ファイルの行数（`wc -l`）
   - 内容: 各スキル・コマンドに「1行要約」「タグ（例: #qa #pwa #token #eval）」「参照コスト（読むべき行数目安）」を付与。ECC 連携表は `docs/ECC-ASSET-MAP.md` への参照1行に置換する（AUDIT の A-04 解消）
   - 完了条件: 全14スキル・10コマンドが掲載され、DAILY/LIBRARY の判定基準が冒頭に明記されている
 - [x] `CLAUDE.md.template` に導線を追記する
@@ -105,7 +105,7 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] `scripts/trace-check.sh` を新設。要件→設計→実装→テストの追跡を機械検証する（重複定義／未定義参照／所有ファイル違反／追跡表未記載／カバー漏れ／孤立テストの6種別）。出力は context-compression の3層要約に従い、全件は詳細レポートへ書き出す
 - [x] `scripts/init-lifecycle.sh` を新設（工程雛形の配置。`--github` で Issue/PR/CI テンプレートも配置。既存ファイルは上書きしない）
 - [x] `scripts/test-trace-check.sh` で回帰テスト化（15ケース PASS）。**雛形が最初から NG=0 で始まること**をテストに含めた（雛形が NG を出すと利用者が検査結果を無視するようになるため）
-- [x] `claude-code/commands/` に `/rfd`・`/lifecycle`・`/trace` を追加
+- [x] `commands/` に `/rfd`・`/lifecycle`・`/trace` を追加
 - [x] GitHub 連携: `templates/github/`（RFD・要件・欠陥の Issue テンプレート、関係 ID 欄付き PR テンプレート）と `github-actions/lifecycle-check.yml`（PR で trace-check を実行）
 - [x] 既存資産との接続: `done-gate` に工程ゲート項目、`sdd-ecc-workflow` に使い分けの導線、`CLAUDE.md.template`・`AGENTS.md.template`・`INDEX.md`・`README.md` に工程の導線を追加。`export-project.sh` が `templates/` と `trace-check.sh` を同梱するよう更新
 - 検証記録: `./scripts/install.sh` → `./scripts/verify.sh` NG=0、`./scripts/test-hooks.sh` 8/8、`./scripts/test-trace-check.sh` 15/15
@@ -202,7 +202,7 @@ WebSpec2Doc のテスト運用（TESTING_STRATEGY / DEFINITION_OF_DONE / 29119 �
 - [x] 承認記録の雛形と配置（S16）: `templates/lifecycle/approvals/{phase-approval.md,README.md}`。`init-lifecycle.sh` が `phase-0..9.md` を工程名・covers を差し込んで生成
 - [x] `scripts/phase-hash.py`（S17）: 承認を版に縛る。対象0件は `empty`（対象なしを「一致」にしない）。`ui-hash.py` は UI 専用版として据え置き
 - [x] `scripts/check-approval.sh` ＋ `check_approval.py` ＋ `test-check-approval.sh`（S18、20 ケース 54 アサーション）: exit 0/1/2 の 3 値契約、判定不能を合格に数えない、工程順序の検出（省略された工程は飛ばす）。`covers` に追跡表を入れない設計へ修正（F-19）
-- [x] `claude-code/hooks/block-phase.py`（S19）: `.claude/phase-gate` オプトイン。未承認・失効・判定不能で deny、承認済み工程の成果物の書き換えも deny、`approvals/` は常に許可、バイパス用の環境変数は作らない。settings.json / export-project.sh / install.sh に配線
+- [x] `hooks/block-phase.py`（S19）: `.claude/phase-gate` オプトイン。未承認・失効・判定不能で deny、承認済み工程の成果物の書き換えも deny、`approvals/` は常に許可、バイパス用の環境変数は作らない。settings.json / export-project.sh / install.sh に配線
 - [x] `skills/phase-approval` ＋ `/phase-review`（S20）: 3 役を**順次**（追跡・仕様一致・リスク）。Agent 並列はトークン約 7 倍で使わない。AI は `approver` を埋めない
 - [x] 既存資産への配線（S21）: 全 10 工程テンプレートに「## 承認」節、`phase-gates.md` に承認ゲート節と機械／人間の境界表、共通出口基準 3→4、`dev-lifecycle/SKILL.md`・`/lifecycle`・`done-gate`・`verify.sh`・`kit-ci.yml`
 - [x] 文書化（S22）: `docs/userguide.html` に「工程の承認ゲート」章（実測した deny メッセージ付き）、PRD FR-14、`spec/09` F-17〜F-19、`spec/10` Q-11
@@ -276,9 +276,9 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 背景: 作業中に届いた保守者の指示を読み飛ばし、英語で途中報告を続けた（`spec/09` F-25、Critical）。保守者「仕組みで改善しなさい」。
 
 - [x] `rules/absolute-rules.md` A-13 指示優先（指示 ＞ 計画 ＞ 自分の規範）。rules 91 行 ≦ 100
-- [x] `claude-code/hooks/instruction-guard.py`（PreToolUse 全ツール）: transcript 末尾を後ろから走査。発言の後に日本語の応答が無ければ deny、理由に指示の先頭。サブエージェント・機械由来タグ・transcript 無しは fail-open
+- [x] `hooks/instruction-guard.py`（PreToolUse 全ツール）: transcript 末尾を後ろから走査。発言の後に日本語の応答が無ければ deny、理由に指示の先頭。サブエージェント・機械由来タグ・transcript 無しは fail-open
 - [x] `reply-language.py`（Stop、判定を共有）／`prompt-priority.py`（UserPromptSubmit、緊急語に注入）
-- [x] 配線: `claude-code/hooks/settings.json`・`export-project.sh` ヒアドキュメント・キット自身の `.claude/settings.json`（`$CLAUDE_PROJECT_DIR` 参照）
+- [x] 配線: `hooks/settings.json`・`export-project.sh` ヒアドキュメント・キット自身の `.claude/settings.json`（`$CLAUDE_PROJECT_DIR` 参照）
 - [x] `test-hooks.sh` 16 ケース追加（63 → 79）。本セッションの実 transcript の応答前断面で deny・応答後で許可を確認
 - [x] `AGENTS.md.template` 必須プロセス・`CLAUDE.md.template` hooks 一覧・INDEX・spec/01・spec/09 F-25・spec/10 Q-16・PRD FR-17・`maintainer-tendencies.md` #31
 - [x] **Claude Code 全体に効かせる導入**（保守者「この環境ではない。claude code 全体全て」）: `scripts/install-guard.sh` / `install_guard.py` が既存 `~/.claude/settings.json` に配線を merge（冪等）。`install.sh` からも自動実行。test-install 84 → 102

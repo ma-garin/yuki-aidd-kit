@@ -8,8 +8,8 @@
                     │  ~/.claude/AGENTS.md          ← AGENTS.md.template（共通規約の本体）│
                     │  ~/.claude/rules/aidd-kit/*   ← rules/（常時読み込み）       │
                     │  ~/.claude/skills/<name>/     ← skills/                     │
-                    │  ~/.claude/commands/*.md      ← claude-code/commands/       │
-                    │  ~/.claude/hooks/*.sh|*.py    ← claude-code/hooks/          │
+                    │  ~/.claude/commands/*.md      ← commands/       │
+                    │  ~/.claude/hooks/*.sh|*.py    ← hooks/          │
                     │  ~/.claude/settings.json      ← hooks/settings.json         │
                     └──────────────────────────────────────────────────────────────┘
 
@@ -79,7 +79,7 @@
 | 系統 | 仕組み | 制御点 |
 |---|---|---|
 | **暗黙発火** | `SKILL.md` frontmatter の `description` に「〜への言及があれば必ずこのスキルを使うこと」形式で発火語を列挙 | 発火しなかったスキルは `retro` で description に言い回しを追加する（`skills/retro/SKILL.md`） |
-| **明示呼び出し** | `claude-code/commands/<name>.md` → `/<name>` | コストは呼んだ時だけ発生（INDEX の設計） |
+| **明示呼び出し** | `commands/<name>.md` → `/<name>` | コストは呼んだ時だけ発生（INDEX の設計） |
 | **強制（hook）** | `settings.json` の PreToolUse / PostToolUse / Stop / statusLine | 唯一 AI の意思で回避できない層。`block-explore.sh`（exit 2）と `block-gates.py`（deny JSON）が実際にブロックする |
 
 ### description の書式パターン（20スキル共通）

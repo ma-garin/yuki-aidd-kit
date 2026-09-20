@@ -1077,7 +1077,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
           <thead><tr><th>症状</th><th>たぶんこれ</th><th>対処</th></tr></thead>
           <tbody>
             <tr><td><code>./scripts/install.sh: Permission denied</code></td><td>実行権限が無い</td><td><code>bash scripts/install.sh</code> のように <code>bash</code> を頭に付けて実行</td></tr>
-            <tr><td><code>⚠ settings.json が既存。手動でマージしてください</code></td><td>自分で作った Claude Code の設定がすでにある</td><td><code>claude-code/hooks/settings.json</code> の中身（<code>hooks</code> と <code>statusLine</code>）を、自分の <code>~/.claude/settings.json</code> にコピーして足す。分からなければ Claude Code に「この 2 つの JSON をマージして」と頼む</td></tr>
+            <tr><td><code>⚠ settings.json が既存。手動でマージしてください</code></td><td>自分で作った Claude Code の設定がすでにある</td><td><code>hooks/settings.json</code> の中身（<code>hooks</code> と <code>statusLine</code>）を、自分の <code>~/.claude/settings.json</code> にコピーして足す。分からなければ Claude Code に「この 2 つの JSON をマージして」と頼む</td></tr>
             <tr><td><code>↷ rules/xxx.md は既存のためスキップ</code></td><td>同じ名前の規律を自分で置いている</td><td>意図した重複なら放置。キット版に置き換えたいなら自分の方を消して再実行</td></tr>
             <tr><td>AI がスキルを使っている気がしない</td><td>入っていない、または言葉が合っていない</td><td><code>./scripts/verify.sh</code> で確認。狙って使うなら「design-system スキルで」と名前を言う</td></tr>
             <tr><td>「テストは要求時のみ」と拒否された</td><td>約束 1（hook が拒否）</td><td>「テストを実行して」と明示する</td></tr>

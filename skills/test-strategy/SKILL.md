@@ -76,7 +76,7 @@ description: プロジェクトのテスト活動全体（テストレベル L1�
 |---|---|---|
 | UI 検証マーカー | E2E 未実行・検証後に UI を変更したコミット | `scripts/ui-hash.py` + `scripts/pre-commit-ui-gate.sh`（`references/ui-verified-gate.md`） |
 | 機能契約ハーネス | UI だけあって実行経路が無い機能、critical/high に失敗系テストが無い機能、契約未登録の新モジュール | `scripts/quality_harness.py` + `quality/feature_contracts.yml`（`references/feature-contracts.md`） |
-| ゲートの無断実行 | 要求されていない pytest / make test | `claude-code/hooks/block-gates.py` |
+| ゲートの無断実行 | 要求されていない pytest / make test | `hooks/block-gates.py` |
 | 秘密情報 | API キー等の混入 | `scripts/pre-commit` |
 
 ## ISO/IEC/IEEE 29119 文書との対応（雛形: `templates/test/`、配置: `./scripts/init-test-docs.sh <対象>`）

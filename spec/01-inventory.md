@@ -9,13 +9,13 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 306 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
+| `README.md` | 305 | 人間向けの入口。版歴（Ver.5.0〜6.4）・導入2方式・推奨フロー・構成ツリー・合言葉 |
 | `INDEX.md` | 203 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 30 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 80 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `claude-projects-setup.md` | 58 | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ5ファイル） |
 | `.gitignore` | 29 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
-| `.claude/settings.json` | 39 | キット自身の開発セッション用の hooks 配線（instruction-guard / prompt-priority / reply-language を `$CLAUDE_PROJECT_DIR` 参照で）。実体が無ければ無言で飛ばす（`sh -c` の存在確認つき。F-26）。配布形は `claude-code/hooks/settings.json`（M22） |
+| `.claude/settings.json` | 39 | キット自身の開発セッション用の hooks 配線（instruction-guard / prompt-priority / reply-language を `$CLAUDE_PROJECT_DIR` 参照で）。実体が無ければ無言で飛ばす（`sh -c` の存在確認つき。F-26）。配布形は `hooks/settings.json`（M22） |
 | `VERSION` | 1 | 版の真実源（`6.3.0`）。git tag と対応。`install.sh` / `export-project.sh` が導入先の `KIT_VERSION` に刻印 |
 
 ---
@@ -82,7 +82,7 @@
 
 ---
 
-## claude-code/commands/（18件・411行）
+## commands/（18件・411行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -107,7 +107,7 @@
 
 ---
 
-## claude-code/hooks/（8件・356行）
+## hooks/（8件・356行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
@@ -247,7 +247,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 306 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 305 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |

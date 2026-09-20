@@ -17,14 +17,14 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 
 ## スコープ / 対象外
 
-- スコープ: `skills/`・`claude-code/`（commands, hooks）・`scripts/`・`templates/`・`docs/`・`INDEX.md`・`*.template`
+- スコープ: `skills/`・`commands/`・`hooks/`・`scripts/`・`templates/`・`docs/`・`INDEX.md`・`*.template`
 - 対象外: ECC 本体（外部参照のみ）、実プロジェクトのコード、CI/CD 基盤（`github-actions/` は配布用サンプル）
 
 ## 機能要求（FR）
 
 - **FR-01 スキル供給**: `skills/<name>/SKILL.md`（frontmatter: name / description 必須）形式でスキルを提供する
   - 検証基準: 全スキルが frontmatter を持ち、`./scripts/verify.sh` の対象リストに含まれ OK になる
-- **FR-02 コマンド供給**: `claude-code/commands/<name>.md` 形式で、対応スキルを呼び出すスラッシュコマンドを提供する
+- **FR-02 コマンド供給**: `commands/<name>.md` 形式で、対応スキルを呼び出すスラッシュコマンドを提供する
   - 検証基準: 各コマンドが「引数」「実行内容」を持ち、参照先スキルが実在する
 - **FR-03 hooks 供給**: 書き込み前チェック・HTML 保存後チェック・セッション終了時リマインド・実装モードの探索ブロック・ゲート実行の要求時限定（`block-gates.py`）・進捗表示（`progress.py` / `statusline.py`）の7 hook と、それらを配線した `settings.json` を提供する
   - 検証基準: stdin に Claude Code hooks 形式の JSON を渡すと期待出力を返す（`./scripts/test-hooks.sh` 19 ケース。`docs/AUDIT-2026-07.md` A-01 の再発防止）

@@ -83,7 +83,7 @@ open docs/yuki-aidd-kit-manual.html           # HTML版の取り扱い説明書�
 | `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 16行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
 
-## claude-code/hooks/（settings.json で配線）
+## hooks/（settings.json で配線）
 
 | hook | 発火 | 役割 |
 |---|---|---|
