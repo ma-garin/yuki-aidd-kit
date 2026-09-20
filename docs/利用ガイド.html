@@ -291,7 +291,8 @@ Claude Code / Codex
    ├─ hooks/ …………… 7 個（頼んでいないテストを止める、調べ直しを止める、進み具合を表示）
    │
    │  ④ 人が使う道具
-   ├─ scripts/ ………… 導入・配布・検査（verify / export / check-docs / check-design …）
+   ├─ scripts/ ………… 導入・配布（install / export / init / verify / check-design）
+   ├─ tools/ …………… あなたのプロジェクトの scripts/ に置かれて動く道具（trace-check / check-approval / test-metrics …）
    └─ templates/ …… 雛形（工程文書・テスト文書・デザインの CSS と部品）</pre></div>
 
         <div class="grid-2">
@@ -370,10 +371,10 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <p class="why">Claude Code は <code>CLAUDE.md</code> を通して、Codex は <code>AGENTS.md</code> を直接読みます。この 1 行で、両方が同じ本体を読むようになります。</p>
           </li>
           <li><strong>（任意）壊れていないことを機械で確かめる</strong>
-            <pre><code>./ci/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。19 ケース</span>
-./ci/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。73 ケース。本物の ~/.claude には触りません</span></code></pre>
+            <pre><code>./ci/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。83 ケース</span>
+./ci/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。102 ケース。本物の ~/.claude には触りません</span></code></pre>
             <p class="expect"></p>
-            <pre><code>結果: PASS=19 / FAIL=0
+            <pre><code>結果: PASS=83 / FAIL=0
 ✅ 全て正常</code></pre>
           </li>
         </ol>

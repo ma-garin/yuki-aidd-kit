@@ -58,7 +58,7 @@ install で `~/.claude/rules/aidd-kit/`、export で `<target>/.claude/rules/` �
 
 ---
 
-# 2. docs/（2,096行）
+# 2. docs/（利用者向け）と internal/（保守者専用。7.0.0 で分離）
 
 ## `Vision.md`（47行）
 目的・解決したい問題6件・到達点3つ・Non-Goals・**配置の2層**・価値の判定基準。→ `internal/spec/00-overview.md` に要約済み。

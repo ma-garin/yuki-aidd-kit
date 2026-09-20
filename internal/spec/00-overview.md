@@ -63,23 +63,26 @@
 
 ---
 
-## 規模（2026-09-19 実測・M20 後）
+## 規模（2026-09-20 実測・M23 後・7.0.0）
 
 | 区分 | 件数 | 行数 |
 |---|---|---|
-| skills（SKILL.md） | 20 | 1,475 |
-| skills/*/references/ | 15 | 1,788 |
+| skills（SKILL.md） | 20 | 1,489 |
+| skills/*/references/ | 16 | 1,839 |
 | skills/atarimae-quality-audit/scan.sh | 1 | 77 |
-| commands | 18 | 411 |
-| hooks（sh 4 + py 9 + settings.json） | 14 | 867 |
-| rules | 4 | 104 |
-| scripts（sh 24 + py 8 + pre-commit） | 33 | 4,734 |
-| templates（lifecycle11 ＋ approvals2 / test8 / github5 / components4 / ui6 / 単体7） | 42 | 2,890 |
-| docs（うち examples/library-loan 7件 1,734行） | 20 | 5,510 |
-| templates/github/workflows（配布用サンプル） | 4 | 171 |
+| commands | 18 | 416 |
+| hooks（sh + py + settings.json） | 17 | 1,118 |
+| rules | 4 | 108 |
+| scripts（キットの checkout から実行する入口） | 13 | 1,201 |
+| tools（導入先の scripts/ に置かれて動く道具） | 10 | 1,714 |
+| ci（回帰テスト・check-docs。配布しない） | 12 | 2,107 |
+| templates（うち github/workflows 4件＝旧 github-actions） | 47 | 3,163 |
+| docs（利用者向け。うち examples/library-loan 7件） | 12 | 4,620 |
+| internal（保守者専用。spec を除く） | 10 | 1,180 |
+| internal/spec（現況仕様。目録の対象外） | 14 | 2,919 |
 | .github/workflows/kit-ci.yml（キット自身の CI） | 1 | 70 |
-| ルート（README / INDEX / 2 template / claude-projects-setup / .gitignore / VERSION） | 7 | 669 |
-| **合計** | **179** | **18,766** |
+| ルート（README / CHANGELOG / INDEX / 2 template / .gitignore / VERSION / .claude/settings.json） | 7 | 529 |
+| **合計** | **202** | **22,550** |
 
 うち最大は `docs/examples/library-loan/library-loan.html`（生成物）、`docs/操作マニュアル.html`、
 `docs/利用ガイド.html`、`skills/uiux_review/references/viewpoints.md`。
@@ -99,6 +102,7 @@
 Ver.6.1 以降は、実プロジェクト（WebSpec2Doc / UX_Auto_Reviewer / my_forward）で育った運用を
 キットへ還流する流れ。**出所と実損害が各所に明記されている**のが特徴（例: テスト資産 17 件が
 1 週間陳腐化した事故 → `test-strategy` の「ゲートの実行タイミング」節）。
+- **7.0.0**（2026-09-20）: 構成管理: 配布物（skills/commands/hooks/rules/templates/tools）と保守者専用（internal/・ci/）を分ける。README を導入に絞り版歴を CHANGELOG.md へ（M23）
 
 ## 設計思想（横断する4本の柱）
 

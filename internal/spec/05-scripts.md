@@ -4,6 +4,16 @@
 
 ---
 
+## 配置（7.0.0・M23）
+
+| 置き場所 | 何が入るか | 動く場所 |
+|---|---|---|
+| `scripts/` | install / install-guard（.sh + .py）/ verify / export-project / init-project / init-lifecycle / init-test-docs / check-design（.sh + .py）/ token-audit（.sh + .py）/ audit-app-workspace — 13 本 | キットの checkout |
+| `tools/` | trace-check / quality_harness / ui-hash / pre-commit-ui-gate / check_approval + check-approval / phase-hash / test_metrics + test-metrics / pre-commit — 10 本 | 導入先の `scripts/`（export-project / init-lifecycle / init-test-docs がコピー。install は check_approval と phase-hash を `~/.claude/scripts/` へ） |
+| `ci/` | test-*.sh 10 本 / check-docs（.sh + .py） | 保守者と `.github/workflows/kit-ci.yml`。配布しない |
+
+本章の見出しはファイル名だけで書く。導入先での呼び方は従来どおり `./scripts/<道具>`。
+
 ## 導入・配布（4件）
 
 ### `install.sh`（57行）— グローバル導入
@@ -266,7 +276,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 - 出力は3層、全件は `check-design-report.md`（`.gitignore` 済み）。対象なしは exit 0
 - 配布先では `./scripts/check-design.sh static src` のように対象を渡す（`templates/design-system.md` 再現チェックリストの機械判定分）
 
-## 回帰テスト（7件・全 green）
+## 回帰テスト（`ci/`・全 green）
 
 | スクリプト | 行 | ケース数 | 2026-09-16 実測 | 特筆 |
 |---|---|---|---|---|
