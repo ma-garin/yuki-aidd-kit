@@ -228,6 +228,11 @@ OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_pat
 expect_contains "Stop: 最後の応答に日本語が無ければ block で続行させる" '"decision": "block"' "$OUT"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: stop_hook_active なら何もしない（無限ループ防止）" "$OUT" "$RC"
+# 最後の assistant エントリは Stop フックの後に transcript へ書かれる。未応答か未書込かを
+# 区別できないため、Stop では未応答を理由に止めない（毎ターンの誤検知を防ぐ）
+{ u_text "構成案を出して"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 応答が未書込でも止めない（未応答の検出は PreToolUse 側の担当）" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_text "報告します。"; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 日本語で応答していれば何もしない" "$OUT" "$RC"

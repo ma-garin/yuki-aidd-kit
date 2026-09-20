@@ -40,11 +40,14 @@ def main() -> int:
     if verdict is None:
         return 0
     kind, inst = verdict
-    head = " ".join(inst.split())[:80]
+    # Stop は「応答し終えたから止まる」時点で動く。ところが最後の assistant エントリは
+    # このフックの後に transcript へ書かれるため、'unanswered' は「本当に無応答」なのか
+    # 「まだ書き込まれていない」のか区別できない。毎ターン誤って差し戻すので採らない。
+    # 無応答の検出は PreToolUse 側（instruction-guard.py）が担う。
     if kind == "unanswered":
-        reason = f"[reply-language] 保守者の指示「{head}」に応答せずに終わろうとしている。日本語で応答してから終える（A-13）"
-    else:
-        reason = f"[reply-language] 最後の応答に日本語が無い。指示「{head}」は日本語。日本語で出し直す（A-13）"
+        return 0
+    head = " ".join(inst.split())[:80]
+    reason = f"[reply-language] 最後の応答に日本語が無い。指示「{head}」は日本語。日本語で出し直す（A-13）"
     print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
     return 0
 
