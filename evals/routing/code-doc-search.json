@@ -1,0 +1,31 @@
+{
+  "skill": "code-doc-search",
+  "positive": [
+    {
+      "prompt": "Playwright の最新バージョンの変更点を調べて",
+      "top_k": 1
+    },
+    {
+      "prompt": "Streamlit の API リファレンスの使い方を探して",
+      "top_k": 1
+    },
+    {
+      "prompt": "cc-sdd のインストール方法のドキュメントを確認したい",
+      "top_k": 2
+    },
+    {
+      "prompt": "Claude Code の hooks の仕様を確認して",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "トークンを節約して要約して",
+      "owner": "context-compression"
+    },
+    {
+      "prompt": "ECC の資産を選んで",
+      "owner": "ecc-daily-router"
+    }
+  ]
+}

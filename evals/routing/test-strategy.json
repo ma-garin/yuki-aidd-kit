@@ -1,0 +1,31 @@
+{
+  "skill": "test-strategy",
+  "positive": [
+    {
+      "prompt": "テスト戦略とテスト計画を決めたい。テストレベルとカバレッジ基準",
+      "top_k": 1
+    },
+    {
+      "prompt": "E2E をいつ回すか、品質ゲートで pre-commit で何を止めるか決めて",
+      "top_k": 1
+    },
+    {
+      "prompt": "29119 のテスト完了報告とインシデントレポートを書いて",
+      "top_k": 1
+    },
+    {
+      "prompt": "テストが陳腐化した。ゲートの実行タイミングを設計して",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "Playwright のスモークテストを書いて",
+      "owner": "test-automation"
+    },
+    {
+      "prompt": "E2E をフェーズ 2 から回して",
+      "owner": "e2e-cycle"
+    }
+  ]
+}

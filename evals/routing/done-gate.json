@@ -1,0 +1,31 @@
+{
+  "skill": "done-gate",
+  "positive": [
+    {
+      "prompt": "これで完了。リリースしていい？",
+      "top_k": 1
+    },
+    {
+      "prompt": "できた。終わったのでクローズして",
+      "top_k": 1
+    },
+    {
+      "prompt": "完成したと思うが完了基準を満たしているか確認して",
+      "top_k": 1
+    },
+    {
+      "prompt": "Definition of Done を通して",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "徹底的に洗い出して品質を上げて",
+      "owner": "atarimae-quality-audit"
+    },
+    {
+      "prompt": "テストを書いて動作確認して",
+      "owner": "test-automation"
+    }
+  ]
+}

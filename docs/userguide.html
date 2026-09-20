@@ -386,7 +386,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ├── rules/aidd-kit/      ← 規律 4 本
 ├── skills/              ← 手順書 20 本（各フォルダに SKILL.md）
 ├── commands/            ← スラッシュコマンド 18 本
-├── hooks/               ← 見張り役 16 本
+├── hooks/               ← 見張り役 18 本
 └── settings.json        ← hooks を Claude Code に登録する設定</code></pre>
         </div>
       </section>
@@ -399,13 +399,15 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <pre><code><span class="c"># キットのフォルダで実行。引数は「配りたいプロジェクトのフォルダ」</span>
 ./scripts/export-project.sh ~/work/my-app</code></pre>
             <p class="expect"></p>
-            <pre><code>=== AIDD Kit プロジェクト配布（版: 6.3.0 xxxxxxx 2026-09-17）===
+            <pre><code>=== AIDD Kit プロジェクト配布（版: 6.9.0 xxxxxxx 2026-09-19）===
 対象: <対象ディレクトリ>
 ✅ スキル: 20個
 ✅ コマンド: 18個
-✅ Hooks: 7個（プロジェクトスコープ・相対パス参照。block-explore.sh も配線済み）
+✅ settings: effortLevel=high / autoCompactWindow=200k / BASH_MAX_OUTPUT_LENGTH=12000
+✅ Hooks: 16個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み ...）
+✅ .codex/hooks.json: Codex CLI 用に 5 hook を配線（block-gates / filter-output / floor-guard / prompt-priority / context-guard。Codex で /hooks を開いて信頼すると有効）
 ✅ Rules: 4個（.claude/rules/）
-✅ .claude/KIT_VERSION: 6.3.0 xxxxxxx 2026-09-17
+✅ .claude/KIT_VERSION: 6.9.0 xxxxxxx 2026-09-19
 ✅ INDEX.md 同梱
 ✅ templates 同梱
 ✅ scripts/trace-check.sh 同梱 ...
@@ -414,7 +416,8 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 === 完了 ===
 次にやること:
 1. AGENTS.md と CLAUDE.md 内の残りの &lt;...&gt; プレースホルダを埋める
-2. git add .claude AGENTS.md CLAUDE.md scripts/ &amp;&amp; git commit</code></pre>
+2. git add .claude .codex AGENTS.md CLAUDE.md scripts/ &amp;&amp; git commit
+3. ... Codex を使う場合: codex を起動し /hooks を開いて .codex/hooks.json を信頼する</code></pre>
             <p class="why">プロジェクト直下に <code>.claude/</code>（A で <code>~/.claude/</code> に入ったものと同じ中身）と <code>AGENTS.md</code> / <code>CLAUDE.md</code> を作ります。すでに同名ファイルがあれば <code>.bak</code> に退避します。</p>
           </li>
           <li><strong>プロジェクト固有のことを書き足す</strong>
@@ -423,9 +426,16 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
           </li>
           <li><strong>git に含める</strong>
             <pre><code>cd ~/work/my-app
-git add .claude AGENTS.md CLAUDE.md scripts
+git add .claude .codex AGENTS.md CLAUDE.md scripts
 git commit -m "chore: add AIDD Kit"</code></pre>
-            <p class="why">コミットしておくと、他の人が clone したときも、クラウドの Claude Code が開いたときも、同じ設定が付いてきます。</p>
+            <p class="why">コミットしておくと、他の人が clone したときも、クラウドの Claude Code が開いたときも、同じ設定が付いてきます。<code>.codex/hooks.json</code> は Codex 用の見張り役の登録（5 つ）です。</p>
+          </li>
+          <li><strong>（Codex も使う人だけ）見張り役を信頼する</strong>
+            <pre><code>cd ~/work/my-app
+codex
+<span class="c"># Codex の中で</span>
+/hooks</code></pre>
+            <p class="why">Codex はプロジェクトに入っている見張り役を、あなたが一度「信頼する」と言うまで動かしません（勝手に仕込まれた hook を防ぐため）。<code>/hooks</code> の画面で <code>.codex/hooks.json</code> を信頼してください。中身を変えたときはもう一度聞かれます。効くのは「出力を絞る」「長く空いた再開を知らせる」「急ぎの指示を優先する」「テストの無断実行を止める」「テストやしきい値を弱める変更を止める」の 5 つで、それ以外（ファイル編集の見張り・指示への応答の見張り）は Claude Code だけです。</p>
           </li>
         </ol>
         <h3>まだプロジェクトが無いとき（ゼロから作る）</h3>
@@ -668,12 +678,12 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
 ./scripts/test-hooks.sh          <span class="c"># 見張り役が反応するか（63）</span>
 ./scripts/test-install.sh        <span class="c"># 導入・配布が正しいか（84）</span>
 ./scripts/test-git-gates.sh      <span class="c"># 秘密情報・UI 検証マーカーの検査が正しいか（27）</span>
-./scripts/check-docs.sh          <span class="c"># 説明書と中身がズレていないか</span>
+./scripts/check-docs.sh          <span class="c"># 説明書と中身がズレていないか（--changed: 変更を説明する文書が未更新なら NG）</span>
 ./scripts/check-design.sh        <span class="c"># デザイン部品に直値・外部読み込み・alert() が無いか</span>
 ./scripts/check-approval.sh      <span class="c"># 工程の承認が揃っているか・失効していないか</span>
 ./scripts/token-audit.sh         <span class="c"># トークン節約の仕組みが配線されているか</span>
 ./scripts/test-metrics.sh        <span class="c"># テストの消化率・合格率・Critical/High 残・完了予測</span></code></pre>
-        <p>ほかに <code>test-trace-check.sh</code>（15）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（25）、<code>test-check-design.sh</code>（44）、<code>test-check-approval.sh</code>（54）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
+        <p>ほかに <code>test-trace-check.sh</code>（15）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（46）、<code>test-check-design.sh</code>（44）、<code>test-check-approval.sh</code>（54）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
 
         <h3>自分のプロジェクトで使う検査</h3>
         <table>
@@ -681,7 +691,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
           <tbody>
             <tr><td>秘密情報スキャン</td><td>API キーやパスワードをうっかりコミットする</td><td><code>scripts/pre-commit</code> を git の pre-commit hook に登録すると、コミットのたびに自動で見ます（これは「自分のパソコンの中」で動くローカルの仕組みです）</td></tr>
             <tr><td>UI 検証マーカー</td><td>画面テスト（E2E）をしていない、または合格後に画面を変えた状態でコミットする</td><td><code>scripts/pre-commit-ui-gate.sh</code>。E2E 合格時に <code>.ui-verified</code> を作り、それと画面ファイルの指紋を照合</td></tr>
-            <tr><td>機能契約ハーネス</td><td>画面だけあって裏の処理が無い「見せかけの機能」、失敗時のテストが無い機能</td><td><code>python3 scripts/quality_harness.py</code></td></tr>
+            <tr><td>機能契約ハーネス</td><td>画面だけあって裏の処理が無い「見せかけの機能」、失敗時のテストが無い機能</td><td><code>python3 scripts/quality_harness.py</code></td></tr>。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
             <tr><td>追跡表の検査</td><td>要件が設計・実装・テストのどこにも落ちていない</td><td><code>./scripts/trace-check.sh docs/lifecycle</code>（工程文書を使う案件のみ）</td></tr>
             <tr><td>工程の承認ゲート</td><td>前の工程が未承認・失効のまま次の工程へ進む／承認後に成果物が差し替わる</td><td><code>./scripts/check-approval.sh</code>（詳しくは<a href="#approval">工程の承認ゲート</a>）</td></tr>
             <tr><td>デザインの直値検査</td><td>CSS に <code>#1976D2</code> や <code>16px</code> をベタ書き、外部サイトからフォントやアイコンを読む、<code>alert()</code> を使う</td><td><code>./scripts/check-design.sh static src</code>（見たいフォルダを並べる）</td></tr>
@@ -1048,7 +1058,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
         <p>「床」は毎回のセッション開始で必ず読まれる分の<strong>推定</strong>です。本当の数字は Claude Code で <code>/context</code>（何が載っているか）と <code>/usage</code>（何に使ったか・キャッシュミス）を打つと出ます。週に 1 回、<code>docs/lessons.md</code> の表に 1 行残してください。会話内で <code>/token-check</code> と打つと、AI がこの点検を代行して結果を読み解きます。</p>
 
         <h3>Codex では</h3>
-        <p>hook は Claude Code だけの仕組みです。Codex では <code>AGENTS.md</code> の散文（grep してから読む・出力は 3 層・決定論的な作業はスクリプトに）を AI が自分で守る形になります。設定 3 つと <code>/clear</code> 相当（新しい会話で始める）は同じ考え方で使えます。</p>
+        <p>Codex にも同じ仕組みの hook があります（2026-09 時点）。<code>export-project.sh</code> が <code>.codex/hooks.json</code> を書き出し、「出力を絞る」「長く空いた再開を知らせる」「急ぎの指示を優先する」「ゲートの無断実行を止める」「テストやしきい値を弱める変更を止める」の 5 つが Codex でも動きます。初回は Codex で <code>/hooks</code> を開いて信頼してください（内容を変えると再承認）。「大きいファイルは先頭だけ読む」は Codex にファイルを読む道具が無いため効かず、<code>AGENTS.md</code> の約束事として AI が自分で守る形になります。設定 3 つと <code>/clear</code> 相当（新しい会話で始める）は同じ考え方で使えます。</p>
       </section>
 
       <section id="design">
@@ -1084,6 +1094,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
             <tr><td>「hook にブロックされました」</td><td>約束 3（実装モード中）</td><td><code>/plan</code> と打つと解除</td></tr>
             <tr><td>完了報告に「未検証」がある</td><td>約束 2（正直な報告）</td><td>必要なら「テストを回して検証して」。そのままでもよい</td></tr>
             <tr><td>Codex が約束事を読んでいない</td><td><code>~/.codex/AGENTS.md</code> が無い</td><td>導入 A の手順 4（<code>ln -s</code>）を実行</td></tr>
+            <tr><td>Codex で見張り役（テスト拒否・出力の絞り込み）が効かない</td><td><code>.codex/hooks.json</code> を信頼していない、または導入 A だけで B をしていない</td><td>導入 B の手順 4（<code>/hooks</code> で信頼）。グローバル導入（A）は Codex の hook には届きません</td></tr>
             <tr><td>キットを最新にしたい</td><td>—</td><td>キットのフォルダで <code>git pull</code> → <code>./scripts/install.sh &amp;&amp; ./scripts/verify.sh</code>。配布先は <code>export-project.sh</code> を再実行（既存は <code>.bak</code> に退避）</td></tr>
             <tr><td>どの版を入れたか忘れた</td><td>—</td><td><code>cat ~/.claude/KIT_VERSION</code>（配布先は <code>.claude/KIT_VERSION</code>）。版・コミット・日付が出ます</td></tr>
             <tr><td>自分のプロジェクトに CI を入れたい</td><td>—</td><td><code>github-actions/</code> の 4 本を <code>.github/workflows/</code> にコピー。どれも手動起動のみ。自動にしたければ自分の判断で <code>on:</code> を書き換える</td></tr>

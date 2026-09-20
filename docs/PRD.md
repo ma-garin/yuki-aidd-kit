@@ -32,7 +32,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: `verify.sh` が rules の配置を OK/NG で報告する。同名ファイルが利用者の `~/.claude/rules` 配下に既にある場合は上書きせずスキップする
 - **FR-04 導入・検証スクリプト**: `install.sh` が `~/.claude/` へ配置し、`verify.sh` が全資産の配置を OK/NG で報告し、NG>0 で exit 1 を返す
   - 検証基準: クリーン環境で install → verify が NG=0・exit 0 で完了する（`./scripts/test-install.sh` が HOME 差し替えで検証）
-- **FR-04a プロジェクト配布**: `export-project.sh <target>` が対象プロジェクト直下に `.claude/`（skills・commands・hooks・rules・settings.json・INDEX.md 一式）と `AGENTS.md`・`CLAUDE.md` を生成し、install なしで Codex・エフェメラルな Claude Code 環境でも動作する形にする
+- **FR-04a プロジェクト配布**: `export-project.sh <target>` が対象プロジェクト直下に `.claude/`（skills・commands・hooks・rules・settings.json・INDEX.md 一式）と `.codex/hooks.json`（Codex CLI 用。入出力を照合済みの hook だけを配線）と `AGENTS.md`・`CLAUDE.md` を生成し、install なしで Codex・エフェメラルな Claude Code 環境でも動作する形にする
   - 検証基準: 生成物を対象プロジェクトの git にコミットするだけで、そのプロジェクトを開いた別セッションでスキル・コマンド・hooks が発火する。既存ファイルがある場合は `.bak` に退避してから上書きする
 - **FR-05 検索構造**: `INDEX.md` が DAILY／LIBRARY の2層で全資産への導線を提供する
   - 検証基準: 全スキル・コマンドが INDEX.md に1行要約＋参照コスト付きで掲載されている
@@ -50,8 +50,8 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: `tokens.css` の変数名が SKILL.md と一致し、`templates/design-system.md` の再現チェックリストで直値・フィードバック・文言・アイコンが確認できる
 - **FR-11 版の刻印**: `VERSION` を真実源とし、`install.sh` / `export-project.sh` が導入先に `KIT_VERSION`（版・commit・日付）を書く。配布先がどの版のキットから出たかを判別できる
   - 検証基準: `./scripts/test-install.sh` が KIT_VERSION の3フィールドと VERSION との一致を assert する
-- **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` から**保守者が手動起動したときだけ**実行する（自動実行はしない。ゲートは要求時のみ、の規律と同じ）
-  - 検証基準: `./scripts/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec/01 同期）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
+- **FR-12 キット自身の回帰テストと文書整合**: 入口スクリプト（`test-install.sh`）・git ゲート（`test-git-gates.sh`）・文書整合（`check-docs.sh`）・スキル発火（`skill-route-check.sh`）を回帰テスト化し、`.github/workflows/kit-ci.yml` から**保守者が手動起動したときだけ**実行する（自動実行はしない。ゲートは要求時のみ、の規律と同じ）
+  - 検証基準: `./scripts/check-docs.sh` が NG=0（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・spec/01 同期）。コミット前は `--changed` も NG=0（変更を説明する文書が同じ差分で更新されている。`docs-gate.py` が止める）。常時読込 rules ≦ 100 行と SKILL ≦ 200 行は移行作業中 WARN、完了後 NG
 - **FR-13 デザイン検査**: `scripts/check-design.sh` が CSS/HTML/JS の直値（色・余白・角丸・文字サイズ）・未定義トークン・外部 CDN・`alert()`・`tokens.css` 未読込を機械判定する（NG>0 で exit 1）。キットの出荷物自身が NG=0 で通ることを回帰テストに含める。配布先では対象パスを引数で渡す
   - 検証基準: `templates/design-system.md` 再現チェックリストの「機械」項目が全て `check-design.sh` で判定される
 - **FR-14 工程承認ゲート**: 各工程の出口に**人間の承認**を置き、その承認を**承認時の成果物の版に縛る**。承認後に成果物が変われば承認は自動失効する。`scripts/check-approval.sh` が記録の有無・必須欄・版の一致・未解消の差し戻し・未確認事項・承認者が人間か・工程順序を機械判定する
@@ -59,7 +59,12 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 境界: 機械が判定するのは「承認記録の形式的な健全性と版の一致」まで。**その設計が本当に要件を満たすかは人間しか判定できない**。AI は承認しない（`/phase-review` は指摘の申し送りまで）
 - **FR-15 トークン節約の機械化**: 節約策を散文でなく hook・設定・検査で強制する。出力の絞り込み（`filter-output.py`）・読む価値の無いファイルの deny と大ファイルの切り詰め（`pre-read-guard.py`）・会話の寿命の警告（`context-guard.py`）・圧縮指示（`pre-compact.py`）・`effortLevel` `autoCompactWindow` `BASH_MAX_OUTPUT_LENGTH` の既定
   - 検証基準: `scripts/token-audit.sh` が配線漏れを NG（exit 1）で検出する。絞ったときは必ず `systemMessage` で全量の取り方を伝える（黙って削らない）。逃がし口は `FULL_OUTPUT=1` と `offset`/`limit` の明示だけで、恒久バイパスは作らない。常時読み込みは rules ≦ 100 行・CLAUDE+AGENTS ≦ 200 行を `check-docs.sh` が検査する
-- **FR-17 指示優先の強制**: 保守者の発言（作業の途中で届いたものを含む）に日本語で応答するまで hook が全ツールを止める（`instruction-guard.py`）。最後の応答の言語は `reply-language.py` が見る。バイパス無し
+- **FR-17 指示優先の強制**: 保守者の発言（作業の途中で届いたものを含む）に日本語で応答するまで hook が全ツールを止める（`instruction-guard.py`）。最後の応答の言語と型（冒頭の宣言文・末尾の申し出・結論ラベル。A-9）は `reply-language.py` が見る。バイパス無し
+- **FR-18 基準を緩めない強制**: `git commit` の前に `floor-guard.py` が差分から「基準を下げる手」（テストの skip・assert 減・テスト削除・抑止コメント・スタブ・しきい値の緩和・除外リスト追加）を検出して止める（A-12）。Claude Code と Codex の両方に配線（`export-project.sh`）。正当な変更は commit メッセージの `Floor-Guard-Allow: <理由>` で通す（git 履歴に残る。環境変数のバイパスは作らない）。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
+- **FR-19 スキル発火の機械判定**: 20 スキルの `description` が「発火すべき依頼文で上位に来る／他スキルの依頼文で 1 位にならない／互いに似すぎない」ことを、`evals/routing/<skill>.json` の依頼文と `scripts/skill-route-check.sh` で LLM を呼ばずに判定する。落ちたら直すのは description（依頼文を description の写しにしない）
+  - 検証基準: 全スキルにケース（positive ≧ 3・negative ≧ 2）があること。kit-ci が `--min-rank1` の床（初回実測 100）で NG にする。床は下げない
+- **FR-20 応答の盲検対比評価**: 規約（rules / AGENTS.md / スキル本文）やモデルを変えたとき、応答が良くなったかを `scripts/response-eval.sh` で判定する。判定者には出所を伏せ（X/Y）、順序を入れ替えて 2 回判定し、5 軸の重み（正確性 35・自律 25・行動可能性 20・安全 10・簡潔 10）で 100 点満点、blocker は 0
+  - 検証基準: exit 0 は「B が A より悪くない」（平均が下回らず blocker 無し）。依頼文は `evals/response/cases.jsonl`（保守者の言い方）、重みは `evals/response/rubric.md`（下げない）。runner は `claude -p --setting-sources ""`（比べる system prompt だけを効かせる）
 - **FR-16 テスト工程のメトリクス**: 工程文書 05〜08 のテスト表・欠陥表と `system_test_cases.csv` を真実源に、`scripts/test-metrics.sh` が消化率・合格率・欠陥密度・Critical/High 未解決・滞留・偏り・完了予測（根拠付き）を出す。集計値を文書に手書きしない
   - 検証基準: 結果欄が語彙外の行は分母に含め、1 件でもあれば `--gate` は 2（判定できない）。欠陥表が無ければ密度・未解決は「算出できない」（0 ではない）。基準は `TESTING_STRATEGY.md` §7 の表（しきい値＋出典。出典が空の行は読まない）。`--into` が完了報告書 §2 と基準評価を置き換え、GO/NO-GO は人が書く。配布雛形が status で exit 0 になることを回帰テストに含める
 - **FR-08a トレーサビリティの機械検証**: 要件が設計・実装・テストへ紐づいているかを目視でなくスクリプトで判定する
@@ -67,7 +72,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 
 ## 非機能要求（ISO/IEC 25010）
 
-- **互換性（最重要）**: **Claude Code と他エージェント（Codex 等）の双方で動作すること。** 共通規約の本体は `AGENTS.md`（Codex が直接読む）一本とし、`CLAUDE.md` は `@AGENTS.md` の import ＋ Claude Code でしか効かないものだけを持つ（二重管理をしない）。スキル・コマンド本文は特定ツールの内部名に依存せず、固有機能に言及する場合は「汎用表現（Claude Code では X）」の併記形式を守る。加えて、**グローバル導入（`install.sh`）とプロジェクト配布（`export-project.sh`）のどちらでも同一の振る舞いになること**（Vision.md「配置の2層」参照）
+- **互換性（最重要）**: **Claude Code と他エージェント（Codex 等）の双方で動作すること。** 共通規約の本体は `AGENTS.md`（Codex が直接読む）一本とし、`CLAUDE.md` は `@AGENTS.md` の import ＋ Claude Code でしか効かないものだけを持つ（二重管理をしない）。スキル・コマンド本文は特定ツールの内部名に依存せず、固有機能に言及する場合は「汎用表現（Claude Code では X）」の併記形式を守る。hook は Claude Code と Codex の両方に配線するが、**stdin の値の形まで照合できたものだけ**を Codex に配線し、未照合のものは「効くふりをしない」（M23。対応表は `spec/11` D-4）。加えて、**グローバル導入（`install.sh`）とプロジェクト配布（`export-project.sh`）のどちらでも同一の振る舞いになること**（Vision.md「配置の2層」参照）
 - **使用性**: 新しいセッションが `AGENTS.md` の「読む範囲」表から 1 ファイル以内の参照で作業開始できる（INDEX.md は表に無いときの第2段）。**毎セッション自動読み込みの `rules/`（`paths` 無し）は合計 ≦ 100 行**（`check-docs.sh` が NG で止める）。**1スキル ≦ 200行、1コマンド ≦ 40行**（`check-docs.sh` が NG で止める）
 - **性能効率性（トークン）**: 毎回読む層（DAILY）の合計を小さく保つ。詳細は references/・docs/ に逃がし、必要時のみ読む
 - **保守性**: 同一情報の真実源は1箇所（デザイン値は design-system、ECC 対応は ECC-ASSET-MAP）。重複を作る変更は監査（AUDIT）で検出・却下する

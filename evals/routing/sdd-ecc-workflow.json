@@ -1,0 +1,31 @@
+{
+  "skill": "sdd-ecc-workflow",
+  "positive": [
+    {
+      "prompt": "仕様から作りたい。spec.md plan.md tasks.md を作ってタスク分解して",
+      "top_k": 1
+    },
+    {
+      "prompt": "要件定義から仕様駆動開発で新規プロジェクトを立ち上げたい",
+      "top_k": 2
+    },
+    {
+      "prompt": "cc-sdd の /kiro コマンドで Coordinator と Implementor の役割分離で進めて",
+      "top_k": 1
+    },
+    {
+      "prompt": "Everything Claude Code を使ってトークン最適化しながら仕様駆動で",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "V字モデルで工程を分けて設計書とテスト仕様書を作って",
+      "owner": "dev-lifecycle"
+    },
+    {
+      "prompt": "ECC 資産を DAILY と LIBRARY に分類して",
+      "owner": "ecc-daily-router"
+    }
+  ]
+}

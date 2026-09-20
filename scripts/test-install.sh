@@ -114,6 +114,16 @@ if grep -q "<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md" "$P/CLAUDE.md" "$P/AGENTS.m
 expect_grep "hooks の settings.json が相対パス参照" ".claude/hooks/block-gates.py" "$P/.claude/settings.json"
 expect_grep "block-explore.sh が Read|Grep|Glob に配線される（グローバル導入と同じ振る舞い）" ".claude/hooks/block-explore.sh" "$P/.claude/settings.json"
 expect_grep "block-phase.py が Write|Edit|MultiEdit に配線される（.claude/phase-gate が無ければ何もしない）" ".claude/hooks/block-phase.py" "$P/.claude/settings.json"
+# Codex CLI 用（M23）: 入出力を照合済みの 4 本だけを .codex/hooks.json に配線する。未照合のものは配線しない（効くふりをしない）
+expect_file "生成物: .codex/hooks.json（Codex CLI 用）" "$P/.codex/hooks.json"
+python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$P/.codex/hooks.json" 2>/dev/null && ok "生成した .codex/hooks.json が JSON として妥当" || ng "生成した .codex/hooks.json が JSON として妥当" "パース失敗"
+for h in block-gates.py filter-output.py floor-guard.py prompt-priority.py context-guard.py; do
+  expect_grep "Codex に $h が配線される（stdin の形が Claude Code と同じと照合済み）" ".claude/hooks/$h" "$P/.codex/hooks.json"
+done
+for h in instruction-guard.py block-phase.py pre-read-guard.py pre-compact.py session-summary.sh; do
+  if grep -qF "$h" "$P/.codex/hooks.json"; then ng "Codex に $h を配線しない（入出力が未照合）" "配線されている"; else ok "Codex に $h を配線しない（入出力が未照合）"; fi
+done
+expect_out "Codex の /hooks で信頼する手順を表示" "/hooks" "$OUT"
 python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$P/.claude/settings.json" 2>/dev/null && ok "生成した settings.json が JSON として妥当" || ng "生成した settings.json が JSON として妥当" "パース失敗"
 SJ=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('effortLevel'), d.get('autoCompactWindow'), d.get('env',{}).get('BASH_MAX_OUTPUT_LENGTH'))" "$P/.claude/settings.json" 2>/dev/null)
 expect_out "effortLevel=high（xhigh から 1 段下げ。設計判断のときだけ上げる）" "high" "$SJ"
@@ -125,6 +135,7 @@ OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1)
 expect_file "再実行で CLAUDE.md.bak" "$P/CLAUDE.md.bak"
 expect_file "再実行で AGENTS.md.bak" "$P/AGENTS.md.bak"
 expect_file "再実行で .claude/settings.json.bak" "$P/.claude/settings.json.bak"
+expect_file "再実行で .codex/hooks.json.bak" "$P/.codex/hooks.json.bak"
 OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$TMP/does-not-exist" 2>&1); RC=$?
 expect_exit "対象ディレクトリ不在なら exit 1" 1 "$RC"
 

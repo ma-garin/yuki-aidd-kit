@@ -110,6 +110,9 @@ kill $(lsof -ti:<PORT>) 2>/dev/null
   `claude-code/hooks/block-gates.py` が PreToolUse で強制する。要求があった時は `GATES_REQUESTED=1` を付けて実行する。
 - 手順は一直線: add（パス明示）→ commit → push → PR 作成 → マージ（作成とマージは別コマンド）。
 - コミット前に変更の性質（docs のみ / code / UI）を 1 行で確定させ、フック回避の要否をそこで決める。
+- コミット前に `./scripts/check-docs.sh --only-changed` で「変更を説明する文書が同じ差分に無い」が NG=0 であることを確認する（M23、2026-09-19）。
+  出所: hook を変えたのに userguide・PRD・spec/04 が古いまま残り、`check-docs.sh` の NG=0 を「文書は最新」と取り違えて完了報告した（`spec/09` F-27）。
+  行数・件数・参照の突合は内容の鮮度を見ない。変更したファイル名で文書を総当たりするのを人の記憶に任せず、キットでは `docs-gate.py` が `git commit` を止める。
 - **ゲートが赤のときの最短手順**: 変更を stash した素の状態で同じ失敗が再現したら main 由来と断定し、
   それ以上の切り分けをしない。PR 本文に「main 由来・スコープ外」と 1 行書いて進む。
 

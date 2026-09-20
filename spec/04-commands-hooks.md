@@ -43,8 +43,24 @@
 | `PostToolUse` | `Write\|Edit\|MultiEdit` | `bash ~/.claude/hooks/post-write-html.sh` | HTML のみ反応 |
 | `Stop` | — | `bash ~/.claude/hooks/session-summary.sh` | — |
 
-`export-project.sh` が生成する版は同内容を相対パス（`.claude/hooks/...`）にしたもの。
-ただし **`Read|Grep|Glob` の block-explore 配線が含まれない**（意図的。`/implement` を使う場合は手で追記）。
+`export-project.sh` が生成する版は同内容を相対パス（`.claude/hooks/...`）にしたもの（M17 以降は block-explore / block-phase / 指示優先 3 hook も配線済み。上の表は 6.1 時点の 6 本で、現行 16 本の配線は `claude-code/hooks/settings.json` が真実源）。
+
+### Codex CLI での配線（M23、2026-09-19）
+
+Codex CLI の lifecycle hook（openai/codex `codex-rs/hooks`、Stable・既定有効）は Claude Code と同じイベント名・stdin キー・出力形式で、`<repo>/.codex/hooks.json` に置く（`timeout` / `statusMessage` のキーも受理。hook はプロジェクトルートを cwd に実行。プロジェクトの hook は `/hooks` で信頼するまで動かない）。`export-project.sh` は **stdin の値の形まで照合できた hook だけ**を配線する。
+
+| hook | Codex | 判定の根拠 |
+|---|---|---|
+| `block-gates.py` / `filter-output.py` / `floor-guard.py` | ✅ | Bash の `tool_input` は `{"command": ...}` で同じ。`updatedInput` も適用される。floor-guard は差分を git から直接読む。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
+| `prompt-priority.py` / `context-guard.py` | ✅ | `prompt` / `transcript_path` があり、`additionalContext` を注入できる |
+| `pre-write-check.sh` / `block-phase.py` / `post-write-html.sh` | ❌ | 編集は `apply_patch` で `tool_input` が `{"command": <パッチ本文>}`。`file_path` が無い（B-14: パッチ本文からパス抽出） |
+| `instruction-guard.py` / `reply-language.py`（言語＋ A-9 の型: 冒頭の宣言文・末尾の申し出・結論ラベル） | ❌ | transcript が Codex 独自の rollout 形式（B-14） |
+| `pre-compact.py` | ❌ | PreCompact の出力に `additionalContext` が無い |
+| `pre-read-guard.py` / `block-explore.sh` | ❌ | Read/Grep/Glob ツールが無い（読み取りは shell 経由） |
+| `log-instructions.py` | ❌ | InstructionsLoaded イベントが無い |
+| `docs-gate.py`（キット開発用。`.claude/settings.json` のみ配線） | 未配線 | Bash の `tool_input.command` を読むので互換だが、キット自身の開発でしか意味が無い |
+| `statusline.py` / `progress.py` | ❌ | status line がコマンド式でない |
+| `session-summary.sh` | ❌ | JSON でない標準出力は Codex 側で捨てられる |
 
 ### 各 hook の仕様
 
@@ -53,6 +69,7 @@
 | `pre-write-check.sh` | PreToolUse Write/Edit | stdin JSON `.tool_input.file_path`（jq → python3 フォールバック） | 秘密情報ファイル名（`.env/.pem/.key/.secret`）警告 / 同階層に `.html` がある `.css`・`.js` 書き込み警告（**「単一HTMLツールのプロジェクトなら規約違反。通常の Web プロジェクトなら無視してよい」と条件を明記**＝AUDIT A-07） | 常に 0（ブロックしない） |
 | `post-write-html.sh` | PostToolUse Write/Edit | 同上 | `.html` のみ反応。行数/KB 報告 / **500行超で部分編集を推奨** / localStorage 未使用の助言 | 常に 0 |
 | `block-explore.sh` | PreToolUse Read/Grep/Glob | stdin JSON `.tool_name` ＋ `CLAUDE_PROJECT_DIR`（既定 `$PWD`） | `.claude/mode` があり tool が Read/Grep/Glob なら stderr に4行の警告 | **exit 2**（ブロック＋Claude へフィードバック）。それ以外 0 |
+| `floor-guard.py` | PreToolUse Bash（`git commit` のみ） | stdin JSON `.tool_input.command` ＋ `git diff HEAD` と未追跡ファイル | skip / assert 減 / テスト削除 / 抑止コメント / スタブ / しきい値の緩和 / 除外リスト追加を検出し deny。`Floor-Guard-Allow: <理由>` で通す（systemMessage）。CLI `--check` は exit 0/1/2 | hook は常に 0 |
 | `block-gates.py` | PreToolUse Bash | stdin JSON `.tool_input.command` | `hookSpecificOutput.permissionDecision = deny` の JSON。理由に H-7 と `GATES_REQUESTED=1` の指示 | 常に 0（判断は JSON で返す） |
 | `progress.py` | 手動（bash に連結） | `start <名> <秒>` / `step <文字列>` / `done` | `.claude/progress.json` の作成・更新・削除 | 0（引数不足で 1） |
 | `statusline.py` | statusLine | stdin（そのまま fallback へ渡す） | `⏱ <task> [<step>] <経過>/<見積> 残り <r> ｜ <従来表示>` | 常に 0 |

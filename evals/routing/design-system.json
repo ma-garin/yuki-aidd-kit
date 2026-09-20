@@ -1,0 +1,31 @@
+{
+  "skill": "design-system",
+  "positive": [
+    {
+      "prompt": "デザインどうする。色とレイアウトを決めたい",
+      "top_k": 1
+    },
+    {
+      "prompt": "トーストと空状態とアイコンを Material Design で実装して",
+      "top_k": 1
+    },
+    {
+      "prompt": "画面の骨格とデザイントークンを React / Tailwind でどう当てるか",
+      "top_k": 1
+    },
+    {
+      "prompt": "UI のコンポーネントを実装して文言も揃えて",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "画面を実際に開いて全状態を確認してレビューして",
+      "owner": "uiux_review"
+    },
+    {
+      "prompt": "PWA にしてスマホで使えるようにして",
+      "owner": "personal-pwa"
+    }
+  ]
+}

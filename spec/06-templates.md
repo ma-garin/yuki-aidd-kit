@@ -60,7 +60,7 @@
 | `CURRENT_STATE.md` | 今どこまで進んだか（フェーズ・直近完了・次タスク・判断待ち・既知の問題・設計決定メモ）＋セッション開始時の指示テンプレート | ADR / lessons |
 | `ADR-template.md` | なぜその設計にしたか（背景・選択肢比較表・決定・結果影響・関連） | CURRENT_STATE / lessons |
 | `lessons.md` | **AIDD の進め方の知見**（Keep/Problem/Try、1エントリ3-5行）。記入例がコメントで同梱 | CURRENT_STATE / ADR |
-| `implement-profile.md` | 実装モードの行動規範（再探索しない・plan 準拠・小さく実装→軽量テスト・done-gate・逸脱時の4手順） | — |
+| `implement-profile.md` | 実装モードの行動規範（再探索しない・plan 準拠・小さく実装→軽量テスト・done-gate・逸脱時の4手順）＋止まる条件の表（同じゲート 3 回・plan に無い判断・基準を弱めないと通らない＝`floor-guard.py` が commit を止める）＋「言い訳と事実」表 8 行（止まる条件を飛ばすときの言葉と反証。出所: agent-skills の Common Rationalizations） | — |
 
 **`lessons.md` は現在エントリ0件**（雛形のまま）。Vision の到達点③「自己改善ループ」が未稼働である証拠。
 
@@ -195,7 +195,7 @@ Playwright でライト・ダーク・360px・モーダル・トーストを確�
 
 | ファイル | トリガー | 内容 |
 |---|---|---|
-| `test-gates.yml` | dispatch（手動のみ） | job `contracts`（`quality_harness.py`）＋ job `unit-integration`。**`hashFiles()` でスタックを自動判定**（pyproject/requirements → pytest --cov-fail-under=80、package.json → npm test。両方無ければ `::warning::` で「未実行」と明示）。`GATES_REQUESTED=1` を付けて実行。L3 はコメントアウトで同梱 |
+| `test-gates.yml` | dispatch（手動のみ） | job `contracts`（`quality_harness.py`）＋ job `unit-integration`。**`hashFiles()` でスタックを自動判定**（pyproject/requirements → pytest --cov-fail-under=80、package.json → npm test。両方無ければ `::warning::` で「未実行」と明示）。`GATES_REQUESTED=1` を付けて実行。L3 はコメントアウトで同梱。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 | `lifecycle-check.yml` | dispatch（手動のみ） | `trace-check.sh docs/lifecycle -o trace-check-report.md` → **失敗時もレポートを artifact 化**し `$GITHUB_STEP_SUMMARY` へ出力 |
 | `deploy.yml` | dispatch（手動のみ） | GitHub Pages（`./docs` を公開。ルート公開なら `./` に変更）。`concurrency: pages` |
 | `secret-scan.yml` | dispatch（手動のみ。コミット時の即時防止は `scripts/pre-commit`） | gitleaks（`fetch-depth: 0` で全履歴） |

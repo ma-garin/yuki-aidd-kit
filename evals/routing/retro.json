@@ -1,0 +1,31 @@
+{
+  "skill": "retro",
+  "positive": [
+    {
+      "prompt": "振り返りをして学びをまとめて lessons に蓄積して",
+      "top_k": 1
+    },
+    {
+      "prompt": "今回うまくいかなかった点と次はこうしたいをレトロで整理して",
+      "top_k": 1
+    },
+    {
+      "prompt": "retro して進め方を改善したい",
+      "top_k": 2
+    },
+    {
+      "prompt": "学びをまとめてキットに還流して",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "出力が長すぎるので要約して",
+      "owner": "context-compression"
+    },
+    {
+      "prompt": "完了基準を満たしているか確認して",
+      "owner": "done-gate"
+    }
+  ]
+}

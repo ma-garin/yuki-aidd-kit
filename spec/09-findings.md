@@ -204,7 +204,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 **是正案**: B-18。`git tag v6.3.0` から始め、`export-project.sh` が `.claude/KIT_VERSION`（tag ＋ commit hash ＋ 日付）を書き、`verify.sh` がそれを表示する。
 
-### F-13 — スキルが意図どおり発火するかを検証する手段が無い
+### F-13 — スキルが意図どおり発火するかを検証する手段が無い — **是正済み（2026-09-20・M23）**
 
 **severity: Medium**（Sonnet 基盤では発火の取りこぼしが増える可能性があるが、測れない。`retro` の「発火しなかったスキル→description に言い回し追加」は観測に依存している）
 
@@ -212,6 +212,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 - 関連: `spec/11` U-4
 
 **是正案**: 移行後に `/usage` のスキル別内訳で観測する（B-10）。恒久策は `skill-creator` の eval を使った発火テストだが、コストが高いので**移行後の実測で問題が出たスキルだけ**に限定する。
+
+**是正（2026-09-20）**: LLM を呼ばない近似で常時回せるようにした。`evals/routing/<skill>.json`（20 本。positive ≧ 3・negative ≧ 2・negative に `owner`）と `scripts/skill_route_check.py`（description に対する依頼文の順位を文字 n-gram TF-IDF の余弦で算出。構造／発火／誤発火／衝突／床の 5 検査）。初回実測 rank-1 率 100%（positive 80 件）を kit-ci の `--min-rank1 100` の床にした。意味の判定は依然できないので `/usage` の観測（B-10）は残す。回帰テスト `test-skill-route-check.sh` 20 ケース。出所: agent-skills の evals Tier 2
 
 ## 3c. ユースケース検証で見つかった finding（2026-09-17「社内図書館の貸出管理を Excel から Web へ。HTML でモック」）
 
@@ -329,15 +331,31 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
   理由に指示の先頭を載せる）／`reply-language.py`（Stop: 最後の応答に日本語が無ければ続行）／`prompt-priority.py`（UserPromptSubmit: 緊急語に優先の注入）。
   本セッションの実 transcript の応答前断面で deny、応答後で許可を確認。キット自身の開発セッションにも `.claude/settings.json` で配線（file watcher で即時反映）
 
+### F-26 — 「Codex には hook が無い」という前提が古かった — **是正済み（M23）**
+
+- evidence: M22 の残・`spec/10` B-14・`spec/11` D-4・`skills/context-compression`・`docs/userguide.html` が「Codex には強制手段が無い」と断定していた。
+  openai/codex 本体（`codex-rs/hooks`、main 595cc91、2026-09-19）は lifecycle hook を Stable・既定有効で持ち、イベント名・stdin・出力は Claude Code と同じ形
+- severity: Medium（Codex 併用が決定事項なのに、強制層の設計が片側だけの前提で組まれていた）
+- 根本原因: 一次情報（Codex 本体のソース・ドキュメント）を当たらず記憶で書いた（A-5）。外部ツールの能力に依存する記述に確認日と参照元が無く、陳腐化を検出できなかった
+- 是正: `export-project.sh` が `.codex/hooks.json` を生成（stdin の形まで照合できた 4 本だけ。編集系は `tool_input` にパスが無く、transcript は rollout 形式なので配線しない）。
+  5 箇所の記述を修正。外部ツール依存の記述には確認日と参照元（commit）を添える
+
+### F-27 — 「検査が緑」を「文書が最新」と取り違え、変更を説明する文書が古いまま完了報告した — **是正済み（M23 同日）**
+
+- evidence: M23 の一次コミットで userguide・manual・PRD・spec/00・04・AGENTS.md.template が「Codex には hook が無い」前提のまま残った。`check-docs.sh` NG=0 を根拠に「文書は最新」と報告。保守者「なぜドキュメント類が最新化されていないのですか」
+- severity: High（成果物の説明書が嘘を書いた状態で「完了」。Codex 併用の利用者が導入 B で hook の存在を知り得ない）
+- 根本原因: 検査 1〜11 は行数・件数・参照の突合で、**内容の鮮度は見ていない**。完了宣言前に変更ファイル名で総当たりせず記憶で列挙（A-4）、done-gate Type C を当てなかった（A-3）
+- 是正: 検査 12（`--changed`）＋ `docs-gate.py`（コミット前に deny）＋ H-7・done-gate への配線。回帰テストの代替値の直値も検査 3 で突合（同じ取り違えが `test-check-docs.sh` の `test-install.sh=102` にもあった）
+
 ### severity 別サマリ（更新）
 
 | severity | 件数 | ID |
 |---|---|---|
 | Critical | 0 | — |
 | High | 0 | ~~F-07~~ ~~F-11~~（M15 で是正） |
-| Medium | 4 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／F-13（発火の検証手段 → 移行後の実測）／**F-21（警告 hook の stdout。未確認）** |
+| Medium | 3 | F-04（SKILL 465 行 → S13）／F-05（lessons 未稼働 → S15）／**F-21（警告 hook の stdout。未確認）** |
 | Low | 2 | F-08（配布層の block-explore → S15）／F-10（manual 図解 → 移行後） |
-| 是正済み | 22 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／**F-25（M22 指示優先）** |
+| 是正済み | 24 | F-01 F-02 F-03 F-06 F-07 F-09 F-11 F-12（M15）／F-04 F-05 F-08（M17）／F-14 F-15 F-16（ユースケース検証）／F-17 F-18 F-19（M18）／F-20（M19）／F-22 F-23（M20 テストメトリクス）／F-24（M21 第 2 回）／F-25（M22 指示優先）／F-26（M23 Codex hook）／F-27（M23 文書の鮮度）／**F-13（M23 スキル発火の機械判定）** |
 
 ## 4. 設計上の既知の割り切り（欠陥ではない・混同しないこと）
 

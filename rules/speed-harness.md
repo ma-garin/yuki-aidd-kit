@@ -44,7 +44,7 @@ kill $(lsof -ti:<PORT>) 2>/dev/null                                            #
 - ゲート（pytest / make test / verify-ui / lint）は**ユーザーが要求した時だけ実行する**（Claude Code では `block-gates.py` が強制。要求時は `GATES_REQUESTED=1` を付ける）
 - 実行したときの出力は `filter-output.py` が失敗行＋集計に絞る（全量は `FULL_OUTPUT=1`）。絞られた結果で判断できないときだけ全量を取る
 - 手順は一直線: add（パス明示）→ commit → push → PR 作成 → マージ。作成とマージは別コマンド
-- コミット前に変更の性質（docs のみ / code / UI）を1行で確定させる
+- コミット前に変更の性質（docs のみ / code / UI）を1行で確定させ、`./scripts/check-docs.sh --only-changed` で「変更を説明する文書が同じ差分に無い」が NG=0 であることを確認する（キットでは `docs-gate.py` が commit を止める。検査が緑＝文書が最新ではない）
 - ゲートが赤なら: 変更を stash した素の状態で同じ失敗が再現したら main 由来と断定し、それ以上切り分けない。PR 本文に「main 由来・スコープ外」と1行
 ## H-8. 進捗の逐次提示
 - 1分超の作業は開始時に見積を宣言し、同じ bash に `python3 <hooks>/progress.py start "<タスク名>" <見積秒>` を連結する

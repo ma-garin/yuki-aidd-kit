@@ -798,8 +798,8 @@
             <h3>4. hooksの動作を確認する</h3>
             <pre><code>./scripts/test-hooks.sh</code></pre>
             <p>
-              保存時の自動チェック（hooks）が正しく動くかを79ケースでテストします。
-              「PASS=79 / FAIL=0」なら合格です。
+              保存時の自動チェック（hooks）が正しく動くかを106ケースでテストします。
+              「PASS=106 / FAIL=0」なら合格です。
             </p>
           </div>
           <div class="callout warn">
@@ -843,7 +843,7 @@
               グローバル導入は「自分のPCさえ整えれば、どのプロジェクトを開いても効く」形です。
               一方でCodexは基本的にプロジェクト直下の`AGENTS.md`を読みますし、
               使い捨てのクラウド環境やチームメイトのPCには自分の`~/.claude`は存在しません。
-              そのため、配布したい対象プロジェクトには②で `.claude/` と `AGENTS.md` / `CLAUDE.md` を
+              そのため、配布したい対象プロジェクトには②で `.claude/` と `.codex/hooks.json` と `AGENTS.md` / `CLAUDE.md` を
               直接書き出し、そのプロジェクトのgitにコミットして持ち運びます。
             </p>
           </div>
@@ -851,11 +851,12 @@
             <h3>プロジェクト配布の手順</h3>
             <pre><code>./scripts/export-project.sh /path/to/target-project
 cd /path/to/target-project
-git add .claude AGENTS.md CLAUDE.md
+git add .claude .codex AGENTS.md CLAUDE.md
 git commit -m "chore: add AIDD Kit"</code></pre>
             <p>
               これで、対象プロジェクトをCodexで開いても、リモートのClaude Codeで開いても、
               チームメイトがcloneしても、install不要でそのままキットが効きます。
+              Codexでは初回に <code>/hooks</code> を開いて <code>.codex/hooks.json</code> を信頼してください（hookは5本。ファイル編集の見張りと指示への応答の見張りはClaude Codeだけです）。
             </p>
           </div>
           <div class="callout warn">
@@ -1022,7 +1023,7 @@ git commit -m "chore: add AIDD Kit"</code></pre>
               <tr>
                 <td>作業の学びを残したい</td>
                 <td>`retro`</td>
-                <td>次回のために改善点を残す</td>
+                <td>次回のために改善点を残す。発火しなかったスキルは description に言い回しを足し、キット側の `skill-route-check.sh` で発火を機械判定する</td>
               </tr>
               <tr>
                 <td>トークンを節約して進めたい</td>

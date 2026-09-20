@@ -1,0 +1,31 @@
+{
+  "skill": "uiux_review",
+  "positive": [
+    {
+      "prompt": "画面を実際に開いて全状態を確認しながら UI/UX をレビューして",
+      "top_k": 1
+    },
+    {
+      "prompt": "UI を直したので完了報告の前に画面が効いているか確認して",
+      "top_k": 1
+    },
+    {
+      "prompt": "管理画面のダッシュボードを実機で開いてレビューして",
+      "top_k": 2
+    },
+    {
+      "prompt": "フロントエンドの Web 画面をレビューして",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "デザイントークンと色とレイアウトを決めて",
+      "owner": "design-system"
+    },
+    {
+      "prompt": "品質観点で severity を分類してレビューして",
+      "owner": "qa-review-standards"
+    }
+  ]
+}

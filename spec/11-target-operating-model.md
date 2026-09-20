@@ -84,6 +84,7 @@
 | サブエージェントに冗長な処理を隔離 | `speed-harness` H-4 にあるが、Pro では委譲自体が高コスト |
 | `/effort` で effort を下げる | `effortLevel: high` を settings で固定（M19、Q-12）。上げる場面は `model-routing` |
 | 具体的なプロンプト／plan mode／早期の軌道修正 | `speed-harness` H-1・H-3 が近い |
+| CLAUDE.md・文書を最新に保つ（古い指示は誤った行動の原因） | `speed-harness` H-7 ＋ 検査 12（`check-docs.sh --changed`）＋ `docs-gate.py`（M23）。変更を説明する文書が同じ差分に無ければ commit を止める |
 | Agent teams は通常の約7倍のトークン | `model-routing`「Agent teams は使わない」。3 役レビューも順次（Q-11） |
 
 ### Sonnet 5 の API 上の性質（bundled skill `claude-api`）
@@ -143,15 +144,17 @@
 
 | 強制手段 | Claude Code | Codex |
 |---|---|---|
-| `block-gates.py`（ゲートの無断実行を止める） | ✅ hook | ❌ 散文の規約のみ |
-| `block-explore.sh`（実装モードの探索ブロック） | ✅ hook | ❌ |
-| `progress.py` / `statusline.py` | ✅ statusLine | ❌ |
+| `block-gates.py`（ゲートの無断実行を止める）／`filter-output.py`／`floor-guard.py`（基準を下げる差分を止める。A-12）／`prompt-priority.py`／`context-guard.py` | ✅ hook | ✅ hook（`.codex/hooks.json`。M23 で stdin の形を照合） |
+| 編集系 `block-phase.py` / `pre-write-check.sh` / `post-write-html.sh` | ✅ hook | ❌（`tool_input` にパスが無い。B-14） |
+| `instruction-guard.py` / `reply-language.py`（言語＋ A-9 の型） | ✅ hook | ❌（transcript が rollout 形式。B-14） |
+| `block-explore.sh` / `pre-read-guard.py`（探索ブロック・部分読み） | ✅ hook | ❌（Read/Grep/Glob ツールが無い） |
+| `progress.py` / `statusline.py` | ✅ statusLine | ❌（status line がコマンド式でない） |
 | `pre-commit`（秘密情報） | ✅ git hook | ✅ git hook |
 | `pre-commit-ui-gate.sh`（`.ui-verified`） | ✅ git hook | ✅ git hook |
-| `trace-check.sh` / `quality_harness.py` | ✅ スクリプト | ✅ スクリプト |
+| `trace-check.sh` / `quality_harness.py` | ✅ スクリプト | ✅ スクリプト。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 
-**git hook 層とスクリプト層は両対応、Claude Code hook 層は片側だけ。**
-Codex 併用を前提にするなら、**強制したいものは可能な限り git hook かスクリプトへ寄せる**のが正しい方向。
+**git hook 層とスクリプト層は両対応。hook 層は M23 で入出力を照合できた 5 本（floor-guard を含む）が Codex でも効く**（2026-09-19 時点の openai/codex `codex-rs/hooks` を一次情報とした。「Codex には hook が無い」という当初の記述は誤り）。
+残り（編集系・transcript 依存・Read 系）は B-14。**強制したいものは可能な限り git hook かスクリプトへ寄せる**方針は変わらない。
 
 ### D-5. 委譲とサブエージェントの採算が変わる
 

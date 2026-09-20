@@ -65,6 +65,12 @@
             "command": "python3 ~/.claude/hooks/filter-output.py",
             "timeout": 5,
             "statusMessage": "冗長な出力を絞る書き換えを確認中"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/floor-guard.py",
+            "timeout": 20,
+            "statusMessage": "基準を下げる差分が無いか確認中（A-12）"
           }
         ]
       }

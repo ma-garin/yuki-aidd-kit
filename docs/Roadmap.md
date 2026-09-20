@@ -282,4 +282,21 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`docs/m
 - [x] `test-hooks.sh` 16 ケース追加（63 → 79）。本セッションの実 transcript の応答前断面で deny・応答後で許可を確認
 - [x] `AGENTS.md.template` 必須プロセス・`CLAUDE.md.template` hooks 一覧・INDEX・spec/01・spec/09 F-25・spec/10 Q-16・PRD FR-17・`maintainer-tendencies.md` #31
 - [x] **Claude Code 全体に効かせる導入**（保守者「この環境ではない。claude code 全体全て」）: `scripts/install-guard.sh` / `install_guard.py` が既存 `~/.claude/settings.json` に配線を merge（冪等）。`install.sh` からも自動実行。test-install 84 → 102
-- 残: Codex には hook が無い。`AGENTS.md` の散文のみ（移行後の実測 U-5 で見直す）。Web 環境の Setup script 経由の導入は未検証（非公開リポジトリの clone 可否）
+- 残: Web 環境の Setup script 経由の導入は未検証（非公開リポジトリの clone 可否）。「Codex には hook が無い」は誤りだった → M23 で訂正
+
+## M23: Codex CLI にも hook を効かせる（完了 2026-09-19）
+
+背景: 保守者「codex-5.6-terra や Claude Code Sonnet 5 で使う前提は考慮されているか」「codex でも使うことは決定事項」。キットは「Codex には hook が無い」を前提にしていた（M22 の残・B-14・`spec/11` D-4・`context-compression`・userguide）が、openai/codex 本体（main 595cc91、2026-09-19）の `codex-rs/hooks` で lifecycle hook が Stable・既定有効と確認した。公式ドキュメント（developers.openai.com/codex/hooks）は本セッションの proxy で開けず、ソースを一次情報にした。
+
+- [x] 確認した事実: イベントは PreToolUse / PostToolUse / Stop / UserPromptSubmit / PreCompact / SessionStart / SessionEnd ほか。stdin の `tool_name` `tool_input` `transcript_path` `prompt` `stop_hook_active`、出力の `decision` / `hookSpecificOutput.permissionDecision` / `updatedInput` / `additionalContext` は Claude Code と同じ。設定は `<repo>/.codex/hooks.json` か `~/.codex/hooks.json`（`timeout` `statusMessage` のキーも受理）。hook はプロジェクトルートを cwd に実行。プロジェクトの hook はハッシュで信頼管理され、`/hooks` で承認するまで動かない
+- [x] 違い: Bash の `tool_input` は `{"command"}` で同じ。編集は `apply_patch` で `tool_input` が `{"command": <パッチ本文>}`（`file_path` 無し。`Write|Edit` は matcher の別名として通る）。Read/Grep/Glob ツール・InstructionsLoaded イベント・コマンド式 status line は無い。transcript は Codex 独自の rollout 形式。PreCompact の出力に `additionalContext` が無い。JSON でない標準出力は捨てられる
+- [x] `export-project.sh` が `.codex/hooks.json` を生成。配線は入出力を照合できた 4 本だけ（block-gates / filter-output / prompt-priority / context-guard）。他は理由付きで配線しない（効くふりをしない）。test-install 102 → 115
+- [x] 古い記述の修正: M22 の残・`spec/10` B-14・`spec/11` D-4・`skills/context-compression`・`docs/userguide.html`・`spec/05`・`spec/09` F-26
+- [x] 同日追記（保守者「なぜドキュメント類が最新化されていないのか」）: 一次コミットで userguide・PRD・spec/04 が古いまま残った（`spec/09` F-27）。`check-docs.sh --changed` 検査 12（変更を説明する文書が同じ差分に無ければ NG）＋ `docs-gate.py`（`git commit` 前に deny）＋ H-7・done-gate・kit-ci への配線。test-hooks 79 → 85、test-check-docs 32 → 46
+- [x] 翌日追記（2026-09-20。保守者「結論は何か。ダラダラと長すぎる」「くど過ぎて伝わっていない」）: `reply-language.py` が A-9 の型も見る。冒頭の宣言文・末尾の申し出と締め・「結論:」ラベル行を block（出所: i-have-adhd の送信前チェック）。test-hooks 85 → 92。次は floor-guard（agent-skills）→ スキル発火テスト
+- [x] 同日: `floor-guard.py`（A-12 を機械に。skip・assert 減・テスト削除・抑止コメント・スタブ・しきい値の緩和・除外リスト追加を commit 前に deny。Claude Code と Codex 両方に配線。出所: agent-skills floor-guard）。test-hooks 92 → 106、test-install 115 → 116
+- [x] 同日: `templates/implement-profile.md` に「言い訳と事実」表（agent-skills の Common Rationalizations の型）
+- [x] 同日: 検査スクリプト 6 本に `--json`（`{ok, exit, data, meta, error{type, message, hint, retry_argv}}`。WeKnora CLI の出力契約の型）。`test-json-envelope.sh` 13 ケース
+- [x] 同日: スキル発火の機械判定（`spec/09` F-13 を是正）。`evals/routing/<skill>.json` 20 本＋`scripts/skill-route-check.sh`（構造／発火／誤発火／衝突／床。文字 n-gram TF-IDF の余弦。出所: agent-skills の evals Tier 2）。初回実測 rank-1 率 100%（positive 80 件）を kit-ci の床に。`test-skill-route-check.sh` 20 ケース
+- [x] 同日: 応答の盲検対比評価 `scripts/response-eval.sh`（A/B の system prompt に同じ依頼文 10 件、判定者には X/Y の匿名ラベルだけ。順序入替・5 軸の重み・blocker。出所: i-have-adhd の blind paired eval）。`test-response-eval.sh` 27 ケース（偽 runner）。実 LLM での実行は未実施（`claude` CLI 無し）
+- 残: 編集系 3 本（block-phase / pre-write-check / post-write-html）のパッチ本文からのパス抽出、instruction-guard / reply-language の rollout 形式対応、`install.sh` の `~/.codex/hooks.json` 出力、Codex 実機での動作確認（本セッションに Codex CLI は無い）。いずれも B-14

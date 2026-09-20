@@ -218,6 +218,23 @@ expect_empty "Stop: stop_hook_active なら何もしない（無限ループ防�
 { u_text "日本語で報告しなさい"; a_text "報告します。"; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 日本語で応答していれば何もしない" "$OUT" "$RC"
+# 型（A-9）: 冒頭の宣言文・末尾の申し出・結論ラベルを止める（i-have-adhd の送信前チェック）
+rl() { printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"; }
+rl_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d).get("reason","") if d.strip() else "")' 2>/dev/null; }
+{ u_text "調べて"; a_text "承知しました。Codex の hook を確認します。"; } > "$TRJ"
+OUT=$(rl); expect_contains "Stop: 冒頭の宣言文（承知しました）は block" "冒頭の宣言文「承知しました」" "$(rl_reason "$OUT")"
+{ u_text "調べて"; a_text "hook はあります。設定は .codex/hooks.json です。\\n\\n必要であれば配線します。"; } > "$TRJ"
+OUT=$(rl); expect_contains "Stop: 末尾の申し出（必要であれば）は block" "末尾の申し出・締め「必要であれば」" "$(rl_reason "$OUT")"
+{ u_text "調べて"; a_text "結論: hook はあります。\\n根拠: codex-rs/hooks。"; } > "$TRJ"
+OUT=$(rl); expect_contains "Stop: 「結論:」のラベル行は block" "ラベル行「結論:」" "$(rl_reason "$OUT")"
+{ u_text "調べて"; a_text "hook はあります（codex-rs/hooks、Stable・既定有効）。\\n\\n配線を export-project.sh に足しますか。推奨は「はい」です。"; } > "$TRJ"
+OUT=$(rl); RC=$?; expect_empty "Stop: 結論から始まり閉じた質問で終わる応答は通す" "$OUT" "$RC"
+{ u_text "着手して"; a_text "目的: hook の配線\\n終了条件: test-hooks PASS\\n見積: 8 往復\\n検証: 1 周"; } > "$TRJ"
+OUT=$(rl); RC=$?; expect_empty "Stop: H-1 の 4 行（目的: 〜）は通す" "$OUT" "$RC"
+{ u_text "はい"; a_text "はい、その指示に対する実装です。"; } > "$TRJ"
+OUT=$(rl); RC=$?; expect_empty "Stop: 「はい」で始まる答えは通す（閉じた質問への回答）" "$OUT" "$RC"
+{ u_text "Please check"; a_text "Sure! Let me check. Hope this helps."; } > "$TRJ"
+OUT=$(rl); RC=$?; expect_empty "Stop: 日本語でない応答は型の判定対象外（言語判定のみ）" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?
@@ -328,6 +345,64 @@ else
 fi
 
 echo ""
+echo "[docs-gate.py]"
+# git commit 以外・check_docs.py の無いプロジェクトでは何もしない。キット相当の一時リポジトリで文書未更新の commit を deny する
+DG="$TMP/dg"; mkdir -p "$DG/scripts" "$DG/claude-code/hooks" "$DG/docs"
+cp "$KIT_DIR/scripts/check_docs.py" "$DG/scripts/"
+printf 'echo hook\n' > "$DG/claude-code/hooks/foo.sh"; printf '# 説明\n\n`foo.sh` は挨拶する hook。\n' > "$DG/docs/guide.md"
+(cd "$DG" && git init -q && git -c user.name=t -c user.email=t@t add -A && git -c user.name=t -c user.email=t@t commit -q -m init)
+OUT=$(cd "$DG" && bash_json "git status" | CLAUDE_PROJECT_DIR="$DG" python3 "$HOOKS/docs-gate.py"); RC=$?
+expect_empty "git commit 以外は何もしない" "$OUT" "$RC"
+OUT=$(cd "$TMP" && bash_json "git commit -m x" | CLAUDE_PROJECT_DIR="$TMP" python3 "$HOOKS/docs-gate.py"); RC=$?
+expect_empty "check_docs.py の無いプロジェクトでは何もしない" "$OUT" "$RC"
+OUT=$(cd "$DG" && bash_json "git commit -m x" | CLAUDE_PROJECT_DIR="$DG" python3 "$HOOKS/docs-gate.py"); RC=$?
+expect_empty "差分が無ければ通す" "$OUT" "$RC"
+printf 'echo hi\n' >> "$DG/claude-code/hooks/foo.sh"
+OUT=$(cd "$DG" && bash_json "git add -A && git commit -m x" | CLAUDE_PROJECT_DIR="$DG" python3 "$HOOKS/docs-gate.py")
+expect_contains "hook を変えて説明文書（docs/guide.md）が未更新なら deny" '"permissionDecision": "deny"' "$OUT"
+expect_contains "deny 理由に未更新の文書名" "docs/guide.md" "$OUT"
+sed -i '$ s/$/ /' "$DG/docs/guide.md"
+OUT=$(cd "$DG" && bash_json "git commit -m x" | CLAUDE_PROJECT_DIR="$DG" python3 "$HOOKS/docs-gate.py"); RC=$?
+expect_empty "説明文書を同じ差分で触れば通す" "$OUT" "$RC"
+
+echo "[floor-guard.py]"
+# 基準を下げる差分（skip / assert 減 / テスト削除 / 抑止コメント / スタブ / しきい値 / 除外リスト）を git commit の前に deny（A-12）
+FG="$TMP/fg"; mkdir -p "$FG/tests" "$FG/src" "$FG/docs/test" "$FG/scripts"
+printf 'def test_a():\n    assert 1 == 1\n    assert 2 == 2\n' > "$FG/tests/test_a.py"
+printf 'def f():\n    return 1\n' > "$FG/src/a.py"
+printf '| 2 | 合格率 | `pass_rate >= 95` | 合意 |\n' > "$FG/docs/test/TESTING_STRATEGY.md"
+printf 'EXCLUDE = {\n    "a.md",\n}\nMAX = 100\n' > "$FG/scripts/check_x.py"
+(cd "$FG" && git init -q && git -c user.name=t -c user.email=t@t add -A && git -c user.name=t -c user.email=t@t commit -q -m init)
+fg() { cd "$FG" && bash_json "$1" | CLAUDE_PROJECT_DIR="$FG" python3 "$HOOKS/floor-guard.py"; }
+fg_reset() { (cd "$FG" && git checkout -q -- . && git clean -fdq); }
+OUT=$(fg "git status"); RC=$?; expect_empty "git commit 以外は何もしない" "$OUT" "$RC"
+printf 'def g():\n    return 2\n' >> "$FG/src/a.py"
+OUT=$(fg "git add -A && git commit -m x"); RC=$?; expect_empty "基準に触れない変更は通す" "$OUT" "$RC"; fg_reset
+printf 'import pytest\n@pytest.mark.skip\ndef test_b():\n    assert 3 == 3\n' >> "$FG/tests/test_a.py"
+OUT=$(fg "git commit -am x"); expect_contains "テストへの skip 追加は deny" "skip tests/test_a.py" "$(ig_reason "$OUT")"; fg_reset
+printf 'def test_a():\n    assert 1 == 1\n' > "$FG/tests/test_a.py"
+OUT=$(fg "git commit -am x"); expect_contains "assert が正味で減ったら deny" "assert / expect が正味 1 件減った" "$(ig_reason "$OUT")"; fg_reset
+rm "$FG/tests/test_a.py"
+OUT=$(fg "git commit -am x"); expect_contains "テストファイルの削除は deny" "test-del tests/test_a.py" "$(ig_reason "$OUT")"; fg_reset
+printf 'x = 1  # noqa\n' >> "$FG/src/a.py"
+OUT=$(fg "git commit -am x"); expect_contains "抑止コメント（noqa）の追加は deny" "suppress src/a.py" "$(ig_reason "$OUT")"; fg_reset
+printf 'def h():\n    raise NotImplementedError  # TODO\n' >> "$FG/src/a.py"
+OUT=$(fg "git commit -am x"); expect_contains "スタブ（TODO / NotImplementedError）の追加は deny" "stub src/a.py" "$(ig_reason "$OUT")"; fg_reset
+sed -i 's/pass_rate >= 95/pass_rate >= 80/' "$FG/docs/test/TESTING_STRATEGY.md"
+OUT=$(fg "git commit -am x"); expect_contains "しきい値を下げたら deny" "基準が下がった" "$(ig_reason "$OUT")"; fg_reset
+sed -i 's/pass_rate >= 95/pass_rate >= 99/' "$FG/docs/test/TESTING_STRATEGY.md"
+OUT=$(fg "git commit -am x"); RC=$?; expect_empty "しきい値を上げる（厳しくする）のは黙って通す" "$OUT" "$RC"; fg_reset
+sed -i 's/    "a.md",/    "a.md",\n    "b.md",/' "$FG/scripts/check_x.py"
+OUT=$(fg "git commit -am x"); expect_contains "除外リストへの追加は deny" "exclude scripts/check_x.py" "$(ig_reason "$OUT")"; fg_reset
+sed -i 's/pass_rate >= 95/pass_rate >= 80/' "$FG/docs/test/TESTING_STRATEGY.md"
+OUT=$(fg "git commit -am 'x' -m 'Floor-Guard-Allow: 案件合意で 80 に変更（議事録 2026-09-20）'"); RC=$?
+if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -q "systemMessage" && ! printf '%s' "$OUT" | grep -q '"deny"'; then echo "  ✅ Floor-Guard-Allow: <理由> を書けば通す（systemMessage で明示）"; PASS=$((PASS+1)); else echo "  ❌ Floor-Guard-Allow: <理由> を書けば通す（$OUT）"; FAIL=$((FAIL+1)); fi
+OUT=$(cd "$FG" && python3 "$HOOKS/floor-guard.py" --check --root "$FG"); RC=$?
+expect_exit_code() { [ "$2" -eq "$3" ] && { echo "  ✅ $1"; PASS=$((PASS+1)); } || { echo "  ❌ $1（期待 exit=$2 / 実際 $3）"; FAIL=$((FAIL+1)); }; }
+expect_exit_code "CLI --check: 違反があれば exit 1" 1 "$RC"; fg_reset
+OUT=$(python3 "$HOOKS/floor-guard.py" --check --root "$FG"); RC=$?; expect_exit_code "CLI --check: 違反が無ければ exit 0" 0 "$RC"
+OUT=$(python3 "$HOOKS/floor-guard.py" --check --root "$TMP"); RC=$?; expect_exit_code "CLI --check: git リポジトリでなければ exit 2（判定不能）" 2 "$RC"
+
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 if [ "$FAIL" -eq 0 ]; then
   echo "✅ 全て正常"

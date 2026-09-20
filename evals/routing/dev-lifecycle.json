@@ -1,0 +1,31 @@
+{
+  "skill": "dev-lifecycle",
+  "positive": [
+    {
+      "prompt": "要件定義から基本設計、詳細設計まで工程を分けて進めたい",
+      "top_k": 1
+    },
+    {
+      "prompt": "V字モデルでトレーサビリティを取りながら設計書を作って",
+      "top_k": 1
+    },
+    {
+      "prompt": "受け入れテスト UAT とシステムテストの仕様書を作って",
+      "top_k": 2
+    },
+    {
+      "prompt": "RFD を起票して保守運用まで工程で進める",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "工程承認のフェーズレビューをして承認に渡す",
+      "owner": "phase-approval"
+    },
+    {
+      "prompt": "仕様から spec.md と tasks.md を作ってタスク分解して",
+      "owner": "sdd-ecc-workflow"
+    }
+  ]
+}

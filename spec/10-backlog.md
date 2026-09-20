@@ -186,21 +186,22 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
 - **検証**: `bash scripts/check-docs.sh`（NG=0）／`bash scripts/test-check-docs.sh`／PR の Actions
 - **見積**: 自分 8〜12 往復（≒25分）
 
-### B-14 — 強制層を Codex 側へ寄せる
+### B-14 — 強制層を Codex 側へ寄せる — **前提を訂正（M23）。残りは移植**
 
 **対応**: `spec/11` D-4
 
-- **対象**: `scripts/`（git hook 層）／ `AGENTS.md.template` ／ `scripts/export-project.sh`
-- **内容**:
-  - Claude Code hook でしか効かない3つ（`block-gates.py` / `block-explore.sh` / `progress.py`）のうち、**Codex でも効かせたいものを git hook かスクリプトへ移せるか**を判定する
-    - ゲートの無断実行 → Codex には強制手段が無い。**`AGENTS.md` の規約として残すしかない**（正直にそう書く）
-    - 探索ブロック → 同上
-    - 秘密情報・`.ui-verified`・trace・契約 → **既に git hook / スクリプトで両対応**。ここを厚くする
+- **訂正（M23、2026-09-19）**: 「Codex には強制手段が無い」は誤り。Codex CLI は lifecycle hook を持つ（openai/codex `codex-rs/hooks`、Stable・既定有効）。イベント名・stdin・出力は Claude Code と同じ形で、`<repo>/.codex/hooks.json` に置く。`export-project.sh` が入出力を照合済みの 4 本（block-gates / filter-output / prompt-priority / context-guard）を配線する。**判定は「イベント名」でなく「hook が読むキーと値の形」で行う**
+- **対象**: `claude-code/hooks/` ／ `scripts/export-project.sh` ／ `scripts/install.sh` ／ `scripts/`（git hook 層）
+- **内容（残り）**:
+  - 編集系 3 本（`block-phase.py` / `pre-write-check.sh` / `post-write-html.sh`）: Codex の `tool_input` は `{"command": <パッチ本文>}` で `file_path` が無い。`*** Update File:` 行からパスを取る分岐を足せば両対応にできる
+  - `instruction-guard.py` / `reply-language.py`: transcript が rollout 形式（`timestamp` ＋ `RolloutItem`）。Claude Code 形式と両方読めるようにする
+  - `block-explore.sh` / `pre-read-guard.py`: Codex に Read/Grep/Glob ツールが無く、読み取りは shell 経由。`Bash` matcher で `cat` / `sed` / `grep` を見る版が要るかを判定する
+  - `pre-compact.py`: Codex の PreCompact 出力に `additionalContext` が無い。`CLAUDE.md.template` の「Compact instructions」を `AGENTS.md` 側にも置く
+  - `install.sh`: `~/.codex/hooks.json` へのグローバル配線（`install-guard.sh` と同じ merge 方式）
   - `scripts/install-git-hooks.sh`（新規）: `pre-commit` と `pre-commit-ui-gate.sh` を `.git/hooks/pre-commit` に**1コマンドで配線**する。現在は手順が文章でしか書かれておらず、配線されていない可能性が高い
-  - `AGENTS.md.template` に「Codex では hook による強制が効かない項目」を明示する節を作る（**効くふりをしない**）
-- **完了条件**: 一時リポジトリで `install-git-hooks.sh` を実行し、秘密情報コミットと UI 未検証コミットが実際に止まること
-- **検証**: 実機で4状態（秘密情報あり／UI 変更＋マーカー無し／マーカー期限切れ／正常）
-- **見積**: 自分 5 往復（≒13分）
+- **完了条件**: Codex 実機で `.codex/hooks.json` の 5 本が動く（`GATES_REQUESTED` 無しの pytest が止まる／`git log` が 20 件に絞られる）。一時リポジトリで `install-git-hooks.sh` を実行し、秘密情報コミットと UI 未検証コミットが実際に止まること
+- **検証**: Codex 実機 2 状態 ＋ git hook 4 状態（秘密情報あり／UI 変更＋マーカー無し／マーカー期限切れ／正常）
+- **見積**: 自分 8 往復（≒20分）
 
 ### B-15 — hook を「入力を絞る」用途に使う — **完了（M19 S23。既定 ON に変更 → Q-12）**
 

@@ -1,0 +1,31 @@
+{
+  "skill": "phase-approval",
+  "positive": [
+    {
+      "prompt": "工程承認の前にフェーズレビューをして指摘を出し切って",
+      "top_k": 1
+    },
+    {
+      "prompt": "承認ゲートで前工程の承認が失効していないか見て差し戻し事項を出して",
+      "top_k": 1
+    },
+    {
+      "prompt": "未承認のまま進めないように phase-review して",
+      "top_k": 2
+    },
+    {
+      "prompt": "承認が失効した工程を確認して",
+      "top_k": 3
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "要件定義から工程を分けて設計書を作って",
+      "owner": "dev-lifecycle"
+    },
+    {
+      "prompt": "完成したのでリリースしていい？",
+      "owner": "done-gate"
+    }
+  ]
+}

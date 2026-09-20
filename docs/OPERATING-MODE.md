@@ -41,7 +41,7 @@ LIBRARY:
 
 ## 4. 実装ループ
 
-着手前に `目的:` `終了条件:` `見積:` `検証:` の4行を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒。
+着手前に `目的:` `終了条件:` `見積:` `検証:` の4行を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒。コミット前に、変更したファイルを説明している文書が同じ差分で更新されているかを機械で確認する（H-7。`check-docs.sh --only-changed`。検査が緑＝文書が最新ではない）。
 
 ```text
 調査（grep/glob で絞る。依存先・呼び出し元は読む）
@@ -71,6 +71,8 @@ UI変更では、ブラウザまたはスクリーンショット確認を省略
 - 大きなファイルを全文取得しない
 - まず `rg --files` と短い `rg`
 - 2分を超えそうなら方針確認。見積を出したら `date` で実測し、見込み・実績・差異を報告する（`rules/absolute-rules.md` A-2）
+- 応答は結論か次の行動から始め、次の一手か閉じた問いで終える。冒頭の宣言文・末尾の申し出・「結論:」ラベルは Claude Code では `reply-language.py` が止める（A-9）
+- ゲートが赤でもテスト・しきい値・除外リストを弱めない。`floor-guard.py` が `git commit` の前に基準を下げる差分を止める（A-12。正当な変更は `Floor-Guard-Allow: <理由>`）。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 - 1分超の作業は `progress.py start/step/done` をコマンドに連結し、ステータスラインに経過を出す
 - `npm ci`, Playwright, ブラウザ実行、外部配信確認は必要性を説明してから
 - full ECC ではなく `ecc-daily-router` で選ぶ

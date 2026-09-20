@@ -1,0 +1,31 @@
+{
+  "skill": "streamlit-rag-app",
+  "positive": [
+    {
+      "prompt": "Streamlit と RAG で業務支援エージェントの新規モジュールを追加して",
+      "top_k": 1
+    },
+    {
+      "prompt": "business_agent_app に PMO 支援と意思決定支援の機能を実装して",
+      "top_k": 1
+    },
+    {
+      "prompt": "マルチテナント対応の社内ナレッジツールを Streamlit で改修して",
+      "top_k": 2
+    },
+    {
+      "prompt": "VeriRAG 連携アプリのエスカレーション判定を実装して",
+      "top_k": 2
+    }
+  ],
+  "negative": [
+    {
+      "prompt": "RAG の回答のハルシネーションを検出して評価して",
+      "owner": "agent-eval"
+    },
+    {
+      "prompt": "単一 HTML でデモを作って",
+      "owner": "single-html-tool"
+    }
+  ]
+}

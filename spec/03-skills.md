@@ -102,7 +102,7 @@
 ## done-gate（56行）
 
 - **目的**: 「動いた」と「完了」は別物。クローズ前に機械的に確認
-- **全種別共通8項目**: spec の FR 検証基準 / 自己レビュー Critical・High 残ゼロ / **テストが pass**（人力の「動作確認した」を置換）/ 秘密情報なし / CURRENT_STATE 更新 / implement.md 追記 / コミット済み / `quality_harness.py` PASS
+- **全種別共通8項目**: spec の FR 検証基準 / 自己レビュー Critical・High 残ゼロ / **テストが pass**（人力の「動作確認した」を置換）/ 秘密情報なし / CURRENT_STATE 更新 / implement.md 追記 / コミット済み / `quality_harness.py` PASS。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 - **変更タイプ別**: Type B（HTML/JS/CSS）は L3 全 PASS + `.ui-verified` 更新 + 実操作 + コンソールエラーなし + `uiux_review` 全状態。**pytest PASS だけで完了としない**
 - **工程ライフサイクル併用時**: 出口基準充足 / `trace-check.sh` NG=0 / TBD 残ゼロ / **人間の承認3点を取得済み**
 - **追加項目**: AI/LLM（agent-eval がベースライン以上・Faithfulness ゲート）/ PWA（360px・export/import・SW キャッシュ版・オフライン・Lighthouse 80+）/ 単一HTML / Streamlit
@@ -128,7 +128,7 @@
 - **3層の記録（混同しない）**: `CURRENT_STATE.md`（進捗）/ ADR（技術判断）/ **`lessons.md`（プロセス改善）← 本スキルの対象**
 - **トリガー**: プロジェクト完了時（必須）/ 大きくつまずいた時（その場で）/ 月1の定期
 - **観点（KPT 変形）**: Keep（再利用したいやり方）/ Problem（詰まった点）/ Try（キットへの反映候補）
-- **キットへのフィードバック**: 発火しなかったスキル→description に言い回し追加 / 繰り返した手作業→コマンド化 / 繰り返したミス→hook or done-gate 項目 / 有効だったプロンプト→スキル本文に定着
+- **キットへのフィードバック**: 発火しなかったスキル→description に言い回し追加＋`evals/routing/` に依頼文を足して `skill-route-check.sh` を通す / 繰り返した手作業→コマンド化 / 繰り返したミス→hook or done-gate 項目 / 有効だったプロンプト→スキル本文に定着
 - **現況**: `templates/lessons.md` はエントリ0件。このループは未稼働（`spec/09-findings.md` F-05）
 
 ---
@@ -153,7 +153,7 @@
   8. フォント読み込み方針 — **既定はシステムフォントスタック**。CDN は「オフライン要件がなく常時オンラインと確定している場合」の任意強化に格下げ（single-html-tool / nfr-standards との矛盾解消）
   9. **画面の作り方**（2026-08 追加）— 直値禁止（*整理開始時点で色105種・角丸11種・文字21種あった*）/ 骨格（globalbar / sidebar / topbar / content）/ **操作には必ず結果を返す**（成功＝消えるトースト、失敗＝**消えない**＋次の行動、処理中、0件、危険操作の確認。`textContent` で入れる）/ アイコン（同梱・CDN 禁止・慣用の形）/ 文言規約6条
 - **references/frameworks.md**（36行。M17 S12 で縮小）: 出荷物への導線表（tokens / components.css / layout.css / feedback.js / icons.js / tailwind.config.js / streamlit_theme.py / check-design.sh）＋分担表（値＝本スキル / 実装規約＝ECC / 独創的 UI 生成＝`frontend-design` に**起動時トークンを渡す** / ブランド起こし＝`ckm:design` / 検証＝`uiux_review`＋`check-design.sh`）＋共通の落とし穴4点。FW 別の置き場所・読み込み順は `templates/ui/README.md` の1枚表へ移した
-- **注**: PRD の非機能「1スキル ≦ 200行」超過（F-04）は S13 で是正済み。`check-docs.sh` 検査7が NG で監視する
+- **注**: PRD の非機能「1スキル ≦ 200行」超過（F-04）は S13 で是正済み。`check-docs.sh` 検査7が NG で監視する。SKILL.md を変えたのに INDEX・本章が未更新なら検査 12（`--changed`）が止める
 
 ## nfr-standards（89行）
 
@@ -163,6 +163,8 @@
 - **Streamlit**: 初期表示3秒（LLM 除く）/ RAG 5秒 / **テナントIDを全DBクエリの第一キーに強制フィルタ** / 1モジュール1責務（16モジュール維持）/ `session_state` は `{module}_{name}` / LLM 呼び出しは1ラッパーに集約 / `.env` は `.gitignore`
 
 ## agent-eval（67行 + references 184行）
+
+> キット自身の応答（rules / AGENTS / スキル本文の改稿前後）を比べるときは `scripts/response-eval.sh`（盲検の A/B。M23）。本スキルはプロジェクトの LLM 機能の評価。
 
 - **目的**: LLM 出力は非決定性なので pass/fail の単体テストでは測れない。**トレース＋データセット＋スコアラー＋回帰ゲート**の4点で評価（Weave 相当を無料スタックで）
 - **スタック**: DeepEval（pytest-native, MIT）/ Langfuse セルフホスト（MIT）/ judge は**業務＝OpenAI GPT-4o系（精度重視）・個人PWA＝Gemini 無料枠 or Ollama（課金ゼロ）**

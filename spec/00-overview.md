@@ -33,7 +33,7 @@
 
 1. **エージェント可搬性** — Claude Code でも Codex でも同じファイルで同じ振る舞い。ツール固有名に依存しない（固有機能は「汎用表現（Claude Code では X）」の併記形式）
 2. **ゼロコンテキスト継続性** — 前提知識ゼロのモデルが `INDEX.md` → `docs/Roadmap.md` の順に読むだけでキット開発を続行できる
-3. **自己改善ループ** — retro → `lessons.md` → スキル/コマンド/hook への反映が月次で回る
+3. **自己改善ループ** — retro → `lessons.md` → スキル/コマンド/hook への反映が月次で回る（description の直しは `scripts/skill-route-check.sh` で発火・誤発火・衝突を機械判定。M23）
    → **③は現時点で未達**（`templates/lessons.md` が雛形のまま。`spec/09-findings.md` F-05）
 
 ## やらないこと（Non-Goals）
@@ -56,7 +56,7 @@
 | 層 | 置き場所 | 導入 | 効く範囲 | 目的 |
 |---|---|---|---|---|
 | **グローバル層** | `~/.claude/` `~/.codex/` | `scripts/install.sh` | 自分の PC 1台・複数プロジェクト横断 | 普段使いの一貫性。キット更新が即座に全プロジェクトへ反映 |
-| **プロジェクト配布層** | 対象プロジェクト直下の `.claude/` `AGENTS.md` `CLAUDE.md` | `scripts/export-project.sh <target>` | Codex／リモート・エフェメラルな Claude Code／CI／teammate の clone 先 | install 不要でその場で効く。対象の git にコミットして持ち運ぶ |
+| **プロジェクト配布層** | 対象プロジェクト直下の `.claude/` `.codex/hooks.json`（Codex で効く hook 5 本） `AGENTS.md` `CLAUDE.md` | `scripts/export-project.sh <target>` | Codex／リモート・エフェメラルな Claude Code／CI／teammate の clone 先 | install 不要でその場で効く。対象の git にコミットして持ち運ぶ |
 
 プロジェクト配布層は**書き出した時点のスナップショット**であり、キット本体の更新には自動追従しない（再エクスポートで同期）。
 配布の性質上避けられないトレードオフとして許容している。
@@ -93,7 +93,7 @@
 | Ver.5.0 | 2026-07 | コンテキスト圧縮・資産監査・自己文書化 | `context-compression` / `/compact-work` / `docs/AUDIT-2026-07.md` / Vision・PRD・Roadmap / `templates/design-system.md` / INDEX 2層化 |
 | Ver.6.0 | 2026-08 | 開発工程ライフサイクル | `dev-lifecycle`(+3 refs) / `templates/lifecycle/` 11本 / `trace-check.sh` / `/rfd` `/lifecycle` `/trace` / GitHub テンプレート / `lifecycle-check.yml` |
 | Ver.6.1 | 2026-08-25 | 速度ハーネス・機能完全性・UI/UX 実機レビュー | `rules/` 3本 / `uiux_review`(+viewpoints) / `block-gates.py` `progress.py` `statusline.py` / `templates/settings.sandbox.json` |
-| Ver.6.2 | 2026-08-25 | テスト活動の設計と機械ゲート | `test-strategy`(+2 refs) / `e2e-cycle` / `templates/test/` 8本 / `quality_harness.py` / `ui-hash.py` + `pre-commit-ui-gate.sh` / `init-test-docs.sh` / `test-gates.yml` |
+| Ver.6.2 | 2026-08-25 | テスト活動の設計と機械ゲート | `test-strategy`(+2 refs) / `e2e-cycle` / `templates/test/` 8本 / `quality_harness.py` / `ui-hash.py` + `pre-commit-ui-gate.sh` / `init-test-docs.sh` / `test-gates.yml`。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 | Ver.6.3 | 2026-08-25〜26 | デザイン: トークン実物・画面の作り方・FW 別適用 | `templates/tokens.css` / `design-system` 「画面の作り方」+ `references/frameworks.md` / `templates/components/` 3本 |
 
 Ver.6.1 以降は、実プロジェクト（WebSpec2Doc / UX_Auto_Reviewer / my_forward）で育った運用を
@@ -105,4 +105,4 @@ Ver.6.1 以降は、実プロジェクト（WebSpec2Doc / UX_Auto_Reviewer / my_
 1. **真実源の一本化** — デザイン値＝`skills/design-system`、ECC 対応＝`docs/ECC-ASSET-MAP.md`、要件追跡＝`traceability-matrix.md`、テストレベルの設計観点＝`dev-lifecycle/references/test-levels.md`。重複は監査（AUDIT）で検出・却下
 2. **「作った」を「効いている」と言わせない** — `rules/functional-integrity.md`（実行経路）→ `uiux_review`（全状態を実機で）→ `done-gate`（完了判定）
 3. **人の注意力に頼らず機械で止める** — `trace-check.sh`（追跡漏れ）/ `quality_harness.py`（実行経路の無い機能）/ `.ui-verified`（E2E 未実行の UI コミット）/ `block-gates.py`（ゲートの無断実行）/ `pre-commit`（秘密情報）
-4. **速度は工程削減でなく往復削減** — `rules/speed-harness.md`「所要時間 ≒ 往復回数 × 12秒」。ゲートは削らない
+4. **速度は工程削減でなく往復削減** — `rules/speed-harness.md`「所要時間 ≒ 往復回数 × 12秒」。ゲートは削らない。コミット前の「変更を説明する文書が同じ差分にあるか」（H-7・検査 12）もゲートの一つ（M23）

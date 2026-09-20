@@ -14,7 +14,7 @@ expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出�
 expect_noout(){ printf '%s' "$3" | grep -qF -- "$2" && ng "$1" "出力に '$2' が出た" || ok "$1"; }
 
 # テスト実行の代替（各検査の突合に集中するため、実テストの再実行はしない）
-export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=79,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=102,test-git-gates.sh=27"
+export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=106,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=116,test-git-gates.sh=27,test-json-envelope.sh=13,test-skill-route-check.sh=20,test-response-eval.sh=27"
 
 fresh() { # 複製を作り直してパスを返す
   rm -rf "$TMP/copy"; mkdir -p "$TMP/copy"
@@ -119,6 +119,41 @@ expect_exit "絶対パスは WARN なので exit 0" 0 "$RC"
 grep -q "| 絶対パス | templates/CURRENT_STATE.md" "$TMP/report.md" && ok "種別「絶対パス」で /Users/ を検出（レポート）" || ng "種別「絶対パス」で検出" "レポートに無い"
 C=$(fresh); OUT=$(run "$C" --skip-tests)
 grep -q "| 絶対パス |" "$TMP/report.md" && ng "元の状態では検出されない" "残っている: $(grep '| 絶対パス |' "$TMP/report.md" | head -2)" || ok "元の状態では検出されない（配布雛形・README・userguide に絶対パスなし）"
+
+echo "[ケース13: 変更文書（検査12・--changed）]"
+# 複製を git リポジトリにして「変更したファイルを説明する文書が同じ差分に無い」を検出する
+fresh_git() { C=$(fresh); (cd "$C" && git init -q && git -c user.name=t -c user.email=t@t add -A && git -c user.name=t -c user.email=t@t commit -q -m init); echo "$C"; }
+C=$(fresh); OUT=$(run "$C" --only-changed); RC=$?
+expect_exit "git リポジトリでなければ WARN で exit 0" 0 "$RC"
+expect_out  "スキップ理由を明示" "git 差分を取れない" "$OUT"
+C=$(fresh_git); OUT=$(run "$C" --only-changed); RC=$?
+expect_exit "差分が無ければ exit 0" 0 "$RC"
+C=$(fresh_git); printf '\n# 変更\n' >> "$C/claude-code/hooks/log-instructions.py"
+OUT=$(run "$C" --only-changed); RC=$?
+expect_exit "hook を変えて説明文書を触らなければ exit 1" 1 "$RC"
+expect_out  "種別「変更文書」で検出" "変更文書" "$OUT"
+grep -q "^| 変更文書 | INDEX.md |" "$TMP/report.md" && ok "INDEX.md（hook 一覧）を未更新として検出" || ng "INDEX.md（hook 一覧）を未更新として検出" "レポートに無い"
+# 検出された文書を全部触る（末尾行に空白を足す＝行数は変えない）と通る
+for d in $(grep "^| 変更文書 |" "$TMP/report.md" | cut -d'|' -f3 | tr -d ' '); do sed -i '$ s/$/ /' "$C/$d"; done
+OUT=$(run "$C" --only-changed); RC=$?
+expect_exit "説明文書を同じ差分で触れば exit 0" 0 "$RC"
+C=$(fresh_git); printf '\n# 変更\n' >> "$C/scripts/test-hooks.sh"
+OUT=$(run "$C" --only-changed); RC=$?
+expect_exit "回帰テスト自体（test-*.sh）は対象外（ケース数検査で見る）" 0 "$RC"
+C=$(fresh_git); sed -i '$ s/$/ /' "$C/skills/retro/SKILL.md"
+OUT=$(run "$C" --only-changed); RC=$?
+expect_exit "SKILL.md の変更はスキル名で言及を探す" 1 "$RC"
+grep -q "^| 変更文書 | INDEX.md |.*\`skills/retro/SKILL.md\`" "$TMP/report.md" && ok "INDEX.md の \`retro\` 行を未更新として検出" || ng "INDEX.md の \`retro\` 行を未更新として検出" "レポートに無い"
+C=$(fresh_git); printf '\n# 変更\n' >> "$C/scripts/export-project.sh"; sed -i '$ s/$/ /' "$C/docs/Roadmap.md"
+OUT=$(run "$C" --only-changed); RC=$?
+expect_exit "台帳（Roadmap）を触っただけでは通らない（説明文書は別）" 1 "$RC"
+expect_noout "Roadmap 自体は対象外" "| 変更文書 | docs/Roadmap.md" "$(cat "$TMP/report.md")"
+
+echo "[ケース14: 回帰テストの代替値（CHECK_DOCS_TEST_TOTALS の直値）も突合]"
+C=$(fresh); sed -i 's/test-install.sh=[0-9]*/test-install.sh=100/' "$C/scripts/test-check-docs.sh"
+OUT=$(run "$C"); RC=$?
+expect_exit "test-check-docs.sh の直値が実測とズレれば exit 1" 1 "$RC"
+grep -q "| ケース数 | scripts/test-check-docs.sh" "$TMP/report.md" && ok "対象 scripts/test-check-docs.sh で検出" || ng "対象 scripts/test-check-docs.sh で検出" "レポートに無い"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

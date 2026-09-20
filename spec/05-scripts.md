@@ -36,7 +36,7 @@
 - 出力: 項目ごとに `✅`/`❌` ＋ 末尾に `結果: OK=n / NG=n`
 - **終了コード**: NG=0 → 0 ／ NG>0 → 1（S1 で修正。`test-install.sh` が assert）。導入済み版（`KIT_VERSION`）とリポジトリ版を表示
 
-### `export-project.sh`（138行）— プロジェクト配布
+### `export-project.sh`（201行）— プロジェクト配布
 
 ```bash
 ./scripts/export-project.sh <対象プロジェクトのパス>
@@ -51,13 +51,14 @@
 | `.claude/templates/` | templates 全体（スキル本文から参照されるため同梱） |
 | `.claude/INDEX.md` | フルコピーなので地図として同梱 |
 | `.claude/KIT_VERSION` | `<VERSION> <commit> <日付>`。配布先がどの版から出たかを判別（S2） |
-| `.claude/settings.json` | 相対パス版をヒアドキュメントで生成。**block-explore の配線は含まない** |
+| `.claude/settings.json` | 相対パス版をヒアドキュメントで生成（block-explore / block-phase / 指示優先 3 hook を含む全 hook） |
+| `.codex/hooks.json` | Codex CLI 用（M23）。入出力を照合済みの 5 hook（block-gates / filter-output / floor-guard / prompt-priority / context-guard）だけを配線。既存は `.bak`。初回は Codex の `/hooks` で信頼 |
 | `AGENTS.md` / `CLAUDE.md` | template から生成。`sed` で `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md` → `.claude/INDEX.md` に変換 |
 | `scripts/trace-check.sh` | 既存があればスキップ |
-| `scripts/{quality_harness.py,ui-hash.py,pre-commit-ui-gate.sh}` | 既存があればスキップ |
+| `scripts/{quality_harness.py,ui-hash.py,pre-commit-ui-gate.sh}` | 既存があればスキップ。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 
-- 既存の `settings.json` / `AGENTS.md` / `CLAUDE.md` は `.bak` に退避
-- 完了後に「次にやること」6項目を出力（プレースホルダを埋める／git add & commit／init-lifecycle／sandbox 設定／init-test-docs）
+- 既存の `settings.json` / `.codex/hooks.json` / `AGENTS.md` / `CLAUDE.md` は `.bak` に退避
+- 完了後に「次にやること」7項目を出力（プレースホルダを埋める／git add & commit（Codex は `/hooks` で信頼）／init-lifecycle／sandbox 設定／init-test-docs／phase-gate）
 - **書き出した時点のスナップショット**。本体更新には自動追従しない
 
 ### `init-project.sh`（102行）— 新規プロジェクト雛形
@@ -224,10 +225,10 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 
 ## 文書整合検査（2026-09-17 追加・S5）
 
-### `check-docs.sh` → `check_docs.py`
+### `check-docs.sh` → `check_docs.py`。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 
 ```bash
-./scripts/check-docs.sh [--root DIR] [-o REPORT] [--strict] [--skip-tests]
+./scripts/check-docs.sh [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--changed [--base REF] [--only-changed]]
 ```
 
 | # | 検査 | 内容 | 既定 |
@@ -240,14 +241,15 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | 6 | 常時読込 | `rules/*.md` で `paths:` frontmatter の無いものの合計 ≦ 100 行 | **WARN**（S7 で NG） |
 | 7 | 行数目安 | SKILL ≦ 200 / コマンド ≦ 40 | NG（S13 で昇格） |
 | 8 | spec 同期 | `spec/01-inventory.md` の行数 ↔ 実測、実ファイルが目録に載っているか | NG |
+| 12 | 変更文書 | `--changed` 時のみ。git 差分（作業ツリー＋index＋未追跡、`--base REF` で REF...HEAD も）で変わった `scripts/` `claude-code/` `skills/` `rules/` `templates/` `github-actions/` を、README・INDEX・docs・spec・雛形・SKILL が言及しているのに同じ差分に無ければ NG。台帳（Roadmap / lessons / AUDIT / spec/01 / 09 / 10）と `test-*.sh` は対象外。SKILL.md はスキル名、曖昧な basename（settings.json 等）は親ディレクトリ付きで探す。`--only-changed` はこれだけを回す（`docs-gate.py` がコミット前に使う） | NG |
 
-- 環境変数 `CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,…"` でテスト実行を代替（回帰テスト用）
+- 環境変数 `CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,…"` でテスト実行を代替（回帰テスト用。この直値も検査 3 が実測と突合する）
 - 出力は3層、全件は `check-docs-report.md`（`.gitignore` 済み）。NG>0 で exit 1
 - 履歴文書（`docs/Roadmap.md` / `docs/AUDIT-2026-07.md`）は「当時の事実」なので数値の突合対象にしない
 
 ## デザイン検査（2026-09-17 追加・S11）
 
-### `check-design.sh` → `check_design.py`
+### `check-design.sh` → `check_design.py`。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20）
 
 ```bash
 ./scripts/check-design.sh [--root DIR] [--tokens FILE] [-o REPORT] [PATH ...]   # PATH 省略時 templates/ui templates/components。--tokens 省略時は templates/tokens.css → .claude/templates/tokens.css
@@ -266,6 +268,35 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 - 出力は3層、全件は `check-design-report.md`（`.gitignore` 済み）。対象なしは exit 0
 - 配布先では `./scripts/check-design.sh static src` のように対象を渡す（`templates/design-system.md` 再現チェックリストの機械判定分）
 
+## スキル発火の機械判定（2026-09-20 追加・M23。F-13）
+
+`scripts/skill-route-check.sh`（本体 `skill_route_check.py`）。ケースは `evals/routing/<skill>.json`（`positive`: 発火すべき依頼文と `top_k`、`negative`: 発火してはいけない依頼文と本来の担当 `owner`）。
+依頼文と各 `description` を文字 2/3-gram（日本語）＋単語（英数）の TF-IDF ベクトルにして余弦で順位を出す（決定論的・LLM を呼ばない）。
+
+| # | 検査 | NG 条件 |
+|---|---|---|
+| 1 | 構造 | ケースファイルが無い／JSON でない／positive < 3／negative < 2／スキルの無いケース |
+| 2 | 発火 | positive の依頼文でその skill が `top_k`（既定 3）に入らない |
+| 3 | 誤発火 | negative の依頼文でその skill が 1 位、または `owner` がその skill より下・不在 |
+| 4 | 衝突 | description 同士の余弦 ≧ 0.75（≧ 0.50 は WARN） |
+| 5 | 床 | `--min-rank1 N` で positive の rank-1 率が N% 未満（kit-ci は初回実測の 100） |
+
+- 落ちたときに直すのは依頼文ではなく description（発火語を足す／責務分離の一文を足す）。`--explain "<依頼文>"` で上位 5 件を表示
+- exit 0 合格／1 NG／2 判定不能（`skills/` 無し）。`--json` 対応（`error.type` は `routing.failed`）
+- 語彙の近似なので意味は判定できない。`/usage` のスキル別観測（B-10）は残す
+
+## 応答の盲検対比評価（2026-09-20 追加・M23）
+
+`scripts/response-eval.sh`（本体 `response_eval.py`）。「規約を変えて応答が良くなったか」を人の印象でなく盲検の判定で決める。出所: i-have-adhd の blind paired eval。
+
+- 入力: A（基準）と B（候補）の system prompt ファイル、`evals/response/cases.jsonl`（依頼文 10 件）、`evals/response/rubric.md`（軸・重み・判定者指示）
+- 盲検: 判定者には X / Y の匿名ラベルだけを渡す（条件名・ファイル名・モデル名を渡さない）。X/Y の割当は案件ごとに seed 付き乱数。既定で順序を入れ替えてもう 1 回判定し平均する（`--single-order` で 1 回）
+- 採点: 軸ごと 0〜10 × 重み（正確性 35・自律 25・行動可能性 20・安全 10・簡潔 10）= 100 点満点。blocker が付いた応答は 0
+- runner: `claude`（`claude -p --setting-sources "" --model <ID> --output-format json --system-prompt-file`。`~/.claude` の hooks / rules を切って比べる system prompt だけを効かせる）か `cmd:<コマンド> {system}`（依頼文は stdin、応答は stdout）。判定者は `--judge-runner`
+- 出力: `evals/response/out/`（`plan.json` 割当・`<id>.A.md` `<id>.B.md` 応答・`<id>.judge.<順序>.txt` 判定の入出力・`records.json`・`report.md`）。`score` で集計だけやり直せる
+- exit 0: B が A より悪くない（平均が下回らず、B に blocker 無し）／1: B が悪い／2: 判定不能（runner 失敗・判定 JSON が読めない）。`--json` 対応（`response.worse` / `response.undetermined`）
+- 未実施: 実 LLM での実行（本セッションに `claude` CLI は無い）。偽 runner の回帰テストで盲検・順序入替・blocker・判定不能の分岐は確認済み
+
 ## 回帰テスト（7件・全 green）
 
 | スクリプト | 行 | ケース数 | 2026-09-16 実測 | 特筆 |
@@ -275,7 +306,9 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 | `test-quality-harness.sh` | 89 | **11** | PASS=11 / FAIL=0 | 検出9種＋allowlist 動作＋**配布雛形が新規プロジェクトで PASS** |
 | `test-install.sh` | 130 | **73** | PASS=73 / FAIL=0 | install / verify / export / init-project / init-test-docs。**HOME を一時ディレクトリに差し替え、実 `~/.claude` には触らない**（冒頭ガード） |
 | `test-git-gates.sh` | 124 | **27** | PASS=27 / FAIL=0 | pre-commit（PATH 最小化で簡易パターン経路を強制）/ ui-hash.py / pre-commit-ui-gate.sh の全分岐 |
-| `test-check-docs.sh` | 105 | **25** | PASS=25 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
+| `test-check-docs.sh` | 149 | **46** | PASS=46 / FAIL=0 | リポジトリ複製に破壊を仕込んで検出を確認。**リポジトリ自身が NG=0 で通ること**を含む |
+| `test-skill-route-check.sh` | 112 | **20** | PASS=20 / FAIL=0 | キットの skills/ と evals/routing/ の複製を壊して 5 検査の検出を確認。リポジトリ自身が NG=0 で通ること・`--explain`・`--json`・skills 無し exit 2 |
+| `test-response-eval.sh` | 129 | **27** | PASS=27 / FAIL=0 | 偽 runner（応答は system prompt で分岐・判定者は GOOD を含む側を高く採点）。validate の壊し方 4 種・盲検（判定者の stdin に条件名が無い）・順序入替 20 回／`--single-order` 10 回・負け・blocker・同点・判定不能・runner 失敗・seed 再現・score |
 | `test-check-design.sh` | 143 | **43** | PASS=43 / FAIL=0 | 出荷物（ui/ + components/）が NG=0 ／ 色・px 直値と除外規則 ／ 未定義・未使用トークン ／ CDN ／ alert() ／ tokens.css 読込 ／ 対象なし・複数パス ／ **配布先の形（.claude/templates/tokens.css 自動検出・.claude/ 不走査・貼り込んだ定義行）** |
 
 **「配布する雛形が最初から NG=0 / PASS で始まること」をテストに含めている**のが両者の共通設計。

@@ -58,7 +58,8 @@
 | 工程の入口/出口基準 | `skills/dev-lifecycle/references/phase-gates.md` | `done-gate` / `/lifecycle` / PR テンプレート |
 | 機能契約の項目定義 | `skills/test-strategy/references/feature-contracts.md` | `quality_harness.py` / `templates/test/feature_contracts.yml` |
 | `.ui-verified` の仕様 | `skills/test-strategy/references/ui-verified-gate.md` | `pre-commit-ui-gate.sh` / `ui-hash.py` / `done-gate` |
-| 速度の規律 | `rules/speed-harness.md` | `CLAUDE.md.template` / `AGENTS.md.template` / `OPERATING-MODE.md` |
+| 速度の規律 | `rules/speed-harness.md` | `CLAUDE.md.template` / `AGENTS.md.template` / `OPERATING-MODE.md` / `docs-gate.py`（H-7 の文書更新確認を commit 前に強制） |
+| 基準を緩めない（A-12） | `rules/absolute-rules.md` | `claude-code/hooks/floor-guard.py`（commit 前に差分を検査。`settings.json` と `.codex/hooks.json` の両方に配線） / `templates/implement-profile.md`（止まる条件・言い訳と事実の表）。`--json` で `{ok, exit, data, meta, error{type, message, hint, retry_argv}}` を返す（2026-09-20） |
 | キット自体の要求 | `docs/PRD.md` | `docs/Roadmap.md`（各項目の完了条件） |
 | **現況の事実・残課題** | `spec/`（本ディレクトリ） | — |
 
@@ -78,7 +79,7 @@
 
 | 系統 | 仕組み | 制御点 |
 |---|---|---|
-| **暗黙発火** | `SKILL.md` frontmatter の `description` に「〜への言及があれば必ずこのスキルを使うこと」形式で発火語を列挙 | 発火しなかったスキルは `retro` で description に言い回しを追加する（`skills/retro/SKILL.md`） |
+| **暗黙発火** | `SKILL.md` frontmatter の `description` に「〜への言及があれば必ずこのスキルを使うこと」形式で発火語を列挙 | 発火しなかったスキルは `retro` で description に言い回しを追加する（`skills/retro/SKILL.md`）。直した description は `scripts/skill-route-check.sh` が `evals/routing/` の依頼文で機械判定（発火・誤発火・衝突・rank-1 率の床。M23） |
 | **明示呼び出し** | `claude-code/commands/<name>.md` → `/<name>` | コストは呼んだ時だけ発生（INDEX の設計） |
 | **強制（hook）** | `settings.json` の PreToolUse / PostToolUse / Stop / statusLine | 唯一 AI の意思で回避できない層。`block-explore.sh`（exit 2）と `block-gates.py`（deny JSON）が実際にブロックする |
 
