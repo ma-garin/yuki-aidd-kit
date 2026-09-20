@@ -345,6 +345,31 @@ else
   echo "  ❌ done で progress.json を削除"; FAIL=$((FAIL+1))
 fi
 
+echo "[.claude/settings.json 配線]"
+# 2026-09-20 の事故の再発防止: 実体に届かない環境（リモートセッション／ディレクトリ移動の途中）で
+# hook の起動に失敗すると、UserPromptSubmit はプロンプト投入ごとブロックされる。無言で飛ぶことを検証する。
+DEV_SETTINGS="$KIT_DIR/.claude/settings.json"
+if [ -f "$DEV_SETTINGS" ]; then
+  EMPTY="$TMP/no-hooks"; mkdir -p "$EMPTY"
+  CMDS=$(python3 -c 'import json,sys
+d = json.load(open(sys.argv[1]))
+for entries in d.get("hooks", {}).values():
+    for e in entries:
+        for h in e.get("hooks", []):
+            print(h.get("command", ""))' "$DEV_SETTINGS")
+  while IFS= read -r CMD; do
+    [ -n "$CMD" ] || continue
+    NAME=$(printf '%s' "$CMD" | grep -o '[a-z-]*\.py' | head -1)
+    OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"報告して"}' | CLAUDE_PROJECT_DIR="$EMPTY" sh -c "$CMD" 2>&1); RC=$?
+    expect_empty "実体が無くても無言で exit 0: $NAME" "$OUT" "$RC"
+  done <<< "$CMDS"
+  PP=$(printf '%s' "$CMDS" | grep prompt-priority)
+  OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"いますぐ報告して"}' | CLAUDE_PROJECT_DIR="$KIT_DIR" sh -c "$PP" 2>&1)
+  expect_contains "実体があれば prompt-priority は従来どおり注入する" "prompt-priority" "$OUT"
+else
+  echo "  ❌ .claude/settings.json が無い"; FAIL=$((FAIL+1))
+fi
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 if [ "$FAIL" -eq 0 ]; then
