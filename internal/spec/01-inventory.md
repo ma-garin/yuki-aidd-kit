@@ -25,7 +25,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `absolute-rules.md` | 22 | **A-1〜A-10** を「発動 / 出力 / 要点」の表で（M16 で 112→19 行）。根拠は `internal/rules-rationale/absolute-rules.md` |
-| `speed-harness.md` | 61 | **H-0〜H-10** の規範だけ（M16 で 115→51 行、7.1.0 で H-0・H-9・H-10 を追加）。トークン消費の根拠は `internal/rules-rationale/token-economics.md`。出所・失敗事例・実測記録は `internal/rules-rationale/speed-harness.md` |
+| `speed-harness.md` | 62 | **H-0〜H-10** の規範だけ（M16 で 115→51 行、7.1.0 で H-0・H-9・H-10 を追加）。トークン消費の根拠は `internal/rules-rationale/token-economics.md`。出所・失敗事例・実測記録は `internal/rules-rationale/speed-harness.md` |
 | `model-routing.md` | 16 | **Pro＋Sonnet の規律**（M16 新設）: 既定 Sonnet・Opus 3条件・effort・`/clear`・委譲・上限時・週1 `/usage` |
 | `functional-integrity.md` | 17 | 実行経路を確認するまで「完了」と言わない。**`paths:` 付き＝コード/UI を触ったときだけ読み込み**（M16） |
 
@@ -119,7 +119,7 @@
 | `filter-output.py` | 114 | 冗長な出力を絞る書き換え（PreToolUse Bash・updatedInput）。テスト→失敗行＋末尾、install/build→tail、git log→-20、git diff→--stat。終了コード保持。`FULL_OUTPUT=1` で素通り |
 | `pre-read-guard.py` | 98 | Read の前段。読む価値の無いファイルを deny、`READ_GUARD_MAX_LINES`（800）超を `READ_GUARD_LIMIT`（300）に切り詰め。バイナリ・offset/limit 指定ありは素通り |
 | `instruction-guard.py` | 203 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無い／日本語の発言に日本語が無い応答なら additionalContext で通知（deny しない）。サブエージェント（agent_id）・機械由来タグ・transcript 無しは対象外 |
-| `reply-language.py` | 56 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
+| `reply-language.py` | 70 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
 | `prompt-priority.py` | 32 | UserPromptSubmit。緊急語を含む発言に「作業より優先」を additionalContext で注入 |
 | `context-guard.py` | 59 | UserPromptSubmit。transcript の mtime でアイドル（`CONTEXT_GUARD_IDLE_MIN` 55）・サイズで肥大（`CONTEXT_GUARD_MAX_MB` 4）を判定し additionalContext を注入 |
 | `pre-compact.py` | 34 | PreCompact。残す／捨てる／形式の指示を注入 |
@@ -177,7 +177,7 @@
 | `test-test-metrics.sh` | 175 | test-metrics の回帰テスト（雛形・実データ・unread・欠陥表なし・基準表・偏り・履歴・報告書置換・CSV） |
 | `test-token-audit.sh` | 56 | token-audit の回帰テスト（キット自身 NG=0・配布先・配線漏れ・ログ集計・MCP 過多） |
 | `test-check-approval.sh` | 241 | check-approval の回帰テスト。配布雛形 NG=0 と各検査の NG ケース |
-| `test-hooks.sh` | 430 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
+| `test-hooks.sh` | 435 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 175 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
@@ -308,7 +308,7 @@
 | `rules-rationale/speed-harness.md` | 127 | `rules/speed-harness.md` の圧縮前原文（実測・失敗事例）と **H-6 の実測記録の追記先**（M16） |
 | `rules-rationale/model-routing.md` | 31 | `rules/model-routing.md` 各行の根拠（一次情報の出典）と未確認事項（M16） |
 | `rules-rationale/token-economics.md` | 39 | トークン消費の構造（実測・解釈・委譲の採算式・バイナリで確かめた設定・引用禁止の数値）。H-0・H-9・H-10 の根拠（7.1.0） |
-| `internal/lessons.md` | 183 | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。`templates/lessons.md` は配布雛形で別物） |
+| `internal/lessons.md` | 192 | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。`templates/lessons.md` は配布雛形で別物） |
 
 ---
 
