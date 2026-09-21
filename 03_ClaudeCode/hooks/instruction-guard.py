@@ -169,7 +169,10 @@ def already_denied(session_id: str, inst: str) -> bool:
     if not session_id:
         return False
     key = hashlib.sha256(inst.encode("utf-8")).hexdigest()
-    state = Path(tempfile.gettempdir()) / f"instruction-guard-{re.sub(r'[^\w-]', '_', session_id)}"
+    # f-string 式の中に \\ を書くと Python 3.11 以下で SyntaxError になる（PEP 701 は 3.12 から）。
+    # このフックは A-13 を強制する要なので、古い系でも必ず読み込めるよう式の外へ出す。
+    safe_id = re.sub(r"[^\w-]", "_", session_id)
+    state = Path(tempfile.gettempdir()) / f"instruction-guard-{safe_id}"
     try:
         if state.is_file() and state.read_text().strip() == key:
             return True
