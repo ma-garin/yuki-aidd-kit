@@ -1,0 +1,3 @@
+display_name: "phase-approval"
+short_description: "工程の出口で人間が承認する前に、AI が 3 役を順次で回して指摘を出し切るスキル"
+allow_implicit_invocation: true

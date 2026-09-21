@@ -1,0 +1,3 @@
+display_name: "uiux_review"
+short_description: "画面のUI/UXを、実際に開いて全状態を確認しながらレビューする"
+allow_implicit_invocation: true

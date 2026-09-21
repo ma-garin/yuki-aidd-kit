@@ -1,0 +1,3 @@
+display_name: "/ecc-daily"
+short_description: "/ecc-daily — プロジェクトに合う ECC 資産を選ぶ"
+allow_implicit_invocation: true

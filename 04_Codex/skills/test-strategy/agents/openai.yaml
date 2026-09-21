@@ -1,0 +1,3 @@
+display_name: "test-strategy"
+short_description: "プロジェクトのテスト活動全体（テストレベル L1〜L4、ゲート基準、テスト種類、完了基準、ゲートの実行タイミング、IS…"
+allow_implicit_invocation: true

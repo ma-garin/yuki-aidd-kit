@@ -1,0 +1,3 @@
+display_name: "/plan"
+short_description: "/plan — 方針の確定（実装モード解除・探索許可）"
+allow_implicit_invocation: true

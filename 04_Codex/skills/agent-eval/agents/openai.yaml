@@ -1,0 +1,3 @@
+display_name: "agent-eval"
+short_description: "自作のAIエージェント・LLMシステム（business_agent、multi-agent research sys…"
+allow_implicit_invocation: true

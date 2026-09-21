@@ -1,0 +1,3 @@
+display_name: "/eval"
+short_description: "/eval — AIエージェントシステムのeval実行"
+allow_implicit_invocation: true

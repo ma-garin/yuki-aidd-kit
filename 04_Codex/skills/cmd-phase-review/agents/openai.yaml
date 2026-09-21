@@ -1,0 +1,3 @@
+display_name: "/phase-review"
+short_description: "/phase-review — 工程の出口で AI 3 役を順次レビューし、人間の承認に渡す"
+allow_implicit_invocation: true

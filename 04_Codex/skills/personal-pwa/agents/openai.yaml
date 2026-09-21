@@ -1,0 +1,3 @@
+display_name: "personal-pwa"
+short_description: "個人用PWA（家計簿・キャッシュフロー・日記・スケジュール管理等）の開発スキル"
+allow_implicit_invocation: true

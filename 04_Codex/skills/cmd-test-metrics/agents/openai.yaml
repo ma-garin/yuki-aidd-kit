@@ -1,0 +1,3 @@
+display_name: "/test-metrics"
+short_description: "/test-metrics — テスト工程の進捗と品質を数字で出す"
+allow_implicit_invocation: true

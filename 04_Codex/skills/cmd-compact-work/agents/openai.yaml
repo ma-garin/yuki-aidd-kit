@@ -1,0 +1,3 @@
+display_name: "/compact-work"
+short_description: "/compact-work — コンテキスト圧縮モードで作業する"
+allow_implicit_invocation: true
