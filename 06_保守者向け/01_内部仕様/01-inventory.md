@@ -118,9 +118,9 @@
 | `block-phase.py` | 115 | 未承認の工程の下流成果物への書き込みを deny。`.claude/phase-gate` があるときだけ発動。approvals 配下は常に許可。バイパス無し |
 | `filter-output.py` | 114 | 冗長な出力を絞る書き換え（PreToolUse Bash・updatedInput）。テスト→失敗行＋末尾、install/build→tail、git log→-20、git diff→--stat。終了コード保持。`FULL_OUTPUT=1` で素通り |
 | `pre-read-guard.py` | 98 | Read の前段。読む価値の無いファイルを deny、`READ_GUARD_MAX_LINES`（800）超を `READ_GUARD_LIMIT`（300）に切り詰め。バイナリ・offset/limit 指定ありは素通り |
-| `instruction-guard.py` | 203 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無い／日本語の発言に日本語が無い応答なら additionalContext で通知（deny しない）。サブエージェント（agent_id）・機械由来タグ・transcript 無しは対象外 |
+| `instruction-guard.py` | 212 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無い／日本語の発言に日本語が無い応答なら additionalContext で通知（deny しない）。サブエージェント（agent_id）・機械由来タグ・transcript 無しは対象外 |
 | `reply-language.py` | 70 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
-| `prompt-priority.py` | 32 | UserPromptSubmit。緊急語を含む発言に「作業より優先」を additionalContext で注入 |
+| `prompt-priority.py` | 33 | UserPromptSubmit。緊急語を含む発言に「作業より優先」を additionalContext で注入 |
 | `context-guard.py` | 59 | UserPromptSubmit。transcript の mtime でアイドル（`CONTEXT_GUARD_IDLE_MIN` 55）・サイズで肥大（`CONTEXT_GUARD_MAX_MB` 4）を判定し additionalContext を注入 |
 | `pre-compact.py` | 34 | PreCompact。残す／捨てる／形式の指示を注入 |
 | `log-instructions.py` | 35 | InstructionsLoaded。時刻＋入力 JSON をログへ追記。集計は token-audit.sh |
@@ -177,7 +177,7 @@
 | `test-test-metrics.sh` | 175 | test-metrics の回帰テスト（雛形・実データ・unread・欠陥表なし・基準表・偏り・履歴・報告書置換・CSV） |
 | `test-token-audit.sh` | 56 | token-audit の回帰テスト（キット自身 NG=0・配布先・配線漏れ・ログ集計・MCP 過多） |
 | `test-check-approval.sh` | 241 | check-approval の回帰テスト。配布雛形 NG=0 と各検査の NG ケース |
-| `test-hooks.sh` | 435 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
+| `test-hooks.sh` | 441 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 175 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
