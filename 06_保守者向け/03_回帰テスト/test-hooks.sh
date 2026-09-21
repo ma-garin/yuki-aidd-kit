@@ -186,7 +186,7 @@ enqueue() { printf '{"type":"queue-operation","operation":"enqueue","content":"%
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "指示の直後にツールを呼ぶと deny（未応答）" "未応答" "$(ig_reason "$OUT")"
 expect_contains "deny 理由に指示の先頭を載せる（読み飛ばし防止）" "日本語で報告しなさい" "$(ig_reason "$OUT")"
-{ u_text "日本語で報告しなさい"; a_text "目的: 報告します。"; a_tool; u_tool; a_tool; } > "$TRJ"
+{ u_text "日本語で報告しなさい"; a_text "目的: 報告します。 見積: 1分（00:01 完了予定）"; a_tool; u_tool; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "日本語で応答済みなら許可（ツール結果が続いても素通り）" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_tool; } > "$TRJ"
@@ -197,19 +197,19 @@ expect_contains "同じ指示の 1 回目は deny" "未応答" "$(ig_reason "$OU
 OUT=$(igs "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "同じ指示の 2 回目は許可（応答が transcript に未反映でも閉じ込めない）" "$OUT" "$RC"
 rm -f "${TMPDIR:-/tmp}/instruction-guard-$IGS"
-{ u_text "作業して"; a_text "目的: 作業。"; a_tool; u_tool; queued "中間報告をしなさい。今すぐに。"; a_tool; } > "$TRJ"
+{ u_text "作業して"; a_text "目的: 作業。 見積: 1分（00:01 完了予定）"; a_tool; u_tool; queued "中間報告をしなさい。今すぐに。"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "途中で届いた発言（queued_command）に未応答なら deny" "中間報告をしなさい" "$(ig_reason "$OUT")"
-{ u_text "作業して"; a_text "目的: 作業。"; a_tool; enqueue "止めなさい"; } > "$TRJ"
+{ u_text "作業して"; a_text "目的: 作業。 見積: 1分（00:01 完了予定）"; a_tool; enqueue "止めなさい"; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "キュー投入（enqueue）の時点で deny（配達前でも理由に載る）" "止めなさい" "$(ig_reason "$OUT")"
-{ u_text "作業して"; a_text "目的: 作業。"; a_tool; u_tool; queued "中間報告をしなさい。"; a_text "中間報告です。"; a_tool; } > "$TRJ"
+{ u_text "作業して"; a_text "目的: 作業。 見積: 1分（00:01 完了予定）"; a_tool; u_tool; queued "中間報告をしなさい。"; a_text "中間報告です。 見積: 1分（00:01 完了予定）"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "途中の発言に日本語で応答済みなら許可" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_text "Reflections are in place. Now updating."; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "日本語の指示に英語で応答したら通知" "日本語で応答し直す" "$(ig_reason "$OUT")"
-{ u_text "Please fix the test"; a_text "Fixing the test now."; a_tool; } > "$TRJ"
+{ u_text "Please fix the test"; a_text "Fixing the test now. 見積: 1分（00:01 完了予定）"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "英語の指示に英語で応答は許可（言語は指示に合わせる）" "$OUT" "$RC"
 { u_text "<command-name>/plan</command-name><command-args>x</command-args>"; a_tool; } > "$TRJ"
@@ -226,16 +226,16 @@ expect_empty "deny しない（permissionDecision を返さず画面にエラー
 OUT=$(igj "$IG/none.jsonl" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "transcript が無ければ許可（fail-open）" "$OUT" "$RC"
 # 機械が書いた本文を指示と誤認すると、応答しても新しいエラー文が湧いて解除されない自己参照ループになる
-{ u_text "構成案を出して"; a_text "案は以下です。"; a_tool; u_text "Error: [instruction-guard] 保守者の指示に未応答: 「構成案を出して」。"; a_tool; } > "$TRJ"
+{ u_text "構成案を出して"; a_text "案は以下です。 見積: 1分（00:01 完了予定）"; a_tool; u_text "Error: [instruction-guard] 保守者の指示に未応答: 「構成案を出して」。"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "フック自身のエラー文を指示として読み直さない（自己参照ループ防止）" "$OUT" "$RC"
-{ u_text "調査して"; a_text "調査します。"; a_tool; u_text "<agent-message from=\\\"abc123\\\">[Subagent hand-back] The text below is the final report.</agent-message>"; a_tool; } > "$TRJ"
+{ u_text "調査して"; a_text "調査します。 見積: 1分（00:01 完了予定）"; a_tool; u_text "<agent-message from=\\\"abc123\\\">[Subagent hand-back] The text below is the final report.</agent-message>"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "サブエージェントの報告（属性付きタグ）は対象外" "$OUT" "$RC"
-{ u_text "調査して"; a_text "調査します。"; a_tool; u_text "<task-notification><status>completed</status></task-notification>"; a_tool; } > "$TRJ"
+{ u_text "調査して"; a_text "調査します。 見積: 1分（00:01 完了予定）"; a_tool; u_text "<task-notification><status>completed</status></task-notification>"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "バックグラウンド完了通知は対象外" "$OUT" "$RC"
-{ u_text "やって"; a_text "やります。"; a_tool; u_text "Stop hook feedback:[reply-language] 日本語で応答してから終える（A-13）"; a_tool; } > "$TRJ"
+{ u_text "やって"; a_text "やります。 見積: 1分（00:01 完了予定）"; a_tool; u_text "Stop hook feedback:[reply-language] 日本語で応答してから終える（A-13）"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "Stop フックの差し戻し文は対象外" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_text "Done."; } > "$TRJ"
@@ -259,7 +259,13 @@ expect_empty "Stop: 日本語で応答していれば何もしない" "$OUT" "$R
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?
-expect_empty "UserPromptSubmit: 通常の発言には何も足さない" "$OUT" "$RC"
+expect_contains "UserPromptSubmit: 通常の発言にも見積もりの提示を注入（A-2 例外なし）" "見積: N分" "$(cg_ctx "$OUT")"
+{ u_text "構成を直して"; a_text "直します。"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "応答に見積もり行が無いままツールを呼んだら通知（A-2）" "見積もりが無い" "$(ig_reason "$OUT")"
+{ u_text "構成を直して"; a_text "見積: 3分（21:30 完了予定）"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "見積もり行があれば通知しない" "$OUT" "$RC"
 
 echo "[pre-read-guard.py]"
 # 読む価値の無いファイルを deny、大きすぎるファイルは先頭だけに絞る（PreToolUse Read）

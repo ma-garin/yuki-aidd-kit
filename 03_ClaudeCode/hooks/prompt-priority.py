@@ -18,13 +18,14 @@ def main() -> int:
     except (json.JSONDecodeError, ValueError):
         return 0
     prompt = data.get("prompt") or ""
-    if not isinstance(prompt, str) or not URGENT_RE.search(prompt):
+    if not isinstance(prompt, str) or not prompt.strip():
         return 0
-    print(json.dumps({"hookSpecificOutput": {
-        "hookEventName": "UserPromptSubmit",
-        "additionalContext": "[prompt-priority] この発言は進行中の作業より優先する。次のツール呼び出しより先に、この発言に日本語で応答する"
-                             "（報告・説明・理由を求められたら、切り分けの途中でも止めて答える。instruction-guard.py が強制する。A-13）",
-    }}, ensure_ascii=False))
+    # 見積もりの提示は例外なし（A-2）。2 分を超えるかの判断を AI に任せると急ぐ場面ほど飛ばすため、毎回注入する
+    ctx = "[estimate] ツールを使う作業をするなら、応答の 1 行目を `見積: N分（HH:MM 完了予定）` にする（A-2。例外なし）"
+    if URGENT_RE.search(prompt):
+        ctx = ("[prompt-priority] この発言は進行中の作業より優先する。次のツール呼び出しより先に、この発言に日本語で応答する"
+               "（報告・説明・理由を求められたら、切り分けの途中でも止めて答える。instruction-guard.py が強制する。A-13）\n" + ctx)
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": ctx}}, ensure_ascii=False))
     return 0
 
 

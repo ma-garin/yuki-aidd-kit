@@ -33,6 +33,7 @@ from pathlib import Path
 
 TAIL_KB = int(os.environ.get("INSTRUCTION_GUARD_TAIL_KB", "512"))
 JA_RE = re.compile(r"[぀-ヿ一-鿿]")
+ESTIMATE_RE = re.compile(r"見積[:：]")
 TAG_BLOCK_RE = re.compile(r"<([a-zA-Z][\w-]*)(?:\s[^>]*)?>.*?</\1>", re.S)
 
 # 人ではなく機械（サブエージェント・ハーネス・このフック自身）が書いた本文の印。
@@ -121,8 +122,9 @@ def tail_lines(path: Path) -> list[str]:
 
 
 def judge(lines: list[str]) -> tuple[str, str] | None:
-    """(kind, detail) を返す。None は許可。kind は 'unanswered' | 'language'。"""
+    """(kind, detail) を返す。None は許可。kind は 'unanswered' | 'language' | 'estimate'。"""
     reply: str | None = None
+    replies: list[str] = []  # 指示より後のアシスタント応答すべて（見積もり行の有無を見る）
     for line in reversed(lines):
         line = line.strip()
         if not line:
@@ -133,11 +135,12 @@ def judge(lines: list[str]) -> tuple[str, str] | None:
             continue
         if not isinstance(e, dict):
             continue
-        if reply is None:
-            a = assistant_text_of(e)
-            if a is not None:
+        a = assistant_text_of(e)
+        if a is not None:
+            replies.append(a)
+            if reply is None:
                 reply = a
-                continue
+            continue
         inst = instruction_of(e)
         if inst is None:
             continue
@@ -147,6 +150,8 @@ def judge(lines: list[str]) -> tuple[str, str] | None:
             return ("unanswered", inst)
         if has_ja(inst) and not has_ja(reply):
             return ("language", inst)
+        if not any(ESTIMATE_RE.search(r) for r in replies):
+            return ("estimate", inst)
         return None
     return None
 
@@ -195,7 +200,11 @@ def main() -> int:
         return 0
     head = " ".join(inst.split())[:80]
     if kind == "unanswered":
-        return notify(f"[instruction-guard] 未応答の指示: 「{head}」。まだ答えていなければ日本語で答える（A-13）")
+        return notify(f"[instruction-guard] 未応答の指示: 「{head}」。まだ答えていなければ日本語で答え、"
+                      "作業するなら 1 行目を `見積: N分（HH:MM 完了予定）` にする（A-13・A-2）")
+    if kind == "estimate":
+        return notify(f"[instruction-guard] 指示「{head}」への応答に見積もりが無い。"
+                      "作業を続ける前に `見積: N分（HH:MM 完了予定）` を出す（A-2。例外なし）")
     return notify(f"[instruction-guard] 指示「{head}」は日本語。日本語で応答し直す（A-13）")
 
 
