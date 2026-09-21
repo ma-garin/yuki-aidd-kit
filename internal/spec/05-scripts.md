@@ -253,7 +253,7 @@ staged に UI ファイルがあるか？（docs/*.html|js|css は除外）
 
 - 環境変数 `CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,…"` でテスト実行を代替（回帰テスト用）
 - 出力は3層、全件は `check-docs-report.md`（`.gitignore` 済み）。NG>0 で exit 1
-- 履歴文書（`internal/Roadmap.md` / `internal/AUDIT-2026-07.md`）は「当時の事実」なので数値の突合対象にしない
+- 履歴文書（`project/Roadmap.md` / `internal/AUDIT-2026-07.md`）は「当時の事実」なので数値の突合対象にしない
 
 ## デザイン検査（2026-09-17 追加・S11）
 

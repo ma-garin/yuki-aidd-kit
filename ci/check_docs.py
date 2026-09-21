@@ -11,7 +11,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   4. 参照切れ     `skills/...` 等のキット内相対パス参照が実在するか（ECC 外部・配布先の生成パスは除外）
   5. frontmatter  SKILL.md の name ↔ ディレクトリ名
   6. 常時読込     rules/*.md で paths: frontmatter の無いものの合計行数 ≦ RULES_ALWAYS_MAX
-  7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（internal/PRD.md 使用性）
+  7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（project/PRD.md 使用性）
   9. 常時読込     CLAUDE.md.template ＋ AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
   8. spec 同期    internal/spec/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
@@ -42,7 +42,7 @@ RULES_STRICT = True     # 検査6: S7（M16）で NG に昇格
 SIZE_STRICT = True      # 検査7: S13（M17）で NG に昇格済み
 
 # ---- 参照切れ検査の除外 ----------------------------------------------------------------
-# ECC（外部キット）のスキル名。実在はこのリポジトリから検証不能（internal/PRD.md 制約・AUDIT A-08）
+# ECC（外部キット）のスキル名。実在はこのリポジトリから検証不能（project/PRD.md 制約・AUDIT A-08）
 ECC_SKILLS = {
     "accessibility", "backend-patterns", "browser-qa", "deep-research", "django-patterns",
     "e2e-testing", "eval-harness", "frontend-patterns", "python-patterns", "python-testing",
@@ -61,7 +61,7 @@ GENERATED_REPORTS = ("check-docs-report.md", "trace-check-report.md", "check-des
 AGENT_ASSET_PREFIXES = ("rules/", "skills/", "commands/", "hooks/")
 REF_SCAN_EXCLUDE_PREFIXES = ("internal/spec/", ".git/") + GENERATED_REPORTS
 # 履歴文書（当時の事実を記録しているので数値の突合対象にしない）
-HISTORY_DOCS = {"internal/Roadmap.md", "internal/AUDIT-2026-07.md"}
+HISTORY_DOCS = {"project/Roadmap.md", "internal/AUDIT-2026-07.md"}
 
 ID_LINE_RE = re.compile(r"`([^`]+)`（(\d+)行）")           # 散文の「`x`（N行）」
 TABLE_COST_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|.*\|\s*(\d+)行\s*\|\s*$")
@@ -108,7 +108,7 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
 INVENTORY_PREFIXES = (
     "", "agent/rules/", "agent/skills/", "agent/commands/", "agent/hooks/", "scripts/", "tools/", "ci/",
     "templates/", "templates/lifecycle/", "templates/test/", "templates/github/",
-    "templates/components/", "templates/ui/", "docs/", "docs/examples/library-loan/", "templates/github/workflows/",
+    "templates/components/", "templates/ui/", "docs/", "examples/library-loan/", "project/", "templates/github/workflows/",
     "internal/", "internal/rules-rationale/",
 )
 
@@ -382,7 +382,7 @@ def check_spec_inventory(root: Path, r: Result) -> None:
 
 def write_report(path: Path, root: Path, r: Result) -> None:
     lines = ["# 文書整合検査レポート", "", f"- 対象: `{root}`", f"- NG: {len(r.ng)} 件 ／ 警告: {len(r.warn)} 件",
-             "- 規約: `internal/PRD.md`（FR-05 検索構造・使用性）／ `internal/spec/09-findings.md`", "", "## NG 一覧", ""]
+             "- 規約: `project/PRD.md`（FR-05 検索構造・使用性）／ `internal/spec/09-findings.md`", "", "## NG 一覧", ""]
     if r.ng:
         lines += ["| 種別 | 対象 | 内容 |", "|---|---|---|"] + [f"| {k} | {t} | {d} |" for k, t, d in r.ng]
     else:

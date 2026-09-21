@@ -5,7 +5,7 @@
 ## 作業ルール（毎回ここから）
 
 1. まず `INDEX.md` を読み、次に本ファイルの未完了項目（先頭の `[ ]`）だけを見る。他ファイルは各項目の「対象」に書かれたものだけ開く
-2. 上位文書: 目的は `internal/Vision.md`、要求と非機能制約は `internal/PRD.md`。迷ったら PRD の非機能要求（特に「Claude Code と他エージェント双方で動作」）に反しないか確認する
+2. 上位文書: 目的は `project/Vision.md`、要求と非機能制約は `project/PRD.md`。迷ったら PRD の非機能要求（特に「Claude Code と他エージェント双方で動作」）に反しないか確認する
 3. 1項目完了ごとに: `./scripts/install.sh` → `./scripts/verify.sh` が NG=0 → 完了条件を確認 → チェックを付け本ファイルを更新 → Conventional Commits で個別コミット
 4. 禁止: 実在しないファイル・ECC 資産への参照の新規作成／真実源の重複（デザイン値は `skills/design-system`、ECC 対応は `docs/ECC-ASSET-MAP.md`）／承認なしの大規模リファクタ
 5. 設計判断に迷ったら選択肢を提示して保守者の確認を取る（勝手に決めない）
@@ -23,7 +23,7 @@
 
 ## M3: 自己文書化（完了 2026-07）
 
-- [x] `internal/Vision.md` / `internal/PRD.md` / `internal/Roadmap.md`（本ファイル）を新設
+- [x] `project/Vision.md` / `project/PRD.md` / `project/Roadmap.md`（本ファイル）を新設
 
 ## M4: デザインシステム指示書（完了 2026-07）
 
@@ -72,8 +72,8 @@
 
 - [x] `scripts/export-project.sh <target>` を新設。対象プロジェクト直下に `.claude/skills,commands,hooks,settings.json,INDEX.md` を全コピーし、`AGENTS.md`・`CLAUDE.md` を生成する（INDEX.md 参照は `.claude/INDEX.md` の相対パスに変換）
   - 検証: スクラッチディレクトリへの初回エクスポート・再実行時の `.bak` 退避・hooks の相対パス動作（cwd=プロジェクトルート想定）を確認済み
-- [x] `internal/Vision.md` に「配置の2層」節を追加し、Non-Goals を「不特定多数へのOSS公開はしない」に意味を限定
-- [x] `internal/PRD.md` に FR-04a（プロジェクト配布）を追加し、互換性NFRに「グローバル導入とプロジェクト配布のどちらでも同一の振る舞い」を追記
+- [x] `project/Vision.md` に「配置の2層」節を追加し、Non-Goals を「不特定多数へのOSS公開はしない」に意味を限定
+- [x] `project/PRD.md` に FR-04a（プロジェクト配布）を追加し、互換性NFRに「グローバル導入とプロジェクト配布のどちらでも同一の振る舞い」を追記
 
 ## M9: デザインシステムのダーク対応・是正（完了 2026-07）
 
@@ -122,7 +122,7 @@ RFD から保守運用までの10工程を AI に実行させる層を追加し�
 - [x] `install.sh`（rules → `~/.claude/rules/aidd-kit/`、同名既存はスキップ）/ `export-project.sh`（rules → `.claude/rules/`、py hooks、statusLine）/ `verify.sh` / `test-hooks.sh`（+8 ケース）
 - [x] `docs/操作マニュアル.html` に「速度と完了のルール」節・uiux_review / atarimae 行・用語 rules を追加
 - [x] `docs/OPERATING-MODE.md` §4〜6 に H-1 着手前3行・H-3 バッチ検証・functional-integrity・progress.py を反映
-- [x] `internal/PRD.md` FR-03 を 7 hook に更新し FR-03a（rules 供給）を追加。`docs/claude-projects-setup.md` の「指定外ファイルを読まない」を速度・完了条件の記述に置換
+- [x] `project/PRD.md` FR-03 を 7 hook に更新し FR-03a（rules 供給）を追加。`docs/claude-projects-setup.md` の「指定外ファイルを読まない」を速度・完了条件の記述に置換
 - 検証記録: `./ci/test-hooks.sh`（実行結果は PR 本文に記載）。`install.sh` はグローバル環境を上書きするため本作業では未実行（`verify.sh` 未計測）
 
 ## M13: テスト活動の設計と機械ゲート（完了 2026-08-25）

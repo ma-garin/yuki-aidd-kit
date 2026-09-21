@@ -37,8 +37,8 @@ Roadmap M12 でも同じ理由で未計測と記録されている。→ F-06。
 | `README.md:82` | `./ci/test-hooks.sh  # hooks の回帰テスト（11ケース）` | **19** |
 | `INDEX.md:18` | `./ci/test-hooks.sh   # hooks の回帰テスト（11ケース）` | **19** |
 | `docs/操作マニュアル.html:792-793` | 「8ケースでテストします」「**PASS=8 / FAIL=0**なら合格です」 | **19** |
-| `internal/Roadmap.md:52` | 「完了確認: 8ケース PASS=8/FAIL=0 で exit 0」 | M6 当時の記録なので**当時の事実として正しい**（履歴） |
-| `internal/PRD.md:30` | 「`./ci/test-hooks.sh` 19 ケース」 | **正しい** |
+| `project/Roadmap.md:52` | 「完了確認: 8ケース PASS=8/FAIL=0 で exit 0」 | M6 当時の記録なので**当時の事実として正しい**（履歴） |
+| `project/PRD.md:30` | 「`./ci/test-hooks.sh` 19 ケース」 | **正しい** |
 | `README.md:42` | 「hooks 回帰テスト 19 ケース」 | **正しい**（同じ README 内で 11 と 19 が併存） |
 
 **是正案**: README:82 / INDEX:18 / manual.html:792-793 を 19 に統一。Roadmap は履歴なので触らない。
@@ -57,8 +57,8 @@ Roadmap M12 でも同じ理由で未計測と記録されている。→ F-06。
 | `INDEX.md:51` `done-gate` | 43行 | **56** | +13 |
 | `INDEX.md:59` `design-system` | 463行 | **465** | +2 |
 | `INDEX.md:73` `functional-integrity` | 39行 | **41** | +2 |
-| `INDEX.md:135` `internal/Roadmap.md` | 115行 | **155** | +40 |
-| `INDEX.md:137` `internal/PRD.md` | 64行 | **72** | +8 |
+| `INDEX.md:135` `project/Roadmap.md` | 115行 | **155** | +40 |
+| `INDEX.md:137` `project/PRD.md` | 64行 | **72** | +8 |
 | `INDEX.md:140` `docs/OPERATING-MODE.md` | 75行 | **78** | +3 |
 | `INDEX.md:142` `docs/操作マニュアル.html` | 1337行 | **1434** | +97 |
 
@@ -89,7 +89,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 **severity: Medium**（DAILY ではなく LIBRARY なので常時コストではないが、発火すると465行を読ませる）
 
-- evidence: `internal/PRD.md` 非機能・使用性「**1スキル ≦ 200行、1コマンド ≦ 40行を目安とする**」／実測 `skills/design-system/SKILL.md` = **465行**
+- evidence: `project/PRD.md` 非機能・使用性「**1スキル ≦ 200行、1コマンド ≦ 40行を目安とする**」／実測 `skills/design-system/SKILL.md` = **465行**
 - 次点は `skills/uiux_review/SKILL.md` = **199行**（ぎりぎり充足）
 - 他17スキルはすべて 105行以下
 - 構造的にも、465行のうち約半分（L388 以降「画面の作り方」）は 2026-08 に追加された別レイヤー
@@ -105,7 +105,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 **severity: Medium**（キットの3大目標のうち1つが未達）
 
 - evidence: `templates/lessons.md` は34行すべて雛形とコメントアウトされた記入例で、**実エントリ0件**
-- evidence: `internal/Roadmap.md:55` M6「retro 運用の実績を反映する」が `[ ]` のまま。前提条件に「lessons.md にエントリが溜まってから着手」と明記されている＝**前提が満たされていない**
+- evidence: `project/Roadmap.md:55` M6「retro 運用の実績を反映する」が `[ ]` のまま。前提条件に「lessons.md にエントリが溜まってから着手」と明記されている＝**前提が満たされていない**
 - evidence: `rules/speed-harness.md` 末尾の「実測記録（プロジェクトごとに追記）」欄も**空**。H-6 が求める違反時の追記が一度も行われていない
 - `skills/retro/SKILL.md` は存在し `/retro` も存在するので、**仕組みでなく運用が回っていない**
 
@@ -119,7 +119,7 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 - evidence: `scripts/verify.sh:47-48` — `結果: OK=$OK / NG=$NG` を出力し、最終行が `[ "$NG" -eq 0 ] && echo "✅ 全て正常" || echo "⚠ 未配置あり…"`。**NG>0 でも `||` 側の echo が成功するため終了コードは 0** になる
 - 一方 `trace-check.sh:248` は `[ "$NG" -eq 0 ] && exit 0 || exit 1`、`quality_harness.py` も 0/1 を返す
-- `internal/Roadmap.md` の「完了の定義」が「verify.sh NG=0」を条件にしているのに、**機械判定できない**
+- `project/Roadmap.md` の「完了の定義」が「verify.sh NG=0」を条件にしているのに、**機械判定できない**
 
 **是正案**: 末尾に `[ "$NG" -eq 0 ] && exit 0 || exit 1` を追加。既存の使い方（目視）は壊れない。
 
@@ -171,8 +171,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 | 箇所 | 内容 | 状態 |
 |---|---|---|
-| `internal/Roadmap.md:55` | M6「retro 運用の実績を反映する」 | 前提条件（lessons.md にエントリ）が未達 → F-05 |
-| `internal/Roadmap.md:139` | M13「manual.html の非エンジニア向け説明（テストレベルと『テストが通った≠完了』）は本 PR で最小限。**図解は未着手**」 | 未着手 |
+| `project/Roadmap.md:55` | M6「retro 運用の実績を反映する」 | 前提条件（lessons.md にエントリ）が未達 → F-05 |
+| `project/Roadmap.md:139` | M13「manual.html の非エンジニア向け説明（テストレベルと『テストが通った≠完了』）は本 PR で最小限。**図解は未着手**」 | 未着手 |
 
 ---
 
@@ -358,8 +358,8 @@ absolute-rules 112 / speed-harness 115 / Vision 47 / ECC-ASSET-MAP 148 / AUDIT 1
 
 | # | 内容 | 根拠 |
 |---|---|---|
-| 1 | プロジェクト配布層はキット更新に自動追従しない | `internal/Vision.md`「配布の性質上避けられないトレードオフとして許容する」 |
-| 2 | ECC 資産の実在はこのリポジトリから検証不能 | `internal/PRD.md` 制約・`AUDIT` A-08。参照は MAP 経由に限定して管理 |
+| 1 | プロジェクト配布層はキット更新に自動追従しない | `project/Vision.md`「配布の性質上避けられないトレードオフとして許容する」 |
+| 2 | ECC 資産の実在はこのリポジトリから検証不能 | `project/PRD.md` 制約・`AUDIT` A-08。参照は MAP 経由に限定して管理 |
 | 3 | `quality_harness.py` が JSON 互換 YAML しか読まない | 依存ゼロで動かすため。`feature-contracts.md` に明記 |
 | 4 | `streamlit-rag-app` が特定プロジェクト前提 | 冒頭に明記済み（AUDIT の備考対応。M6 で完了） |
 | 5 | `manual.html` がデザインシステムの3パターンに従わない | `templates/design-system.md`「適用除外: ドキュメント・マニュアル類」で**意図的な別ジャンル**と宣言 |

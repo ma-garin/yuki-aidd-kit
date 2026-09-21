@@ -1,7 +1,7 @@
 # CHANGELOG — yuki-aidd-kit
 
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
-各版の作業台帳は `internal/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
+各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
 ## Ver.7.1.0（2026-09-21）— トークン消費を構造から削る
 
@@ -122,7 +122,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 - **`skills/design-system/SKILL.md` を 473 → 115 行に**: 値の唯一の真実源を `templates/tokens.css` に一本化し、決めの理由は `references/tokens.md`、部品の使い分けと落とし穴（実不具合由来 7 件）は `references/components.md` へ。`check-docs.sh` の「SKILL ≦ 200 行」を **NG に昇格**
 - `tokens.css` に `--color-medium-text` / `--color-scrim` / `--color-tooltip-bg/-text` / `--color-knob` を追加（直値解消のため）
 - **`internal/lessons.md`**（新設）: キット自身の改善ログ。本セッションと移行準備が最初のエントリ。移行後の週次 `/usage` 記録欄付き
-- **`docs/examples/library-loan/`**（新設）: 事例「社内図書館の貸出管理を Excel から Web へ。HTML でモック」。依頼文 1 行からキットの手順だけで作った完成品・ソース・仕様・引き継ぎメモ。`docs/利用ガイド.html` の「ハンズオン」章の教材。この検証でキットの欠陥 3 件（F-14〜F-16）を見つけて是正
+- **`examples/library-loan/`**（新設）: 事例「社内図書館の貸出管理を Excel から Web へ。HTML でモック」。依頼文 1 行からキットの手順だけで作った完成品・ソース・仕様・引き継ぎメモ。`docs/利用ガイド.html` の「ハンズオン」章の教材。この検証でキットの欠陥 3 件（F-14〜F-16）を見つけて是正
 - `export-project.sh` の settings.json に `block-explore.sh`（Read/Grep/Glob）を配線。グローバル導入と配布先で `/implement` の振る舞いが同じになった
 
 ## Ver.6.3 での主な更新（2026-08-25）— デザイン: トークン実物・画面の作り方・フレームワーク別適用
@@ -189,7 +189,7 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 
 - `context-compression` スキルと `/compact-work` コマンドを追加（3層要約・grep/glob優先・決定論的作業のスクリプト化）
 - 全資産を監査し修正を適用（`internal/AUDIT-2026-07.md`）。特に **hooks が入力を受け取れず無言で機能停止していた不具合を修復**し、`ci/test-hooks.sh` で回帰テスト化
-- キット自体の自己文書化: `internal/Vision.md` / `internal/PRD.md` / `internal/Roadmap.md`（前提知識ゼロのモデルが開発を継続できる作業台帳）
+- キット自体の自己文書化: `project/Vision.md` / `project/PRD.md` / `project/Roadmap.md`（前提知識ゼロのモデルが開発を継続できる作業台帳）
 - `templates/design-system.md`: コード無しで見た目を再現するための視覚的指示書（Webアプリ／HTMLスライド／管理画面）
 - `INDEX.md` を2層＋タグ＋参照コストで再構成。ECC 対応表の真実源を `docs/ECC-ASSET-MAP.md` に一本化
 - `verify.sh` のチェックリストをリポジトリ実体からの自動導出に変更（資産追加時の更新不要）

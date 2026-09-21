@@ -19,9 +19,9 @@
 ## 開く・作り直す・検査する
 
 ```bash
-open docs/examples/library-loan/library-loan.html          # モックを見る（Windows は start、Linux は xdg-open）
-python3 docs/examples/library-loan/build.py                 # キットの部品を更新したら再生成
-./scripts/check-design.sh docs/examples/library-loan        # 直値・未定義トークン・CDN・alert() の検査（NG=0 が合格）
+open examples/library-loan/library-loan.html          # モックを見る（Windows は start、Linux は xdg-open）
+python3 examples/library-loan/build.py                 # キットの部品を更新したら再生成
+./scripts/check-design.sh examples/library-loan        # 直値・未定義トークン・CDN・alert() の検査（NG=0 が合格）
 ```
 
 ## この事例で確認できたこと（2026-09-17）

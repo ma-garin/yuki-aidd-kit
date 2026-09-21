@@ -1,6 +1,6 @@
 # PRD — yuki-aidd-kit
 
-このキット自体を1つのプロダクトとして定義する要求文書。形式はキット自身の spec テンプレート（`skills/sdd-ecc-workflow/references/templates.md`）に従う。上位文書: `internal/Vision.md`、実行計画: `internal/Roadmap.md`。
+このキット自体を1つのプロダクトとして定義する要求文書。形式はキット自身の spec テンプレート（`skills/sdd-ecc-workflow/references/templates.md`）に従う。上位文書: `project/Vision.md`、実行計画: `project/Roadmap.md`。
 
 ## 目的（1〜2文）
 
@@ -13,7 +13,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
 | 保守者（人間） | キットの導入・更新・レトロ反映。QA エンジニア。ISTQB/ISO 用語は説明不要 |
 | Claude Code | `~/.claude/` 配下のスキル・コマンド・hooks として読み込み、日常開発で発火 |
 | 他エージェント（Codex 等） | `AGENTS.md.template` とスキル本文を文書として読み込み、同じ規約で動作 |
-| ゼロコンテキストのモデル | `INDEX.md` → `internal/Roadmap.md` を読んでキット自体の開発を継続 |
+| ゼロコンテキストのモデル | `INDEX.md` → `project/Roadmap.md` を読んでキット自体の開発を継続 |
 
 ## スコープ / 対象外
 
@@ -38,7 +38,7 @@ AI エージェントに開発規約・品質基準・作業手順を供給す�
   - 検証基準: 全スキル・コマンドが INDEX.md に1行要約＋参照コスト付きで掲載されている
 - **FR-06 ECC ルーティング**: プロジェクトに応じた ECC 資産の絞り込みを提供する。真実源は `docs/ECC-ASSET-MAP.md` のみ（複製禁止）
   - 検証基準: プリセット情報が MAP 以外に重複して存在しない
-- **FR-07 自己文書化**: キット自体の開発が `internal/Vision.md`・`internal/PRD.md`・`internal/Roadmap.md` で継続可能である
+- **FR-07 自己文書化**: キット自体の開発が `project/Vision.md`・`project/PRD.md`・`project/Roadmap.md` で継続可能である
   - 検証基準: Roadmap の未完了項目に対象ファイル・完了条件・検証手順が明記されている
 - **FR-08 開発工程ライフサイクル**: RFD →要件定義→基本設計→詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用の10工程を、成果物雛形（`templates/lifecycle/`）・入口出口基準（`skills/dev-lifecycle/references/phase-gates.md`）・ID 体系の3点で提供する
   - 検証基準: `./scripts/init-lifecycle.sh <対象>` が11ファイルを配置し、`./scripts/trace-check.sh` が NG=0 を返す（`./ci/test-trace-check.sh` で回帰テスト）

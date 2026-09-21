@@ -46,7 +46,7 @@ open docs/操作マニュアル.html                  # HTML版の取り扱い�
 ./ci/check-docs.sh                            # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
 ```
 
-**導入方式は2つ**（併用が前提。`internal/Vision.md` の「配置の2層」参照）:
+**導入方式は2つ**（併用が前提。`project/Vision.md` の「配置の2層」参照）:
 - **グローバル導入**（`install.sh`）: 自分のPC1台で複数プロジェクトを横断する日常運用
 - **プロジェクト配布**（`export-project.sh`）: 対象プロジェクト直下に `.claude/` と `AGENTS.md`/`CLAUDE.md`、道具を `scripts/` に書き出し、そのプロジェクトの git にコミット。Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先でも install 不要でそのまま効く
 
@@ -175,16 +175,16 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 | `docs/OPERATING-MODE.md` | 日常の標準作業モード | 78行 |
 | `docs/ECC-ASSET-MAP.md` | ECCプロジェクト別対応表（真実源） | 148行 |
 
-`docs/examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/利用ガイド.html`）。
+`examples/library-loan/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`docs/利用ガイド.html`）。
 
 ## internal/（保守者専用。配布しない）
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `internal/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 298行 |
+| `project/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 298行 |
 | `internal/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
-| `internal/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
-| `internal/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |
+| `project/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
+| `project/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |
 | `internal/lessons.md` | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。数値は実測だけ） | 183行 |
 | `internal/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `internal/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |

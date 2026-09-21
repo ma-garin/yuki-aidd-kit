@@ -1,11 +1,11 @@
 """build.py — library-loan.html を組み立てる（事例のソースは app.css / app.js。部品はキットの実物を毎回コピー）。
 
-使い方（キットのルートで）: python3 docs/examples/library-loan/build.py
+使い方（キットのルートで）: python3 examples/library-loan/build.py
 tokens.css / ui/components.css / ui/layout.css / components/icons.js / feedback.js を変えたら再実行して同期する。
 """
 import sys, pathlib
 HERE = pathlib.Path(__file__).resolve().parent
-KIT = HERE.parents[2]; S = HERE; OUT = HERE / 'library-loan.html'
+KIT = HERE.parents[1]; S = HERE; OUT = HERE / 'library-loan.html'
 rd = lambda p: pathlib.Path(p).read_text(encoding='utf-8')
 tokens = rd(KIT/'templates/tokens.css'); comps = rd(KIT/'templates/ui/components.css'); layout = rd(KIT/'templates/ui/layout.css')
 icons = rd(KIT/'templates/components/icons.js'); feedback = rd(KIT/'templates/components/feedback.js'); app_css = rd(S/'app.css'); app_js = rd(S/'app.js')
@@ -21,7 +21,7 @@ html = f"""<!doctype html>
   見た目は AIDD Kit のデザインシステムをそのまま同梱（順に tokens.css → ui/components.css → ui/layout.css）。
   操作フィードバック（トースト・確認・空状態）は components/feedback.js、アイコンは components/icons.js。
   未実装（本実装で対応）: Excel の取り込み・利用者の追加・認証・サーバ保存。
-  このファイルは docs/examples/library-loan/build.py が app.css / app.js とキットの実物から組み立てた生成物。
+  このファイルは examples/library-loan/build.py が app.css / app.js とキットの実物から組み立てた生成物。
   直接編集せず、app.css / app.js を直して build.py を再実行する。
 -->
 <style>

@@ -13,12 +13,12 @@
 
 | 読み手 | 入口 | 何をする |
 |---|---|---|
-| 保守者（人間） | `README.md` → `internal/Roadmap.md` | キットの導入・更新・レトロ反映。QA エンジニアで ISTQB/ISO 用語は説明不要 |
+| 保守者（人間） | `README.md` → `project/Roadmap.md` | キットの導入・更新・レトロ反映。QA エンジニアで ISTQB/ISO 用語は説明不要 |
 | Claude Code | `~/.claude/` 配下（install 後） | スキル・コマンド・hooks・rules として自動読み込み、日常開発で発火 |
 | 他エージェント（Codex 等） | `AGENTS.md` + スキル本文 | 文書として読み込み、同じ規約で動作 |
-| ゼロコンテキストのモデル | `INDEX.md` → `internal/Roadmap.md`（今後は `internal/spec/`） | キット自体の開発を継続 |
+| ゼロコンテキストのモデル | `INDEX.md` → `project/Roadmap.md`（今後は `internal/spec/`） | キット自体の開発を継続 |
 
-## 解いている6つの問題（`internal/Vision.md`）
+## 解いている6つの問題（`project/Vision.md`）
 
 | 問題 | キットの答え |
 |---|---|
@@ -32,7 +32,7 @@
 ## 到達点3つ（Vision の KPI 相当）
 
 1. **エージェント可搬性** — Claude Code でも Codex でも同じファイルで同じ振る舞い。ツール固有名に依存しない（固有機能は「汎用表現（Claude Code では X）」の併記形式）
-2. **ゼロコンテキスト継続性** — 前提知識ゼロのモデルが `INDEX.md` → `internal/Roadmap.md` の順に読むだけでキット開発を続行できる
+2. **ゼロコンテキスト継続性** — 前提知識ゼロのモデルが `INDEX.md` → `project/Roadmap.md` の順に読むだけでキット開発を続行できる
 3. **自己改善ループ** — retro → `lessons.md` → スキル/コマンド/hook への反映が月次で回る
    → **③は現時点で未達**（`templates/lessons.md` が雛形のまま。`internal/spec/09-findings.md` F-05）
 
@@ -84,7 +84,7 @@
 | ルート（README / CHANGELOG / INDEX / 2 template / .gitignore / VERSION / .claude/settings.json） | 7 | 529 |
 | **合計** | **202** | **22,550** |
 
-うち最大は `docs/examples/library-loan/library-loan.html`（生成物）、`docs/操作マニュアル.html`、
+うち最大は `examples/library-loan/library-loan.html`（生成物）、`docs/操作マニュアル.html`、
 `docs/利用ガイド.html`、`skills/uiux_review/references/viewpoints.md`。
 
 ---

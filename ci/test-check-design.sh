@@ -28,8 +28,8 @@ OUT=$(python3 "$KIT_DIR/scripts/check_design.py" --root "$KIT_DIR" -o "$TMP/repo
 expect_exit "templates/ui + templates/components が exit 0" 0 "$RC"
 expect_out  "結論に NG=0" "NG=0" "$OUT"
 grep -q "デザイン検査レポート" "$TMP/report.md" && ok "詳細レポートを書き出す" || ng "詳細レポートを書き出す" "無い"
-OUT=$(python3 "$KIT_DIR/scripts/check_design.py" --root "$KIT_DIR" -o "$TMP/report.md" docs/examples/library-loan 2>&1); RC=$?
-expect_exit "同梱の事例 docs/examples/library-loan も exit 0" 0 "$RC"
+OUT=$(python3 "$KIT_DIR/scripts/check_design.py" --root "$KIT_DIR" -o "$TMP/report.md" examples/library-loan 2>&1); RC=$?
+expect_exit "同梱の事例 examples/library-loan も exit 0" 0 "$RC"
 
 echo "[ケース2: 色の直値（S9 以前の SKILL.md 由来）]"
 reset; cat > "$P/templates/ui/x.css" <<'CSS'

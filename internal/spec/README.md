@@ -34,14 +34,14 @@
 
 ## このディレクトリの位置づけ（重要）
 
-キット本体は「**同一情報の真実源は1箇所**」を規約にしている（`internal/PRD.md` 保守性 NFR）。
+キット本体は「**同一情報の真実源は1箇所**」を規約にしている（`project/PRD.md` 保守性 NFR）。
 `internal/spec/` はそれを壊さないために、次の線を引く。
 
 | 区分 | 置き場所 | internal/spec/ での扱い |
 |---|---|---|
 | **設計値・規約の定義**（色・トークン・ゲート基準・ID 体系・ECC 対応） | 本体（`skills/` `rules/` `docs/ECC-ASSET-MAP.md`） | **再定義しない。参照のみ**。値を写すときは「実測の引用」と明記する |
 | **現況の事実**（どのファイルが何行で何をするか、どこが矛盾しているか） | `internal/spec/` | ここが真実源。本体には書かない |
-| **これからやること** | `internal/spec/10-backlog.md` ↔ `internal/Roadmap.md` | Roadmap がマイルストーン台帳、`10-backlog.md` が未整理の候補置き場。**採用したら Roadmap へ昇格させ、backlog からは消す** |
+| **これからやること** | `internal/spec/10-backlog.md` ↔ `project/Roadmap.md` | Roadmap がマイルストーン台帳、`10-backlog.md` が未整理の候補置き場。**採用したら Roadmap へ昇格させ、backlog からは消す** |
 
 矛盾を見つけたら、本体が正。`internal/spec/` を直す。ただし **本体どうしが矛盾している場合は `09-findings.md` に記録する**（勝手に片方へ寄せない）。
 
@@ -53,7 +53,7 @@
 2. **本体を変更したら、同じコミットで `internal/spec/` を更新する**。分けると必ず乖離する
 3. 更新時は**実測値で書く**。`wc -l` を取らずに行数を書かない（`09-findings.md` の陳腐化はこれを怠って起きた）
 4. 残課題を見つけたら `09-findings.md` に **ID・対象ファイル:行番号・evidence・severity（ISTQB）** で追記する。evidence の無い指摘は書かない
-5. バックログを消化したら `10-backlog.md` から削り、`internal/Roadmap.md` の該当マイルストーンにチェックを入れる
+5. バックログを消化したら `10-backlog.md` から削り、`project/Roadmap.md` の該当マイルストーンにチェックを入れる
 6. 冒頭の「対象リビジョン」を更新する
 
 ### 更新漏れの検出

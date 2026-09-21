@@ -14,7 +14,7 @@
 | qa_viewpoint の CHANGELOG.md | 変更履歴の型（Keep a Changelog・技術的決定の節） |
 | キット自身: `internal/rules-rationale/*`・`internal/AUDIT-2026-07.md`・`internal/lessons.md`・`internal/spec/10` 決定事項 | 既に規約化されているもの |
 | **第 2 回で追加**: qa-autopilot の harness/loop.md・docs/HANDOVER.md・VERIFICATION_REPORT.md（30 ペルソナ）・WORK_ORDER_UI_REDESIGN.md・personas/P1〜P5・docs/standards/README.md・specs/006 | 実装者に守らせている**ループの型・止まる条件・検証の型・指示書の型・準拠主張の線** |
-| **第 2 回で追加**: キット自身の `docs/OPERATING-MODE.md`・`internal/Vision.md`・`internal/AUDIT-2026-07.md`、istqb_genai_study の HANDOFF.md、docreview の README | 保守者が自分の手で書いた型（引き継ぎ・監査・価値判定） |
+| **第 2 回で追加**: キット自身の `docs/OPERATING-MODE.md`・`project/Vision.md`・`internal/AUDIT-2026-07.md`、istqb_genai_study の HANDOFF.md、docreview の README | 保守者が自分の手で書いた型（引き継ぎ・監査・価値判定） |
 
 ## 傾向 — 第 1 回（頻度と根拠の強い順）
 
@@ -75,7 +75,7 @@
 
 ## 使い方
 
-- キットへの反映候補は `internal/Vision.md` の価値判定基準（立ち上がり速度／トークンあたり成果／品質判定の再現性）のどれに寄与するかを 1 行で書く。書けなければ採用しない
+- キットへの反映候補は `project/Vision.md` の価値判定基準（立ち上がり速度／トークンあたり成果／品質判定の再現性）のどれに寄与するかを 1 行で書く。書けなければ採用しない
 - 手順の傾向（着手前・止まる・検証の型）は `rules/` に書かない。手順が走る場所（コマンド・雛形・スキル）に埋める
 - 保守者から同じ指摘を 2 回受けたら、この表に行を足し、反映先（規約 / hook / 検査）を決める。**散文に書いて終わりにしない**（M19 の教訓）
 - 反映先の優先順: hook や検査で機械が止められるもの → `rules/`（常時、≦ 100 行）→ `AGENTS.md.template`（Codex も読む）→ スキル（発火時のみ）

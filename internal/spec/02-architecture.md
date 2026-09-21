@@ -59,7 +59,7 @@
 | 機能契約の項目定義 | `skills/test-strategy/references/feature-contracts.md` | `quality_harness.py` / `templates/test/feature_contracts.yml` |
 | `.ui-verified` の仕様 | `skills/test-strategy/references/ui-verified-gate.md` | `pre-commit-ui-gate.sh` / `ui-hash.py` / `done-gate` |
 | 速度の規律 | `rules/speed-harness.md` | `CLAUDE.md.template` / `AGENTS.md.template` / `OPERATING-MODE.md` |
-| キット自体の要求 | `internal/PRD.md` | `internal/Roadmap.md`（各項目の完了条件） |
+| キット自体の要求 | `project/PRD.md` | `project/Roadmap.md`（各項目の完了条件） |
 | **現況の事実・残課題** | `internal/spec/`（本ディレクトリ） | — |
 
 ### 過去に重複して是正された例（AUDIT-2026-07）

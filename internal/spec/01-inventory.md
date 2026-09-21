@@ -9,7 +9,7 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 125 | 人間向けの入口（7.0.0 で導入に絞った）: 導入2方式・取り扱い説明書・推奨フロー・ECC 連携・構成ツリー・作り込みの入口・合言葉。版歴は `CHANGELOG.md` |
+| `README.md` | 126 | 人間向けの入口（7.0.0 で導入に絞った）: 導入2方式・取り扱い説明書・推奨フロー・ECC 連携・構成ツリー・作り込みの入口・合言葉。版歴は `CHANGELOG.md` |
 | `CHANGELOG.md` | 195 | 版ごとの変更内容（Ver.5.0〜7.0.0。7.0.0 で README から分離）。版の真実源は `VERSION` |
 | `INDEX.md` | 227 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 30 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
@@ -118,7 +118,7 @@
 | `block-phase.py` | 115 | 未承認の工程の下流成果物への書き込みを deny。`.claude/phase-gate` があるときだけ発動。approvals 配下は常に許可。バイパス無し |
 | `filter-output.py` | 114 | 冗長な出力を絞る書き換え（PreToolUse Bash・updatedInput）。テスト→失敗行＋末尾、install/build→tail、git log→-20、git diff→--stat。終了コード保持。`FULL_OUTPUT=1` で素通り |
 | `pre-read-guard.py` | 98 | Read の前段。読む価値の無いファイルを deny、`READ_GUARD_MAX_LINES`（800）超を `READ_GUARD_LIMIT`（300）に切り詰め。バイナリ・offset/limit 指定ありは素通り |
-| `instruction-guard.py` | 203 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無ければ deny、日本語の発言に日本語が無い応答なら deny。サブエージェント・機械由来タグ・transcript 無しは許可 |
+| `instruction-guard.py` | 196 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無ければ deny、日本語の発言に日本語が無い応答なら deny。サブエージェント・機械由来タグ・transcript 無しは許可 |
 | `reply-language.py` | 56 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
 | `prompt-priority.py` | 32 | UserPromptSubmit。緊急語を含む発言に「作業より優先」を additionalContext で注入 |
 | `context-guard.py` | 59 | UserPromptSubmit。transcript の mtime でアイドル（`CONTEXT_GUARD_IDLE_MIN` 55）・サイズで肥大（`CONTEXT_GUARD_MAX_MB` 4）を判定し additionalContext を注入 |
@@ -267,7 +267,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 125 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 126 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |

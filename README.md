@@ -91,11 +91,12 @@ yuki-aidd-kit/
 │   ├── 操作マニュアル.html        # 取り扱い説明書（13 章）
 │   ├── claude-projects-setup.md  # claude.ai Projects のセットアップ
 │   ├── OPERATING-MODE.md         # 標準作業モード
-│   ├── ECC-ASSET-MAP.md          # ECC 対応表（真実源）
-│   └── examples/library-loan/    # 事例: 貸出管理モック（完成品・app.css/js・build.py・spec・CURRENT_STATE）
+│   └── ECC-ASSET-MAP.md          # ECC 対応表（真実源）
+├── examples/library-loan/    # 事例: 貸出管理モック（完成品・app.css/js・build.py・spec・CURRENT_STATE）。ハンズオン教材
 │
 │  ── 配布しない ──
-├── internal/                 # 保守者専用: spec/（現況仕様）・rules-rationale/・lessons.md・maintainer-tendencies.md・PRD.md・Roadmap.md・Vision.md・監査/適合レポート
+├── project/                  # キット開発の計画: PRD.md・Roadmap.md（作業台帳）・Vision.md
+├── internal/                 # 保守者専用: spec/（現況仕様）・rules-rationale/・lessons.md・maintainer-tendencies.md・監査/適合レポート
 ├── ci/                       # 回帰テスト 10 本と check-docs（文書整合）。キット自身の CI が呼ぶ
 └── .github/workflows/        # kit-ci.yml（キット自身の CI。手動起動のみ。GitHub が直下しか読まないためここ）
 ```
@@ -103,7 +104,7 @@ yuki-aidd-kit/
 ## キット自体を作り込むとき
 
 `internal/spec/` に全資産を読み切った現況仕様がある。**まず `internal/spec/README.md` を読む**（読む順序・更新規約）。
-現況の残課題は `internal/spec/09-findings.md`、次にやることは `internal/spec/10-backlog.md`、作業台帳は `internal/Roadmap.md`。
+現況の残課題は `internal/spec/09-findings.md`、次にやることは `internal/spec/10-backlog.md`、作業台帳は `project/Roadmap.md`。
 本体を変更したら同じコミットで `internal/spec/` を更新し、回帰テストと文書整合検査を通す。
 
 ```bash
@@ -122,4 +123,4 @@ for t in ci/test-*.sh; do bash "$t"; done   # 回帰テスト 10 本（hooks / i
 - 「UI/UXを見て」 → `qa-review-standards` + ECC `browser-qa`
 - 「E2E/動作確認」 → `test-automation` + ECC `e2e-testing`
 - 「完成判定」 → `done-gate` + ECC `verification-loop`
-- 「キット自体を直したい」 → `internal/Roadmap.md` の作業ルールに従う
+- 「キット自体を直したい」 → `project/Roadmap.md` の作業ルールに従う

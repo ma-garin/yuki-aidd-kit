@@ -1,7 +1,7 @@
 # 10 — 作り込みバックログ
 
 **優先度の基準**: `internal/spec/11-target-operating-model.md`（Pro ＋ Sonnet ＋ Codex 併用で開発がスムーズに回ること）への直接の寄与。
-`internal/Roadmap.md` の作業ルールに合わせ、各項目に **対象 / 内容 / 完了条件 / 検証 / 見積** を持たせる。
+`project/Roadmap.md` の作業ルールに合わせ、各項目に **対象 / 内容 / 完了条件 / 検証 / 見積** を持たせる。
 採用して着手が決まったら **Roadmap のマイルストーンへ昇格させ、ここからは消す**。
 
 > 2026-09-17 改訂。旧版は「キットの健全性」で優先度を決めていたが、保守者から真の目的
@@ -32,7 +32,7 @@
 
 ---
 
-## 優先度0b（土台）— **完了 2026-09-17 → `internal/Roadmap.md` M15 へ昇格**
+## 優先度0b（土台）— **完了 2026-09-17 → `project/Roadmap.md` M15 へ昇格**
 
 B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録は Roadmap M15、仕様は `internal/spec/05-scripts.md`。以下は当時の計画（履歴）。
 
@@ -223,7 +223,7 @@ B-16 / B-17 / B-18 / B-02 / B-01 / B-03 / B-08 はすべて実装済み。記録
 `internal/spec/09-findings.md` F-06。末尾に `[ "$NG" -eq 0 ] && exit 0 || exit 1`。見積 2 往復。
 
 ### B-03 — 陳腐化した数値の一括是正 — **完了（M15）**
-`internal/spec/09-findings.md` F-01 / F-02 / F-03。**B-01 完了後に `check-docs.sh` の出力どおり直す**（手で直すだけでは再発する）。`internal/Roadmap.md:52` は当時の事実の記録なので触らない。見積 2 往復。
+`internal/spec/09-findings.md` F-01 / F-02 / F-03。**B-01 完了後に `check-docs.sh` の出力どおり直す**（手で直すだけでは再発する）。`project/Roadmap.md:52` は当時の事実の記録なので触らない。見積 2 往復。
 
 ### B-05 — 自己改善ループを起動する — **完了（M17 S15）**
 `internal/spec/09-findings.md` F-05。`templates/lessons.md`（配布雛形）と `internal/lessons.md`（キット自身用・新設）を分け、
