@@ -2,7 +2,7 @@
 """check_docs.py — キット文書の整合をリポジトリ実体と突合する（キット自身用）。
 
 verify.sh は「配置」だけを自動導出していたが、INDEX の参照コスト・README のケース数・
-manual の数値は手書きのままで、10 箇所以上が実体からズレていた（06_保守者向け/01_内部仕様/09-findings.md F-01〜F-03, F-09）。
+manual の数値は手書きのままで、10 箇所以上が実体からズレていた（06_保守者向け/01_内部仕様/09_指摘事項.md F-01〜F-03, F-09）。
 本スクリプトは次を機械判定する。NG>0 で exit 1（CI でそのまま落とせる）。
 
   1. 参照コスト   INDEX.md 等の「N行」表記 ↔ 実測 wc -l
@@ -14,13 +14,13 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（05_プロジェクト管理/要求仕様.md 使用性）
   9. 常時読込     03_ClaudeCode/CLAUDE.md.template ＋ 04_Codex/AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
-  8. spec 同期    06_保守者向け/01_内部仕様/01-inventory.md の行数 ↔ 実測、実ファイルが目録に載っているか
+  8. spec 同期    06_保守者向け/01_内部仕様/01_構成品目目録.md の行数 ↔ 実測、実ファイルが目録に載っているか
 
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
 
 使い方: python3 06_保守者向け/03_回帰テスト/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
-  --fix-inventory: 06_保守者向け/01_内部仕様/01-inventory.md の行数を実測で書き換えてから検査する（網羅性の不足は手で足す）
+  --fix-inventory: 06_保守者向け/01_内部仕様/01_構成品目目録.md の行数を実測で書き換えてから検査する（網羅性の不足は手で足す）
   環境変数 CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,test-trace-check.sh=15" でテスト実行を代替できる（回帰テスト用）。
 """
 from __future__ import annotations
@@ -347,8 +347,8 @@ INVENTORY_ROW_RE = re.compile(r"^(\|\s*`([^`]+)`\s*\|\s*)(\d+)(\s*\|.*)$")
 
 
 def fix_spec_inventory(root: Path) -> int:
-    """06_保守者向け/01_内部仕様/01-inventory.md の行数セルを実測で書き換える。書き換えた行数を返す。"""
-    p = root / "06_保守者向け" / "01_内部仕様" / "01-inventory.md"
+    """06_保守者向け/01_内部仕様/01_構成品目目録.md の行数セルを実測で書き換える。書き換えた行数を返す。"""
+    p = root / "06_保守者向け" / "01_内部仕様" / "01_構成品目目録.md"
     if not p.is_file():
         return 0
     out, changed = [], 0
@@ -365,7 +365,7 @@ def fix_spec_inventory(root: Path) -> int:
 
 
 def check_spec_inventory(root: Path, r: Result) -> None:
-    p = root / "06_保守者向け" / "01_内部仕様" / "01-inventory.md"
+    p = root / "06_保守者向け" / "01_内部仕様" / "01_構成品目目録.md"
     if not p.is_file():
         return
     row = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|")
@@ -376,11 +376,11 @@ def check_spec_inventory(root: Path, r: Result) -> None:
         name, n = m.group(1), int(m.group(2))
         f = resolve_inventory_name(root, name)
         if f is None:
-            r.add(True, "spec同期", f"06_保守者向け/01_内部仕様/01-inventory.md:{i}", f"`{name}` が実在しない")
+            r.add(True, "spec同期", f"06_保守者向け/01_内部仕様/01_構成品目目録.md:{i}", f"`{name}` が実在しない")
             continue
         actual = wc_l(f)
         if actual != n:
-            r.add(True, "spec同期", f"06_保守者向け/01_内部仕様/01-inventory.md:{i}", f"`{name}` 記載 {n}行 / 実測 {actual}行")
+            r.add(True, "spec同期", f"06_保守者向け/01_内部仕様/01_構成品目目録.md:{i}", f"`{name}` 記載 {n}行 / 実測 {actual}行")
     # 網羅性: リポジトリの実ファイル（06_保守者向け/01_内部仕様/ と生成物を除く）が目録に載っているか
     text = read(p)
     for f in sorted(root.rglob("*")):
@@ -393,14 +393,14 @@ def check_spec_inventory(root: Path, r: Result) -> None:
             continue
         names = {rel} | {rel[len(pre):] for pre in INVENTORY_PREFIXES if pre and rel.startswith(pre)}
         if not any(f"`{n}`" in text for n in names):
-            r.add(True, "spec同期", "06_保守者向け/01_内部仕様/01-inventory.md", f"`{rel}` が目録に無い")
+            r.add(True, "spec同期", "06_保守者向け/01_内部仕様/01_構成品目目録.md", f"`{rel}` が目録に無い")
 
 
 # ---- 出力 ---------------------------------------------------------------------------------
 
 def write_report(path: Path, root: Path, r: Result) -> None:
     lines = ["# 文書整合検査レポート", "", f"- 対象: `{root}`", f"- NG: {len(r.ng)} 件 ／ 警告: {len(r.warn)} 件",
-             "- 規約: `05_プロジェクト管理/要求仕様.md`（FR-05 検索構造・使用性）／ `06_保守者向け/01_内部仕様/09-findings.md`", "", "## NG 一覧", ""]
+             "- 規約: `05_プロジェクト管理/要求仕様.md`（FR-05 検索構造・使用性）／ `06_保守者向け/01_内部仕様/09_指摘事項.md`", "", "## NG 一覧", ""]
     if r.ng:
         lines += ["| 種別 | 対象 | 内容 |", "|---|---|---|"] + [f"| {k} | {t} | {d} |" for k, t, d in r.ng]
     else:
@@ -419,12 +419,12 @@ def main() -> int:
     ap.add_argument("-o", "--report", default="06_保守者向け/04_監査記録/check-docs-report.md")
     ap.add_argument("--strict", action="store_true", help="検査 6・7 を WARN でなく NG にする")
     ap.add_argument("--skip-tests", action="store_true", help="検査 3 のテスト実行を省く")
-    ap.add_argument("--fix-inventory", action="store_true", help="06_保守者向け/01_内部仕様/01-inventory.md の行数を実測で書き換えてから検査する")
+    ap.add_argument("--fix-inventory", action="store_true", help="06_保守者向け/01_内部仕様/01_構成品目目録.md の行数を実測で書き換えてから検査する")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     r = Result()
     if a.fix_inventory:
-        print(f"06_保守者向け/01_内部仕様/01-inventory.md: {fix_spec_inventory(root)} 行の行数を実測に更新")
+        print(f"06_保守者向け/01_内部仕様/01_構成品目目録.md: {fix_spec_inventory(root)} 行の行数を実測に更新")
 
     check_costs(root, r)
     check_index_coverage(root, r)
