@@ -90,7 +90,7 @@ def main() -> int:
         print(f"✅ settings.json に配線: {', '.join(added)}" + ("（既存を .bak に退避して merge）" if existed else "（新規作成）"))
     else:
         print("✅ settings.json: 配線済み（変更なし）")
-    print("効き方: 保守者の発言に日本語で応答するまで全ツールが deny される。実行中のセッションにも file watcher で反映される（反映されなければ再起動）")
+    print("効き方: 保守者の発言への未応答・見積もり未提示をツール呼び出しの直前に通知する（止めない）。実行中のセッションにも file watcher で反映される（反映されなければ再起動）")
     return 0
 
 
