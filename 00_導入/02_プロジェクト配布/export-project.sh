@@ -33,9 +33,9 @@ mkdir -p "$TARGET/.claude/skills" "$TARGET/.claude/commands" "$TARGET/.claude/ho
 
 # スキル一式（フルコピー。DAILY/LIBRARYの絞り込みはINDEX.mdを見て各エージェントが行う）
 cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$TARGET/.claude/skills/"
-# Codex用に同じスキルを .agents/skills/ にも配る（出典: https://learn.chatgpt.com/codex/build-skills）
-cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$TARGET/.agents/skills/"
-echo "✅ スキル: $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個（.claude/skills/ と .agents/skills/ の両方）"
+# Codex用のスキル（04_Codex/skills/。skills と commands から生成、agents/openai.yaml 付き）を .agents/skills/ にも配る（出典: https://learn.chatgpt.com/codex/build-skills）
+cp -r "$KIT_DIR/04_Codex/skills/"* "$TARGET/.agents/skills/"
+echo "✅ スキル: Claude Code $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個（.claude/skills/）／Codex $(ls "$KIT_DIR/04_Codex/skills" | wc -l)個（.agents/skills/）"
 
 # コマンド一式
 cp "$KIT_DIR/03_ClaudeCode/commands/"*.md "$TARGET/.claude/commands/"

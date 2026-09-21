@@ -1,0 +1,3 @@
+display_name: "/trace"
+short_description: "/trace — トレーサビリティの更新と検証"
+allow_implicit_invocation: true

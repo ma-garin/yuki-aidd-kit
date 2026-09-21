@@ -10,6 +10,7 @@
 - **命名規則**: 直下のフォルダは「番号_日本語名」。番号 00 は実行の入口、01〜04 は配布、05〜06 は非配布。英語は外部仕様で名前が決まるもの（README.md・CHANGELOG.md・VERSION・Claude Code の `skills/` 等）だけ
 - **対応**: `scripts/`→`00_導入/`、`docs/`→`01_利用者向け資料/`（事例は `サンプル/図書貸出/`）、`rules/`・`templates/`・`tools/`→`02_共通/{rules,ひな形,ツール}/`、`skills/`・`commands/`・`hooks/`・`CLAUDE.md.template`→`03_ClaudeCode/`、`AGENTS.md.template`→`04_Codex/`、PRD・Roadmap・Vision→`05_プロジェクト管理/{要求仕様,ロードマップ,構想}.md`、`internal/`・`ci/`→`06_保守者向け/`（`内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`）
 - **2 階層目も番号で整理**: `00_導入/{01_インストール,02_プロジェクト配布,03_点検}/`、`01_利用者向け資料/` は `01_利用ガイド.html`〜`05_ECC資産対応表.md` と `90_サンプル/`、`06_保守者向け/{01_内部仕様,02_設計判断の根拠,03_回帰テスト,04_監査記録}/`。check-docs のレポートは `04_監査記録/` に出力。導入先から名前で参照されるファイル（`ひな形/`・`ツール/`・`commands/`・`hooks/` の中身）は互換性のため名前を変えない
+- **Codex 用スキルを生成**: `04_Codex/build_codex_skills.py` が `03_ClaudeCode/` の skills（20）と commands（18。`cmd-<名前>`）から `04_Codex/skills/`（`agents/openai.yaml` 付き）を生成し、export は `<対象>/.agents/skills/`、install は `~/.agents/skills/` に配る。同期は test-install で検査
 - **構成管理の文書を新設**: `05_プロジェクト管理/構成管理/構成管理計画書.md`（ISO 10007:2017 の計画・識別・変更管理・状況の記録・監査）と `構成品目一覧.md`（CI-00〜）
 - **利用者向け資料を配る**: export は `<対象>/.claude/docs/`、install は `~/.claude/docs/aidd-kit/`
 - **hook の誤動作を解消**: `instruction-guard` は deny をやめ additionalContext で通知（応答済みでも毎回エラー表示していた）、サブエージェント内は対象外。`reply-language` は `last_assistant_message` で判定

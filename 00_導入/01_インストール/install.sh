@@ -23,9 +23,9 @@ cp "$KIT_DIR/04_Codex/AGENTS.md.template" "$CLAUDE_DIR/AGENTS.md"
 
 # スキル
 cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$CLAUDE_DIR/skills/"
-# Codex用に同じスキルを ~/.agents/skills/ にも配る（出典: https://learn.chatgpt.com/codex/build-skills）
-cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$HOME/.agents/skills/"
-echo "✅ スキル: $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個（~/.claude/skills/ と ~/.agents/skills/ の両方）"
+# Codex用のスキル（04_Codex/skills/。skills と commands から生成、agents/openai.yaml 付き）を ~/.agents/skills/ にも配る（出典: https://learn.chatgpt.com/codex/build-skills）
+cp -r "$KIT_DIR/04_Codex/skills/"* "$HOME/.agents/skills/"
+echo "✅ スキル: Claude Code $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個（~/.claude/skills/）／Codex $(ls "$KIT_DIR/04_Codex/skills" | wc -l)個（~/.agents/skills/）"
 
 # コマンド
 cp "$KIT_DIR/03_ClaudeCode/commands/"*.md "$CLAUDE_DIR/commands/"

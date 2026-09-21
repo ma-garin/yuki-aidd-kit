@@ -1,0 +1,3 @@
+display_name: "ecc-daily-router"
+short_description: "各プロジェクトに対して、ECCのskills/rules/agentsをDAILYとLIBRARYに分類して使うための…"
+allow_implicit_invocation: true

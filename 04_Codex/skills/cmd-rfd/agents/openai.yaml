@@ -1,0 +1,3 @@
+display_name: "/rfd"
+short_description: "/rfd — RFD（提案・論点出し）の起票"
+allow_implicit_invocation: true

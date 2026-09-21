@@ -1,0 +1,3 @@
+display_name: "/qa-review"
+short_description: "/qa-review — ISO 25010 + ISTQB準拠のAIレビュー実行"
+allow_implicit_invocation: true

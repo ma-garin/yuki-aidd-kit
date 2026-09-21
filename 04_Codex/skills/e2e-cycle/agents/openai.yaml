@@ -1,0 +1,3 @@
+display_name: "e2e-cycle"
+short_description: "段階停止型のE2Eテスト＆不具合修整ワークフロー"
+allow_implicit_invocation: true

@@ -1,0 +1,3 @@
+display_name: "/doc-search"
+short_description: "/doc-search — 技術ドキュメント特化検索"
+allow_implicit_invocation: true

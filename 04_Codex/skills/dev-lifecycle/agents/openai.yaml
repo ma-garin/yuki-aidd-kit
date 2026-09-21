@@ -1,0 +1,3 @@
+display_name: "dev-lifecycle"
+short_description: "RFD から保守運用までの開発工程（V字モデル）を AI エージェントに実行させるスキル"
+allow_implicit_invocation: true

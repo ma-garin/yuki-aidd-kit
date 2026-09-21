@@ -1,0 +1,3 @@
+display_name: "test-automation"
+short_description: "成果物に対する実際のテストコードを生成・実行するスキル"
+allow_implicit_invocation: true

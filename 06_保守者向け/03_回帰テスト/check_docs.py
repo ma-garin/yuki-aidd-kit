@@ -67,7 +67,7 @@ def is_local_junk(rel: str) -> bool:
     return rel.startswith(LOCAL_JUNK_PREFIXES) or any(p in LOCAL_JUNK_PARTS for p in rel.split("/"))
 
 
-REF_SCAN_EXCLUDE_PREFIXES = ("06_保守者向け/01_内部仕様/", ".git/", "CHANGELOG.md") + GENERATED_REPORTS  # CHANGELOG は過去の版の旧パスを記録として残す
+REF_SCAN_EXCLUDE_PREFIXES = ("06_保守者向け/01_内部仕様/", ".git/", "CHANGELOG.md", "04_Codex/skills/") + GENERATED_REPORTS  # CHANGELOG は過去の版の旧パスを記録として残す
 # 履歴文書（当時の事実を記録しているので数値の突合対象にしない）
 HISTORY_DOCS = {"05_プロジェクト管理/ロードマップ.md", "06_保守者向け/04_監査記録/AUDIT-2026-07.md"}
 
@@ -387,7 +387,7 @@ def check_spec_inventory(root: Path, r: Result) -> None:
         if not f.is_file():
             continue
         rel = unicodedata.normalize("NFC", f.relative_to(root).as_posix())  # macOS の複製は日本語名が NFD になる
-        if rel.startswith((".git/", "06_保守者向け/01_内部仕様/")) or rel.rsplit("/", 1)[-1] in GENERATED_REPORTS:
+        if rel.startswith((".git/", "06_保守者向け/01_内部仕様/", "04_Codex/skills/")) or rel.rsplit("/", 1)[-1] in GENERATED_REPORTS:
             continue
         if is_local_junk(rel):
             continue

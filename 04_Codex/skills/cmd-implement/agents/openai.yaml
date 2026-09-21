@@ -1,0 +1,3 @@
+display_name: "/implement"
+short_description: "/implement — 実装モードの開始（探索ブロックON）"
+allow_implicit_invocation: true
