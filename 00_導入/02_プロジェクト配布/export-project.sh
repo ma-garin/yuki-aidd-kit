@@ -29,11 +29,13 @@ backup_if_exists() {
   fi
 }
 
-mkdir -p "$TARGET/.claude/skills" "$TARGET/.claude/commands" "$TARGET/.claude/hooks" "$TARGET/.claude/rules"
+mkdir -p "$TARGET/.claude/skills" "$TARGET/.claude/commands" "$TARGET/.claude/hooks" "$TARGET/.claude/rules" "$TARGET/.agents/skills"
 
 # スキル一式（フルコピー。DAILY/LIBRARYの絞り込みはINDEX.mdを見て各エージェントが行う）
 cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$TARGET/.claude/skills/"
-echo "✅ スキル: $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個"
+# Codex用に同じスキルを .agents/skills/ にも配る（出典: https://learn.chatgpt.com/codex/build-skills）
+cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$TARGET/.agents/skills/"
+echo "✅ スキル: $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個（.claude/skills/ と .agents/skills/ の両方）"
 
 # コマンド一式
 cp "$KIT_DIR/03_ClaudeCode/commands/"*.md "$TARGET/.claude/commands/"

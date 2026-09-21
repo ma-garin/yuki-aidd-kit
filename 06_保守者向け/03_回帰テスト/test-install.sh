@@ -48,6 +48,7 @@ expect_nofile "スキップした rule は aidd-kit/ に置かれない" "$FAKE_
 expect_file "スキップしなかった rule は aidd-kit/ に置かれる" "$FAKE_HOME/.claude/rules/aidd-kit/speed-harness.md"
 SKILL_N=$(ls -d "$KIT_DIR"/03_ClaudeCode/skills/*/ | wc -l | tr -d " "); CMD_N=$(ls "$KIT_DIR"/03_ClaudeCode/commands/*.md | wc -l | tr -d " ")
 expect_count "スキルが全部配置される（リポジトリ実体から導出: $SKILL_N 個）" "$SKILL_N" "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
+expect_count "Codex用にスキルが ~/.agents/skills/ にも全部配置される" "$SKILL_N" "$(ls -d "$FAKE_HOME"/.agents/skills/*/ | wc -l)"
 expect_count "コマンドが全部配置される（$CMD_N 個）" "$CMD_N" "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
 HOOK_N=$(ls "$KIT_DIR"/03_ClaudeCode/hooks/*.sh "$KIT_DIR"/03_ClaudeCode/hooks/*.py | wc -l | tr -d " ")
 expect_count "hooks が全部配置される（リポジトリ実体から導出: $HOOK_N 個）" "$HOOK_N" "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
@@ -103,6 +104,7 @@ echo "# my own trace-check" > "$P/scripts/trace-check.sh"
 OUT=$(bash "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh" "$P" 2>&1); RC=$?
 expect_exit "export-project.sh が exit 0" 0 "$RC"
 expect_count "skills $SKILL_N 個（リポジトリ実体と同数）" "$SKILL_N" "$(ls -d "$P"/.claude/skills/*/ | wc -l)"
+expect_count "Codex用にskillsが .agents/skills/ にも同数配置される" "$SKILL_N" "$(ls -d "$P"/.agents/skills/*/ | wc -l)"
 expect_count "commands $CMD_N 個（リポジトリ実体と同数）" "$CMD_N" "$(ls "$P"/.claude/commands/*.md | wc -l)"
 expect_count "hooks $HOOK_N 個（リポジトリ実体と同数）" "$HOOK_N" "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
 expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
