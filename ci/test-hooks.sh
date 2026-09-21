@@ -187,6 +187,14 @@ expect_contains "deny 理由に指示の先頭を載せる（読み飛ばし防�
 { u_text "日本語で報告しなさい"; a_text "目的: 報告します。"; a_tool; u_tool; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "日本語で応答済みなら許可（ツール結果が続いても素通り）" "$OUT" "$RC"
+{ u_text "日本語で報告しなさい"; a_tool; } > "$TRJ"
+IGS="test-ig-$$"; rm -f "${TMPDIR:-/tmp}/instruction-guard-$IGS"
+igs() { printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{},"session_id":"%s","transcript_path":"%s"}' "$IGS" "$1"; }
+OUT=$(igs "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "同じ指示の 1 回目は deny" "未応答" "$(ig_reason "$OUT")"
+OUT=$(igs "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "同じ指示の 2 回目は許可（応答が transcript に未反映でも閉じ込めない）" "$OUT" "$RC"
+rm -f "${TMPDIR:-/tmp}/instruction-guard-$IGS"
 { u_text "作業して"; a_text "目的: 作業。"; a_tool; u_tool; queued "中間報告をしなさい。今すぐに。"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "途中で届いた発言（queued_command）に未応答なら deny" "中間報告をしなさい" "$(ig_reason "$OUT")"

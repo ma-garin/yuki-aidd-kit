@@ -11,13 +11,19 @@ AI がツール結果の一部として読み飛ばし、次のコマンドを�
   - 応答はあるが、発言が日本語なのに応答に日本語が無い → **deny**（日本語で応答し直す）
   - それ以外（応答済み／発言が見つからない／transcript が無い／サブエージェント）→ 許可（fail-open）
 
+同じ指示での deny はセッションごとに 1 回だけ（2026-09-21）。PreToolUse の時点では同じターンで書いた
+テキスト応答がまだ transcript に書き込まれておらず、応答後も毎回 deny して全ツールが止まった。
+1 回目の deny で指示は理由として必ず読まれるので、2 回目以降は通す（状態は TMPDIR の session 別ファイル）。
+
 バイパス用の環境変数は用意しない。止めたいときは settings.json から外す（差分に残る）。
 走査幅は INSTRUCTION_GUARD_TAIL_KB（既定 512 KB）。
 """
+import hashlib
 import json
 import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 TAIL_KB = int(os.environ.get("INSTRUCTION_GUARD_TAIL_KB", "512"))
@@ -147,6 +153,21 @@ def deny(reason: str) -> int:
     return 0
 
 
+def already_denied(session_id: str, inst: str) -> bool:
+    """同じ指示で既に deny していれば True。初回は記録して False。"""
+    if not session_id:
+        return False
+    key = hashlib.sha256(inst.encode("utf-8")).hexdigest()
+    state = Path(tempfile.gettempdir()) / f"instruction-guard-{re.sub(r'[^\w-]', '_', session_id)}"
+    try:
+        if state.is_file() and state.read_text().strip() == key:
+            return True
+        state.write_text(key)
+    except OSError:
+        return False
+    return False
+
+
 def main() -> int:
     try:
         data = json.load(sys.stdin)
@@ -162,6 +183,8 @@ def main() -> int:
     if verdict is None:
         return 0
     kind, inst = verdict
+    if already_denied(data.get("session_id", ""), f"{kind}:{inst}"):
+        return 0
     head = " ".join(inst.split())[:80]
     if kind == "unanswered":
         return deny(f"[instruction-guard] 保守者の指示に未応答: 「{head}」。ツールを呼ぶ前に、この指示に日本語で応答する"
