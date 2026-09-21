@@ -4,8 +4,8 @@
 使い方:
     python3 scripts/ui-hash.py disk    # git 管理対象の UI ファイル全体
     python3 scripts/ui-hash.py staged  # git staged の UI ファイル
-環境変数 UI_HASH_EXCLUDE_PREFIXES（カンマ区切り。既定 "01_利用者向け資料/"）で対象外の接頭辞を指定する
-（01_利用者向け資料/ 配下の HTML/JS/CSS は設計モックであり実 UI ではない）。
+環境変数 UI_HASH_EXCLUDE_PREFIXES（カンマ区切り。既定 "docs/"）で対象外の接頭辞を指定する
+（docs/ 配下の HTML/JS/CSS は設計モックであり実 UI ではない）。
 .ui-verified マーカーとの照合は scripts/pre-commit-ui-gate.sh。
 出所: WebSpec2Doc scripts/ui-hash.py。
 """
@@ -20,7 +20,7 @@ from pathlib import Path
 UI_EXTENSIONS = {".html", ".js", ".css"}
 EXCLUDE_DIRS = {".git", "venv", "node_modules", "output", "__pycache__", "dist", "test-results"}
 EXCLUDE_PREFIXES = tuple(
-    p for p in os.environ.get("UI_HASH_EXCLUDE_PREFIXES", "01_利用者向け資料/").split(",") if p
+    p for p in os.environ.get("UI_HASH_EXCLUDE_PREFIXES", "docs/").split(",") if p
 )
 
 
@@ -36,7 +36,7 @@ def _filter(lines: list[str]) -> list[str]:
 
 def _ui_files_on_disk() -> list[str]:
     # git 管理対象（追跡済み＋未追跡だが無視されないもの）のみ。rglob だと per-run 生成物が混入し hash が揺れる。
-    # core.quotePath=false: 日本語パス（例 01_利用者向け資料/）が "\NNN" 8 進エスケープで返るのを防ぐ。
+    # core.quotePath=false: 日本語パスが "\NNN" 8 進エスケープで返るのを防ぐ。
     out = subprocess.run(
         ["git", "-c", "core.quotePath=false", "ls-files", "--cached", "--others", "--exclude-standard"],
         capture_output=True,

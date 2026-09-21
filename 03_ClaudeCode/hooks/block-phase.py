@@ -87,7 +87,7 @@ def main() -> int:
             "工程承認ゲートが有効（.claude/phase-gate あり）ですが、判定に使う "
             "scripts/check_approval.py が見つかりません。\n"
             "配置してください: <キット>/00_導入/02_プロジェクト配布/export-project.sh . を再実行する、または "
-            "check_approval.py / phase-hash.py を 00_導入/ へコピーする。\n"
+            "check_approval.py / phase-hash.py を scripts/ へコピーする。\n"
             "ゲートを使わないなら .claude/phase-gate を削除してください（削除は git 差分に残ります）。"
         )
 
