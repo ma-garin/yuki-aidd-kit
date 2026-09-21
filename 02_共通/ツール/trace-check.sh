@@ -234,7 +234,7 @@ echo "=== トレーサビリティ検査: $DIR ==="
 if [ "$NG" -eq 0 ]; then
   echo "✅ NG=0（定義済み ID: $DEFS 件）"
 else
-  echo "❌ NG=$NG（定義済み ID: $DEFS 件）"
+  echo "❌ NG=${NG}（定義済み ID: $DEFS 件）"
   cut -f1 "$TMP/ng.tsv" | sort | uniq -c | sort -rn | while read -r n kind; do
     echo "  - $kind: $n 件"
   done

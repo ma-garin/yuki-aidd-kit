@@ -62,7 +62,7 @@ OUT=$(cd "$TMP" && bash "$HOOKS/session-summary.sh"); RC=$?
 if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -qF "session-end"; then
   echo "  ✅ セッション終了サマリが出力され exit 0"; PASS=$((PASS+1))
 else
-  echo "  ❌ セッション終了サマリ（exit=$RC）"; FAIL=$((FAIL+1))
+  echo "  ❌ セッション終了サマリ（exit=${RC}）"; FAIL=$((FAIL+1))
 fi
 
 echo "[block-explore.sh]"

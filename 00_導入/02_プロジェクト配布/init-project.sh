@@ -37,7 +37,7 @@ EOF
 
 # --- プロジェクト用 CLAUDE.md ---
 cat > CLAUDE.md << EOF
-# CLAUDE.md（プロジェクト: $NAME）
+# CLAUDE.md（プロジェクト: ${NAME}）
 
 ## このプロジェクトの概要
 <!-- 一文で目的を書く -->

@@ -29,7 +29,7 @@ fi
 case "$TOOL" in
   Read|Grep|Glob)
     echo "=== [AIDD Hook: block-explore] 実装モード中です ===" >&2
-    echo "探索系ツール（$TOOL）は .claude/mode 存在時はブロックされます。" >&2
+    echo "探索系ツール（${TOOL}）は .claude/mode 存在時はブロックされます。" >&2
     echo "plan で確定済みの方針・対象ファイルに基づいて実装を進めてください。" >&2
     echo "再探索が必要になったら /plan で実装モードを解除してから調査してください。" >&2
     exit 2
