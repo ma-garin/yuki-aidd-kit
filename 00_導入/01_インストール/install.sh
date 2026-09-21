@@ -6,7 +6,7 @@ CLAUDE_DIR="$HOME/.claude"
 KIT_VERSION="$(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown) $(git -C "$KIT_DIR" rev-parse --short HEAD 2>/dev/null || echo -) $(date -I)"
 
 echo "=== AIDD Kit インストール（版: $KIT_VERSION）==="
-mkdir -p "$CLAUDE_DIR/skills" "$CLAUDE_DIR/commands" "$CLAUDE_DIR/hooks" "$CLAUDE_DIR/rules/aidd-kit"
+mkdir -p "$CLAUDE_DIR/skills" "$CLAUDE_DIR/commands" "$CLAUDE_DIR/hooks" "$CLAUDE_DIR/rules/aidd-kit" "$HOME/.agents/skills"
 
 # グローバルCLAUDE.md（既存があればバックアップ）
 if [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
@@ -23,7 +23,9 @@ cp "$KIT_DIR/04_Codex/AGENTS.md.template" "$CLAUDE_DIR/AGENTS.md"
 
 # スキル
 cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$CLAUDE_DIR/skills/"
-echo "✅ スキル: $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個"
+# Codex用に同じスキルを ~/.agents/skills/ にも配る（出典: https://learn.chatgpt.com/codex/build-skills）
+cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$HOME/.agents/skills/"
+echo "✅ スキル: $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個（~/.claude/skills/ と ~/.agents/skills/ の両方）"
 
 # コマンド
 cp "$KIT_DIR/03_ClaudeCode/commands/"*.md "$CLAUDE_DIR/commands/"
