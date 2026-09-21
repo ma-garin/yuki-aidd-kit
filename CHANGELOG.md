@@ -3,16 +3,17 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
-## Ver.8.0.0（2026-09-21）— 構成管理: 配布物を agent/ に束ね、計画と事例を分ける（M24）
+## Ver.8.0.0（2026-09-21）— 構成管理: 番号付きの構成へ、Claude Code と Codex を分ける（M24）
 
-直下に配布物 4 種・計画文書・事例が並び、「キットの checkout の中の場所」と「導入先に置かれる場所」の区別が付きにくかったため、役割でもう一段切り直します。**互換性のない変更**: キットの checkout 内のパスが変わります（`skills/` → `agent/skills/` ほか）。キットのパスを直接参照している外部スクリプトは要更新。導入先側の置き場所（`~/.claude/{skills,commands,hooks,rules}`・`<対象>/.claude/...`・`<対象>/scripts/`）は変わりません。
+直下に配布物・計画・保守資料が役割の区別なく並び、Claude Code 用と Codex 用の区別も無かったため、SIer の構成管理（ISO 10007:2017 の構成品目の識別）に倣って切り直します。**互換性のない変更**: キットの checkout 内のパスがすべて変わります。導入先側の置き場所（`~/.claude/{skills,commands,hooks,rules}`・`<対象>/.claude/...`・`<対象>/scripts/`）は変わりません。
 
-- **配布物を `agent/` に**: `rules/ skills/ commands/ hooks/` → `agent/rules/ agent/skills/ agent/commands/ agent/hooks/`。install / export / verify / `install_guard.py --hooks-dir` の既定値 / token_audit / check_docs / 回帰テスト / kit-ci を更新。`.claude/settings.json` の hook 配線は移動と同一コミット（F-26 の再発防止）
-- **計画文書を `project/` に**: internal/ の PRD・Roadmap・Vision → `project/`。`internal/` は spec・根拠・lessons・監査だけ
-- **事例を `examples/` に**: 旧 docs/examples/library-loan → `examples/library-loan`（`build.py` のキット位置を追随）
-- **利用者向け資料を配る**: `export-project.sh` は `<対象>/.claude/docs/`、`install.sh` は `~/.claude/docs/aidd-kit/` へ `docs/` 直下を置く。`test-install.sh` に 6 ケース追加（108）
-- `check_docs.py`: 文書中の `skills/…` `rules/…` 等は配布物の名前（キット内は `agent/`、導入先は `.claude/`）として `agent/` でも解決する。目録解決に `agent/*`・`project/`・`examples/` を追加
-- 各段で回帰テスト 10 本と `ci/check-docs.sh` を実行し、FAIL 数・NG 数が 7.1.0（ec4bb97）を超えないことを確認（既存 FAIL: test-hooks 8・test-check-approval 37・test-check-docs 10・test-test-metrics 8 は据え置き）。`git mv` で履歴は保持
+- **命名規則**: 直下のフォルダは「番号_日本語名」。番号 00 は実行の入口、01〜04 は配布、05〜06 は非配布。英語は外部仕様で名前が決まるもの（README.md・CHANGELOG.md・VERSION・Claude Code の `skills/` 等）だけ
+- **対応**: `scripts/`→`00_導入/`、`docs/`→`01_利用者向け資料/`（事例は `サンプル/図書貸出/`）、`rules/`・`templates/`・`tools/`→`02_共通/{rules,ひな形,ツール}/`、`skills/`・`commands/`・`hooks/`・`CLAUDE.md.template`→`03_ClaudeCode/`、`AGENTS.md.template`→`04_Codex/`、PRD・Roadmap・Vision→`05_プロジェクト管理/{要求仕様,ロードマップ,構想}.md`、`internal/`・`ci/`→`06_保守者向け/`（`内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`）
+- **構成管理の文書を新設**: `05_プロジェクト管理/構成管理/構成管理計画書.md`（ISO 10007:2017 の計画・識別・変更管理・状況の記録・監査）と `構成品目一覧.md`（CI-00〜）
+- **利用者向け資料を配る**: export は `<対象>/.claude/docs/`、install は `~/.claude/docs/aidd-kit/`
+- **hook の誤動作を解消**: `instruction-guard` は deny をやめ additionalContext で通知（応答済みでも毎回エラー表示していた）、サブエージェント内は対象外。`reply-language` は `last_assistant_message` で判定
+- **既存 FAIL 63 件 → 0**: 回帰テストの GNU 専用 `sed -i`・`touch -d` を BSD/GNU 共通に。check_docs は手元の生成物を除外し、日本語名を NFC で比較。CHANGELOG の過去の版の旧パスは参照切れ検査から除外
+- 回帰テスト 10 本すべて FAIL=0、`check-docs` NG=0
 
 ## Ver.7.1.0（2026-09-21）— トークン消費を構造から削る
 
