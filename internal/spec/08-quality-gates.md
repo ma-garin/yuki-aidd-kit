@@ -1,0 +1,211 @@
+# 08 — 品質ゲートの全体像
+
+キットの核心。**「動いた」を「完了」と言わせないための層構造**を1枚にまとめる。
+各値の真実源は `internal/spec/02-architecture.md` の真実源マップを参照。
+
+---
+
+## 1. 判定の3分割（混ぜない）
+
+| 見るもの | 使うもの | 問い |
+|---|---|---|
+| **コードが動くか** | `test-automation` | テストは通るか |
+| **画面が使いやすいか / 効いているか** | `qa-review-standards` ＋ `uiux_review` ＋ `atarimae-quality-audit` | 利用者が迷わないか。全状態を実際に開いたか。指摘1点の裏の欠陥クラスを全部洗ったか |
+| **AI 出力が正しいか** | `agent-eval` | 根拠に基づいているか（非決定性前提） |
+| （最後に）**完成と言ってよいか** | `done-gate` | 未確認の項目は残っていないか |
+
+---
+
+## 2. テストレベル L1〜L4（`test-strategy` が真実源）
+
+```text
+L1 単体 ─┐
+L2 統合 ─┴─→ 証明するのは「コードが壊れていない」ことだけ
+L3 E2E  ─┐
+L4 受入 ─┴─→ ここで初めて「ユーザーが価値を受け取れる」ことが証明される
+```
+
+| レベル | 対象 | ツール | ゲート | 証跡 | 承認 |
+|---|---|---|---|---|---|
+| L1 単体 | 関数・クラス・純ロジック | pytest / vitest | FAIL 0 ＋ 行カバレッジ **80%** 以上 | テスト結果 | — |
+| L2 統合 | API・サービス間結合・状態遷移 | pytest + test client / supertest | FAIL 0 | テスト結果 | — |
+| L3 システム（E2E） | ブラウザ上の実フロー | Playwright | FAIL 0 → `.ui-verified` 生成。**無ければ UI 変更をコミット不可** | スクショ（失敗時必須）1280×800 + 1366×768 | — |
+| L4 受け入れ | ユーザーストーリー・非機能 | 手動。ISTQB FL 相当が**初見・マニュアルなし** | 依頼者（PO）が承認 | スクショ + コメント | **人間。AI は承認しない** |
+
+**レベル別の設計観点**（何を疑うか・落としてはいけないもの）は `dev-lifecycle/references/test-levels.md` が真実源。
+
+| レベル | 何を疑うか | 検証対象 ID | 落としてはいけないもの |
+|---|---|---|---|
+| UT | ロジックが仕様どおりか | `DD-xxx` | 分岐・境界・異常入力 |
+| IT | つなぐと壊れないか | `BD-xxx` | I/F の型・順序・失敗時 |
+| ST | 本番相当で要求を満たすか | `REQ-N-xxx` | 実測値・環境依存 |
+| UAT | 依頼者の目的を果たすか | `REQ-F-xxx` | 業務の通し・受入基準 |
+
+> 下位レベルで潰せる欠陥を上位で見つけるのは手戻りコストが高い。
+> 「ST で初めて分岐漏れが出た」は **UT の設計不足として `retro` に記録する**。
+
+---
+
+## 3. ゲートの実行タイミング（最優先で宣言する）★
+
+| タイミング | 実行するもの | 根拠 |
+|---|---|---|
+| 日常のコミット | **実行しない**（`block-gates.py` が無断実行を止める） | `rules/speed-harness.md` H-7（速度） |
+| **マイルストーン**（機能の区切り・PR マージ前・リリース判断） | **フルゲート**: L1/L2 + L3 + lint + security + `quality_harness.py`。結果を `docs/quality/evidence/` へ保存 | `test-strategy` |
+| ユーザーが要求した時 | 要求されたもの（`GATES_REQUESTED=1` を付ける） | H-7 |
+
+**この優先関係をプロジェクト文書に必ず書く。**
+書かれていなかったため、H-7 運用でゲートが1週間実行されず、**テスト資産17件が陳腐化したまま放置された（2026-08-23 実損害）**。
+迷ったらマイルストーンとして実行する。フルゲートの実測は約5分で、1週間の腐敗より安い。
+
+各テンプレート（`TESTING_STRATEGY.md` §4 / `DEFINITION_OF_DONE.md`）は「各所の『スキップ不可』は**マイルストーン時点の要求として読む**」と明記し、
+規約どうしの矛盾を設計で解消している。
+
+---
+
+## 4. 変更タイプ別 DoD
+
+| タイプ | 対象 | MANDATORY | PROHIBITED |
+|---|---|---|---|
+| **A** バックエンド | `*.py` / `*.ts`（UI 以外） | L1/L2 全 PASS + カバレッジ80% / 構文チェック / `quality_harness.py` PASS / code-reviewer で HIGH 以上ゼロ | — |
+| **B** フロントエンド ★ | `*.html` / `*.js` / `*.css` | L1/L2 + **L3 全 PASS + `.ui-verified`（hash 一致）** / ブラウザで実操作（1920×1080・1366×768） / 変更した全フローを最初から最後まで / コンソールエラーなし / **`uiux_review` で全状態** / スクショ保存 | pytest PASS だけで完了とする ／ ブラウザ確認なしにコミット・プッシュ ／ E2E をスキップして UI をコミット ／ 「動くはず」で完了宣言 |
+| **C** ドキュメント | `docs/**/*.md` 等 | 内部リンク有効 / 関連文書の同時更新 | — |
+
+---
+
+## 5. 機械ゲート（人の注意力に頼らない6つ）
+
+| ゲート | 何を止めるか | 実装 | 失敗 |
+|---|---|---|---|
+| **探索ブロック** | 実装モード中の再探索（Read/Grep/Glob） | `block-explore.sh` × `.claude/mode` | exit 2 |
+| **ゲートの無断実行** | 要求されていない pytest / make test / verify-ui / lint | `block-gates.py` | `permissionDecision: deny` |
+| **秘密情報** | API キー等の混入 | `tools/pre-commit`（gitleaks or 簡易パターン） | exit 1 |
+| **UI 検証マーカー** | E2E 未実行・検証後に UI を変更したコミット | `ui-hash.py` + `pre-commit-ui-gate.sh` × `.ui-verified` | exit 1（BLOCKED） |
+| **機能契約ハーネス** | UI だけあって実行経路が無い機能／critical・high に失敗系テストが無い／契約未登録の新モジュール | `quality_harness.py` × `quality/feature_contracts.yml` | exit 1 |
+| **トレーサビリティ** | 要件が設計・テストへ落ちていない | `trace-check.sh` × `traceability-matrix.md` | exit 1 |
+| **デザイン直値** | CSS/JS の色・余白の直値、未定義トークン、外部 CDN、`alert()`、`tokens.css` 未読込（M17 追加） | `check-design.sh` × `templates/tokens.css` | exit 1 |
+
+### UI 検証マーカーの仕組み
+
+```text
+make verify-ui（L3 E2E 全 PASS）
+  → printf "%s %s %s\n" "$(git rev-parse HEAD)" "$(python3 tools/ui-hash.py disk)" "$(date -Iseconds)" > .ui-verified
+
+git commit（UI ファイルが staged）
+  → pre-commit-ui-gate.sh
+       存在しない            → BLOCKED
+       2時間より古い          → BLOCKED
+       UI hash が現在と不一致 → BLOCKED（検証後に UI が変更された）
+       一致                  → PASS ＋「ブラウザ目視確認も実施しましたか？」と WARN
+```
+
+- **`touch` による偽造を hash で防ぐ**のが設計の肝（出所: WebSpec2Doc `.githooks/pre-commit` v2）
+- hash は staged 差分でなく **disk 全体**で照合（部分コミットで必ず不一致になるのを避ける）
+- `docs/` 配下は設計モックとして対象外（誤検出で pytest 全件を完走してから BLOCK していた実績）
+- **刷新モード `.rebuild-mode`**: UI を作り替えている期間は毎コミットの E2E を要求しない。ただし**免除ではなく「マイルストーンでまとめて実行」への切り替え**であり、有効中は毎コミットに「E2E は未実行。**未検証であり問題なしではない**」と表示する
+
+### 機能契約ハーネスの検証8種
+
+`rules/functional-integrity.md` の実行経路（UI → API → backend → 出力 → 永続化 → エラー → 証跡）を、**人の注意力でなくスクリプトで**検証する。
+
+```json
+{
+  "feature_id": "user_feedback", "risk_level": "high", "status": "implemented",
+  "ui_files": [...], "route_files": [...], "core_files": [...], "symbols": [...],
+  "outputs": [...], "persistence": [...],
+  "failure_modes": ["empty_message_rejected", "write_failure_reported_not_silently_dropped"],
+  "required_tests": ["happy_path", "error_path", "evidence"]
+}
+```
+
+検出: ①統制文書の欠落 ②無効な列挙値（**`ui-only` は禁止**）③参照パスの欠落 ④実行経路の無い implemented
+⑤失敗系の無い critical/high ⑥存在しないシンボル ⑦**契約未登録の新モジュール** ⑧未実装マーカー。
+
+⑦は *2026-07-19 に「機能を足したが契約に登録し忘れ、ハーネスが素通しで PASS」が実際に起きた*ため追加された。
+基盤部品は `unregistered_allowlist` に **「なぜ機能ではないか」の理由付きで**登録する。
+
+---
+
+## 6. 工程ゲート（`dev-lifecycle`）
+
+### 共通の出口基準3つ（全工程に適用）
+
+1. 成果物に**未確定の `TBD` が残っていない**（残すなら RFD へ差し戻すか ADR で保留理由を明記）
+2. 当該工程で採番した ID が全て追跡表に載っている（`trace-check.sh` NG=0）
+3. `qa-review-standards` の観点で自己レビュー済み（**Critical/High 残ゼロ・evidence-only**）
+
+### 人間の承認が必須な3点（AI は承認しない）
+
+```text
+RFD の決定  →  要件定義の確定  →  受け入れテストの合格判定
+```
+
+### 差し戻しの規則
+
+- 出口基準の未達は**次工程の作業で埋めない**。必ず当該工程へ戻す
+- 要件の追加・変更は RFD へ戻す（実装中に要件を足さない）
+- **差し戻しが3回続いた工程は粒度が合っていない兆候**。工程分割か軽量 SDD への切り替えを人間に求める
+
+---
+
+## 7. ID 体系とトレーサビリティ
+
+```text
+RFD → REQ-F / REQ-N → BD → DD → T → UT / IT / ST / UAT → OPS
+                            V字:  REQ↔UAT  /  BD↔ST・IT  /  DD↔UT
+```
+
+| 規約 | 内容 |
+|---|---|
+| 書式 | `<接頭辞>-<3桁>`（`REQ-F-012` / `DD-003` / `UAT-007`） |
+| 定義位置 | 所有ファイル内の**見出し行の先頭**または**表の第1セル**。この2形式以外は定義とみなさない |
+| 参照 | 他工程からは本文中に ID を書くだけ。**再定義しない** |
+| 連番 | 詰めない。削除した ID は欠番のまま残す（過去の参照を壊さない） |
+| 粒度 | 1つの ID に複数の内容を詰めない。「AかつB」は2つに分ける（テストが1対1で書けなくなる） |
+| 追跡表 | `traceability-matrix.md` **だけ**が真実源。工程文書に対応表を複製しない |
+| 空欄 | **禁止**。非該当は `-` を入れる（空欄はカバー漏れとして検出される） |
+| 必須列 | `REQ-F` は UAT 列必須 / `REQ-N` は ST 列必須 |
+
+### 欠陥（DEF）の扱い
+
+発見したテスト工程の文書内に定義し `{DEF-ID, 対象 REQ/DD, severity, evidence, 再現手順, 対応}` を記録。
+severity は ISTQB 4段（**severity と priority を混同しない**）。
+Critical/High は当該工程の出口基準に直結、Medium/Low は `09-operations.md` の既知の制約へ引き継ぐ。
+
+---
+
+## 8. ISO/IEC/IEEE 29119-3 文書との対応
+
+| 29119-3 文書 | 雛形 | 何を書くか | `dev-lifecycle` との分担 |
+|---|---|---|---|
+| テスト計画 | `iso29119-test-plan.md` | 対象/対象外・レベル×タイプ・リスクベース戦略・開始/終了/中断/再開基準・環境・データ・役割 | 工程文書（05〜08）はケースと結果。**計画はこちらにだけ書く** |
+| テスト設計仕様 | `iso29119-test-design-spec.md` | 技法の適用状況・境界値の突合表・カバレッジの死角・追跡できない要求 | ケース本体は 05〜08 または CSV |
+| テスト完了報告 | `iso29119-test-completion-report.md` | レベル別結果・計画との差異・25010 別到達・残存リスク・GO/NO-GO・申し送り | 結果の一次記録は 05〜08。報告はそれを参照 |
+| インシデントレポート | `iso29119-incident-report.md` | 製品欠陥 / テスト陳腐化 / 環境依存 / flaky の分類と、**テストと実装のどちらを直すかの判定** | 欠陥票は GitHub Issue テンプレート |
+| システムテストケース | `system_test_cases.csv` | ID・ロール・機能・**ツアー観点**・前提・手順・期待結果・severity | `e2e-cycle` ステップ1 の出力形式 |
+
+AUDIT-2026-07 で指摘された「ISO 29119 が 0 件」は M13 で解消済み。
+
+---
+
+## 9. リスク（全プロジェクト共通の既定）
+
+| リスク | 確率 | 影響 | 対策 |
+|---|---|---|---|
+| E2E が flaky | 中 | 中 | 再試行2回まで。**原因調査は必須**。`time.sleep` 禁止（`expect` / `wait_for`） |
+| テスト保守の遅延・陳腐化 | 高 | 高 | 機能追加と同一 PR にテストを必須化。マイルストーンでフルゲート |
+| L3 省略の習慣化 | 高 | 高 | `.ui-verified` で機械的に強制。刷新期間は `.rebuild-mode` に理由を書いて明示的に免除 |
+| L4 省略 | 中 | 高 | DoD にチェック欄を設け記録を残す |
+
+---
+
+## 10. 完了基準（Exit Criteria）
+
+1. L1+L2 全 PASS ＋ カバレッジ基準達成
+2. L3（UI 変更時）全 PASS ＋ スクリーンショット目視済み
+3. L4（新機能時）依頼者の承認
+4. **Critical / High の未解決指摘ゼロ**
+5. `quality_harness.py` PASS（critical/high 機能に failure_modes と失敗系テストがある）
+
+その上で `done-gate` の全種別共通8項目＋変更タイプ別＋（該当すれば）工程・AI/LLM・PWA・単一HTML・Streamlit の追加項目を通す。
+**未達があれば「未完了。残り N 項目」と出す。全達成時のみ「完了基準を満たしている」と判定する。**

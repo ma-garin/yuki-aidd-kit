@@ -36,24 +36,26 @@ cp -r "$KIT_DIR/skills/"* "$TARGET/.claude/skills/"
 echo "✅ スキル: $(ls "$KIT_DIR/skills" | wc -l)個"
 
 # コマンド一式
-cp "$KIT_DIR/claude-code/commands/"*.md "$TARGET/.claude/commands/"
-echo "✅ コマンド: $(ls "$KIT_DIR/claude-code/commands" | wc -l)個"
+cp "$KIT_DIR/commands/"*.md "$TARGET/.claude/commands/"
+echo "✅ コマンド: $(ls "$KIT_DIR/commands" | wc -l)個"
 
 # Hooks（プロジェクトスコープはリポジトリ相対パスで参照する）
 # 前提: Claude Code のプロジェクトスコープ hooks はプロジェクトルートを
 # 作業ディレクトリとして実行される。環境によって異なる場合は要検証。
-cp "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py "$TARGET/.claude/hooks/"
+cp "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py "$TARGET/.claude/hooks/"
 chmod +x "$TARGET/.claude/hooks/"*.sh "$TARGET/.claude/hooks/"*.py
 backup_if_exists "$TARGET/.claude/settings.json"
 cat > "$TARGET/.claude/settings.json" << 'JSON'
 {
   "effortLevel": "high",
   "autoCompactWindow": "200k",
-  "env": { "BASH_MAX_OUTPUT_LENGTH": "12000" },
+  "bashOutputMaxChars": 12000,
+  "env": { "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0" },
   "statusLine": { "type": "command", "command": "python3 .claude/hooks/statusline.py", "padding": 2 },
   "hooks": {
     "PreToolUse": [
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/instruction-guard.py", "timeout": 5, "statusMessage": "保守者の指示に応答済みか確認中" } ] },
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/block-ci.py", "timeout": 5, "statusMessage": "自己ウェイク・CI 待ちでないか確認中" } ] },
       {
         "matcher": "Read|Grep|Glob",
         "hooks": [
@@ -105,8 +107,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
   }
 }
 JSON
-echo "✅ settings: effortLevel=high / autoCompactWindow=200k / BASH_MAX_OUTPUT_LENGTH=12000（トークン節約の既定。設計判断のときだけ /effort xhigh）"
-echo "✅ Hooks: $(ls "$KIT_DIR/claude-code/hooks/"*.sh "$KIT_DIR/claude-code/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み: .claude/mode ・ .claude/phase-gate が無ければ何もしない。filter-output.py が冗長な出力を絞る: 全量は FULL_OUTPUT=1）"
+echo "✅ settings: effortLevel=high / autoCompactWindow=200k / bashOutputMaxChars=12000（トークン節約の既定。設計判断のときだけ /effort xhigh）"
+echo "✅ Hooks: $(ls "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み: .claude/mode ・ .claude/phase-gate が無ければ何もしない。filter-output.py が冗長な出力を絞る: 全量は FULL_OUTPUT=1）"
 
 # Rules（.claude/rules/*.md は Claude Code が常時読み込む。speed-harness.md の H-2 はプロジェクトごとに埋める）
 cp "$KIT_DIR/rules/"*.md "$TARGET/.claude/rules/"
@@ -130,7 +132,7 @@ mkdir -p "$TARGET/scripts"
 if [ -e "$TARGET/scripts/trace-check.sh" ]; then
   echo "↷ scripts/trace-check.sh は既存のためスキップ"
 else
-  cp "$KIT_DIR/scripts/trace-check.sh" "$TARGET/scripts/trace-check.sh"
+  cp "$KIT_DIR/tools/trace-check.sh" "$TARGET/scripts/trace-check.sh"
   chmod +x "$TARGET/scripts/trace-check.sh"
   echo "✅ scripts/trace-check.sh 同梱"
 fi
@@ -138,7 +140,7 @@ fi
 # テスト活動のゲートスクリプト（機能契約ハーネス・UI 検証マーカー。文書雛形は init-test-docs.sh で配置）
 for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh check_approval.py check-approval.sh phase-hash.py test_metrics.py test-metrics.sh; do
   if [ -e "$TARGET/scripts/$s" ]; then echo "↷ scripts/$s は既存のためスキップ"
-  else cp "$KIT_DIR/scripts/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"; echo "✅ scripts/$s 同梱"; fi
+  else cp "$KIT_DIR/tools/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"; echo "✅ scripts/$s 同梱"; fi
 done
 
 # Codex用 AGENTS.md（INDEX.md参照をプロジェクト相対パスに変換）

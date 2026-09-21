@@ -78,6 +78,6 @@
       "Read(**/*secret*)"
     ]
   },
-  "// 4": "--- フック: claude-code/hooks/settings.json を参照（本雛形には含めない） ---",
+  "// 4": "--- フック: hooks/settings.json を参照（本雛形には含めない） ---",
   "// 0": "テンプレート出所: my-forward (2026-08)。permissions.allow の npm/vite 行はプロジェクトに合わせて差し替える"
 }

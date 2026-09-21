@@ -4,7 +4,7 @@
 
 > 社内図書館の貸出管理を Excel から Web システムにする。HTML でモックを作ってください
 
-この 1 行から、キットの規律（目的 1 行・残課題・未検証）と手順書（single-html-tool / design-system / uiux_review / done-gate）だけで、ここにある `library-loan.html` ができた。ハンズオンの教材でもある（`docs/userguide.html` の「ハンズオン」章）。
+この 1 行から、キットの規律（目的 1 行・残課題・未検証）と手順書（single-html-tool / design-system / uiux_review / done-gate）だけで、ここにある `library-loan.html` ができた。ハンズオンの教材でもある（`docs/利用ガイド.html` の「ハンズオン」章）。
 
 ## 中身
 
@@ -29,7 +29,7 @@ python3 docs/examples/library-loan/build.py                 # キットの部品
 - 5 画面（ダッシュボード / 蔵書 / 貸出中 / 利用者 / 設定）が、キットの CSS を**貼るだけ**で揃った。書き足した CSS は配置の 20 行
 - 操作には必ず結果が返る: 貸出（モーダル・冊数上限のエラー）／返却（確認 → 記録 → トースト）／失敗（消えないメッセージ＋「もう一度」）／0 件（空状態とボタン）／処理中
 - 360×820 / 1366×768 / 1920×1080・ライト／ダークで横スクロールなし（Playwright で 14 状態を確認）
-- **キット自身の欠陥が 3 件見つかり、是正した**（`spec/09-findings.md` F-14〜F-16、`docs/lessons.md`）。事例で通しでやると、部品のセルフテストでは出ない問題が出る
+- **キット自身の欠陥が 3 件見つかり、是正した**（`internal/spec/09-findings.md` F-14〜F-16、`internal/lessons.md`）。事例で通しでやると、部品のセルフテストでは出ない問題が出る
 
 ## モックの範囲外（本実装で対応）
 

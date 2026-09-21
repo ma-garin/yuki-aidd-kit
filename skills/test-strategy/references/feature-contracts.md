@@ -9,7 +9,7 @@
 |---|---|
 | `quality/feature_contracts.yml` | 機能ごとの契約（JSON 互換 YAML）。雛形: `templates/test/feature_contracts.yml` |
 | `scripts/quality_harness.py` | 契約を検証し PASS/FAIL を返す（NG>0 で exit 1。CI でそのまま落とせる） |
-| `scripts/test-quality-harness.sh` | ハーネス自身の回帰テスト（キット側） |
+| `ci/test-quality-harness.sh` | ハーネス自身の回帰テスト（キット側） |
 
 ## 契約の項目
 
@@ -47,5 +47,5 @@
 
 - 機能を追加したら契約を同じ PR で追加する。ハーネスが #7 で止めてくれる。
 - 基盤部品（設定・認証・型定義など）は `unregistered_allowlist` に **「なぜ機能ではないか」の理由付き**で登録する。
-- 実行はマイルストーンとユーザー要求時（`rules/speed-harness.md` H-7）。CI では `github-actions/test-gates.yml`。
+- 実行はマイルストーンとユーザー要求時（`rules/speed-harness.md` H-7）。CI では `templates/github/workflows/test-gates.yml`。
 - `python3 scripts/quality_harness.py --root . --contract quality/feature_contracts.yml`

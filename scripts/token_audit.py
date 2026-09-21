@@ -5,10 +5,10 @@
 NG>0 で exit 1、WARN のみは exit 0。
 
   1. 床（常時読み込み）  rules/*.md（paths 無し）＋ CLAUDE.md（@AGENTS.md 展開）の文字数と推定トークン。
-                          換算は spec/11 D-1（日本語 1.0 tok/char・ASCII 0.27 tok/char）。**推定**であり実測は /context
+                          換算は internal/spec/11 D-1（日本語 1.0 tok/char・ASCII 0.27 tok/char）。**推定**であり実測は /context
   2. 実測ログ            .claude/instructions-loaded.log（log-instructions.py）があればファイル別の読み込み回数
   3. 仕組みの配線        settings.json に filter-output / pre-read-guard / context-guard / pre-compact が配線されているか、
-                          effortLevel / autoCompactWindow / BASH_MAX_OUTPUT_LENGTH があるか（無ければ NG）
+                          effortLevel / autoCompactWindow / bashOutputMaxChars があるか（無ければ NG）
   4. MCP                 .mcp.json / settings の mcpServers の数。MCP_WARN_COUNT（既定 3）超で WARN（CLI で代替できないか）
   5. スキルの肥大        SKILL.md が SKILL_WARN_LINES（既定 150）超で WARN（check-docs.sh の 200 行 NG より手前で気づく）
   6. 手元でしか測れないもの  /context /usage /doctor のコマンドを印字するだけ
@@ -24,10 +24,10 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-HOOKS_REQUIRED = ("filter-output.py", "pre-read-guard.py", "context-guard.py", "pre-compact.py")
-SETTINGS_REQUIRED = ("effortLevel", "autoCompactWindow")
-ENV_REQUIRED = ("BASH_MAX_OUTPUT_LENGTH",)
-FLOOR_WARN_TOKENS = 8000        # spec/11 D-1: M16 後の床 ≒ 5,400。超えたら WARN
+HOOKS_REQUIRED = ("block-ci.py", "filter-output.py", "pre-read-guard.py", "context-guard.py", "pre-compact.py")
+SETTINGS_REQUIRED = ("effortLevel", "autoCompactWindow", "bashOutputMaxChars")
+ENV_REQUIRED: tuple[str, ...] = ()  # BASH_MAX_OUTPUT_LENGTH は単独では読み戻し幅だけ（bashOutputMaxChars が置き換える）
+FLOOR_WARN_TOKENS = 8000        # internal/spec/11 D-1: M16 後の床 ≒ 5,400。超えたら WARN
 MCP_WARN_COUNT = 3
 SKILL_WARN_LINES = 150
 IMPORT_RE = re.compile(r"^@(\S+)\s*$", re.M)
@@ -124,9 +124,9 @@ def check_loaded_log(root: Path, r: Result) -> None:
 
 
 def load_settings(root: Path) -> tuple[dict, Path | None]:
-    # キット本体（claude-code/hooks/settings.json がある形）では配布形の settings を見る。キット自身の .claude/settings.json は
+    # キット本体（hooks/settings.json がある形）では配布形の settings を見る。キット自身の .claude/settings.json は
     # 開発セッション用の一部配線（instruction-guard 等）だけなので、床・配線の判定対象にしない
-    for c in (root / "claude-code/hooks/settings.json", root / ".claude/settings.json", Path.home() / ".claude/settings.json"):
+    for c in (root / "hooks/settings.json", root / ".claude/settings.json", Path.home() / ".claude/settings.json"):
         if c.is_file():
             try:
                 return json.loads(read(c)), c
@@ -138,7 +138,7 @@ def load_settings(root: Path) -> tuple[dict, Path | None]:
 def check_wiring(root: Path, r: Result) -> None:
     s, path = load_settings(root)
     if path is None:
-        r.add(True, "配線", "settings.json", "見つからない（.claude/settings.json / claude-code/hooks/settings.json / ~/.claude/settings.json）")
+        r.add(True, "配線", "settings.json", "見つからない（.claude/settings.json / hooks/settings.json / ~/.claude/settings.json）")
         return
     blob = json.dumps(s, ensure_ascii=False)
     for h in HOOKS_REQUIRED:
@@ -151,7 +151,7 @@ def check_wiring(root: Path, r: Result) -> None:
         if k not in (s.get("env") or {}):
             r.add(True, "配線", path.name, f"env.{k} が無い")
     r.info.append(f"settings: {path}（effortLevel={s.get('effortLevel')} autoCompactWindow={s.get('autoCompactWindow')} "
-                  f"BASH_MAX_OUTPUT_LENGTH={(s.get('env') or {}).get('BASH_MAX_OUTPUT_LENGTH')}）")
+                  f"bashOutputMaxChars={s.get('bashOutputMaxChars')}）")
 
 
 def check_mcp(root: Path, r: Result) -> None:
@@ -181,7 +181,7 @@ def check_skills(root: Path, r: Result) -> None:
 
 def write_report(path: Path, root: Path, r: Result) -> None:
     lines = ["# トークン監査レポート", "", f"- 対象: `{root}`", f"- NG: {len(r.ng)} 件 ／ 警告: {len(r.warn)} 件",
-             "- 規約: `rules/model-routing.md` ／ 根拠: `docs/rules-rationale/model-routing.md` ／ 一次情報: `spec/11` §2", "",
+             "- 規約: `rules/model-routing.md` ／ 根拠: `internal/rules-rationale/model-routing.md` ／ 一次情報: `internal/spec/11` §2", "",
              "## 計測", ""] + [f"- {i}" for i in r.info]
     lines += ["", "## NG 一覧", ""]
     lines += (["| 種別 | 対象 | 内容 |", "|---|---|---|"] + [f"| {k} | {t} | {d} |" for k, t, d in r.ng]) if r.ng else ["なし。"]

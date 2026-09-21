@@ -97,12 +97,12 @@ if [ "$WITH_GITHUB" -eq 1 ]; then
   mkdir -p "$TARGET/.github/workflows"
   dest="$TARGET/.github/workflows/lifecycle-check.yml"
   if [ -e "$dest" ]; then echo "  ↷ スキップ（既存）: workflows/lifecycle-check.yml"
-  else cp "$KIT_DIR/github-actions/lifecycle-check.yml" "$dest"; echo "  ✅ workflows/lifecycle-check.yml"; fi
+  else cp "$KIT_DIR/templates/github/workflows/lifecycle-check.yml" "$dest"; echo "  ✅ workflows/lifecycle-check.yml"; fi
 
   mkdir -p "$TARGET/scripts"
   dest="$TARGET/scripts/trace-check.sh"
   if [ -e "$dest" ]; then echo "  ↷ スキップ（既存）: scripts/trace-check.sh"
-  else cp "$KIT_DIR/scripts/trace-check.sh" "$dest"; chmod +x "$dest"; echo "  ✅ scripts/trace-check.sh（CI から実行するため同梱）"; fi
+  else cp "$KIT_DIR/tools/trace-check.sh" "$dest"; chmod +x "$dest"; echo "  ✅ scripts/trace-check.sh（CI から実行するため同梱）"; fi
 fi
 
 echo ""
