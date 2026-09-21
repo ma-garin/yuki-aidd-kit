@@ -42,7 +42,7 @@ open docs/利用ガイド.html                      # ユーザーガイド（�
 open docs/操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（ci/ は配布しない）
-./ci/test-hooks.sh                            # hooks の回帰テスト（106ケース）
+./ci/test-hooks.sh                            # hooks の回帰テスト（108ケース）
 ./ci/test-install.sh                          # 導入・配布・初期化の回帰テスト（108ケース）
 ./ci/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
 ./ci/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）

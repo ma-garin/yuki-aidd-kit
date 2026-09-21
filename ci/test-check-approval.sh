@@ -4,6 +4,8 @@
 # 一時プロジェクトに init-lifecycle.sh で雛形を置き、工程の着手・承認・改変を再現して
 # 「壊した箇所を検出できること」と「配布される雛形そのものが NG=0 で通ること」を両方確認する。
 # 終了コードの契約（0=合格 / 1=未承認・失効・順序違反 / 2=判定不能）を全ケースで assert する。
+# BSD/GNU 共通のその場置換（macOS の sed -i は拡張子引数が必須で GNU と書き方が違う）
+sedi() { local f="${@: -1}"; sed "${@:1:$#-1}" "$f" > "$f.sedi" && mv "$f.sedi" "$f"; }
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -71,7 +73,7 @@ proj() { # 新しい一時プロジェクトを作って雛形を置く
   "$KIT_DIR/scripts/init-lifecycle.sh" "$d" >/dev/null; echo "$d"
 }
 start() { # 工程 $2 を「着手済み」にする（雛形の日付プレースホルダを実日付に置換）
-  local f; f=$(ls "$1/docs/lifecycle/0$2-"*.md); sed -i 's/YYYY-MM-DD/2026-09-19/' "$f"
+  local f; f=$(ls "$1/docs/lifecycle/0$2-"*.md); sedi 's/YYYY-MM-DD/2026-09-19/' "$f"
 }
 fill() { python3 "$TMP/fill.py" "$@"; }
 run()  { python3 "$KIT_DIR/tools/check_approval.py" --root "$1" -o "$TMP/report.md" "${@:2}" 2>&1; }
@@ -194,7 +196,7 @@ expect_noout "工程順序の NG を出さない" "工程順序" "$OUT"
 echo "[ケース17: 後続工程を進めても前工程の承認は失効しない]"
 P=$(proj); start "$P" 1; fill "$P" 1 承認
 start "$P" 2; fill "$P" 2 承認
-sed -i 's/YYYY-MM-DD/2026-09-19/' "$P/docs/lifecycle/traceability-matrix.md"
+sedi 's/YYYY-MM-DD/2026-09-19/' "$P/docs/lifecycle/traceability-matrix.md"
 echo "| REQ-F-002 |  | RFD-001 | BD-002 | - | - | - | - | - | UAT-002 | 未着手 |" >> "$P/docs/lifecycle/traceability-matrix.md"
 OUT=$(run "$P"); RC=$?
 expect_exit "追跡表を更新しても exit 0（covers に追跡表を入れない設計）" 0 "$RC"

@@ -30,6 +30,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from collections import Counter
 from pathlib import Path
 
@@ -59,7 +60,16 @@ GENERATED_REPORTS = ("check-docs-report.md", "trace-check-report.md", "check-des
                      "check-approval-report.md", "token-audit-report.md", "test-metrics-report.md")
 # 配布物 4 種。キット内の実体は agent/ 配下、導入先では .claude/ 配下（`skills/x` は両方の呼び名として通す）
 AGENT_ASSET_PREFIXES = ("rules/", "skills/", "commands/", "hooks/")
-REF_SCAN_EXCLUDE_PREFIXES = ("internal/spec/", ".git/") + GENERATED_REPORTS
+# git 管理外の手元の生成物（.gitignore 対象・ツールの作業ファイル）。目録の網羅性検査に含めない
+LOCAL_JUNK_PREFIXES = (".playwright-mcp/", ".claude/settings.local.json")
+LOCAL_JUNK_PARTS = (".DS_Store", "__pycache__")
+
+
+def is_local_junk(rel: str) -> bool:
+    return rel.startswith(LOCAL_JUNK_PREFIXES) or any(p in LOCAL_JUNK_PARTS for p in rel.split("/"))
+
+
+REF_SCAN_EXCLUDE_PREFIXES =("internal/spec/", ".git/") + GENERATED_REPORTS
 # 履歴文書（当時の事実を記録しているので数値の突合対象にしない）
 HISTORY_DOCS = {"project/Roadmap.md", "internal/AUDIT-2026-07.md"}
 
@@ -370,8 +380,10 @@ def check_spec_inventory(root: Path, r: Result) -> None:
     for f in sorted(root.rglob("*")):
         if not f.is_file():
             continue
-        rel = f.relative_to(root).as_posix()
+        rel = unicodedata.normalize("NFC", f.relative_to(root).as_posix())  # macOS の複製は日本語名が NFD になる
         if rel.startswith((".git/", "internal/spec/")) or rel in GENERATED_REPORTS:
+            continue
+        if is_local_junk(rel):
             continue
         names = {rel} | {rel[len(pre):] for pre in INVENTORY_PREFIXES if pre and rel.startswith(pre)}
         if not any(f"`{n}`" in text for n in names):

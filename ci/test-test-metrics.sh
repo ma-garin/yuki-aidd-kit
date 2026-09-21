@@ -3,6 +3,8 @@
 #
 # 一時プロジェクトに init-lifecycle.sh / init-test-docs.sh で雛形を置き、表を書き換えて
 # 「配布雛形が壊れないこと」「合格に数えてはいけない状態を落とさないこと」「exit 0/1/2 の契約」を確認する。
+# BSD/GNU 共通のその場置換（macOS の sed -i は拡張子引数が必須で GNU と書き方が違う）
+sedi() { local f="${@: -1}"; sed "${@:1:$#-1}" "$f" > "$f.sedi" && mv "$f.sedi" "$f"; }
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -87,23 +89,23 @@ OUT=$(run "$P" --gate); RC=$?
 expect_exit "Critical 未解決・消化率不足 → exit 1" 1 "$RC"
 
 echo "[ケース4: 判定できない行は分母に入り、ゲートは 2]"
-P=$(proj); fill "$P"; sed -i 's/| ST-005 | REQ-N-003 | 信頼性 | オフライン |  |  | pass |/| ST-005 | REQ-N-003 | 信頼性 | オフライン |  |  | たぶんOK |/' "$P/docs/lifecycle/07-system-test.md"
+P=$(proj); fill "$P"; sedi 's/| ST-005 | REQ-N-003 | 信頼性 | オフライン |  |  | pass |/| ST-005 | REQ-N-003 | 信頼性 | オフライン |  |  | たぶんOK |/' "$P/docs/lifecycle/07-system-test.md"
 OUT=$(run "$P" --level ST)
 expect_out  "判定不能 1 を数える" "判定不能 1" "$OUT"
 expect_out  "分母に残る（全 8 のまま、実行 4）" "全 8 / 実行 4" "$OUT"
 expect_out  "検知に語彙外の値を出す" "「たぶんOK」" "$OUT"
-sed -i 's/| ST-006 | REQ-N-003 | 信頼性 | 再接続 |  |  | 未実施 |/| ST-006 | REQ-N-003 | 信頼性 | 再接続 |  |  | pass |/; s/| ST-007 | REQ-N-004 | セキュリティ | XSS |  |  | blocked |/| ST-007 | REQ-N-004 | セキュリティ | XSS |  |  | pass |/; s/| ST-008 | REQ-N-004 | セキュリティ | CSRF |  |  |  |/| ST-008 | REQ-N-004 | セキュリティ | CSRF |  |  | pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| ST-006 | REQ-N-003 | 信頼性 | 再接続 |  |  | 未実施 |/| ST-006 | REQ-N-003 | 信頼性 | 再接続 |  |  | pass |/; s/| ST-007 | REQ-N-004 | セキュリティ | XSS |  |  | blocked |/| ST-007 | REQ-N-004 | セキュリティ | XSS |  |  | pass |/; s/| ST-008 | REQ-N-004 | セキュリティ | CSRF |  |  |  |/| ST-008 | REQ-N-004 | セキュリティ | CSRF |  |  | pass |/' "$P/docs/lifecycle/07-system-test.md"
 # ここまでで unread だけが残る状態にはならない（UAT 未実施が残る）ので、UAT 側も埋める
-sed -i 's/| UAT-004 | 延滞 | REQ-F-004 |  |  |  |  |/| UAT-004 | 延滞 | REQ-F-004 |  |  |  | 合 |/; s/| UAT-005 | 検索 | REQ-F-005 |  |  |  |  |/| UAT-005 | 検索 | REQ-F-005 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
-sed -i 's/| 2026-09-12 | 未対応 |/| 2026-09-12 | 修正済 |/; ' "$P/docs/lifecycle/07-system-test.md"; sed -i 's/| 2026-09-19 | 修正する |/| 2026-09-19 | 修正済 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| UAT-004 | 延滞 | REQ-F-004 |  |  |  |  |/| UAT-004 | 延滞 | REQ-F-004 |  |  |  | 合 |/; s/| UAT-005 | 検索 | REQ-F-005 |  |  |  |  |/| UAT-005 | 検索 | REQ-F-005 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| 2026-09-12 | 未対応 |/| 2026-09-12 | 修正済 |/; ' "$P/docs/lifecycle/07-system-test.md"; sedi 's/| 2026-09-19 | 修正する |/| 2026-09-19 | 修正済 |/' "$P/docs/lifecycle/08-acceptance-test.md"
 OUT=$(run "$P" --gate); RC=$?
 expect_exit "unread が 1 件残ると --gate は 2（判定不能を合格に数えない）" 2 "$RC"
 
 echo "[ケース5: 全件 pass・Critical 解消 → 進める]"
-sed -i 's/| たぶんOK |/| pass |/' "$P/docs/lifecycle/07-system-test.md"
-sed -i 's/| ST-003 | REQ-N-002 | デバイス対応 | 360px |  |  | fail |/| ST-003 | REQ-N-002 | デバイス対応 | 360px |  |  | pass |/' "$P/docs/lifecycle/07-system-test.md"
-sed -i 's/| UAT-003 | 予約 | REQ-F-003 |  |  |  | 否 |/| UAT-003 | 予約 | REQ-F-003 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
-sed -i 's/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  |  |  |  |/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  | pass |  |  |/; s/| UT-003 | DD-001 | 境界値 | 上限+1 |  |  |  |  |  |  |/| UT-003 | DD-001 | 境界値 | 上限+1 |  |  |  | pass |  |  |/' "$P/docs/lifecycle/05-unit-test.md"
+sedi 's/| たぶんOK |/| pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| ST-003 | REQ-N-002 | デバイス対応 | 360px |  |  | fail |/| ST-003 | REQ-N-002 | デバイス対応 | 360px |  |  | pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| UAT-003 | 予約 | REQ-F-003 |  |  |  | 否 |/| UAT-003 | 予約 | REQ-F-003 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  |  |  |  |/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  | pass |  |  |/; s/| UT-003 | DD-001 | 境界値 | 上限+1 |  |  |  |  |  |  |/| UT-003 | DD-001 | 境界値 | 上限+1 |  |  |  | pass |  |  |/' "$P/docs/lifecycle/05-unit-test.md"
 OUT=$(run "$P" --gate); RC=$?
 expect_exit "全基準 ✓ → exit 0" 0 "$RC"
 expect_out  "判定候補は「進める」。GO/NO-GO は人" "進める" "$OUT"
@@ -126,7 +128,7 @@ P=$(proj); fill "$P"; rm "$P/docs/test/TESTING_STRATEGY.md"
 OUT=$(run "$P" --gate); RC=$?
 expect_exit "基準表が無ければ 2" 2 "$RC"
 expect_out  "基準なしと出す" "基準が無い" "$OUT"
-P=$(proj); fill "$P"; sed -i 's/| `severe_open == 0` | `qa-review-standards`（ISTQB severity） |/| `severe_open == 0` |  |/' "$P/docs/test/TESTING_STRATEGY.md"
+P=$(proj); fill "$P"; sedi 's/| `severe_open == 0` | `qa-review-standards`（ISTQB severity） |/| `severe_open == 0` |  |/' "$P/docs/test/TESTING_STRATEGY.md"
 OUT=$(run "$P" --gate)
 expect_out  "出典が空の行は読まない" "読まず 3." "$OUT"
 expect_noout "読まなかった基準は判定に出ない" "✗ 3." "$OUT"
@@ -148,7 +150,7 @@ P=$(proj); fill "$P"
 OUT=$(run "$P" --history); RC=$?
 expect_out  "初回は履歴を開始" "履歴を開始" "$OUT"
 [ -f "$P/docs/test/metrics-history.tsv" ] && grep -q "ALL" "$P/docs/test/metrics-history.tsv" && ok "metrics-history.tsv に ALL 行" || ng "metrics-history.tsv に ALL 行" "無い"
-sed -i 's/| UAT-004 | 延滞 | REQ-F-004 |  |  |  |  |/| UAT-004 | 延滞 | REQ-F-004 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| UAT-004 | 延滞 | REQ-F-004 |  |  |  |  |/| UAT-004 | 延滞 | REQ-F-004 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
 OUT=$(run "$P" --history)
 expect_out  "2 回目は前回との差分" "前回 2026-09-20 から: 実行" "$OUT"
 R="$P/docs/test/iso29119-test-completion-report.md"; BEFORE=$(grep -c '' "$R"); TAIL_BEFORE=$(sed -n '/metrics:end/,$p' "$R" | md5sum)

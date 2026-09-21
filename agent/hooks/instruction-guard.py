@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""保守者の指示に応答するまでツールを呼ばせない PreToolUse フック（全ツール対象）。
+"""保守者の指示への未応答を AI の文脈に載せる PreToolUse フック（全ツール対象）。
+
+2026-09-21: deny をやめ additionalContext に変えた。PreToolUse の時点では同じターンで書いた応答が
+transcript に未反映のため、応答済みでも毎回 deny が画面にエラー表示され、保守者に不快と指摘された。
+サブエージェント内（入力に agent_id がある）は対象外（親の発言を未応答と誤認して止めていた）。
+以下の「deny」は通知（additionalContext）と読み替える。
 
 出所: 2026-09-19、作業中に届いた保守者の指示（「日本語で報告しなさい」「中間報告を今すぐ」）を、
 AI がツール結果の一部として読み飛ばし、次のコマンドを続けた。**指示 ＞ 計画 ＞ 自分の規範** の順を
@@ -146,9 +151,10 @@ def judge(lines: list[str]) -> tuple[str, str] | None:
     return None
 
 
-def deny(reason: str) -> int:
+def notify(context: str) -> int:
+    """ツールは止めず、指示を additionalContext で AI の文脈に載せる（画面にエラーを出さない）。"""
     print(json.dumps({"hookSpecificOutput": {
-        "hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": reason,
+        "hookEventName": "PreToolUse", "additionalContext": context,
     }}, ensure_ascii=False))
     return 0
 
@@ -173,6 +179,8 @@ def main() -> int:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
         return 0
+    if data.get("agent_id"):
+        return 0  # サブエージェント内の呼び出し。親の発言を未応答と誤認する
     tp = data.get("transcript_path", "")
     if not tp or not Path(tp).is_file():
         return 0
@@ -187,9 +195,8 @@ def main() -> int:
         return 0
     head = " ".join(inst.split())[:80]
     if kind == "unanswered":
-        return deny(f"[instruction-guard] 保守者の指示に未応答: 「{head}」。ツールを呼ぶ前に、この指示に日本語で応答する"
-                    "（報告・説明・理由を求められたら作業を中断してそれに答える。A-13）")
-    return deny(f"[instruction-guard] 直前の応答に日本語が無い。指示「{head}」は日本語。日本語で応答し直してからツールを呼ぶ（A-13）")
+        return notify(f"[instruction-guard] 未応答の指示: 「{head}」。まだ答えていなければ日本語で答える（A-13）")
+    return notify(f"[instruction-guard] 指示「{head}」は日本語。日本語で応答し直す（A-13）")
 
 
 if __name__ == "__main__":

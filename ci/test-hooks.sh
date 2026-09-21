@@ -2,6 +2,8 @@
 # test-hooks.sh — hooks の回帰テスト
 # AUDIT-2026-07 A-01（hooks が入力を受け取れず無言で素通りしていた）の再発防止。
 # stdin に Claude Code hooks 形式の JSON を流し、期待出力を検証する。
+# BSD/GNU 共通のその場置換（macOS の sed -i は拡張子引数が必須で GNU と書き方が違う）
+sedi() { local f="${@: -1}"; sed "${@:1:$#-1}" "$f" > "$f.sedi" && mv "$f.sedi" "$f"; }
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HOOKS="$KIT_DIR/agent/hooks"
 TMP=$(mktemp -d)
@@ -98,7 +100,7 @@ touch "$PG/.claude/phase-gate"
 OUT=$(pj "docs/lifecycle/02-basic-design.md" | ph); RC=$?
 expect_empty "手前に着手済み工程が無ければ許可" "$OUT" "$RC"
 
-sed -i 's/YYYY-MM-DD/2026-09-19/' "$PG/docs/lifecycle/01-requirements.md"
+sedi 's/YYYY-MM-DD/2026-09-19/' "$PG/docs/lifecycle/01-requirements.md"
 OUT=$(pj "docs/lifecycle/02-basic-design.md" | ph)
 expect_contains "前工程が未承認なら deny" '"permissionDecision": "deny"' "$OUT"
 expect_contains "deny 理由に前工程の状態を含む" "第1工程 要件定義: 未承認" "$(reason "$OUT")"
@@ -147,11 +149,11 @@ echo "[context-guard.py / pre-compact.py / log-instructions.py]"
 CG="$TMP/cg"; mkdir -p "$CG"; TR="$CG/transcript.jsonl"
 cgj() { printf '{"hook_event_name":"UserPromptSubmit","transcript_path":"%s","prompt":"x"}' "$1"; }
 cg_ctx() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("additionalContext","") if d.strip() else "")' 2>/dev/null; }
-echo '{}' > "$TR"; touch -d '70 minutes ago' "$TR"
+echo '{}' > "$TR"; python3 -c 'import os,sys,time;t=time.time()-4200;os.utime(sys.argv[1],(t,t))' "$TR"
 OUT=$(cgj "$TR" | python3 "$HOOKS/context-guard.py")
 expect_contains "70 分空いたら /clear か要約再開を注入" "/clear" "$(cg_ctx "$OUT")"
 expect_contains "経過分数を含む" "70 分" "$(cg_ctx "$OUT")"
-touch -d '10 minutes ago' "$TR"
+python3 -c 'import os,sys,time;t=time.time()-600;os.utime(sys.argv[1],(t,t))' "$TR"
 OUT=$(cgj "$TR" | python3 "$HOOKS/context-guard.py"); RC=$?
 expect_empty "10 分なら何も注入しない" "$OUT" "$RC"
 truncate -s 5M "$TR"; touch "$TR"
@@ -173,7 +175,7 @@ echo "[instruction-guard.py / reply-language.py / prompt-priority.py]"
 # 保守者の指示に応答するまでツールを呼ばせない（PreToolUse 全ツール）／最後の応答の言語（Stop）／優先の注入（UserPromptSubmit）
 IG="$TMP/ig"; mkdir -p "$IG"; TRJ="$IG/t.jsonl"
 igj() { printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{},"transcript_path":"%s"}' "$1"; }
-ig_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("permissionDecisionReason","") if d.strip() else "")' 2>/dev/null; }
+ig_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("additionalContext","") if d.strip() else "")' 2>/dev/null; }
 u_text()  { printf '{"type":"user","message":{"role":"user","content":"%s"}}\n' "$1"; }
 u_tool()  { printf '{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"x","content":"ok"}]}}\n'; }
 a_text()  { printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"%s"}]}}\n' "$1"; }
@@ -206,7 +208,7 @@ OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "途中の発言に日本語で応答済みなら許可" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_text "Reflections are in place. Now updating."; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
-expect_contains "日本語の指示に英語で応答したら deny" "日本語が無い" "$(ig_reason "$OUT")"
+expect_contains "日本語の指示に英語で応答したら通知" "日本語で応答し直す" "$(ig_reason "$OUT")"
 { u_text "Please fix the test"; a_text "Fixing the test now."; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "英語の指示に英語で応答は許可（言語は指示に合わせる）" "$OUT" "$RC"
@@ -216,6 +218,11 @@ expect_empty "機械由来のタグだけの発言（スラッシュコマンド
 { printf '{"type":"user","isSidechain":true,"message":{"role":"user","content":"調べて"}}\n'; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "サブエージェント（isSidechain）は対象外" "$OUT" "$RC"
+{ u_text "日本語で報告しなさい"; a_tool; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{},"agent_id":"sub1","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "サブエージェント内（agent_id あり）は親の発言で止めない" "$OUT" "$RC"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_empty "deny しない（permissionDecision を返さず画面にエラーを出さない）" "$(printf '%s' "$OUT" | grep -o permissionDecision)" 0
 OUT=$(igj "$IG/none.jsonl" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "transcript が無ければ許可（fail-open）" "$OUT" "$RC"
 # 機械が書いた本文を指示と誤認すると、応答しても新しいエラー文が湧いて解除されない自己参照ループになる
