@@ -2,7 +2,7 @@
 
 AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツールに最適化するための個人用キットです。
 
-**全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。使い方は `01_利用者向け資料/利用ガイド.html`（初学者向け）と `01_利用者向け資料/操作マニュアル.html`。キット自体の目的・要求・作業台帳は `internal/`（保守者専用。配布しない）にあります。
+**全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。使い方は `01_利用者向け資料/01_利用ガイド.html`（初学者向け）と `01_利用者向け資料/02_操作マニュアル.html`。キット自体の目的・要求・作業台帳は `internal/`（保守者専用。配布しない）にあります。
 
 **版**: `VERSION` ファイルと git tag（`vX.Y.Z`）に対応。版ごとの変更内容は `CHANGELOG.md`。`install.sh` / `export-project.sh` は導入先に `KIT_VERSION`（版・commit・日付）を刻印し、`verify.sh` が表示する。
 
@@ -12,29 +12,29 @@ AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツ
 
 ```bash
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
-./00_導入/install.sh          # ~/.claude へ配置（skills / commands / hooks / rules / 工程承認の判定スクリプト）
-./00_導入/install-guard.sh    # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge。冪等。Claude Code 全体に効く）
-./00_導入/verify.sh           # 配置確認（リストは自動導出。NG>0 で exit 1）
+./00_導入/01_インストール/install.sh          # ~/.claude へ配置（skills / commands / hooks / rules / 工程承認の判定スクリプト）
+./00_導入/01_インストール/install-guard.sh    # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge。冪等。Claude Code 全体に効く）
+./00_導入/01_インストール/verify.sh           # 配置確認（リストは自動導出。NG>0 で exit 1）
 ```
 
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md`、道具を `00_導入/` に書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
 
 ```bash
-./00_導入/export-project.sh <対象プロジェクトのパス>
+./00_導入/02_プロジェクト配布/export-project.sh <対象プロジェクトのパス>
 cd <対象プロジェクトのパス> && git add .claude AGENTS.md CLAUDE.md scripts && git commit -m "chore: add AIDD Kit"
 ```
 
-Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md`）。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。claude.ai の Projects で使う場合は `01_利用者向け資料/claude-projects-setup.md` を参照。
+Codex は `AGENTS.md` を直接読みます（グローバルは `ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md`）。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。claude.ai の Projects で使う場合は `01_利用者向け資料/03_ClaudeProjects設定手順.md` を参照。
 
 続きの手順（新規プロジェクトの雛形・工程文書・テスト文書・CI サンプルの配置、導入先で動かす道具）は `INDEX.md` のクイックスタートにまとめてあります。
 
 ## 取り扱い説明書
 
-HTML 版のガイドを 2 冊同梱しています。**初めて導入するなら `01_利用者向け資料/利用ガイド.html`**（概要・導入手順・最初のセッション・毎日の流れ・品質チェック・Pro/Sonnet のコツ）、使い始めてからは `01_利用者向け資料/操作マニュアル.html`（スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時）。
+HTML 版のガイドを 2 冊同梱しています。**初めて導入するなら `01_利用者向け資料/01_利用ガイド.html`**（概要・導入手順・最初のセッション・毎日の流れ・品質チェック・Pro/Sonnet のコツ）、使い始めてからは `01_利用者向け資料/02_操作マニュアル.html`（スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時）。
 
 ```bash
-open 01_利用者向け資料/利用ガイド.html        # 概要と導入（初学者向け）
-open 01_利用者向け資料/操作マニュアル.html    # 取り扱い説明書（13 章）
+open 01_利用者向け資料/01_利用ガイド.html        # 概要と導入（初学者向け）
+open 01_利用者向け資料/02_操作マニュアル.html    # 取り扱い説明書（13 章）
 ```
 
 ## 推奨する使い方
@@ -52,17 +52,17 @@ open 01_利用者向け資料/操作マニュアル.html    # 取り扱い説明
 
 ## ECC との連携
 
-ECC（外部キット）の資産は全部読まず、プロジェクトごとに DAILY／LIBRARY に絞って使います。**プロジェクト別の対応表の真実源は `01_利用者向け資料/ECC-ASSET-MAP.md`**（ここには複製しません）。分類の実行は `ecc-daily-router` スキルまたは `/ecc-daily` コマンドで行います。
+ECC（外部キット）の資産は全部読まず、プロジェクトごとに DAILY／LIBRARY に絞って使います。**プロジェクト別の対応表の真実源は `01_利用者向け資料/05_ECC資産対応表.md`**（ここには複製しません）。分類の実行は `ecc-daily-router` スキルまたは `/ecc-daily` コマンドで行います。
 
 アプリ群の棚卸しを更新する場合:
 
 ```bash
-./00_導入/audit-app-workspace.sh <APP_WORKSPACE>
+./00_導入/03_点検/audit-app-workspace.sh <APP_WORKSPACE>
 ```
 
 ## キット構成
 
-`internal/` と `06_保守者向け/回帰テスト/` 以外は導入先へ配る（`install.sh` は `~/.claude/` へ、`export-project.sh` は `<対象>/.claude/` と `<対象>/scripts/` へ）。`00_導入/` だけは配らずに「キットの checkout から実行する入口」。
+`internal/` と `06_保守者向け/03_回帰テスト/` 以外は導入先へ配る（`install.sh` は `~/.claude/` へ、`export-project.sh` は `<対象>/.claude/` と `<対象>/scripts/` へ）。`00_導入/` だけは配らずに「キットの checkout から実行する入口」。
 
 ```text
 yuki-aidd-kit/
@@ -87,30 +87,30 @@ yuki-aidd-kit/
 │
 │  ── 利用者向け文書 ──
 ├── 01_利用者向け資料/
-│   ├── 利用ガイド.html            # 初学者向け（概要・導入・最初のセッション・ハンズオン）
-│   ├── 操作マニュアル.html        # 取り扱い説明書（13 章）
-│   ├── claude-projects-setup.md  # claude.ai Projects のセットアップ
-│   ├── OPERATING-MODE.md         # 標準作業モード
-│   └── ECC-ASSET-MAP.md          # ECC 対応表（真実源）
-├── 01_利用者向け資料/サンプル/図書貸出/    # 事例: 貸出管理モック（完成品・app.css/js・build.py・spec・CURRENT_STATE）。ハンズオン教材
+│   ├── 01_利用ガイド.html            # 初学者向け（概要・導入・最初のセッション・ハンズオン）
+│   ├── 02_操作マニュアル.html        # 取り扱い説明書（13 章）
+│   ├── 03_ClaudeProjects設定手順.md  # claude.ai Projects のセットアップ
+│   ├── 04_運用モード.md         # 標準作業モード
+│   └── 05_ECC資産対応表.md          # ECC 対応表（真実源）
+├── 01_利用者向け資料/90_サンプル/図書貸出/    # 事例: 貸出管理モック（完成品・app.css/js・build.py・spec・CURRENT_STATE）。ハンズオン教材
 │
 │  ── 配布しない ──
 ├── project/                  # キット開発の計画: PRD.md・Roadmap.md（作業台帳）・Vision.md
-├── internal/                 # 保守者専用: spec/（現況仕様）・rules-rationale/・lessons.md・maintainer-tendencies.md・監査/適合レポート
-├── 06_保守者向け/回帰テスト/                       # 回帰テスト 10 本と check-docs（文書整合）。キット自身の CI が呼ぶ
+├── internal/                 # 保守者専用: spec/（現況仕様）・rules-rationale/・lessons.md・保守者の傾向.md・監査/適合レポート
+├── 06_保守者向け/03_回帰テスト/                       # 回帰テスト 10 本と check-docs（文書整合）。キット自身の CI が呼ぶ
 └── .github/workflows/        # kit-ci.yml（キット自身の CI。手動起動のみ。GitHub が直下しか読まないためここ）
 ```
 
 ## キット自体を作り込むとき
 
-`06_保守者向け/内部仕様/` に全資産を読み切った現況仕様がある。**まず `06_保守者向け/内部仕様/README.md` を読む**（読む順序・更新規約）。
-現況の残課題は `06_保守者向け/内部仕様/09-findings.md`、次にやることは `06_保守者向け/内部仕様/10-backlog.md`、作業台帳は `05_プロジェクト管理/ロードマップ.md`。
-本体を変更したら同じコミットで `06_保守者向け/内部仕様/` を更新し、回帰テストと文書整合検査を通す。
+`06_保守者向け/01_内部仕様/` に全資産を読み切った現況仕様がある。**まず `06_保守者向け/01_内部仕様/README.md` を読む**（読む順序・更新規約）。
+現況の残課題は `06_保守者向け/01_内部仕様/09-findings.md`、次にやることは `06_保守者向け/01_内部仕様/10-backlog.md`、作業台帳は `05_プロジェクト管理/ロードマップ.md`。
+本体を変更したら同じコミットで `06_保守者向け/01_内部仕様/` を更新し、回帰テストと文書整合検査を通す。
 
 ```bash
 for t in ci/test-*.sh; do bash "$t"; done   # 回帰テスト 10 本（hooks / install / trace-check / quality-harness / git-gates / check-approval / test-metrics / token-audit / check-docs / check-design）
-./06_保守者向け/回帰テスト/check-docs.sh                            # 文書整合（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
-./00_導入/check-design.sh                     # デザイン検査（直値・未定義トークン・外部 CDN・alert()）
+./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
+./00_導入/03_点検/check-design.sh                     # デザイン検査（直値・未定義トークン・外部 CDN・alert()）
 ```
 
 ## 今後の開発時の合言葉

@@ -33,7 +33,7 @@ rm .rebuild-mode                                     # 解除。必ず make veri
 ## 配置
 
 ```bash
-./00_導入/init-test-docs.sh <対象>        # ui-hash.py / pre-commit-ui-gate.sh を <対象>/scripts/ に置く
+./00_導入/02_プロジェクト配布/init-test-docs.sh <対象>        # ui-hash.py / pre-commit-ui-gate.sh を <対象>/scripts/ に置く
 # <対象>/.git/hooks/pre-commit から呼ぶ（秘密情報スキャンの scripts/pre-commit と併用）:
 #   bash scripts/pre-commit-ui-gate.sh || exit 1
 ```

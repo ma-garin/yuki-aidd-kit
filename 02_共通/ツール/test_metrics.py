@@ -535,7 +535,7 @@ def main() -> int:
 
     if not records:
         print(f"ℹ テストの実行記録が無い（docs/lifecycle/05〜08 の表と docs/system_test_cases.csv に採番済みの行が無い）: {root}")
-        print("  雛形: ./00_導入/init-lifecycle.sh <対象> ／ ./00_導入/init-test-docs.sh <対象>")
+        print("  雛形: ./00_導入/02_プロジェクト配布/init-lifecycle.sh <対象> ／ ./00_導入/02_プロジェクト配布/init-test-docs.sh <対象>")
         return 2 if a.gate else 0
 
     by_level: dict[str, Metrics] = {}

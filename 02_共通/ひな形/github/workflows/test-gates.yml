@@ -1,5 +1,5 @@
 # テスト活動のゲート（機能契約ハーネス + L1/L2）— Python / Node 両対応
-# .github/workflows/test-gates.yml に配置（./00_導入/init-test-docs.sh <target> --ci で自動配置）
+# .github/workflows/test-gates.yml に配置（./00_導入/02_プロジェクト配布/init-test-docs.sh <target> --ci で自動配置）
 # スタックはファイルの有無で自動判定: pyproject.toml / requirements*.txt → pytest、package.json → npm test（vitest 等）。
 # L3（E2E）はマイルストーンで手動実行し .ui-verified を更新する運用（skills/test-strategy）。CI でも回す場合は末尾の verify-ui を有効化。
 # 起動は手動のみ（workflow_dispatch）。PR や push で自動実行しない: ゲートは要求した時だけ動かす（rules/speed-harness.md H-7）。

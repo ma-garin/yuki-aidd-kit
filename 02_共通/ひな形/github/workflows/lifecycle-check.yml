@@ -1,6 +1,6 @@
 # 工程トレーサビリティ検査
 # .github/workflows/lifecycle-check.yml に配置
-# （./00_導入/init-lifecycle.sh <target> --github で scripts/trace-check.sh と一緒に自動配置される）
+# （./00_導入/02_プロジェクト配布/init-lifecycle.sh <target> --github で scripts/trace-check.sh と一緒に自動配置される）
 #
 # docs/lifecycle/ の工程文書について、要件が設計・実装・テストへ紐づいているかを
 # 保守者が手動で起動して機械検証する。NG があれば失敗として止まる。
