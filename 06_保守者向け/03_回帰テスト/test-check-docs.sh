@@ -97,7 +97,7 @@ OUT=$(run "$C" --strict); RC=$?
 expect_exit "--strict でも exit 1" 1 "$RC"
 
 echo "[ケース9: spec 同期]"
-C=$(fresh); sedi 's/^| `verify.sh` | [0-9]* |/| `verify.sh` | 1 |/' "$C/06_保守者向け/01_内部仕様/01-inventory.md"
+C=$(fresh); sedi 's/^| `verify.sh` | [0-9]* |/| `verify.sh` | 1 |/' "$C/06_保守者向け/01_内部仕様/01_構成品目目録.md"
 OUT=$(run "$C"); RC=$?
 expect_exit "06_保守者向け/内部仕様/01 の行数がズレると exit 1" 1 "$RC"
 expect_out  "種別「spec同期」で検出" "spec同期" "$OUT"
