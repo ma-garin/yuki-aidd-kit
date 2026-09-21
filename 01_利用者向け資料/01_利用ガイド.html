@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AIDD Kit ユーザーガイド — はじめての人向け（Ver.6.4）</title>
+  <title>AIDD Kit ユーザーガイド — はじめての人向け（Ver.8.0.0）</title>
   <meta name="description" content="yuki-aidd-kit を初めて使う人のためのガイド。何のための道具か、どう入れるか、最初に何を言えばいいかを、専門用語を使わずに説明します。">
   <style>
     /* 読み物ページ（templates/design-system.md「適用除外: ドキュメント・マニュアル類」）。
@@ -137,12 +137,22 @@
       .chat .you, .chat .ai { max-width: 100%; }
     }
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    /* 画面切り替え（保守者要望: 縦長スクロールをやめる） */
+    section[hidden] { display: none; }
+    .chapter-nav { display: flex; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .chapter-nav-btn { display: inline-block; padding: 8px 16px; border-radius: var(--radius); background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; }
+    .chapter-nav-btn:hover { background: var(--accent-dark); text-decoration: none; }
+    .chapter-nav-btn.next { margin-left: auto; }
+    @media print {
+      section[hidden] { display: block !important; }
+      .chapter-nav { display: none; }
+    }
   </style>
 </head>
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">Y</span><span>AIDD Kit ユーザーガイド</span></div>
-    <div class="topbar-note">Ver.6.4（2026-09-17）— はじめての人向け。慣れたら取り扱い説明書へ</div>
+    <div class="topbar-note">Ver.8.0.0（2026-09-21）— はじめての人向け。慣れたら取り扱い説明書へ</div>
   </header>
 
   <div class="layout">
@@ -178,7 +188,7 @@
     <main class="main">
       <details class="mobile-toc">
         <summary>目次を開く</summary>
-        <ol>
+        <ol class="nav-list">
           <li><a href="#intro">まず 3 分：これは何？</a></li>
           <li><a href="#words">先に知っておく言葉 8 つ</a></li>
           <li><a href="#inside">箱の中身を一言ずつ</a></li>
@@ -292,7 +302,7 @@ Claude Code / Codex
    │
    │  ④ 人が使う道具
    ├─ 00_導入/ ………… 導入・配布（install / export / init / verify / check-design）
-   ├─ 02_共通/ツール/ …………… あなたのプロジェクトの 00_導入/ に置かれて動く道具（trace-check / check-approval / test-metrics …）
+   ├─ 02_共通/ツール/ …………… あなたのプロジェクトの scripts/ に置かれて動く道具（trace-check / check-approval / test-metrics …）
    └─ 02_共通/ひな形/ …… 雛形（工程文書・テスト文書・デザインの CSS と部品）</pre></div>
 
         <div class="grid-2">
@@ -302,6 +312,7 @@ Claude Code / Codex
           <div class="card"><h4>commands/（18 のコマンド）</h4><p>会話の中で <code>/plan</code> のように打つと決まった手順が走ります。よく使うのは <code>/plan</code> <code>/implement</code> <code>/qa-review</code> <code>/retro</code>。</p></div>
           <div class="card"><h4>hooks/（7 の見張り）</h4><p>「頼んでいないテストを拒否」「実装中の調べ直しを拒否」「1 分超の作業の進み具合を表示」など。口約束を機械にしたものです。</p></div>
           <div class="card"><h4>00_導入/ と 02_共通/ひな形/</h4><p>人が使う道具と雛形。導入（install / export）、検査（verify / check-docs / check-design）、雛形（工程文書 11・テスト文書 8・デザインの CSS と部品）。</p></div>
+          <div class="card"><h4>フォルダ番号の意味</h4><p><code>00_導入/</code> が入口、<code>01_利用者向け資料/</code>〜<code>04_Codex/</code> が配布される中身（このガイドや資料一式も含む）、<code>05_プロジェクト管理/</code>・<code>06_保守者向け/</code> は配布されません。</p></div>
         </div>
       </section>
 
@@ -347,7 +358,7 @@ cd yuki-aidd-kit</code></pre>
 ✅ KIT_VERSION: 6.3.0 xxxxxxx 2026-09-17
 
 Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または cp）</code></pre>
-            <p class="why">スキル・コマンド・hooks・規律・共通の約束事を <code>~/.claude/</code> にコピーしています。<strong>すでにあった自分の <code>CLAUDE.md</code> は消さず <code>CLAUDE.md.bak</code> に退避</strong>します。<code>settings.json</code> がすでにあると「手動でマージしてください」と出ます（<a href="#trouble">困ったとき</a>参照）。</p>
+            <p class="why">スキル・コマンド・hooks・規律・共通の約束事を <code>~/.claude/</code> にコピーしています。<strong>すでにあった自分の <code>CLAUDE.md</code> は消さず <code>CLAUDE.md.bak</code> に退避</strong>します。<code>settings.json</code> がすでにあると「手動でマージしてください」と出ます（<a href="#trouble">困ったとき</a>参照）。Codex 用のスキル 38 本（Claude Code のスキル 20 本 ＋ コマンド 18 本を <code>cmd-&lt;名前&gt;</code> に変換したもの）は <code>~/.agents/skills/</code> に、この利用ガイドなどの資料は <code>~/.claude/docs/aidd-kit/</code> にも配られます。</p>
           </li>
           <li><strong>ちゃんと入ったか確認する</strong>
             <pre><code>./00_導入/01_インストール/verify.sh</code></pre>
@@ -368,7 +379,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
           </li>
           <li><strong>（Codex も使う人だけ）同じ約束事を Codex にも読ませる</strong>
             <pre><code>ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md</code></pre>
-            <p class="why">Claude Code は <code>CLAUDE.md</code> を通して、Codex は <code>AGENTS.md</code> を直接読みます。この 1 行で、両方が同じ本体を読むようになります。</p>
+            <p class="why">Claude Code は <code>CLAUDE.md</code> を通して、Codex は <code>AGENTS.md</code> を直接読みます。この 1 行で、両方が同じ本体を読むようになります。スキルは <code>$名前</code>（例: <code>$done-gate</code>）で呼び、スラッシュメニューにも並びます。コマンドは <code>$cmd-&lt;名前&gt;</code>（例: <code>$cmd-trace</code>）です。</p>
           </li>
           <li><strong>（任意）壊れていないことを機械で確かめる</strong>
             <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。88 ケース</span>
@@ -415,8 +426,8 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 === 完了 ===
 次にやること:
 1. AGENTS.md と CLAUDE.md 内の残りの &lt;...&gt; プレースホルダを埋める
-2. git add .claude AGENTS.md CLAUDE.md 00_導入/ &amp;&amp; git commit</code></pre>
-            <p class="why">プロジェクト直下に <code>.claude/</code>（A で <code>~/.claude/</code> に入ったものと同じ中身）と <code>AGENTS.md</code> / <code>CLAUDE.md</code> を作ります。すでに同名ファイルがあれば <code>.bak</code> に退避します。</p>
+2. git add .claude AGENTS.md CLAUDE.md scripts/ &amp;&amp; git commit</code></pre>
+            <p class="why">プロジェクト直下に <code>.claude/</code>（A で <code>~/.claude/</code> に入ったものと同じ中身）と <code>AGENTS.md</code> / <code>CLAUDE.md</code> を作ります。すでに同名ファイルがあれば <code>.bak</code> に退避します。Codex 用スキル 38 本は <code>&lt;対象&gt;/.agents/skills/</code> に、資料は <code>&lt;対象&gt;/.claude/docs/</code> にも配られます。</p>
           </li>
           <li><strong>プロジェクト固有のことを書き足す</strong>
             <p>生成された <code>AGENTS.md</code> の末尾に「プロジェクト別追記欄」があります。ここに、起動コマンド、テストの実行方法、触ってはいけないフォルダ、などを書きます。<code>.claude/rules/speed-harness.md</code> の H-2「環境チートシート」も、そのプロジェクトのコマンドで埋めてください。</p>
@@ -450,6 +461,7 @@ claude</code></pre>
 残課題: なし</div>
         </div>
         <p>返事の 1 行目に <code>目的:</code>、最後に <code>残課題:</code> が付いていれば、規律が効いています。これが「約束事が読まれている」印です。</p>
+        <p>作業を伴う応答は 1 行目に <code>見積: N分（HH:MM 完了予定）</code> も出す約束です（発言のたびに hook が思い出させます）。出さずにツールを使っても画面にエラーは出ず、次の操作の直前に AI へ通知が入り、言い直します（サブエージェントは対象外）。日本語以外で答えたときも、同じ仕組み（reply-language）が次までに日本語で出し直させます。</p>
 
         <h3>会話例 1：最初にプロジェクトの段取りを決めてもらう</h3>
         <div class="chat">
@@ -1136,23 +1148,78 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
         </ol>
       </section>
 
-      <footer>AIDD Kit ユーザーガイド — 2026-09-17。読み物なのでデザインシステムの適用除外（<code>02_共通/ひな形/design-system.md</code>）。</footer>
+      <footer>AIDD Kit ユーザーガイド — 2026-09-21。読み物なのでデザインシステムの適用除外（<code>02_共通/ひな形/design-system.md</code>）。</footer>
     </main>
   </div>
 
   <script>
-    // 目次の現在位置ハイライトだけ。外部ライブラリは読まない
+    // 画面切り替え（1 章＝1 画面）。外部ライブラリは読まない
     (function () {
-      var links = Array.prototype.slice.call(document.querySelectorAll('.nav-list a'));
-      var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
-      if (!('IntersectionObserver' in window) || !targets.length) return;
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (!e.isIntersecting) return;
-          links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id); });
+      var chapters = Array.prototype.slice.call(document.querySelectorAll('main > section[id]'));
+      if (!chapters.length) return;
+      var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-list a'));
+
+      // 章末に「← 前へ」「次へ →」を挿入
+      chapters.forEach(function (sec, i) {
+        var nav = document.createElement('div');
+        nav.className = 'chapter-nav';
+        if (i > 0) {
+          var prev = document.createElement('a');
+          prev.className = 'chapter-nav-btn prev';
+          prev.href = '#' + chapters[i - 1].id;
+          prev.textContent = '← 前へ';
+          nav.appendChild(prev);
+        }
+        if (i < chapters.length - 1) {
+          var next = document.createElement('a');
+          next.className = 'chapter-nav-btn next';
+          next.href = '#' + chapters[i + 1].id;
+          next.textContent = '次へ →';
+          nav.appendChild(next);
+        }
+        sec.appendChild(nav);
+      });
+
+      function resolveChapter(id) {
+        var el = document.getElementById(id);
+        if (!el) return null;
+        return el.closest('section[id]');
+      }
+
+      function showChapter(chapterId) {
+        chapters.forEach(function (sec) { sec.hidden = sec.id !== chapterId; });
+        navLinks.forEach(function (a) {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + chapterId);
         });
-      }, { rootMargin: '-30% 0px -60% 0px' });
-      targets.forEach(function (t) { io.observe(t); });
+      }
+
+      function goToHash() {
+        var id = location.hash.slice(1);
+        var chapter = resolveChapter(id) || chapters[0];
+        showChapter(chapter.id);
+        var target = id && document.getElementById(id);
+        if (target) target.scrollIntoView();
+      }
+
+      // 章内リンク・目次・前へ/次へを共通処理（クリックで章を切り替えてからスクロール）
+      document.addEventListener('click', function (ev) {
+        var a = ev.target.closest('a[href^="#"]');
+        if (!a) return;
+        var id = a.getAttribute('href').slice(1);
+        if (!id || !document.getElementById(id)) return;
+        var chapter = resolveChapter(id);
+        if (!chapter) return;
+        ev.preventDefault();
+        showChapter(chapter.id);
+        if (location.hash === '#' + id) {
+          document.getElementById(id).scrollIntoView();
+        } else {
+          location.hash = id;
+        }
+      });
+
+      window.addEventListener('hashchange', goToHash);
+      goToHash();
     })();
   </script>
 </body>

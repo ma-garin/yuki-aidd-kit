@@ -15,7 +15,7 @@ expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出�
 expect_empty(){ [ -z "$2" ] && ok "$1" || ng "$1" "出力あり: $(printf '%s' "$2" | head -1)"; }
 
 # 一時リポジトリ（cwd を移して実行する。ゲートは git rev-parse --show-toplevel を使う）
-R="$TMP/repo"; mkdir -p "$R/scripts" "$R/01_利用者向け資料" "$R/static"
+R="$TMP/repo"; mkdir -p "$R/scripts" "$R/docs" "$R/static"
 cd "$R"
 git init -q && git config user.email t@example.com && git config user.name t
 cp "$KIT_DIR/02_共通/ツール/pre-commit" "$KIT_DIR/02_共通/ツール/pre-commit-ui-gate.sh" "$KIT_DIR/02_共通/ツール/ui-hash.py" scripts/
@@ -24,7 +24,7 @@ echo "base" > README.md && git add README.md && git commit -qm init
 # gitleaks が入っている環境でもフォールバック経路（簡易パターン）を検証するため PATH を最小にする
 run_precommit() { env PATH=/usr/bin:/bin bash scripts/pre-commit; }
 stage() { printf '%s\n' "$2" > "$1"; git add "$1"; }
-unstage_all() { git reset -q --hard HEAD; git clean -qfd -e scripts; mkdir -p "01_利用者向け資料" static; }  # clean で空ディレクトリが消えるので作り直す
+unstage_all() { git reset -q --hard HEAD; git clean -qfd -e scripts; mkdir -p "docs" static; }  # clean で空ディレクトリが消えるので作り直す
 
 echo "=== git ゲート 回帰テスト ==="
 
@@ -50,17 +50,17 @@ unstage_all
 
 echo "[ui-hash.py]"
 printf '<html>v1</html>\n' > static/app.html
-printf '<html>mock</html>\n' > "01_利用者向け資料/mock.html"
+printf '<html>mock</html>\n' > "docs/mock.html"
 H1=$(python3 scripts/ui-hash.py disk)
 [ ${#H1} -eq 16 ] && ok "disk hash は 16 桁" || ng "disk hash は 16 桁" "$H1"
 printf '<html>v2</html>\n' > static/app.html
 H2=$(python3 scripts/ui-hash.py disk)
 [ "$H1" != "$H2" ] && ok "UI ファイルを変えると hash が変わる" || ng "UI ファイルを変えると hash が変わる" "同じ"
-printf '<html>mock2</html>\n' > "01_利用者向け資料/mock.html"
+printf '<html>mock2</html>\n' > "docs/mock.html"
 H3=$(python3 scripts/ui-hash.py disk)
-[ "$H2" = "$H3" ] && ok "01_利用者向け資料/ 配下の変更は既定で hash に影響しない" || ng "01_利用者向け資料/ 配下の変更は既定で hash に影響しない" "変わった"
+[ "$H2" = "$H3" ] && ok "docs/ 配下の変更は既定で hash に影響しない" || ng "docs/ 配下の変更は既定で hash に影響しない" "変わった"
 H4=$(UI_HASH_EXCLUDE_PREFIXES= python3 scripts/ui-hash.py disk)
-[ "$H2" != "$H4" ] && ok "除外接頭辞を空にすると 01_利用者向け資料/ も対象になる" || ng "除外接頭辞を空にすると 01_利用者向け資料/ も対象になる" "同じ"
+[ "$H2" != "$H4" ] && ok "除外接頭辞を空にすると docs/ も対象になる" || ng "除外接頭辞を空にすると docs/ も対象になる" "同じ"
 git add static/app.html
 HS=$(python3 scripts/ui-hash.py staged)
 [ ${#HS} -eq 16 ] && ok "staged hash は 16 桁" || ng "staged hash は 16 桁" "$HS"
@@ -77,10 +77,10 @@ OUT=$(gate 2>&1); RC=$?
 expect_exit "UI 未 stage なら exit 0" 0 "$RC"
 expect_empty "UI 未 stage なら無言" "$OUT"
 unstage_all
-# 01_利用者向け資料/ 配下の HTML だけ
-printf '<html>mock</html>\n' > "01_利用者向け資料/mock.html"; git add "01_利用者向け資料/mock.html"
+# docs/ 配下の HTML だけ
+printf '<html>mock</html>\n' > "docs/mock.html"; git add "docs/mock.html"
 OUT=$(gate 2>&1); RC=$?
-expect_exit "01_利用者向け資料/*.html のみなら exit 0（設計モック）" 0 "$RC"
+expect_exit "docs/*.html のみなら exit 0（設計モック）" 0 "$RC"
 unstage_all
 # マーカー無し
 printf '<html>v1</html>\n' > static/app.html; git add static/app.html

@@ -17,7 +17,7 @@ git commit（UI ファイルが staged）
 ```
 
 - UI hash は `scripts/ui-hash.py disk`（git 管理対象の `.html/.js/.css` 全体）。staged 差分ではなく disk 全体で照合する（部分コミットで必ず不一致になるのを避ける）。
-- `01_利用者向け資料/` 配下の HTML/JS/CSS は設計モックとして対象外（誤検出で pytest 全件を完走してから BLOCK していた実績）。
+- `docs/` 配下の HTML/JS/CSS は設計モックとして対象外（誤検出で pytest 全件を完走してから BLOCK していた実績）。
 
 ## 刷新モード（`.rebuild-mode`）
 

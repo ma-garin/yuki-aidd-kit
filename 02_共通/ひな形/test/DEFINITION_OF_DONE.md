@@ -47,7 +47,7 @@ REQUIRED（人間・省略禁止）
 PROHIBITED
 - `pytest` PASS のみで完了と判断する ／ ブラウザ確認なしにコミット・プッシュする ／ E2E をスキップして UI 変更をコミットする ／ 「動くはず」で完了を宣言する
 
-### Type C: ドキュメント変更（`01_利用者向け資料/**/*.md`, `README.md`, `CLAUDE.md`, `AGENTS.md`）
+### Type C: ドキュメント変更（`docs/**/*.md`, `README.md`, `CLAUDE.md`, `AGENTS.md`）
 
 - [ ] 内部リンク（相対パス）が有効
 - [ ] 古い情報を更新した場合、関連文書も合わせて更新

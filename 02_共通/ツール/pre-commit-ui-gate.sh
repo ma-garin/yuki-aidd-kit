@@ -18,7 +18,7 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
 UI_CHANGED=false
 while IFS= read -r f; do
   case "$f" in
-    01_利用者向け資料/*.html|01_利用者向け資料/*.js|01_利用者向け資料/*.css) ;;   # 設計モック。実 UI ではない
+    docs/*.html|docs/*.js|docs/*.css) ;;   # 設計モック。実 UI ではない
     *.html|*.js|*.css) UI_CHANGED=true ;;
   esac
 done <<< "$STAGED"

@@ -4,7 +4,7 @@
 #   docs/test/      TESTING_STRATEGY / DEFINITION_OF_DONE / iso29119-*（計画・設計仕様・完了報告・インシデント）
 #   01_利用者向け資料/           system_test_cases.csv（e2e-cycle ステップ1 の出力形式）
 #   quality/        feature_contracts.yml
-#   00_導入/        quality_harness.py / ui-hash.py / pre-commit-ui-gate.sh / test_metrics.py / test-metrics.sh
+#   scripts/        quality_harness.py / ui-hash.py / pre-commit-ui-gate.sh / test_metrics.py / test-metrics.sh
 #   --ci            .github/workflows/test-gates.yml
 # 既存ファイルは上書きしない。運用は skills/test-strategy/SKILL.md。
 set -e
