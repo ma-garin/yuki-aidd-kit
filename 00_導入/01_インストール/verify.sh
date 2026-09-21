@@ -46,7 +46,7 @@ for f in "$KIT_DIR/02_共通/rules/"*.md; do
   if find "$CLAUDE_DIR/rules" -name "$n" 2>/dev/null | grep -q .; then
     echo "  ✅ rules/$n"; OK=$((OK+1))
   else
-    echo "  ❌ rules/$n（未配置: $CLAUDE_DIR/rules/**/$n）"; NG=$((NG+1))
+    echo "  ❌ rules/${n}（未配置: $CLAUDE_DIR/rules/**/${n}）"; NG=$((NG+1))
   fi
 done
 

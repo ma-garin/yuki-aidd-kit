@@ -19,7 +19,7 @@ fi
 TARGET="$(cd "$TARGET" && pwd)"
 KIT_VERSION="$(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown) $(git -C "$KIT_DIR" rev-parse --short HEAD 2>/dev/null || echo -) $(date -I)"
 
-echo "=== AIDD Kit プロジェクト配布（版: $KIT_VERSION）==="
+echo "=== AIDD Kit プロジェクト配布（版: ${KIT_VERSION}）==="
 echo "対象: $TARGET"
 
 backup_if_exists() {
