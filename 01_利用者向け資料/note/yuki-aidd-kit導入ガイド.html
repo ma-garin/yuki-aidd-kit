@@ -1,0 +1,321 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Claude Code に「規律」を入れる — 個人用キット yuki-aidd-kit の導入ガイド</title>
+<style>
+:root{--bg:#fff;--fg:#222;--muted:#666;--code:#f4f4f4;--line:#e5e5e5;--accent:#e8743b}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b1b;--fg:#e8e8e8;--muted:#aaa;--code:#2a2a2a;--line:#333}}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.9 "Hiragino Sans","Noto Sans JP",sans-serif}
+main{max-width:720px;margin:0 auto;padding:40px 16px 80px}
+h1{font-size:1.8em;line-height:1.4} h2{margin-top:2.4em;border-bottom:2px solid var(--line);padding-bottom:.3em}
+img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:6px} figure{margin:1.6em 0 .4em}
+em{color:var(--muted);font-size:.9em} pre{background:var(--code);padding:14px;border-radius:6px;overflow-x:auto;font-size:.85em;line-height:1.6}
+code{background:var(--code);padding:.1em .35em;border-radius:4px;font-size:.9em} pre code{padding:0;background:none}
+hr{border:0;border-top:1px solid var(--line);margin:3em 0} a{color:var(--accent)}
+blockquote{margin:1em 0;padding-left:1em;border-left:4px solid var(--line);color:var(--muted)}
+</style></head><body><main>
+<h1>Claude Code に「規律」を入れる — 個人用キット yuki-aidd-kit の導入ガイド</h1>
+<figure><img src="01_cover.png" alt="キットのカバー画像"></figure>
+<p><em>yuki-aidd-kit の全体像を表したカバー画像</em></p>
+<p>Claude Code を毎日使っていると、同じ種類の困りごとに何度もぶつかります。</p>
+<ul>
+<li>「完了しました」と言われて画面を開くと、動いていない</li>
+<li>途中で「ちょっと待って」と書いても、手を止めずに作業を続けてしまう</li>
+<li>テストのログや <code>git diff</code> をそのまま読み込んで、あっという間にコンテキストが埋まる</li>
+<li>プロジェクトが変わるたびに、CLAUDE.md に同じ注意書きを貼り直している</li>
+</ul>
+<p>このような「毎回言っていること」を、散文の注意書きではなく <strong>hooks・スキル・検査スクリプト</strong> に置き換えて持ち運べるようにしたのが、今回紹介する <strong>yuki-aidd-kit（AIDD Kit）</strong> です。AIDD は AI-Driven Development（AI 駆動開発）の略です。</p>
+<p>この記事では、キットの考え方と全体像を中心に説明します。導入手順や1日の使い方は別の記事で扱います。</p>
+<ul>
+<li>リポジトリ: <a href="https://github.com/ma-garin/yuki-aidd-kit">https://github.com/ma-garin/yuki-aidd-kit</a></li>
+<li>記事執筆時点の版: 8.0.0（2026-09-21）</li>
+<li>対象: Claude Code（または Codex）をすでに使っていて、規約・hooks・スキルをこれから整えたい方</li>
+</ul>
+<hr>
+<h2>1. なぜ作ったのか</h2>
+<h3>「お願い」は守られない</h3>
+<p>最初は CLAUDE.md に「完了と言う前に動作確認すること」「テストはユーザーが頼んだときだけ回すこと」と書いていました。実際にどうなったかというと、たとえばこんな場面です。</p>
+<ul>
+<li>長い調査タスクの途中で「そのアプローチだと後で困るから、いったん止めて」と割り込んだのに、直前のツール呼び出しの結果が返ってくるまで返事がなく、しかもそのまま次のステップに進んでしまう</li>
+<li>「UI を直したら実機で確認してから完了と言って」と何度も書いているのに、コードを直しただけで「完了しました」と返ってくる</li>
+<li>「テストはこちらが頼むまで実行しないで」と書いているのに、リファクタの途中で確認のつもりで pytest を回してしまい、無関係な既存の失敗まで拾って本題が埋もれる</li>
+<li>会話が長くなるほど、これらの注意書き自体が CLAUDE.md の後ろの方に埋もれて、AI の目に触れる優先度が下がっていく</li>
+</ul>
+<p>これらを引き起こしていたのは、次の 2 つの構造的な理由でした。</p>
+<ol>
+<li><strong>CLAUDE.md の散文は「読まれる」だけで、「止める」力がない。</strong> 自然文で書かれた注意事項は、他の文脈と同列のテキストとして扱われるため、割り込みの優先度も、ゲートとしての強制力も持ちません。守るかどうかは、そのターンでどれだけ注意深く文脈を読み返すかに依存してしまいます。</li>
+<li><strong>注意書きが増えるほど毎ターン読み込む量が増え、肝心の作業に使えるコンテキストが減る。</strong> 「あれもこれも守って」を全部散文で足していくと、規約を読むだけでコンテキストを消費し、実際の作業に使える余地が狭くなるという逆効果が起きます。</li>
+</ol>
+<p>そこで方針を「書いて頼む」から「<strong>仕組みで止める・仕組みで知らせる</strong>」に切り替えました。たとえば「保守者の発言には作業より先に応答する」というルールは、hook が<strong>ツールを呼ぶたびに「未応答の指示」を AI の文脈へ差し込む</strong>形で実装しています。当初はこの hook で全ツールを止めていましたが、応答済みでも誤って止まってしまう不具合があったため、2026-09-21 に「ブロックする」方式から「通知する」方式に変更しました。今は指示に応答していなくても処理そのものは止まらず、次のツール呼び出しの直前に「まだ応答していない指示がある」という通知が差し込まれる仕組みです。</p>
+<h3>品質の基準を外部規格に寄せる</h3>
+<p>私は QA が本業なので、レビューやテストの観点は自作の分類ではなく ISO/IEC 25010・ISTQB・ISO/IEC/IEEE 29119 に寄せています。AI に「いい感じにレビューして」と頼むと、指摘の観点も severity の重さも毎回ぶれます。同じコードを見せても、ある回は表示崩れを重大指摘にし、別の回は軽微な言い回しの指摘に終始する、といったことが起きます。規格の品質特性と severity 分類をあらかじめ渡しておくと、指摘の粒度がそろい、レビュー結果を積み重ねて比較できるようになります。</p>
+<figure><img src="02_concept.png" alt="キットが解決する2つの問題の関係"></figure>
+<p><em>「散文は守られない」と「品質観点がぶれる」という2つの困りごとが、hooksとスキルにそれぞれ対応する</em></p>
+<hr>
+<h2>2. キットの全体像</h2>
+<figure><img src="03_architecture.png" alt="キットの構成図"></figure>
+<p><em>hooks・スキル・コマンド・rulesの4種類の部品からなるキットの構成</em></p>
+<p>キットは大きく 4 種類の部品でできています。ポイントは、<strong>規約の本体は <code>AGENTS.md</code> に 1 つだけ</strong>置くことです。Claude Code は <code>CLAUDE.md</code> の <code>@AGENTS.md</code> で、Codex は <code>AGENTS.md</code> を直接読むので、両方のエージェントが同じ規約で動きます。</p>
+<h3>hooks（機械的に強制するもの）</h3>
+<p>hooks は Claude Code の設定ファイルに配線しておくと、決まったタイミングで自動的に発火する小さなプログラムです。「何を・いつ・どう」で 1 本ずつ見ていきます。</p>
+<ul>
+<li><strong><code>instruction-guard.py</code></strong>: 何を — 保守者（ユーザー）の発言に日本語で応答したかどうかを見る。いつ — 全ツールの呼び出し前（PreToolUse）。どう — 未応答の指示があれば、それを AI の文脈へ通知として差し込む。以前は全ツールを deny していたが、誤作動があったため 2026-09-21 に「止める」から「通知する」方式へ変更した</li>
+<li><strong><code>reply-language.py</code></strong>: 何を — 直前の応答に日本語が含まれているか、指示に応答済みかを見る。いつ — 応答を終えて止まろうとするとき（Stop）。どう — 日本語が無い、または指示に未応答のまま終わろうとしていたら、続行させて書き直させる</li>
+<li><strong><code>prompt-priority.py</code></strong>: 何を — ユーザーの発言に「今すぐ・報告・説明・なぜ・止め」などの語が含まれるか。いつ — ユーザーが発言を送った直後（UserPromptSubmit）。どう — 「作業より優先して応答すること」という注記を差し込む</li>
+<li><strong><code>block-gates.py</code></strong>: 何を — Bash コマンドが pytest・make test・lint などの重いゲートかどうか。いつ — Bash 実行前。どう — ユーザーが明示的に頼んだ（<code>GATES_REQUESTED=1</code> が付いている）とき以外は実行を deny する</li>
+<li><strong><code>block-ci.py</code></strong>: 何を — 自己起床の予約や <code>gh run watch</code> のような CI の起動・待機。いつ — 全ツールの呼び出し前。どう — deny する（Bash は <code>CI_REQUESTED=1</code> を付ければ許可）</li>
+<li><strong><code>filter-output.py</code></strong>: 何を — テスト・install・build・<code>git log</code>・<code>git diff</code> の実行結果。いつ — Bash 実行前。どう — 全量を読み込む前に失敗行と集計に絞り込む（<code>FULL_OUTPUT=1</code> を付ければ全量を読める）</li>
+<li><strong><code>pre-read-guard.py</code></strong>: 何を — 読もうとしているファイルの種類とサイズ。いつ — Read 実行前。どう — ロックファイル・minified・<code>node_modules</code>・生成レポートは読ませず、800 行を超えるファイルは先頭 300 行に絞る(続きは offset 指定で読む)</li>
+<li><strong><code>block-explore.sh</code></strong>: 何を — 「実装モード」（<code>.claude/mode</code> の有無）かどうか。いつ — Read/Grep/Glob の実行前。どう — 実装モード中は探索系ツールをブロックし、調査と実装のフェーズを分離する</li>
+<li><strong><code>block-phase.py</code></strong>: 何を — 前工程が承認済みかどうか(<code>.claude/phase-gate</code> の有無)。いつ — Write/Edit の実行前。どう — 未承認のまま次工程の成果物を書こうとしたら deny する(承認記録自体への書き込みは常に許可)</li>
+<li><strong><code>pre-write-check.sh</code></strong>: 何を — 書き込み・編集しようとしているファイル。いつ — Write/Edit の実行前(PreToolUse)。どう — 秘密情報が書かれていそうなファイルや、単一 HTML ツールの CSS/JS を外部分割しようとする変更に警告する(ブロックはしない)</li>
+<li><strong><code>post-write-html.sh</code></strong>: 何を — 保存した HTML ファイルの行数。いつ — Write/Edit の実行後(PostToolUse)。どう — 500 行を超えていたら部分編集を勧めるレポートを出す</li>
+<li><strong><code>context-guard.py</code></strong>: 何を — 前回のやり取りから経過した時間(55分以上)や会話サイズ(4MB超)。いつ — ユーザー発言の直後。どう — <code>/clear</code> や <code>/compact</code> を促す注記を差し込む(止めない)</li>
+<li><strong><code>pre-compact.py</code></strong>: 何を — 会話の圧縮が発生するタイミング。いつ — PreCompact。どう — 「何を残し、何を捨てるか」の指示を注入する</li>
+<li><strong><code>log-instructions.py</code></strong>: 何を — 指示ファイル(CLAUDE.md や AGENTS.md 等)の読み込み。いつ — InstructionsLoaded。どう — <code>.claude/instructions-loaded.log</code> に記録するだけで、AI には何も返さない(実測用)</li>
+<li><strong><code>progress.py</code></strong>: 何を — 1分を超える見込みの作業。いつ — 手動で bash コマンドに連結して呼ぶ。どう — <code>start</code> / <code>step</code> / <code>done</code> で <code>progress.json</code> を更新し、進捗を管理する</li>
+<li><strong><code>statusline.py</code></strong>: 何を — 進行中タスクの経過時間・見積・残り、セッションの累計消費。いつ — ステータスラインの描画時。どう — これらを画面下部に表示する(該当するタスクが無いときは従来のステータスラインをそのまま表示)</li>
+<li><strong><code>session-summary.sh</code></strong>: 何を — セッションの終了。いつ — Stop。どう — セッションの終了サマリを出す</li>
+</ul>
+<h3>スキル(場面ごとの手順書)</h3>
+<p>20 本のスキルを同梱しています。どのプロジェクトでも使う <strong>DAILY</strong>(13 本)と、特定の種別でだけ使う <strong>LIBRARY</strong> の 2 層に分けています。</p>
+<p>DAILY の 13 本を、1 行要約で並べます。</p>
+<ul>
+<li><code>dev-lifecycle</code>: RFD → 要件定義 → 基本/詳細設計 → 実装 → 単体/結合/システム/受け入れテスト → 保守運用。工程ゲートとトレーサビリティ</li>
+<li><code>context-compression</code>: 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存</li>
+<li><code>ecc-daily-router</code>: プロジェクトに合うECC資産をDAILY/LIBRARYに分類</li>
+<li><code>sdd-ecc-workflow</code>: 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離</li>
+<li><code>qa-review-standards</code>: ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only</li>
+<li><code>atarimae-quality-audit</code>: 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視</li>
+<li><code>test-automation</code>: Playwright/pytestで「動いた」をテスト実行判定に置き換える</li>
+<li><code>test-strategy</code>: テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・機能契約ハーネス・UI 検証マーカー</li>
+<li><code>e2e-cycle</code>: E2E を設計 → Playwright 生成 → 実行 → ODC 分析・修整 → コミットの5フェーズで段階停止しながら回す</li>
+<li><code>phase-approval</code>: 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない</li>
+<li><code>done-gate</code>: 完了宣言前の Definition of Done チェック</li>
+<li><code>uiux_review</code>: 画面を実際に開いて全状態(通常/実行中/失敗/0件/狭い画面/モーダル)を確認する。「作った」を「効いている」と報告しない</li>
+<li><code>retro</code>: AIDD の進め方の学びを <code>lessons.md</code> に蓄積しキットへ還流する</li>
+</ul>
+<p>LIBRARY はプロジェクトの種別に合わせて選ぶスキル群です。代表的なものを挙げます。</p>
+<ul>
+<li><code>design-system</code>: トークン(CSS変数の真実源)と画面の作り方(骨格・操作フィードバック・直値禁止)</li>
+<li><code>nfr-standards</code>: PWA/単一HTML/Streamlit別の非機能要件のデフォルト値</li>
+<li><code>agent-eval</code>: LLM/RAG/エージェント出力の品質をデータセット+スコアラーで回帰評価</li>
+<li><code>single-html-tool</code>: 単一HTMLツール(社内配布・PoC)の開発規約</li>
+<li><code>personal-pwa</code>: GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約</li>
+<li><code>streamlit-rag-app</code>: Streamlit+RAG業務アプリの開発規約</li>
+</ul>
+<h3>スラッシュコマンド</h3>
+<p>スキルを起動する入口として、18 本のスラッシュコマンドを用意しています。それぞれの役割です。</p>
+<ul>
+<li><code>/rfd</code>: RFD(提案・論点出し)を起票し、決定を人間に求める</li>
+<li><code>/lifecycle</code>: 指定工程の成果物を生成し入口/出口基準で判定する</li>
+<li><code>/trace</code>: トレーサビリティの更新と機械検証を実行する</li>
+<li><code>/test-metrics</code>: テスト工程の進捗・品質を数字で出し、検知と人が判定することを分けて報告する</li>
+<li><code>/phase-review</code>: 工程の出口で AI 3 役を順次レビューし、差し戻し事項を出し切って人間の承認へ渡す</li>
+<li><code>/plan</code>: 方針を確定し実装モードを解除する(探索を許可、PLAN.md を生成)</li>
+<li><code>/implement</code>: 実装モードを開始する(plan 必須。探索を hook で物理ブロック)</li>
+<li><code>/compact-work</code>: context-compression 規約で作業する(3層要約・スクリプト化)</li>
+<li><code>/ecc-daily</code>: プロジェクトに合う ECC 資産の分類を実行する</li>
+<li><code>/app-scan</code>: アプリワークスペースの軽量棚卸しを行う</li>
+<li><code>/sdd-start</code>: SDD の spec/plan/tasks/CLAUDE.md を一気に生成する</li>
+<li><code>/new-pwa</code>: 新規個人 PWA の spec からスキャフォールドまで生成する</li>
+<li><code>/qa-review</code>: ISO/ISTQB 準拠のレビューを実行する</li>
+<li><code>/e2e-cycle</code>: E2E の1フェーズだけ実行して停止する</li>
+<li><code>/eval</code>: AI システムの eval を実行する(スコアラー選定〜回帰判定)</li>
+<li><code>/doc-search</code>: 技術ドキュメント特化の検索を行う</li>
+<li><code>/retro</code>: レトロを実行し <code>lessons.md</code> に追記する</li>
+<li><code>/token-check</code>: トークン使用量の確認と最適化提案を行う</li>
+</ul>
+<h3>rules(規律)と検査スクリプト</h3>
+<ul>
+<li>rules: 絶対遵守ルール(A-1〜A-13)、開発速度ハーネス(H-1〜H-10)、モデル/effort の使い分け、機能完全性</li>
+<li>導入先の <code>scripts/</code> で動く道具: トレーサビリティ検査 <code>trace-check.sh</code>、工程承認の検査 <code>check-approval.sh</code>、テストメトリクス集計 <code>test-metrics.sh</code>、機能契約ハーネス <code>quality_harness.py</code> など</li>
+</ul>
+<p>これら 4 種類の部品を組み合わせることで、「規約を書いて頼む」から「規約を hook とスキルに埋め込んで、機械的に効かせる」という運用に変わります。</p>
+<hr>
+<h2>3. 導入の前に</h2>
+<h3>必要なもの</h3>
+<ul>
+<li>macOS または Linux のシェル環境（同梱のスクリプトはすべて bash です）</li>
+<li>Python 3（hooks 本体、導入スクリプトの一部、承認ゲートの判定処理が Python で書かれています）</li>
+<li>git（版の記録に <code>git rev-parse</code> を使っているため、キット自体を git clone した状態で実行します）</li>
+<li>Claude Code（Codex だけで使う場合は後述の「プロジェクト配布」方式を使います）</li>
+</ul>
+<h3>導入方式は 2 つ</h3>
+<ol>
+<li><strong>グローバル導入</strong>（<code>install.sh</code>）: 自分の PC の <code>~/.claude</code> に配置します。複数のプロジェクトを横断して毎日使う場合はこちらです</li>
+<li><strong>プロジェクト配布</strong>（<code>export-project.sh</code>）: 対象プロジェクトの直下に <code>.claude/</code>・<code>AGENTS.md</code>・<code>CLAUDE.md</code>・<code>scripts/</code> を書き出します。生成物はそのプロジェクトの git にコミットする想定で、Codex、クラウド上の一時的な Claude Code 環境、チームメンバーが clone した環境など、<code>~/.claude</code> が使えない・使いたくない場合に向いています</li>
+</ol>
+<p>2 つは排他ではなく、キット自体が併用を前提に作られています。自分の PC ではグローバル導入をベースにしつつ、特定のプロジェクトだけプロジェクト配布で固定する、という使い方もできます。迷ったらまずグローバル導入から始めるのがおすすめです。</p>
+<h3>既存の設定がある方へ（重要）</h3>
+<p>導入スクリプトは「壊さず退避する」ことを優先しています。具体的には次の 3 つの挙動を覚えておくと迷いません。</p>
+<ul>
+<li>既存の <code>~/.claude/CLAUDE.md</code> と <code>~/.claude/AGENTS.md</code> は、実行するたびに <code>CLAUDE.md.bak</code> / <code>AGENTS.md.bak</code> へ退避してから置き換えます。つまり <strong>2 回目以降の実行では前回の <code>.bak</code> が上書きされる</strong>ので、独自に書いていた内容は導入直後に手動でマージしてください</li>
+<li>既存の <code>~/.claude/settings.json</code> は<strong>上書きしません</strong>。ファイルが存在する場合はコピーをスキップし、「手動でマージしてください」というメッセージだけが表示されます。マージの参照元はキット内の <code>03_ClaudeCode/hooks/settings.json</code> です</li>
+<li>ただし「指示優先」の 3 つの hook（<code>instruction-guard.py</code> / <code>reply-language.py</code> / <code>prompt-priority.py</code> の配線）だけは例外で、既存の <code>settings.json</code> にも自動でマージされます。この処理は <code>install_guard.py</code> が担っており、何度実行しても同じ結果になる冪等な処理です。settings.json を後から手動マージした場合でも、もう一度実行して配線を確実にできます</li>
+</ul>
+<p>なお、<code>install.sh</code> は完全新規導入と既存環境への追加導入のどちらでも同じ手順で実行できます。ただし CLAUDE.md / AGENTS.md の <code>.bak</code> は 1 世代しか残らないため、念のため導入前に <code>~/.claude</code> をまるごとバックアップしておくと安心です。</p>
+<pre><code>
+cp -R ~/.claude ~/.claude.backup-$(date +%Y%m%d)
+</code></pre>
+<hr>
+<h2>4. 導入手順（グローバル導入）</h2>
+<h3>ステップ 1: リポジトリを取得する</h3>
+<pre><code>
+cd ~/dev   # 置き場所は任意
+git clone https://github.com/ma-garin/yuki-aidd-kit.git
+cd yuki-aidd-kit
+</code></pre>
+<h3>ステップ 2: インストールする</h3>
+<pre><code>
+./00_導入/01_インストール/install.sh
+</code></pre>
+<p><strong>何が起きるか</strong>: <code>~/.claude</code> の下に <code>skills/</code> <code>commands/</code> <code>hooks/</code> rules/aidd-kit/ <code>scripts/</code> docs/aidd-kit/ を作り、キット本体のファイルをコピーします。CLAUDE.md と AGENTS.md はテンプレートから配置され（既存があれば前述の通り <code>.bak</code> に退避）、settings.json は既存が無い場合だけ新規作成されます。あわせて Codex 用に変換したスキルが <code>~/.agents/skills/</code> にも配布されます。実行中は「✅ スキル: n個」のようにコピーした件数が種類ごとに表示されます。</p>
+<figure><img src="05_install.png" alt="install.sh 実行後のターミナル出力"></figure>
+<p><em>install.sh を実行した直後のターミナル。スキル・コマンド・hooks・rules・利用者向け資料の配置件数が種類ごとに表示されます。</em></p>
+<p><strong>うまくいかないときの確認点</strong>:</p>
+<ul>
+<li><code>Permission denied</code> が出る場合は <code>chmod +x</code> が実行されていません。<code>bash ./00_導入/01_インストール/install.sh</code> のように bash 経由で直接実行すれば回避できます</li>
+<li>Python 3 が無いと「指示優先」3 hook の自動マージ処理（<code>install_guard.py</code>）が失敗します。<code>python3 --version</code> で存在を確認してください</li>
+<li>途中で <code>⚠ 既存のCLAUDE.mdを CLAUDE.md.bak に退避</code> と表示された場合はエラーではありません。後述のステップ 5 で手動マージしてください</li>
+</ul>
+<h3>ステップ 3: 指示優先の hook を入れる</h3>
+<pre><code>
+./00_導入/01_インストール/install-guard.sh
+</code></pre>
+<p>ステップ 2 の内部でも同じ処理（<code>install_guard.py</code>）が呼ばれているため、通常は明示的に実行する必要はありません。settings.json を手動でマージした<strong>後</strong>にもう一度実行しておくと、指示優先の 3 hook の配線が確実に settings.json に入っていることを再確認できます。この処理は冪等なので、何度実行しても差分がなければ「変更なし」という趣旨の表示になるだけです。</p>
+<h3>ステップ 4: 配置を確認する</h3>
+<pre><code>
+./00_導入/01_インストール/verify.sh
+</code></pre>
+<p><strong>何が起きるか</strong>: <code>~/.claude</code> 配下の各資産（グローバル設定・スキル・コマンド・hooks・判定スクリプト・rules）を 1 つずつ調べ、存在すれば <code>✅</code>、無ければ <code>❌（未配置: パス）</code> を表示します。チェックリストはキットのリポジトリ実体（<code>03_ClaudeCode/</code> 配下の skills・commands・hooks）から自動的に導出されるため、キットに資産が増えても <code>verify.sh</code> 自体の更新は不要です。最後に <code>結果: OK=n / NG=m</code> と表示され、導入済みの版（<code>KIT_VERSION</code>）とリポジトリの版（git commit）も併記されます。</p>
+<figure><img src="06_verify.png" alt="verify.sh 実行後のターミナル出力"></figure>
+<p><em>verify.sh の実行結果。各資産の配置状況と、最後の OK/NG 集計が表示されます。</em></p>
+<p><strong>うまくいかないときの確認点</strong>:</p>
+<ul>
+<li><strong>NG=0 なら導入完了</strong>です。NG が 1 件以上ある場合は終了コード 1 で終わるので、<code>❌</code> の行に出ている「未配置: パス」を確認し、<code>install.sh</code> を再実行してください</li>
+<li>rules だけ <code>❌</code> になる場合は、<code>~/.claude/rules</code> の別ディレクトリに同名ファイルがあり、<code>install.sh</code> が重複を避けてスキップした可能性があります。<code>find ~/.claude/rules -name &quot;&lt;ファイル名&gt;&quot;</code> で実体を確認してください</li>
+</ul>
+<h3>ステップ 5: settings.json をマージする（既存の設定がある場合のみ）</h3>
+<p>ステップ 2 で「settings.json が既存」というメッセージが出た場合は、<code>03_ClaudeCode/hooks/settings.json</code> を開き、次の項目を自分の <code>~/.claude/settings.json</code> に取り込みます。</p>
+<ul>
+<li><code>hooks</code>（各 hook の配線。<code>PreToolUse</code> に instruction-guard・block-ci・pre-read-guard・block-explore・pre-write-check・block-phase・block-gates・filter-output などがぶら下がっています）</li>
+<li><code>statusLine</code></li>
+<li>トークン節約の設定: <code>effortLevel</code>（既定 high）、<code>autoCompactWindow</code>、<code>bashOutputMaxChars</code></li>
+</ul>
+<p>取り込んだら、ステップ 3 の <code>install-guard.sh</code> をもう一度実行し、Claude Code を再起動してください。</p>
+<hr>
+<h2>5. 導入手順（プロジェクト配布）</h2>
+<p>Codex で使う場合や、チームのリポジトリにキットを含めたい場合はこちらです。グローバル導入と違い、<code>export-project.sh</code> は対象プロジェクトの <code>.claude/settings.json</code> を<strong>新規作成した内容で上書き</strong>します（既存があれば自動で <code>.bak</code> に退避したうえで上書きするため、グローバル導入の「上書きしない」方針とは挙動が異なります）。書き出される settings.json は、hooks のコマンドをプロジェクト相対パス（<code>.claude/hooks/xxx.py</code> など）で参照する形になっており、プロジェクトルートを作業ディレクトリとして実行される前提です。</p>
+<pre><code>
+cd ~/dev/yuki-aidd-kit
+./00_導入/02_プロジェクト配布/export-project.sh ~/dev/my-app
+
+cd ~/dev/my-app
+git add .claude AGENTS.md CLAUDE.md scripts
+git commit -m &quot;chore: add AIDD Kit&quot;
+</code></pre>
+<p><strong>何が起きるか</strong>: 対象プロジェクト直下に <code>.claude/skills</code> <code>.claude/commands</code> <code>.claude/hooks</code> <code>.claude/rules</code> <code>.agents/skills</code> を作り、キットのスキル・コマンド・hooks を<strong>フルコピー</strong>します（グローバル導入のような DAILY/LIBRARY の絞り込みはせず、どのスキルを使うかは各エージェントが <code>INDEX.md</code> を見て判断する設計です）。</p>
+<figure><img src="12_export.png" alt="export-project.sh 実行後のターミナル出力"></figure>
+<p><em>export-project.sh の実行結果。対象プロジェクト配下にスキル・コマンド・hooks が配置された件数が表示されます。</em></p>
+<p><strong>うまくいかないときの確認点</strong>:</p>
+<ul>
+<li>引数の対象ディレクトリが存在しないと使い方だけ表示して終了します。あらかじめ <code>mkdir -p</code> で作成しておいてください</li>
+<li>生成された <code>.claude/settings.json</code> の hooks はプロジェクト相対パスを前提にしています。Claude Code のプロジェクトスコープ hooks がプロジェクトルート以外を作業ディレクトリにする環境では、パスの解決に失敗する可能性があります（スクリプト内のコメントでも要検証と明記されています）</li>
+<li>コミットしておけば、そのリポジトリを clone した人は install なしで同じ規約・hooks・スキルを使えます。Codex では <code>$done-gate</code> や <code>$cmd-trace</code> のように <code>$名前</code> でスキルを呼び出します</li>
+</ul>
+<h3>新規プロジェクトを雛形から作る</h3>
+<pre><code>
+./00_導入/02_プロジェクト配布/init-project.sh my-app pwa   # pwa | html | streamlit
+</code></pre>
+<p><code>init-project.sh</code> は git init・<code>.gitignore</code>（秘密情報とログ・データファイルを除外）・プロジェクト用 CLAUDE.md・<code>CURRENT_STATE.md</code>・SDD 用の空テンプレート（<code>spec.md</code> <code>plan.md</code> <code>tasks.md</code>）を作った上で、第 2 引数の種別ごとに次のスキャフォールドを追加します。</p>
+<ul>
+<li><strong>pwa</strong>: <code>docs/manifest.json</code>（GitHub Pages で <code>docs/</code> を公開する構成を前提）と <code>docs/index.html</code> の空ファイルを作成します。スマホで使う個人アプリ・localStorage で完結するツールに向いています</li>
+<li><strong>html</strong>: 単一の <code>&lt;プロジェクト名&gt;.html</code> だけを作成します。ビルドや依存関係を持たない、社内配布用デモや使い捨てツールに向いています</li>
+<li><strong>streamlit</strong>: <code>requirements.txt</code>（streamlit）と <code>app.py</code> を作成します。RAG 連携や業務支援エージェントのように、Python 側でロジックを持つアプリに向いています</li>
+</ul>
+<p><strong>どちらの方式を選ぶか</strong>は、実行環境と配布形態で決めます。ブラウザだけで完結し配布も URL 共有で済ませたいなら pwa、依存関係ゼロで 1 ファイルを渡したいだけなら html、Python のライブラリ（RAG・LLM 呼び出しなど）が必要なら streamlit、という判断基準になります。迷った場合は <code>sdd-ecc-workflow</code> スキル（<code>/sdd-start</code>）が種別ごとの判断を案内します。</p>
+<h3>工程文書やテスト文書の雛形を置く</h3>
+<pre><code>
+./00_導入/02_プロジェクト配布/init-lifecycle.sh ~/dev/my-app --github   # 工程文書一式＋Issue/PRテンプレート
+./00_導入/02_プロジェクト配布/init-test-docs.sh ~/dev/my-app            # テスト戦略・DoD・29119文書の雛形
+</code></pre>
+<p><code>init-lifecycle.sh</code> は <code>docs/lifecycle/</code> に RFD〜保守運用の工程文書テンプレートを配置します。<code>--github</code> を付けると <code>.github/</code> に Issue・PR テンプレートも追加されます。<code>init-test-docs.sh</code> は <code>docs/test/</code> に TESTING_STRATEGY・DEFINITION_OF_DONE・ISO/IEC/IEEE 29119 準拠の計画書・設計仕様・完了報告・インシデント報告の雛形を置き、あわせて <code>quality/feature_contracts.yml</code> と <code>scripts/quality_harness.py</code> など機能契約ハーネス一式を配置します。</p>
+<p><strong>うまくいかないときの確認点</strong>: どちらのスクリプトも既存ファイルは上書きせずスキップし、<code>↷ スキップ（既存）</code> と表示します。雛形を最新版に更新したい場合は、対象ファイルを一度削除するか別名に退避してから再実行してください。<code>init-test-docs.sh</code> は実行後に「次にやること」として、<code>&lt;PROJECT&gt;</code> プレースホルダーの置換や <code>quality_harness.py</code> の初回実行手順を表示するので、その案内に従って埋めていきます。</p>
+<hr>
+<h2>6. 導入後、最初の 1 日の使い方</h2>
+<p>導入が終わった翌朝、私が最初にやるのは「この案件はどっちの進め方か」を決めることです。<code>dev-lifecycle</code> スキルの冒頭に判断表があり、他の人に納品する・引き継ぐ・要件の合意が必要・保守運用が続く案件なら工程ライフサイクル（<code>/rfd</code> → <code>/lifecycle &lt;工程名&gt;</code> → <code>/trace</code>）、個人の PWA・単一 HTML ツール・PoC なら軽量な <code>sdd-ecc-workflow</code>（<code>/sdd-start</code>）に進みます。迷ったら「進め方を決めたい」とだけ伝えれば、この判断表から案内されます。</p>
+<p>進め方が決まったら、実装は必ず「調査」と「実装」を分けます。<code>/plan</code> で調査モードに入り、方針・対象ファイル・検証手順を <code>PLAN.md</code> に書かせてから、<code>/implement</code> で実装モードに切り替えます。<code>/implement</code> は <code>PLAN.md</code>（またはプロジェクトの plan ファイル）が無いと警告して中断するので、勢いで実装に入ることができません。実装モードに入ると <code>.claude/mode</code> が作られ、<code>block-explore.sh</code> が Read/Grep/Glob を物理的にブロックします。私はこれを入れる前、実装の途中で「念のため」ともう一度コードを読みに行き、方針がぶれることがよくありました。ブロックされると、方針が足りないと気づいた時点で <code>/plan</code> に戻るしかなくなり、結果として手戻りが減りました。</p>
+<p>仕上げでは「作った」と「効いている」を分けます。画面を触ったら <code>uiux_review</code> で全状態を実際に開き、完了と言う前に <code>done-gate</code> を通します。確認していない項目は「未検証」と、その確かめ方まで明記させるのがポイントです。1 日の終わりには <code>/retro</code> で Keep / Problem / Try を <code>lessons.md</code> に残し、同じつまずきが 2 回出たらスキルか hook に昇格させています。</p>
+<figure><img src="19_daily_flow.png" alt="導入後の1日の流れ"></figure>
+<p><em>進め方の判断から /plan・/implement、仕上げの uiux_review・done-gate、retro までの1日の流れ</em></p>
+<h2>7. 工程を分ける案件: V字とトレーサビリティ</h2>
+<p>納品や引き継ぎが絡む案件では <code>dev-lifecycle</code> を使います。RFD（提案・論点出し）から要件定義・基本設計・詳細設計・実装・単体テスト・結合テスト・システムテスト・受け入れテスト・保守運用まで、10 の工程それぞれに成果物と ID の付番規則（<code>REQ-F-001</code> や <code>DD-001</code> など）が決まっています。V 字モデルの対応も固定されていて、要件定義は受け入れテストと、基本設計はシステムテスト・結合テストと、詳細設計は単体テストと対応します。テストを書くときは、まず「左側のどの ID を検証するのか」を先に書かせるようにしています。</p>
+<p>各工程は前工程の出口基準を満たさない限り開始しません。共通の出口基準は、未確定の <code>TBD</code> が残っていないこと、採番した ID が追跡表に全て載っていること（<code>trace-check.sh</code> が NG=0）、<code>qa-review-standards</code> の観点で自己レビュー済みであること、そして人間の承認記録があることの 4 点です。ここで重要なのは、<strong>AI は承認しない</strong>という一線です。<code>phase-approval</code> スキルでは、追跡担当・仕様一致担当・リスク担当という 3 つの役を同一セッションで順番に回し、指摘を出し切るところまでを AI が担当します。承認欄（<code>approver</code>）を埋めるのは人間だけで、承認後に成果物が変われば承認は自動で失効します。3 役を並列でなく順次に回すのは、並列委譲だとトークン消費が約 7 倍になり Pro＋Sonnet の上限に当たりやすいためです。</p>
+<p>トレーサビリティの検証も、目視ではなくスクリプトに任せます。<code>./scripts/trace-check.sh docs/lifecycle</code> を実行すると、重複定義・未定義参照・要件の設計/テスト未カバー・孤立したテストを機械的に検出します。</p>
+<figure><img src="18_vmodel.png" alt="V字モデルの工程対応"></figure>
+<p><em>RFD から保守運用までの10工程とV字の対応（要件定義↔受け入れテスト、基本設計↔システム・結合テスト、詳細設計↔単体テスト）</em></p>
+<figure><img src="15_trace_check.png" alt="trace-check.sh の実行結果"></figure>
+<p><em>trace-check.sh を実行した様子（実行結果の数値は未取得のため割愛）</em></p>
+<h2>8. テストと完了判定</h2>
+<p><code>test-strategy</code> スキルでは、テストを L1（単体）・L2（統合）・L3（システム／E2E）・L4（受け入れ）の 4 レベルに分けています。L1・L2 は pytest や Playwright のテストクライアントで、1 件でも FAIL すれば不合格です。L3 はブラウザ上の実フローを Playwright で通すレベルで、1 件でも FAIL すれば <code>.ui-verified</code> マーカーが付かず、UI 変更をコミットできない仕組みになっています。L4 は ISTQB のファウンデーションレベル相当の担当者が初見・マニュアルなしで確認し、依頼者が承認するレベルで、ここも AI は承認しません。</p>
+<p>このスキルの説明文にある一文が、私にとって一番刺さった注意書きです。「pytest が全 PASS であることは完了ではない。それは L1/L2 の確認にすぎない。L3 と L4 が終わって初めて完了である」。テストが緑でも、ブラウザで実際に開くと崩れている、というのは何度も経験しました。</p>
+<p>ゲートの実行タイミングも明確に分けています。日常のコミットではゲートを実行しません（<code>block-gates.py</code> が無断実行を止めます）。一方でマイルストーン（機能の区切りやリリース判断）では、L1/L2・L3・lint・security・機能契約ハーネスまで含めたフルゲートを回します。この優先関係を文書に書いていなかったために、以前テスト資産 17 件が 1 週間陳腐化したまま放置された、という実損害が記録に残っています。フルゲートの実測は約 5 分で済むので、迷ったらマイルストーンとして実行する、というのが今の運用です。</p>
+<p>完了判定は <code>done-gate</code> スキルに集約しています。全種別共通の項目に加え、HTML/JS/CSS を触った場合は L3 の全 PASS と <code>.ui-verified</code> の更新、1920×1080 と 1366×768 での実操作確認、<code>uiux_review</code> での全状態確認までが必須です。未達の項目が 1 つでもあれば「未完了。残り N 項目」と表示され、全て満たしたときだけ「完了基準を満たしている」と判定します。</p>
+<h2>9. ハンズオン: 1行の依頼から HTML モックまで</h2>
+<p>キットの使い方を通しで見せるために、社内図書館の貸出管理を Excel から Web にする、という架空の事例を同梱しています。依頼文はたった 1 行です。「社内図書館の貸出管理を Excel から Web システムにする。HTML でモックを作ってください」。</p>
+<p>この 1 行から、キットの規律（目的を 1 行で言う・残課題を残さない・未検証は未検証と書く）と <code>single-html-tool</code>・<code>design-system</code>・<code>uiux_review</code>・<code>done-gate</code> の手順書だけを使って、ダッシュボード・蔵書・貸出中・利用者・設定の 5 画面が揃った単一 HTML のモックができ上がりました。書き足した CSS はレイアウトの配置に関する 20 行だけで、部品や骨格はキットに同梱されている実物をそのまま使っています。動作確認では、貸出・返却・失敗・0 件・処理中などを含めて Playwright で 14 状態を確認し、360×820 から 1920×1080 までの幅とライト・ダークモードで横スクロールが出ないことを確かめました。</p>
+<p>この事例を通しでやってみて分かったことがもう一つあります。部品それぞれのセルフテストでは見つからなかった、キット自身の欠陥が 3 件見つかり、その場で是正しました。個々の部品が正しくても、実際の画面に組み上げると初めて崩れが見える、というのは <code>uiux_review</code> を「全状態を実際に開く」手順にしている理由そのものです。</p>
+<p>利用ガイドにも同じ事例を使ったハンズオン章があるので、実際に手を動かして試したい方はそちらから辿れます。</p>
+<figure><img src="17_sample_app.png" alt="サンプルアプリの画面"></figure>
+<p><em>図書貸出モックの画面。1行の依頼文からキットの部品だけで組み上がった5画面の一つ</em></p>
+<figure><img src="10_guide.png" alt="利用ガイドのハンズオン章"></figure>
+<p><em>利用ガイド（01_利用ガイド.html）に収録されているハンズオン章</em></p>
+<hr>
+<h2>10. トークンを節約する仕組み</h2>
+<p>規約を hooks に移すと、今度は「hooks 自体が読み込むコンテキスト」が気になり始めました。そこでキットには、トークン消費を構造から削るための設定と hook をまとめて入れています。</p>
+<p>まず <code>03_ClaudeCode/hooks/settings.json</code> に、トークン節約に直結する 3 つの値を置いています。</p>
+<ul>
+<li><code>effortLevel: &quot;high&quot;</code>: Claude Code 素の既定である xhigh から 1 段下げています。設計判断が要る場面だけ <code>/effort xhigh</code> に上げ、終わったら戻す運用です</li>
+<li><code>autoCompactWindow: &quot;200k&quot;</code>: 自動コンパクトが走るウィンドウ幅</li>
+<li><code>bashOutputMaxChars: 12000</code>: Bash の出力をそのまま抱え込まないための上限</li>
+</ul>
+<p>その上で、hook が実際の出力を絞ります。<code>filter-output.py</code> は PreToolUse で Bash コマンドを書き換える hook で、pytest や npm test などのテストランナーは失敗行の前後と末尾の集計行だけに、<code>npm install</code> や <code>docker build</code> のような冗長な install・build は末尾 40 行だけに絞ります。件数指定の無い <code>git log</code> には <code>--oneline -20</code> を、対象指定の無い <code>git diff</code> には <code>--stat</code> を補います。全量が必要なときは <code>FULL_OUTPUT=1</code> を付けて実行すれば元のコマンドがそのまま通ります。</p>
+<p>もう 1 つが <code>pre-read-guard.py</code> です。こちらは Read そのものを見ていて、ロックファイル・minified・source map・<code>node_modules</code> などは「読んでも判断材料にならない」として最初から止めます。800 行を超えるファイルは offset・limit を指定せずに読もうとすると、先頭 300 行だけに絞られ、続きは offset を指定して読む形になります。</p>
+<p>長時間の会話を見張るのが <code>context-guard.py</code> です。こちらは止めずに警告するだけの hook で、直前の発言から 55 分（サブスクのキャッシュ寿命 1 時間の手前）以上空いて再開したときは「この 1 通は全履歴を再処理する」と伝え、会話の transcript が 4 MB を超えたら <code>/compact</code> か <code>/clear</code> を促します。判断は人に委ね、材料だけ差し込む設計です。</p>
+<p>これらが実際に配線されているかを点検するのが <code>token-audit.sh</code>（本体は <code>token_audit.py</code>）です。常時読み込まれる分量の推定、実測ログの集計、hook と設定の配線チェック、MCP の数、スキルの肥大化を一度に出し、配線漏れがあれば NG として exit 1 で終わります。私は月に一度これを回して、増えすぎたスキルやルールファイルがないかを確認しています。</p>
+<figure><img src="20_token_audit.png" alt="token-audit.sh の実行結果画面"></figure>
+<p><em><code>/token-check</code> または <code>token-audit.sh</code> を実行したときの端末画面</em></p>
+<h2>11. Codex でも同じ規約で動かす</h2>
+<p>キットは Claude Code 専用ではなく、Codex でも同じ規約で動くように作られています。仕組みの中心は <code>04_Codex/build_codex_skills.py</code> です。このスクリプトは <code>03_ClaudeCode/skills/</code> と <code>commands/</code> を読み込み、Codex の仕様（<code>&lt;名前&gt;/SKILL.md</code> に frontmatter の name・description が必須、任意で <code>agents/openai.yaml</code>）に合わせて <code>04_Codex/skills/</code> を生成します。Claude Code のスラッシュコマンドも同じ扱いでスキルに変換されるため、<code>/trace</code> のようなコマンドは Codex 側では <code>$cmd-trace</code> のような名前で呼び出せます。生成本数は現時点で 38 本です。<code>--check</code> オプションを付けて実行すると、生成物が最新かどうかを差分で検査し、ずれていれば exit 1 で終わります。つまり Claude Code 側のスキルを直接書き換えても、Codex 側の生成物が古いままにならないよう機械で検査できる形になっています。</p>
+<p>規約の本体を 1 か所にまとめているのも同じ狙いからです。<code>AGENTS.md</code> に規約を書き、Claude Code は <code>CLAUDE.md</code> の <code>@AGENTS.md</code> インポートでこれを読み込み、Codex は <code>AGENTS.md</code> を直接読みます。私が実際に困ったのは、最初のうちは Claude Code 用の CLAUDE.md と Codex 用の設定を別々に育ててしまい、気づいたら内容がずれていたことでした。規約を 1 本化してからは、エージェントを切り替えるたびに文言を合わせ直す作業がなくなりました。</p>
+<p>Codex にはフックの仕組みが無いため、<code>block-gates.py</code> や <code>filter-output.py</code> のような「機械的に止める・絞る」層はそのままでは持ち込めません。プロジェクト配布（<code>export-project.sh</code>）で書き出した <code>.claude/</code> や <code>scripts/</code> はあくまで Claude Code 向けで、Codex 側は AGENTS.md の規約とスキルの手順書に沿って動く形になります。この違いは把握した上で使う必要があります。</p>
+<h2>12. 作ってみて分かったこと</h2>
+<p>キット自身の学びは <code>06_保守者向け/学んだこと.md</code> に Keep / Problem / Try の形で溜めています。中でも印象に残っているのが、社内の貸出管理ツールをモックで作ってキットの手順を検証したときの話です。<code>init-project.sh</code> でプロジェクトを作り、<code>export-project.sh</code> で配布し、<code>design-system</code> と <code>single-html-tool</code> の手順で画面を組み、<code>check-design.sh</code> を実行したところ、配布先では NG=426 という結果になりました。キット自身の 7 ファイルに対しては NG=0 だったため、それまで気づけていなかった不具合です。原因は <code>tokens.css</code> の置き場所や <code>.claude/</code> の走査範囲、貼り込んだ定義行の扱いにありました。「出荷物が自分自身のテストを通ること」と「配布先で実際に使えること」は別物だと、身をもって学びました。</p>
+<p>もう 1 つの気づきは、デモ用の文言の長さです。<code>layout.css</code> の globalbar は、短いサンプル文言では崩れませんでしたが、実案件の「社内図書館 貸出管理」＋「総務部 図書係」＋テーマ切り替えという現実的な長さの文言に差し替えたところ、幅 360px で初めて折り返しが崩れました。デモやサンプルは、実際に使うときの文言の長さで作らないと、崩れを見逃すという教訓です。</p>
+<p>CHANGELOG.md を振り返ると、キットは Ver.6.1 の速度ハーネス・機能完全性・UI 実機レビューから始まり、6.2 でテスト活動の設計、6.4 で工程承認ゲート、6.5〜6.7 でトークン節約と保守者の傾向の埋め込み、6.8 で指示優先を hook で強制、7.0〜7.1 で配布物と保守者専用の分離、8.0 で Claude Code と Codex の構成分離という順に育ってきました。散文の注意書きを 1 つずつ機械の仕組みに置き換えていった過程が、そのままバージョン履歴になっています。</p>
+<h2>13. 困ったとき</h2>
+<ul>
+<li><strong>テストや lint が実行されない</strong>: <code>block-gates.py</code> によるものです。「テストを回して」と頼めば <code>GATES_REQUESTED=1</code> 付きで実行されます</li>
+<li><strong>ログが途中までしか表示されない</strong>: <code>filter-output.py</code> が絞っています。テストランナー・install・build・<code>git log</code>・<code>git diff</code> が対象で、全量が必要なときは <code>FULL_OUTPUT=1 &lt;コマンド&gt;</code> で実行してください（例: <code>FULL_OUTPUT=1 GATES_REQUESTED=1 pytest tests/</code>）</li>
+<li><strong>ファイルが途中までしか読まれない</strong>: 800 行を超えるファイルを offset・limit 指定無しで読もうとすると、先頭 300 行に絞られます。続きは offset を指定して読ませてください</li>
+<li><strong>Bash の出力が長すぎて省略される</strong>: <code>bashOutputMaxChars</code>（既定 12000）が上限です。必要な範囲だけを <code>grep</code> や <code>head</code> で絞ってから読む運用にしています</li>
+<li><strong>配布先でだけ検査が NG になる</strong>: <code>check-design.sh</code> はキット内で NG=0 でも、配布先の実プロジェクトでは配置や貼り込みの違いで NG が出ることがあります。配布したら一度は検査を回して確認してください</li>
+<li><strong>トークン節約が効いているか確かめたい</strong>: <code>/token-check</code>、またはキットの checkout で <code>./00_導入/03_点検/token-audit.sh</code> を実行します。配線漏れがあれば NG として教えてくれます</li>
+</ul>
+<p>より詳しい使い方は、同梱の HTML ガイドにまとめています。</p>
+<pre><code>
+open 01_利用者向け資料/01_利用ガイド.html       # 概要と導入（初めての方向け）
+open 01_利用者向け資料/02_操作マニュアル.html   # 取り扱い説明書（13 章）
+</code></pre>
+<h2>14. 注意点</h2>
+<ul>
+<li>個人用に作ったキットなので、ルールは私の働き方（速度優先・日本語・QA 観点）に寄せています。ルールファイルは Markdown なので、合わない部分は自由に書き換えてください</li>
+<li>hook は Claude Code 全体に効きます。グローバル導入する前に、まず 1 つのプロジェクトでプロジェクト配布方式を試すという順番でも構いません</li>
+<li>「キット自身のテストが通ること」と「配布先で使えること」は別問題です。プロジェクト配布のあとは、そのプロジェクトで一度 <code>check-design.sh</code> や <code>verify.sh</code> を回してから使い始めることをおすすめします</li>
+<li>Codex 側の生成物（<code>04_Codex/skills/</code>）は <code>build_codex_skills.py</code> が自動生成するもので、直接編集する対象ではありません。変更するのは常に <code>03_ClaudeCode/skills/</code> や <code>commands/</code> 側です</li>
+<li>版は <code>VERSION</code> と git tag で管理しており、変更内容は <code>CHANGELOG.md</code> にまとめています。8.0.0 時点では Claude Code 用（<code>03_ClaudeCode/</code>）と Codex 用（<code>04_Codex/</code>）を分ける構成管理になっています</li>
+</ul>
+<h2>おわりに</h2>
+<p>規約を「書いて頼む」ものから「仕組みで止める」ものに置き換えていく作業は、地味ですが積み重ねると効きます。ツール呼び出しのたびに未応答の指示を差し込む hook、テストや lint を要求時だけ回す hook、出力を絞る hook。1 つひとつは小さな仕組みですが、これらが揃うと「毎回同じことを言う」コストが下がり、Claude Code と Codex のどちらを使っていても同じ基準で動かせるようになりました。</p>
+<p>キットは公開しているので、気になった部品だけ取り出して使っていただいても大丈夫です。感想や改善案は GitHub の Issue でお待ちしています。</p>
+<p><a href="https://github.com/ma-garin/yuki-aidd-kit">https://github.com/ma-garin/yuki-aidd-kit</a></p>
+</main></body></html>
