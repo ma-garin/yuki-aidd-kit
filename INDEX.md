@@ -14,7 +14,7 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 
 | ディレクトリ | 中身 | 導入先へ |
 |---|---|---|
-| `skills/` `commands/` `hooks/` `rules/` `templates/` | 規約固定の配布物（install で `~/.claude/`、export で `<対象>/.claude/`） | 配る |
+| `agent/`（`skills/` `commands/` `hooks/` `rules/`）・`templates/` | 規約固定の配布物（install で `~/.claude/`、export で `<対象>/.claude/`） | 配る |
 | `tools/` | 導入先の `scripts/` に置かれて動く道具（trace-check・quality_harness・check-approval・test-metrics …） | 配る |
 | `scripts/` | キットの checkout から実行する入口（install / export / init-* / verify / check-design / token-audit） | 実行元 |
 | `docs/` | 利用者向け文書（利用ガイド・操作マニュアル・事例） | 読む |
@@ -88,7 +88,7 @@ python3 scripts/quality_harness.py            # 機能契約ハーネス（契�
 | `personal-pwa` | GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約 | #pwa #mobile | 30行 |
 | `streamlit-rag-app` | Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約 | #streamlit #rag | 32行 |
 
-## rules/（規律。`paths` 無し＝毎セッション自動読み込み／`paths` 付き＝該当ファイルを触ったときだけ。install で `~/.claude/rules/aidd-kit/`、export で `.claude/rules/` へ。根拠と原文は `internal/rules-rationale/`）
+## agent/rules/（規律。`paths` 無し＝毎セッション自動読み込み／`paths` 付き＝該当ファイルを触ったときだけ。install で `~/.claude/rules/aidd-kit/`、export で `.claude/rules/` へ。根拠と原文は `internal/rules-rationale/`）
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
@@ -97,7 +97,7 @@ python3 scripts/quality_harness.py            # 機能契約ハーネス（契�
 | `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 16行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
 
-## hooks/（settings.json で配線）
+## agent/hooks/（settings.json で配線）
 
 | hook | 発火 | 役割 |
 |---|---|---|

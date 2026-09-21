@@ -4,7 +4,7 @@
 キット本体でも配布先プロジェクトでも動く。会話には結論だけ（3 層要約）、全件は token-audit-report.md。
 NG>0 で exit 1、WARN のみは exit 0。
 
-  1. 床（常時読み込み）  rules/*.md（paths 無し）＋ CLAUDE.md（@AGENTS.md 展開）の文字数と推定トークン。
+  1. 床（常時読み込み）  agent/rules/*.md（paths 無し）＋ CLAUDE.md（@AGENTS.md 展開）の文字数と推定トークン。
                           換算は internal/spec/11 D-1（日本語 1.0 tok/char・ASCII 0.27 tok/char）。**推定**であり実測は /context
   2. 実測ログ            .claude/instructions-loaded.log（log-instructions.py）があればファイル別の読み込み回数
   3. 仕組みの配線        settings.json に filter-output / pre-read-guard / context-guard / pre-compact が配線されているか、
@@ -79,7 +79,7 @@ def expand_imports(p: Path) -> str:
 
 def floor_files(root: Path) -> list[tuple[str, Path]]:
     out: list[tuple[str, Path]] = []
-    for d in ("rules", ".claude/rules"):
+    for d in ("agent/rules", ".claude/rules"):
         for f in sorted((root / d).glob("*.md")):
             if not has_paths_frontmatter(f):
                 out.append((f"{d}/{f.name}（常時）", f))
@@ -126,7 +126,7 @@ def check_loaded_log(root: Path, r: Result) -> None:
 def load_settings(root: Path) -> tuple[dict, Path | None]:
     # キット本体（hooks/settings.json がある形）では配布形の settings を見る。キット自身の .claude/settings.json は
     # 開発セッション用の一部配線（instruction-guard 等）だけなので、床・配線の判定対象にしない
-    for c in (root / "hooks/settings.json", root / ".claude/settings.json", Path.home() / ".claude/settings.json"):
+    for c in (root / "agent/hooks/settings.json", root / ".claude/settings.json", Path.home() / ".claude/settings.json"):
         if c.is_file():
             try:
                 return json.loads(read(c)), c
@@ -138,7 +138,7 @@ def load_settings(root: Path) -> tuple[dict, Path | None]:
 def check_wiring(root: Path, r: Result) -> None:
     s, path = load_settings(root)
     if path is None:
-        r.add(True, "配線", "settings.json", "見つからない（.claude/settings.json / hooks/settings.json / ~/.claude/settings.json）")
+        r.add(True, "配線", "settings.json", "見つからない（.claude/settings.json / agent/hooks/settings.json / ~/.claude/settings.json）")
         return
     blob = json.dumps(s, ensure_ascii=False)
     for h in HOOKS_REQUIRED:
@@ -172,7 +172,7 @@ def check_mcp(root: Path, r: Result) -> None:
 
 
 def check_skills(root: Path, r: Result) -> None:
-    for d in ("skills", ".claude/skills"):
+    for d in ("agent/skills", ".claude/skills"):
         for f in sorted((root / d).glob("*/SKILL.md")):
             n = len(read(f).splitlines())
             if n > SKILL_WARN_LINES:

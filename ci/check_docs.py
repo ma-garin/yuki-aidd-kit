@@ -57,6 +57,8 @@ TARGET_SIDE_PREFIXES = (
 # 参照切れ検査の対象から外すディレクトリ（internal/spec/ は計画中の未作成ファイルを正当に参照する）
 GENERATED_REPORTS = ("check-docs-report.md", "trace-check-report.md", "check-design-report.md",
                      "check-approval-report.md", "token-audit-report.md", "test-metrics-report.md")
+# 配布物 4 種。キット内の実体は agent/ 配下、導入先では .claude/ 配下（`skills/x` は両方の呼び名として通す）
+AGENT_ASSET_PREFIXES = ("rules/", "skills/", "commands/", "hooks/")
 REF_SCAN_EXCLUDE_PREFIXES = ("internal/spec/", ".git/") + GENERATED_REPORTS
 # 履歴文書（当時の事実を記録しているので数値の突合対象にしない）
 HISTORY_DOCS = {"internal/Roadmap.md", "internal/AUDIT-2026-07.md"}
@@ -90,12 +92,12 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
     """INDEX の表・散文に出る名前を実ファイルへ解決する。"""
     cands = []
     if name.startswith("/"):
-        cands.append(root / "commands" / f"{name[1:]}.md")
+        cands.append(root / "agent/commands" / f"{name[1:]}.md")
     cands += [
         root / name,
-        root / "skills" / name / "SKILL.md",
-        root / "rules" / f"{name}.md",
-        root / "hooks" / name,
+        root / "agent/skills" / name / "SKILL.md",
+        root / "agent/rules" / f"{name}.md",
+        root / "agent/hooks" / name,
     ]
     for c in cands:
         if c.is_file():
@@ -104,7 +106,7 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
 
 
 INVENTORY_PREFIXES = (
-    "", "rules/", "skills/", "commands/", "hooks/", "scripts/", "tools/", "ci/",
+    "", "agent/rules/", "agent/skills/", "agent/commands/", "agent/hooks/", "scripts/", "tools/", "ci/",
     "templates/", "templates/lifecycle/", "templates/test/", "templates/github/",
     "templates/components/", "templates/ui/", "docs/", "docs/examples/library-loan/", "templates/github/workflows/",
     "internal/", "internal/rules-rationale/",
@@ -142,16 +144,16 @@ def check_index_coverage(root: Path, r: Result) -> None:
     idx = read(root / "INDEX.md") if (root / "INDEX.md").is_file() else ""
     def listed(name: str) -> bool:
         return f"`{name}`" in idx
-    for d in sorted((root / "skills").glob("*/")):
+    for d in sorted((root / "agent/skills").glob("*/")):
         if (d / "SKILL.md").is_file() and not listed(d.name):
             r.add(True, "掲載漏れ", f"skills/{d.name}", "INDEX.md に無い")
-    for f in sorted((root / "commands").glob("*.md")):
+    for f in sorted((root / "agent/commands").glob("*.md")):
         if not listed(f"/{f.stem}"):
             r.add(True, "掲載漏れ", f"commands/{f.name}", "INDEX.md に無い")
-    for f in sorted((root / "rules").glob("*.md")):
+    for f in sorted((root / "agent/rules").glob("*.md")):
         if not listed(f.stem):
             r.add(True, "掲載漏れ", f"rules/{f.name}", "INDEX.md に無い")
-    for f in sorted(list((root / "hooks").glob("*.sh")) + list((root / "hooks").glob("*.py"))):
+    for f in sorted(list((root / "agent/hooks").glob("*.sh")) + list((root / "agent/hooks").glob("*.py"))):
         if not listed(f.name):
             r.add(True, "掲載漏れ", f"hooks/{f.name}", "INDEX.md に無い")
 
@@ -215,12 +217,14 @@ def check_references(root: Path, r: Result) -> None:
                     continue
                 if ref.startswith("scripts/") and (root / "tools" / ref[len("scripts/"):]).is_file():
                     continue  # 導入先の scripts/ に置かれる道具（キット内の実体は tools/）
+                if ref.startswith(AGENT_ASSET_PREFIXES) and (root / "agent" / ref).exists():
+                    continue  # 配布物の名前（キット内の実体は agent/。導入先では .claude/ 配下）
                 if not (root / ref).exists():
                     r.add(True, "参照切れ", f"{rel}:{i}", f"`{ref}` が存在しない")
 
 
 def check_frontmatter(root: Path, r: Result) -> None:
-    for d in sorted((root / "skills").glob("*/")):
+    for d in sorted((root / "agent/skills").glob("*/")):
         f = d / "SKILL.md"
         if not f.is_file():
             r.add(True, "frontmatter", f"skills/{d.name}", "SKILL.md が無い")
@@ -246,7 +250,7 @@ def has_paths_frontmatter(p: Path) -> bool:
 
 
 def check_always_loaded(root: Path, r: Result, strict: bool) -> None:
-    always = [(f, wc_l(f)) for f in sorted((root / "rules").glob("*.md")) if not has_paths_frontmatter(f)]
+    always = [(f, wc_l(f)) for f in sorted((root / "agent/rules").glob("*.md")) if not has_paths_frontmatter(f)]
     total = sum(n for _, n in always)
     if total > RULES_ALWAYS_MAX:
         detail = f"合計 {total}行 > {RULES_ALWAYS_MAX}（" + ", ".join(f"{f.name}={n}" for f, n in always) + "）"
@@ -264,9 +268,9 @@ COUNT_DOCS = ("README.md", "INDEX.md", "docs/利用ガイド.html", "docs/操作
 def check_counts(root: Path, r: Result) -> None:
     """検査10: 資産の件数を直値で書いた箇所が実数とズレていないか（WARN）。"""
     actual = {
-        "skills": len(list((root / "skills").glob("*/SKILL.md"))),
-        "commands": len(list((root / "commands").glob("*.md"))),
-        "hooks": len(list((root / "hooks").glob("*.sh"))) + len(list((root / "hooks").glob("*.py"))),
+        "skills": len(list((root / "agent/skills").glob("*/SKILL.md"))),
+        "commands": len(list((root / "agent/commands").glob("*.md"))),
+        "hooks": len(list((root / "agent/hooks").glob("*.sh"))) + len(list((root / "agent/hooks").glob("*.py"))),
     }
     for rel in COUNT_DOCS:
         p = root / rel
@@ -313,11 +317,11 @@ def check_claude_total(root: Path, r: Result) -> None:
 
 
 def check_size_targets(root: Path, r: Result, strict: bool) -> None:
-    for f in sorted((root / "skills").glob("*/SKILL.md")):
+    for f in sorted((root / "agent/skills").glob("*/SKILL.md")):
         n = wc_l(f)
         if n > SKILL_MAX:
             r.add(strict, "行数目安", f"skills/{f.parent.name}/SKILL.md", f"{n}行 > {SKILL_MAX}")
-    for f in sorted((root / "commands").glob("*.md")):
+    for f in sorted((root / "agent/commands").glob("*.md")):
         n = wc_l(f)
         if n > COMMAND_MAX:
             r.add(strict, "行数目安", f"commands/{f.name}", f"{n}行 > {COMMAND_MAX}")

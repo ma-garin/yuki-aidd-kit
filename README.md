@@ -74,10 +74,11 @@ yuki-aidd-kit/
 ├── CLAUDE.md.template        # @AGENTS.md + Claude Code 固有（実装モード・hooks・トークン）
 │
 │  ── 導入先へ配る ──
-├── skills/                   # スキル（skills/<name>/SKILL.md、一部 references/ 付き）
-├── commands/                 # スラッシュコマンド（/<name>）
-├── hooks/                    # hooks + settings.json（statusLine 含む）
-├── rules/                    # 規律 4 本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
+├── agent/                    # Claude Code の規約どおりの配布物（導入先では ~/.claude/ か <対象>/.claude/ の直下に置かれる）
+│   ├── skills/               # スキル（skills/<name>/SKILL.md、一部 references/ 付き）
+│   ├── commands/             # スラッシュコマンド（/<name>）
+│   ├── hooks/                # hooks + settings.json（statusLine 含む）
+│   └── rules/                # 規律 4 本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
 ├── templates/                # 雛形: design-system / tokens.css / ui / components / lifecycle / test / github（Issue・PR・workflows）ほか
 ├── tools/                    # 導入先の scripts/ に置かれて動く道具（trace-check / quality_harness / ui-hash / pre-commit-ui-gate / check-approval / phase-hash / test-metrics / pre-commit）
 │

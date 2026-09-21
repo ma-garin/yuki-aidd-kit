@@ -34,7 +34,7 @@ def already_wired(entries: list, name: str) -> bool:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--home", default=os.environ.get("HOME", str(Path.home())))
-    ap.add_argument("--hooks-dir", default=str(Path(__file__).resolve().parent.parent / "hooks"))
+    ap.add_argument("--hooks-dir", default=str(Path(__file__).resolve().parent.parent / "agent" / "hooks"))
     a = ap.parse_args()
     home = Path(a.home)
     claude = home / ".claude"

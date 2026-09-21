@@ -32,17 +32,17 @@ backup_if_exists() {
 mkdir -p "$TARGET/.claude/skills" "$TARGET/.claude/commands" "$TARGET/.claude/hooks" "$TARGET/.claude/rules"
 
 # スキル一式（フルコピー。DAILY/LIBRARYの絞り込みはINDEX.mdを見て各エージェントが行う）
-cp -r "$KIT_DIR/skills/"* "$TARGET/.claude/skills/"
-echo "✅ スキル: $(ls "$KIT_DIR/skills" | wc -l)個"
+cp -r "$KIT_DIR/agent/skills/"* "$TARGET/.claude/skills/"
+echo "✅ スキル: $(ls "$KIT_DIR/agent/skills" | wc -l)個"
 
 # コマンド一式
-cp "$KIT_DIR/commands/"*.md "$TARGET/.claude/commands/"
-echo "✅ コマンド: $(ls "$KIT_DIR/commands" | wc -l)個"
+cp "$KIT_DIR/agent/commands/"*.md "$TARGET/.claude/commands/"
+echo "✅ コマンド: $(ls "$KIT_DIR/agent/commands" | wc -l)個"
 
 # Hooks（プロジェクトスコープはリポジトリ相対パスで参照する）
 # 前提: Claude Code のプロジェクトスコープ hooks はプロジェクトルートを
 # 作業ディレクトリとして実行される。環境によって異なる場合は要検証。
-cp "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py "$TARGET/.claude/hooks/"
+cp "$KIT_DIR/agent/hooks/"*.sh "$KIT_DIR/agent/hooks/"*.py "$TARGET/.claude/hooks/"
 chmod +x "$TARGET/.claude/hooks/"*.sh "$TARGET/.claude/hooks/"*.py
 backup_if_exists "$TARGET/.claude/settings.json"
 cat > "$TARGET/.claude/settings.json" << 'JSON'
@@ -108,11 +108,11 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
 }
 JSON
 echo "✅ settings: effortLevel=high / autoCompactWindow=200k / bashOutputMaxChars=12000（トークン節約の既定。設計判断のときだけ /effort xhigh）"
-echo "✅ Hooks: $(ls "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み: .claude/mode ・ .claude/phase-gate が無ければ何もしない。filter-output.py が冗長な出力を絞る: 全量は FULL_OUTPUT=1）"
+echo "✅ Hooks: $(ls "$KIT_DIR/agent/hooks/"*.sh "$KIT_DIR/agent/hooks/"*.py | wc -l | tr -d ' ')個（プロジェクトスコープ・相対パス参照。block-explore.sh / block-phase.py も配線済み: .claude/mode ・ .claude/phase-gate が無ければ何もしない。filter-output.py が冗長な出力を絞る: 全量は FULL_OUTPUT=1）"
 
 # Rules（.claude/rules/*.md は Claude Code が常時読み込む。speed-harness.md の H-2 はプロジェクトごとに埋める）
-cp "$KIT_DIR/rules/"*.md "$TARGET/.claude/rules/"
-echo "✅ Rules: $(ls "$KIT_DIR/rules/"*.md | wc -l | tr -d ' ')個（.claude/rules/。speed-harness.md の H-2 環境チートシートを埋めること）"
+cp "$KIT_DIR/agent/rules/"*.md "$TARGET/.claude/rules/"
+echo "✅ Rules: $(ls "$KIT_DIR/agent/rules/"*.md | wc -l | tr -d ' ')個（.claude/rules/。speed-harness.md の H-2 環境チートシートを埋めること）"
 
 # 版の刻印（配布先がどの版のキットから出たかを判別するため。書式: <VERSION> <commit> <日付>）
 printf '%s\n' "$KIT_VERSION" > "$TARGET/.claude/KIT_VERSION"

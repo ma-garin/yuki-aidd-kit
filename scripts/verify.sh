@@ -1,6 +1,6 @@
 #!/bin/bash
 # verify.sh — インストール確認
-# チェックリストはリポジトリ実体（skills/ commands/ hooks/）から自動導出する。
+# チェックリストはリポジトリ実体（agent/ の skills/ commands/ hooks/）から自動導出する。
 # 資産を追加してもこのファイルの更新は不要（Roadmap M6 で決定）。
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLAUDE_DIR="$HOME/.claude"
@@ -19,19 +19,19 @@ check "AGENTS.md（CLAUDE.md が @AGENTS.md で import）" "$CLAUDE_DIR/AGENTS.m
 check "settings.json" "$CLAUDE_DIR/settings.json"
 
 echo "[スキル]"
-for d in "$KIT_DIR/skills/"*/; do
+for d in "$KIT_DIR/agent/skills/"*/; do
   s=$(basename "$d")
   check "$s" "$CLAUDE_DIR/skills/$s/SKILL.md"
 done
 
 echo "[コマンド]"
-for f in "$KIT_DIR/commands/"*.md; do
+for f in "$KIT_DIR/agent/commands/"*.md; do
   c=$(basename "$f" .md)
   check "/$c" "$CLAUDE_DIR/commands/$c.md"
 done
 
 echo "[Hooks]"
-for f in "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py; do
+for f in "$KIT_DIR/agent/hooks/"*.sh "$KIT_DIR/agent/hooks/"*.py; do
   h=$(basename "$f")
   check "$h" "$CLAUDE_DIR/hooks/$h"
 done
@@ -41,7 +41,7 @@ check "scripts/check_approval.py（工程承認ゲートの判定。block-phase.
 check "scripts/phase-hash.py（承認を版に縛る。check_approval.py が隣を参照する）" "$CLAUDE_DIR/scripts/phase-hash.py"
 
 echo "[Rules]"
-for f in "$KIT_DIR/rules/"*.md; do
+for f in "$KIT_DIR/agent/rules/"*.md; do
   n=$(basename "$f")
   if find "$CLAUDE_DIR/rules" -name "$n" 2>/dev/null | grep -q .; then
     echo "  ✅ rules/$n"; OK=$((OK+1))

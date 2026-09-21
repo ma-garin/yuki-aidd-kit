@@ -46,10 +46,10 @@ expect_out  "settings.json 既存時に手動マージの警告" "手動でマ�
 expect_out  "同名 rules が別ディレクトリにあればスキップ表示" "absolute-rules.md は ~/.claude/rules 配下に既存のためスキップ" "$OUT"
 expect_nofile "スキップした rule は aidd-kit/ に置かれない" "$FAKE_HOME/.claude/rules/aidd-kit/absolute-rules.md"
 expect_file "スキップしなかった rule は aidd-kit/ に置かれる" "$FAKE_HOME/.claude/rules/aidd-kit/speed-harness.md"
-SKILL_N=$(ls -d "$KIT_DIR"/skills/*/ | wc -l | tr -d " "); CMD_N=$(ls "$KIT_DIR"/commands/*.md | wc -l | tr -d " ")
+SKILL_N=$(ls -d "$KIT_DIR"/agent/skills/*/ | wc -l | tr -d " "); CMD_N=$(ls "$KIT_DIR"/agent/commands/*.md | wc -l | tr -d " ")
 expect_count "スキルが全部配置される（リポジトリ実体から導出: $SKILL_N 個）" "$SKILL_N" "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
 expect_count "コマンドが全部配置される（$CMD_N 個）" "$CMD_N" "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
-HOOK_N=$(ls "$KIT_DIR"/hooks/*.sh "$KIT_DIR"/hooks/*.py | wc -l | tr -d " ")
+HOOK_N=$(ls "$KIT_DIR"/agent/hooks/*.sh "$KIT_DIR"/agent/hooks/*.py | wc -l | tr -d " ")
 expect_count "hooks が全部配置される（リポジトリ実体から導出: $HOOK_N 個）" "$HOOK_N" "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
 expect_file "工程承認の判定スクリプトが ~/.claude/scripts/ に置かれる（block-phase.py の探索先）" "$FAKE_HOME/.claude/scripts/check_approval.py"
 expect_file "phase-hash.py も同じ場所に置かれる（check_approval.py が隣を参照する）" "$FAKE_HOME/.claude/scripts/phase-hash.py"

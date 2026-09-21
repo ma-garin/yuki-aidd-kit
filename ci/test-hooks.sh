@@ -3,7 +3,7 @@
 # AUDIT-2026-07 A-01（hooks が入力を受け取れず無言で素通りしていた）の再発防止。
 # stdin に Claude Code hooks 形式の JSON を流し、期待出力を検証する。
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-HOOKS="$KIT_DIR/hooks"
+HOOKS="$KIT_DIR/agent/hooks"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 PASS=0; FAIL=0
@@ -418,6 +418,6 @@ if [ "$FAIL" -eq 0 ]; then
   echo "✅ 全て正常"
   exit 0
 else
-  echo "⚠ 失敗あり。hooks/ と internal/AUDIT-2026-07.md A-01 を確認してください"
+  echo "⚠ 失敗あり。agent/hooks/ と internal/AUDIT-2026-07.md A-01 を確認してください"
   exit 1
 fi

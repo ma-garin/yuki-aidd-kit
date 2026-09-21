@@ -22,24 +22,24 @@ fi
 cp "$KIT_DIR/AGENTS.md.template" "$CLAUDE_DIR/AGENTS.md"
 
 # スキル
-cp -r "$KIT_DIR/skills/"* "$CLAUDE_DIR/skills/"
-echo "✅ スキル: $(ls "$KIT_DIR/skills" | wc -l)個"
+cp -r "$KIT_DIR/agent/skills/"* "$CLAUDE_DIR/skills/"
+echo "✅ スキル: $(ls "$KIT_DIR/agent/skills" | wc -l)個"
 
 # コマンド
-cp "$KIT_DIR/commands/"*.md "$CLAUDE_DIR/commands/"
-echo "✅ コマンド: $(ls "$KIT_DIR/commands" | wc -l)個"
+cp "$KIT_DIR/agent/commands/"*.md "$CLAUDE_DIR/commands/"
+echo "✅ コマンド: $(ls "$KIT_DIR/agent/commands" | wc -l)個"
 
 # Hooks
-cp "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py "$CLAUDE_DIR/hooks/"
+cp "$KIT_DIR/agent/hooks/"*.sh "$KIT_DIR/agent/hooks/"*.py "$CLAUDE_DIR/hooks/"
 chmod +x "$CLAUDE_DIR/hooks/"*.sh "$CLAUDE_DIR/hooks/"*.py
 if [ -f "$CLAUDE_DIR/settings.json" ]; then
-  echo "⚠ settings.json が既存。hooks / statusLine と、トークン節約の 3 キー（effortLevel=high / autoCompactWindow=200k / bashOutputMaxChars=12000）と env.CLAUDE_CODE_GOAL_CHECKIN_MINUTES=0を手動でマージしてください（参照: hooks/settings.json）"
+  echo "⚠ settings.json が既存。hooks / statusLine と、トークン節約の 3 キー（effortLevel=high / autoCompactWindow=200k / bashOutputMaxChars=12000）と env.CLAUDE_CODE_GOAL_CHECKIN_MINUTES=0を手動でマージしてください（参照: agent/hooks/settings.json）"
 else
-  cp "$KIT_DIR/hooks/settings.json" "$CLAUDE_DIR/settings.json"
+  cp "$KIT_DIR/agent/hooks/settings.json" "$CLAUDE_DIR/settings.json"
 fi
-echo "✅ Hooks: $(ls "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py | wc -l | tr -d ' ')個"
+echo "✅ Hooks: $(ls "$KIT_DIR/agent/hooks/"*.sh "$KIT_DIR/agent/hooks/"*.py | wc -l | tr -d ' ')個"
 # 指示優先の 3 hook は既存 settings.json にも merge する（A-13。手動マージ待ちにしない）
-python3 "$KIT_DIR/scripts/install_guard.py" --home "$HOME" --hooks-dir "$KIT_DIR/hooks" | grep -E "配線|変更なし" || true
+python3 "$KIT_DIR/scripts/install_guard.py" --home "$HOME" --hooks-dir "$KIT_DIR/agent/hooks" | grep -E "配線|変更なし" || true
 
 # 判定スクリプト（block-phase.py が ~/.claude/scripts/ から探す。phase-hash.py は同じ場所に必要）
 mkdir -p "$CLAUDE_DIR/scripts"
@@ -49,7 +49,7 @@ echo "✅ Scripts: check_approval.py / phase-hash.py（工程承認ゲートの�
 
 # Rules（常時読み込み。~/.claude/rules 配下の別ディレクトリに同名があれば重複を避けてスキップ）
 RULES_OK=0
-for f in "$KIT_DIR/rules/"*.md; do
+for f in "$KIT_DIR/agent/rules/"*.md; do
   n=$(basename "$f")
   if find "$CLAUDE_DIR/rules" -path "$CLAUDE_DIR/rules/aidd-kit" -prune -o -name "$n" -print 2>/dev/null | grep -q .; then
     echo "↷ rules/$n は ~/.claude/rules 配下に既存のためスキップ（手動で差分確認）"

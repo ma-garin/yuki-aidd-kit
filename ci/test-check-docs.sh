@@ -68,17 +68,17 @@ OUT=$(run "$C"); RC=$?
 expect_exit "ECC スキル名と配布先の生成パスは参照切れにしない" 0 "$RC"
 
 echo "[ケース6: frontmatter]"
-C=$(fresh); sed -i 's/^name: retro$/name: retrospective/' "$C/skills/retro/SKILL.md"
+C=$(fresh); sed -i 's/^name: retro$/name: retrospective/' "$C/agent/skills/retro/SKILL.md"
 OUT=$(run "$C"); RC=$?
 expect_exit "name がディレクトリ名と違えば exit 1" 1 "$RC"
 expect_out  "種別「frontmatter」で検出" "frontmatter" "$OUT"
 
 echo "[ケース7: 常時読み込み層の上限]"
-C=$(fresh); seq 1 300 | sed 's/^/- 行 /' >> "$C/rules/speed-harness.md"
+C=$(fresh); seq 1 300 | sed 's/^/- 行 /' >> "$C/agent/rules/speed-harness.md"
 OUT=$(run "$C"); RC=$?
 expect_exit "既定で exit 1（M16 で NG に昇格済み）" 1 "$RC"
 expect_out  "種別「常時読込」で検出" "常時読込" "$OUT"
-C=$(fresh); { printf -- '---\npaths:\n  - "src/**/*.py"\n---\n'; seq 1 300 | sed 's/^/- 行 /'; } > "$C/rules/zz-scoped.md"
+C=$(fresh); { printf -- '---\npaths:\n  - "src/**/*.py"\n---\n'; seq 1 300 | sed 's/^/- 行 /'; } > "$C/agent/rules/zz-scoped.md"
 # INDEX 掲載漏れにならないよう表へ1行足す
 printf '| `zz-scoped` | テスト用 | #test | 304行 |\n' >> "$C/INDEX.md"
 OUT=$(run "$C" --strict); RC=$?
@@ -86,7 +86,7 @@ if grep "| 常時読込 |" "$TMP/report.md" | grep -q "zz-scoped"; then ng "path
 grep -q "rules/zz-scoped.md.*目録に無い" "$TMP/report.md" && ok "新規ファイルが internal/spec/01 に無いことを検出（網羅性）" || ng "新規ファイルが internal/spec/01 に無いことを検出（網羅性）" "検出されない"
 
 echo "[ケース8: 行数目安]"
-C=$(fresh); seq 1 250 | sed 's/^/- 行 /' >> "$C/skills/retro/SKILL.md"
+C=$(fresh); seq 1 250 | sed 's/^/- 行 /' >> "$C/agent/skills/retro/SKILL.md"
 sed -i 's/^\(| `retro` |.*| \)[0-9]*\(行 |\)$/\1288\2/' "$C/INDEX.md"   # 参照コストは合わせておく
 OUT=$(run "$C"); RC=$?
 expect_exit "SKILL.md が 200 行を超えると exit 1（M17 で NG に昇格）" 1 "$RC"

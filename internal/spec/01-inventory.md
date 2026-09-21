@@ -9,7 +9,7 @@
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `README.md` | 124 | 人間向けの入口（7.0.0 で導入に絞った）: 導入2方式・取り扱い説明書・推奨フロー・ECC 連携・構成ツリー・作り込みの入口・合言葉。版歴は `CHANGELOG.md` |
+| `README.md` | 125 | 人間向けの入口（7.0.0 で導入に絞った）: 導入2方式・取り扱い説明書・推奨フロー・ECC 連携・構成ツリー・作り込みの入口・合言葉。版歴は `CHANGELOG.md` |
 | `CHANGELOG.md` | 195 | 版ごとの変更内容（Ver.5.0〜7.0.0。7.0.0 で README から分離）。版の真実源は `VERSION` |
 | `INDEX.md` | 227 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 30 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
@@ -118,7 +118,7 @@
 | `block-phase.py` | 115 | 未承認の工程の下流成果物への書き込みを deny。`.claude/phase-gate` があるときだけ発動。approvals 配下は常に許可。バイパス無し |
 | `filter-output.py` | 114 | 冗長な出力を絞る書き換え（PreToolUse Bash・updatedInput）。テスト→失敗行＋末尾、install/build→tail、git log→-20、git diff→--stat。終了コード保持。`FULL_OUTPUT=1` で素通り |
 | `pre-read-guard.py` | 98 | Read の前段。読む価値の無いファイルを deny、`READ_GUARD_MAX_LINES`（800）超を `READ_GUARD_LIMIT`（300）に切り詰め。バイナリ・offset/limit 指定ありは素通り |
-| `instruction-guard.py` | 196 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無ければ deny、日本語の発言に日本語が無い応答なら deny。サブエージェント・機械由来タグ・transcript 無しは許可 |
+| `instruction-guard.py` | 203 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無ければ deny、日本語の発言に日本語が無い応答なら deny。サブエージェント・機械由来タグ・transcript 無しは許可 |
 | `reply-language.py` | 56 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
 | `prompt-priority.py` | 32 | UserPromptSubmit。緊急語を含む発言に「作業より優先」を additionalContext で注入 |
 | `context-guard.py` | 59 | UserPromptSubmit。transcript の mtime でアイドル（`CONTEXT_GUARD_IDLE_MIN` 55）・サイズで肥大（`CONTEXT_GUARD_MAX_MB` 4）を判定し additionalContext を注入 |
@@ -182,7 +182,7 @@
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 168 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
-| `check_docs.py` | 441 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
+| `check_docs.py` | 445 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |
 | `test-check-docs.sh` | 125 | **check-docs の回帰テスト**（リポジトリ複製に破壊を仕込んで検出を確認。自身が NG=0 で通ることを含む） |
 | `test-check-design.sh` | 145 | **check-design の回帰テスト 36ケース**（出荷物が NG=0 で通ること＋各検査の検出＋除外規則） |
@@ -267,7 +267,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `components.css` | 176 | **部品 CSS の実物**。SKILL.md の CSS ブロックを `var(--*)` だけで1ファイルに実体化（ボタン／入力／バッジ／カード／スコア／KPI／表／列フィルタ／ページャ／トグル／セグメント／ツールチップ／モーダル／通知／空状態／コールアウト／スケルトン／ユーティリティ）。トースト・確認は `feedback.js` の責務 |
-| `README.md` | 124 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
+| `README.md` | 125 | **どのファイルをどのフレームワークでどこに置くか**の1枚表（単一 HTML / PWA / React+Vite+Tailwind / Streamlit / Flask・Django）＋検証手順 |
 | `tailwind.config.js` | 48 | Tailwind `theme.extend`（colors / spacing / borderRadius / fontSize / boxShadow / minHeight tap 等）を CSS 変数参照で登録。値を持たない |
 | `streamlit-config.toml` | 12 | Streamlit `[theme]`（tokens.css ライトの写し。値を変えるときは tokens.css を先に直す） |
 | `streamlit_theme.py` | 82 | Streamlit へ tokens.css + components.css を1箇所で注入する `apply_theme()` ＋ `badge()` `kpi()` `empty_state()` `callout()`（severity は列挙、`html.escape` 必須） |
