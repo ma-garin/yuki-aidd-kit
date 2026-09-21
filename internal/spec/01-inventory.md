@@ -118,8 +118,8 @@
 | `block-phase.py` | 115 | 未承認の工程の下流成果物への書き込みを deny。`.claude/phase-gate` があるときだけ発動。approvals 配下は常に許可。バイパス無し |
 | `filter-output.py` | 114 | 冗長な出力を絞る書き換え（PreToolUse Bash・updatedInput）。テスト→失敗行＋末尾、install/build→tail、git log→-20、git diff→--stat。終了コード保持。`FULL_OUTPUT=1` で素通り |
 | `pre-read-guard.py` | 98 | Read の前段。読む価値の無いファイルを deny、`READ_GUARD_MAX_LINES`（800）超を `READ_GUARD_LIMIT`（300）に切り詰め。バイナリ・offset/limit 指定ありは素通り |
-| `instruction-guard.py` | 146 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無ければ deny、日本語の発言に日本語が無い応答なら deny。サブエージェント・機械由来タグ・transcript 無しは許可 |
-| `reply-language.py` | 53 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
+| `instruction-guard.py` | 173 | PreToolUse 全ツール。transcript 末尾を後ろから走査し、保守者の発言の後にアシスタントのテキスト応答が無ければ deny、日本語の発言に日本語が無い応答なら deny。サブエージェント・機械由来タグ・transcript 無しは許可 |
+| `reply-language.py` | 56 | Stop。同じ判定で decision=block（stop_hook_active で抑止） |
 | `prompt-priority.py` | 32 | UserPromptSubmit。緊急語を含む発言に「作業より優先」を additionalContext で注入 |
 | `context-guard.py` | 59 | UserPromptSubmit。transcript の mtime でアイドル（`CONTEXT_GUARD_IDLE_MIN` 55）・サイズで肥大（`CONTEXT_GUARD_MAX_MB` 4）を判定し additionalContext を注入 |
 | `pre-compact.py` | 34 | PreCompact。残す／捨てる／形式の指示を注入 |
