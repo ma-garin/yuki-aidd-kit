@@ -4,6 +4,12 @@
 
 共通の規約は上の `AGENTS.md`（import）。ここには **Claude Code でしか効かないもの**だけを書く。
 
+## エージェント（`agents/`。Claude Code にしか無い層）
+- 成果物レベルの依頼は `aidd-lead` が受ける。**種別判定・進め方・デザイン・次の工程を人間に聞かない**
+- 人間が入るのは**要件定義の合意**と**受け入れ判定**の 2 点だけ。工程 2〜7 は `spec-agent` / `build-agent` / `verify-agent` が回し、各出口で `gate-agent` が差し戻す
+- スキルは基準の真実源として残る。エージェントはそれを読んで実行する（基準を複製しない）
+- 終了条件は機械判定に接続する（`trace-check.sh` / `check-design.sh` / `test-metrics.sh` / `check-approval.sh`）。**AI は `approver` 欄を埋めない**
+
 ## 実装モード（探索ブロック）
 - `.claude/mode` の有無で切り替える（**存在＝実装モード＝ Read/Grep/Glob を hook がブロック**）
 - `/plan` で解除して調査 → `PLAN.md` に方針・対象ファイル・検証手順 → `/implement` で開始（plan 未作成なら中断）。実装モード中は再探索しない。行動規範は `02_共通/ひな形/implement-profile.md`

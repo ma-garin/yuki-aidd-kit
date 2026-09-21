@@ -17,10 +17,10 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 | `00_導入/` | キットの checkout から実行する入口（install / export / init-* / verify / check-design / token-audit） | 実行元 |
 | `01_利用者向け資料/` | 利用ガイド・操作マニュアル・claude-projects-setup・OPERATING-MODE・ECC-ASSET-MAP・`サンプル/図書貸出/` | 配る（export で `<対象>/.claude/docs/`、install で `~/.claude/docs/aidd-kit/`） |
 | `02_共通/` | Claude Code・Codex 共通: `rules/`・`ひな形/`・`ツール/`（導入先の `scripts/` で動く道具） | 配る（rules は `.claude/rules/`、ひな形は `.claude/templates/`、ツールは `<対象>/scripts/`） |
-| `03_ClaudeCode/` | `CLAUDE.md.template`・`skills/`・`commands/`・`hooks/` | 配る（install で `~/.claude/` 直下、export で `<対象>/.claude/` 直下） |
+| `03_ClaudeCode/` | `CLAUDE.md.template`・`skills/`・`commands/`・`agents/`・`hooks/` | 配る（install で `~/.claude/` 直下、export で `<対象>/.claude/` 直下） |
 | `04_Codex/` | `AGENTS.md.template`・配置の説明 | 配る（`AGENTS.md`） |
 | `05_プロジェクト管理/` | 要求仕様・ロードマップ・構想・`構成管理/`（構成管理計画書・構成品目一覧） | 配らない |
-| `06_保守者向け/` | `内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`（回帰テスト 10 本と check-docs）・監査レポート | 配らない |
+| `06_保守者向け/` | `内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`（回帰テスト 11 本と check-docs）・監査レポート | 配らない |
 
 ## クイックスタート
 
@@ -41,7 +41,8 @@ open 01_利用者向け資料/02_操作マニュアル.html                  # H
 
 # 保守者だけ（06_保守者向け/ は配布しない）
 ./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（112ケース）
-./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（113ケース）
+./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（118ケース）
+./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（57ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
 ./06_保守者向け/03_回帰テスト/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
@@ -58,6 +59,22 @@ open 01_利用者向け資料/02_操作マニュアル.html                  # H
 ./scripts/test-metrics.sh [--gate]            # テスト工程の消化率・合格率・欠陥密度・滞留・完了予測を表から集計（--gate は §7 の基準で 0/1/2）
 python3 scripts/quality_harness.py            # 機能契約ハーネス（契約に沿って実装・テストが揃っているか。NG>0 で exit 1）
 ```
+
+## エージェント（自走する実行主体。install で `~/.claude/agents/`、export で `.claude/agents/` へ）
+
+成果物レベルの依頼（「図書管理システムを作って」）は `aidd-lead` が受ける。**どのスキルを使うか・デザインをどうするか・次にどの工程へ進むかを人間に聞かない。**
+人間が入るのは **要件定義の合意** と **受け入れ判定** の 2 点だけで、工程 2〜7 はエージェントが自分でループを回して収束させる。
+スキルは基準の真実源として残り、エージェントがそれを読んで実行する（基準を複製しない）。Codex にはサブエージェント構造が無いため配らず、スキルのまま縮退する。
+
+| エージェント | 担当 | ループの終了条件（機械判定） | コスト |
+|---|---|---|---|
+| `aidd-lead` | 統括。種別判定・進め方の選択・工程の駆動・差し戻しの配分 | 工程 2〜7 が収束し受け入れ材料が揃う | 65行 |
+| `spec-agent` | 工程 2・3（基本設計・詳細設計） | `trace-check.sh` NG=0・TBD 残ゼロ | 49行 |
+| `build-agent` | 工程 4（実装＋デザイン。指示が無くても design-system を適用する） | `check-design.sh` NG=0・実行経路の疎通 | 50行 |
+| `verify-agent` | 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行） | Critical/High 残ゼロ・`test-metrics.sh --gate` exit 0 | 49行 |
+| `gate-agent` | 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す） | 差し戻し 0 件。**承認欄は空のまま人間へ** | 44行 |
+
+AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない線）。中間工程は「AI 検証完了・承認待ち」として積み、受け入れ時に人間がまとめて判定する。
 
 ## DAILY スキル（進め方の制御）
 

@@ -6,12 +6,12 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
 本スクリプトは次を機械判定する。NG>0 で exit 1（CI でそのまま落とせる）。
 
   1. 参照コスト   INDEX.md 等の「N行」表記 ↔ 実測 wc -l
-  2. 掲載漏れ     skills / commands / rules / hooks が INDEX.md に載っているか
+  2. 掲載漏れ     skills / commands / agents / rules / hooks が INDEX.md に載っているか
   3. ケース数     「test-X.sh … Nケース」「PASS=N」 ↔ 実際にテストを実行した PASS+FAIL
   4. 参照切れ     `skills/...` 等のキット内相対パス参照が実在するか（ECC 外部・配布先の生成パスは除外）
-  5. frontmatter  SKILL.md の name ↔ ディレクトリ名
+  5. frontmatter  SKILL.md の name ↔ ディレクトリ名／agents/*.md の name ↔ ファイル名・tools/model の有無
   6. 常時読込     rules/*.md で paths: frontmatter の無いものの合計行数 ≦ RULES_ALWAYS_MAX
-  7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX（05_プロジェクト管理/要求仕様.md 使用性）
+  7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX / agents ≦ AGENT_MAX（05_プロジェクト管理/要求仕様.md 使用性）
   9. 常時読込     03_ClaudeCode/CLAUDE.md.template ＋ 04_Codex/AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
   8. spec 同期    06_保守者向け/01_内部仕様/01_構成品目目録.md の行数 ↔ 実測、実ファイルが目録に載っているか
@@ -39,6 +39,7 @@ RULES_ALWAYS_MAX = 100
 CLAUDE_TOTAL_MAX = 200   # 検査9: 03_ClaudeCode/CLAUDE.md.template ＋ 04_Codex/AGENTS.md.template（@import は起動時に展開される）。公式「200 行未満」
 SKILL_MAX = 200
 COMMAND_MAX = 40
+AGENT_MAX = 120   # サブエージェント定義（目標・ループ・終了条件・エスカレーションを持つので command より大きい）
 RULES_STRICT = True     # 検査6: S7（M16）で NG に昇格
 SIZE_STRICT = True      # 検査7: S13（M17）で NG に昇格済み
 
@@ -74,12 +75,14 @@ HISTORY_DOCS = {"05_プロジェクト管理/ロードマップ.md", "06_保守�
 ID_LINE_RE = re.compile(r"`([^`]+)`（(\d+)行）")           # 散文の「`x`（N行）」
 TABLE_COST_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|.*\|\s*(\d+)行\s*\|\s*$")
 BACKTICK_PATH_RE = re.compile(
-    r"`((?:skills|templates|scripts|tools|ci|docs|rules|hooks|commands"
+    r"`((?:skills|templates|scripts|tools|ci|docs|rules|hooks|commands|agents"
     r"|00_導入|01_利用者向け資料|02_共通|03_ClaudeCode|04_Codex|05_プロジェクト管理|06_保守者向け)"
     r"/[A-Za-z0-9_./\-\u3040-\u30ff\u4e00-\u9fff]+)`")
 # 配布物の呼び名 → キット内の実体（導入先では .claude/ 配下・scripts/ 配下に置かれる）
-ASSET_HOME = {"skills/": "03_ClaudeCode/", "commands/": "03_ClaudeCode/", "hooks/": "03_ClaudeCode/", "rules/": "02_共通/"}
+ASSET_HOME = {"skills/": "03_ClaudeCode/", "commands/": "03_ClaudeCode/", "agents/": "03_ClaudeCode/", "hooks/": "03_ClaudeCode/", "rules/": "02_共通/"}
 TOOL_HOME = "02_共通/ツール/"   # 導入先の scripts/ に置かれる道具
+# Codex スキル内の相対パス（04_Codex/skills/<名前>/agents/openai.yaml）。Claude Code の agents/ とは別物
+CODEX_SKILL_PATHS = ("agents/openai.yaml",)
 CASE_RE = re.compile(r"(\d+)\s*ケース")
 PASS_RE = re.compile(r"PASS=(\d+)")
 
@@ -110,6 +113,7 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
     cands += [
         root / name,
         root / "03_ClaudeCode/skills" / name / "SKILL.md",
+        root / "03_ClaudeCode/agents" / f"{name}.md",
         root / "02_共通/rules" / f"{name}.md",
         root / "03_ClaudeCode/hooks" / name,
     ]
@@ -120,7 +124,7 @@ def resolve_cost_name(root: Path, name: str) -> Path | None:
 
 
 INVENTORY_PREFIXES = (
-    "", "02_共通/rules/", "03_ClaudeCode/skills/", "03_ClaudeCode/commands/", "03_ClaudeCode/hooks/", "00_導入/", "02_共通/ツール/", "06_保守者向け/03_回帰テスト/", "03_ClaudeCode/", "04_Codex/",
+    "", "02_共通/rules/", "03_ClaudeCode/skills/", "03_ClaudeCode/commands/", "03_ClaudeCode/agents/", "03_ClaudeCode/hooks/", "00_導入/", "02_共通/ツール/", "06_保守者向け/03_回帰テスト/", "03_ClaudeCode/", "04_Codex/",
     "02_共通/ひな形/", "02_共通/ひな形/lifecycle/", "02_共通/ひな形/test/", "02_共通/ひな形/github/",
     "02_共通/ひな形/components/", "02_共通/ひな形/ui/", "01_利用者向け資料/", "01_利用者向け資料/90_サンプル/図書貸出/", "05_プロジェクト管理/", "02_共通/ひな形/github/workflows/",
     "06_保守者向け/", "06_保守者向け/02_設計判断の根拠/", "06_保守者向け/04_監査記録/",
@@ -165,6 +169,9 @@ def check_index_coverage(root: Path, r: Result) -> None:
     for f in sorted((root / "03_ClaudeCode/commands").glob("*.md")):
         if not listed(f"/{f.stem}"):
             r.add(True, "掲載漏れ", f"commands/{f.name}", "INDEX.md に無い")
+    for f in sorted((root / "03_ClaudeCode/agents").glob("*.md")):
+        if not listed(f.stem):
+            r.add(True, "掲載漏れ", f"agents/{f.name}", "INDEX.md に無い")
     for f in sorted((root / "02_共通/rules").glob("*.md")):
         if not listed(f.stem):
             r.add(True, "掲載漏れ", f"rules/{f.name}", "INDEX.md に無い")
@@ -228,7 +235,7 @@ def check_references(root: Path, r: Result) -> None:
             for ref in BACKTICK_PATH_RE.findall(line):
                 if ref.startswith("skills/") and ref.split("/")[1] in ECC_SKILLS:
                     continue
-                if ref.startswith(TARGET_SIDE_PREFIXES):
+                if ref.startswith(TARGET_SIDE_PREFIXES) or ref in CODEX_SKILL_PATHS:
                     continue
                 if ref.startswith("scripts/") and (root / TOOL_HOME / ref[len("scripts/"):]).is_file():
                     continue  # 導入先の scripts/ に置かれる道具（キット内の実体は 02_共通/ツール/）
@@ -251,6 +258,25 @@ def check_frontmatter(root: Path, r: Result) -> None:
             r.add(True, "frontmatter", f"skills/{d.name}/SKILL.md", f"name={names[0] if names else '(なし)'} ≠ ディレクトリ名")
         if not any(l.startswith("description:") for l in head):
             r.add(True, "frontmatter", f"skills/{d.name}/SKILL.md", "description が無い")
+
+
+def check_agent_frontmatter(root: Path, r: Result) -> None:
+    """検査5b: agents/*.md の name ↔ ファイル名、description / tools / model の有無。
+
+    Claude Code は frontmatter の name で委譲先を解決し、description で自動起動を判定する。
+    tools が無いと全ツールを継承するため、「レビュー役は書けない」等の機械的な強制が消える。
+    """
+    d = root / "03_ClaudeCode/agents"
+    if not d.is_dir():
+        return
+    for f in sorted(d.glob("*.md")):
+        head = read(f).splitlines()[:8]
+        names = [l.split(":", 1)[1].strip() for l in head if l.startswith("name:")]
+        if not names or names[0] != f.stem:
+            r.add(True, "frontmatter", f"agents/{f.name}", f"name={names[0] if names else '(なし)'} ≠ ファイル名")
+        for key in ("description", "tools", "model"):
+            if not any(l.startswith(f"{key}:") for l in head):
+                r.add(True, "frontmatter", f"agents/{f.name}", f"{key} が無い")
 
 
 def has_paths_frontmatter(p: Path) -> bool:
@@ -277,6 +303,7 @@ COUNT_PATTERNS = (
     ("skills", re.compile(r"(?:スキル|skills?/?)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件|の)")),
     ("commands", re.compile(r"(?:コマンド|commands?/?)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件|の)")),
     ("hooks", re.compile(r"(?:hooks?|見張り役)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件)")),
+    ("agents", re.compile(r"(?:エージェント|agents?/?)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件|体)")),
 )
 COUNT_DOCS = ("README.md", "INDEX.md", "01_利用者向け資料/01_利用ガイド.html", "01_利用者向け資料/02_操作マニュアル.html")
 
@@ -287,6 +314,7 @@ def check_counts(root: Path, r: Result) -> None:
         "skills": len(list((root / "03_ClaudeCode/skills").glob("*/SKILL.md"))),
         "commands": len(list((root / "03_ClaudeCode/commands").glob("*.md"))),
         "hooks": len(list((root / "03_ClaudeCode/hooks").glob("*.sh"))) + len(list((root / "03_ClaudeCode/hooks").glob("*.py"))),
+        "agents": len(list((root / "03_ClaudeCode/agents").glob("*.md"))),
     }
     for rel in COUNT_DOCS:
         p = root / rel
@@ -341,6 +369,10 @@ def check_size_targets(root: Path, r: Result, strict: bool) -> None:
         n = wc_l(f)
         if n > COMMAND_MAX:
             r.add(strict, "行数目安", f"commands/{f.name}", f"{n}行 > {COMMAND_MAX}")
+    for f in sorted((root / "03_ClaudeCode/agents").glob("*.md")):
+        n = wc_l(f)
+        if n > AGENT_MAX:
+            r.add(strict, "行数目安", f"agents/{f.name}", f"{n}行 > {AGENT_MAX}")
 
 
 INVENTORY_ROW_RE = re.compile(r"^(\|\s*`([^`]+)`\s*\|\s*)(\d+)(\s*\|.*)$")
@@ -431,6 +463,7 @@ def main() -> int:
     check_case_counts(root, r, test_totals(root, a.skip_tests))
     check_references(root, r)
     check_frontmatter(root, r)
+    check_agent_frontmatter(root, r)
     check_always_loaded(root, r, a.strict or RULES_STRICT)
     check_claude_total(root, r)
     check_counts(root, r)

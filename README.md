@@ -39,7 +39,11 @@ open 01_利用者向け資料/02_操作マニュアル.html    # 取り扱い説
 
 ## 推奨する使い方
 
-普段の開発では、まずこの順で使います。
+**成果物をまるごと作るなら、`aidd-lead` に投げるだけでよい。** 「図書管理システムを作って」と言えば、種別を判定し、工程を分け、
+設計・実装・デザイン・テストを回し、各工程の出口で差し戻しを処理して収束させる。**人間が入るのは要件定義の合意と受け入れ判定の 2 点だけ**。
+どのスキルを使うか・デザインをどうするかを人間が指定する必要はない。
+
+個別の資産を自分で選んで進める場合は、この順で使う。
 
 1. `INDEX.md` を読み、今の作業タグに合う DAILY／LIBRARY だけ開く
 2. `ecc-daily-router` で対象プロジェクトに合う ECC 資産を選ぶ
@@ -75,6 +79,7 @@ yuki-aidd-kit/
 ├── 03_ClaudeCode/             # Claude Code の規約どおりの配布物（導入先では ~/.claude/ か <対象>/.claude/ の直下に置かれる）
 │   ├── CLAUDE.md.template    # @AGENTS.md + Claude Code 固有（実装モード・hooks・トークン）
 │   ├── skills/               # スキル（skills/<name>/SKILL.md、一部 references/ 付き）
+│   ├── agents/               # サブエージェント（自走する実行主体。成果物レベルの依頼は aidd-lead が受ける）
 │   ├── commands/             # スラッシュコマンド（/<name>）
 │   └── hooks/                # hooks + settings.json（statusLine 含む）
 ├── 04_Codex/                  # Codex 用の配布物
@@ -99,7 +104,7 @@ yuki-aidd-kit/
 │
 │  ── 配布しない ──
 ├── 05_プロジェクト管理/       # キット開発の計画: 要求仕様.md・ロードマップ.md（作業台帳）・構想.md・構成管理/構成管理計画書.md・構成品目一覧.md
-├── 06_保守者向け/             # 保守者専用: 01_内部仕様/（現況仕様）・02_設計判断の根拠/・03_回帰テスト/（回帰テスト 10 本と check-docs。キット自身の CI が呼ぶ）・04_監査記録/・保守者の傾向.md・学んだこと.md
+├── 06_保守者向け/             # 保守者専用: 01_内部仕様/（現況仕様）・02_設計判断の根拠/・03_回帰テスト/（回帰テスト 11 本と check-docs。キット自身の CI が呼ぶ）・04_監査記録/・保守者の傾向.md・学んだこと.md
 └── .github/workflows/        # kit-ci.yml（キット自身の CI。手動起動のみ。GitHub が直下しか読まないためここ）
 ```
 
@@ -110,7 +115,7 @@ yuki-aidd-kit/
 本体を変更したら同じコミットで `06_保守者向け/01_内部仕様/` を更新し、回帰テストと文書整合検査を通す。
 
 ```bash
-for t in ci/test-*.sh; do bash "$t"; done   # 回帰テスト 10 本（hooks / install / trace-check / quality-harness / git-gates / check-approval / test-metrics / token-audit / check-docs / check-design）
+for t in ci/test-*.sh; do bash "$t"; done   # 回帰テスト 11 本（hooks / install / agents / trace-check / quality-harness / git-gates / check-approval / test-metrics / token-audit / check-docs / check-design）
 ./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
 ./00_導入/03_点検/check-design.sh                     # デザイン検査（直値・未定義トークン・外部 CDN・alert()）
 ```

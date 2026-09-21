@@ -27,6 +27,7 @@
 
 | やりたいこと | 最初に使う |
 |---|---|
+| **成果物をまるごと作る**（「〇〇システムを作って」） | **`aidd-lead`**（Claude Code のみ。工程・デザイン・テストの駆動を任せる。人間は要件合意と受け入れ判定だけ）。Codex は次行から手で進める |
 | 進め方を決める | `dev-lifecycle` 冒頭の判断表。工程分割が要れば `/rfd` → `/lifecycle <工程名>` → `/trace`、個人PWA・単一HTML・PoC は `sdd-ecc-workflow`（`/sdd-start`） |
 | ECC 資産を選ぶ | `ecc-daily-router`（`/ecc-daily`） |
 | UI を作る・直す | `design-system`（値・部品・画面の作り方）→ 完了前に `uiux_review` で全状態を実機で開く |

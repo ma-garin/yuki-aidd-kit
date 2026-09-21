@@ -47,6 +47,7 @@ expect_out  "同名 rules が別ディレクトリにあればスキップ表示
 expect_nofile "スキップした rule は aidd-kit/ に置かれない" "$FAKE_HOME/.claude/rules/aidd-kit/absolute-rules.md"
 expect_file "スキップしなかった rule は aidd-kit/ に置かれる" "$FAKE_HOME/.claude/rules/aidd-kit/speed-harness.md"
 SKILL_N=$(ls -d "$KIT_DIR"/03_ClaudeCode/skills/*/ | wc -l | tr -d " "); CMD_N=$(ls "$KIT_DIR"/03_ClaudeCode/commands/*.md | wc -l | tr -d " ")
+AGENT_N=$(ls "$KIT_DIR"/03_ClaudeCode/agents/*.md | wc -l | tr -d " ")
 expect_count "スキルが全部配置される（リポジトリ実体から導出: $SKILL_N 個）" "$SKILL_N" "$(ls -d "$FAKE_HOME"/.claude/skills/*/ | wc -l)"
 CODEX_N=$(ls -d "$KIT_DIR"/04_Codex/skills/*/ | wc -l)
 expect_count "Codex 用スキル（skills＋commands 変換）が ~/.agents/skills/ に全部配置される" "$CODEX_N" "$(ls -d "$FAKE_HOME"/.agents/skills/*/ | wc -l)"
@@ -55,6 +56,9 @@ expect_file "コマンドが Codex スキル（cmd-trace）に変換される" "
 OUT=$(python3 "$KIT_DIR/04_Codex/build_codex_skills.py" --check); RC=$?
 expect_count "04_Codex/skills が 03_ClaudeCode から生成した最新の状態" "0" "$RC"
 expect_count "コマンドが全部配置される（$CMD_N 個）" "$CMD_N" "$(ls "$FAKE_HOME"/.claude/commands/*.md | wc -l)"
+expect_count "エージェントが全部配置される（$AGENT_N 個）" "$AGENT_N" "$(ls "$FAKE_HOME"/.claude/agents/*.md | wc -l)"
+expect_file  "統括エージェント aidd-lead が ~/.claude/agents/ にある" "$FAKE_HOME/.claude/agents/aidd-lead.md"
+expect_nofile "エージェントは Codex（~/.agents/skills/）へは配らない" "$FAKE_HOME/.agents/skills/aidd-lead"
 HOOK_N=$(ls "$KIT_DIR"/03_ClaudeCode/hooks/*.sh "$KIT_DIR"/03_ClaudeCode/hooks/*.py | wc -l | tr -d " ")
 expect_count "hooks が全部配置される（リポジトリ実体から導出: $HOOK_N 個）" "$HOOK_N" "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
 expect_file "工程承認の判定スクリプトが ~/.claude/scripts/ に置かれる（block-phase.py の探索先）" "$FAKE_HOME/.claude/scripts/check_approval.py"
@@ -111,6 +115,8 @@ expect_exit "export-project.sh が exit 0" 0 "$RC"
 expect_count "skills $SKILL_N 個（リポジトリ実体と同数）" "$SKILL_N" "$(ls -d "$P"/.claude/skills/*/ | wc -l)"
 expect_count "Codex 用スキルが .agents/skills/ に全部配置される" "$CODEX_N" "$(ls -d "$P"/.agents/skills/*/ | wc -l)"
 expect_count "commands $CMD_N 個（リポジトリ実体と同数）" "$CMD_N" "$(ls "$P"/.claude/commands/*.md | wc -l)"
+expect_count "agents $AGENT_N 個（リポジトリ実体と同数）" "$AGENT_N" "$(ls "$P"/.claude/agents/*.md | wc -l)"
+expect_nofile "export でもエージェントは .agents/skills/ へ配らない" "$P/.agents/skills/aidd-lead"
 expect_count "hooks $HOOK_N 個（リポジトリ実体と同数）" "$HOOK_N" "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
 expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
 for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py scripts/test_metrics.py scripts/test-metrics.sh; do

@@ -3,6 +3,25 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
+## Ver.8.1.0（2026-09-21）— エージェント層: 成果物レベルの依頼を受けて自走する 5 体（M25）
+
+`02_共通/rules/model-routing.md` は「独立に分けられる単位が 2 つ以上あれば着手時に並列で委譲する」と規律で定めていたが、**委譲先の定義がキットに 1 本も無かった**。規律だけがあって実体が無い状態を解消する。
+
+これまで「どのスキルを使うか」「デザインをどうするか」「次にどの工程へ進むか」はすべて人間が `/lifecycle` `/qa-review` `/trace` と手で呼んで指定していた。**その判断自体をエージェントに持たせる。**
+
+- **`03_ClaudeCode/agents/` を新設（5 体・281行）**: `aidd-lead`（統括。種別判定・進め方の選択・工程の駆動・差し戻しの配分）／`spec-agent`（工程2・3）／`build-agent`（工程4。実装とデザインを分けない）／`verify-agent`（工程5〜7）／`gate-agent`（各工程の出口）
+- **人間が入るのは 2 点だけ**: 要件定義の合意と受け入れ判定。工程 2〜7 はエージェントがループを回して収束させる。中間工程は「AI 検証完了・承認待ち」として積み、受け入れ時にまとめて判定する。**AI は `approver` 欄を埋めない**
+- **終了条件を機械判定に接続**: `trace-check.sh` NG=0（spec-agent）／`check-design.sh` NG=0 と実行経路の疎通（build-agent）／Critical・High 残ゼロと `test-metrics.sh --gate` exit 0（verify-agent）／`check-approval.sh`（gate-agent）。収束しなければ 2 周でエスカレーション
+- **スキルは置き換えない**: エージェントはスキルを基準の真実源として読み、独立したコンテキストで実行する。基準を複製しないので参照切れ・目録同期の検査がそのまま効く。Codex にはサブエージェント構造が無いため配らず、スキルのまま縮退する
+- **`build-agent` はデザインを別途指示されなくても適用する**: 「図書管理システムを作って」でデザインも動く。`02_共通/ひな形/tokens.css`・`ui/components.css` の実物を使い、画面は全状態（通常・実行中・失敗・0件・狭い画面・モーダル）を作る
+- **委譲は `aidd-lead` だけが持つ**: 実行役に `Task` を与えない（再委譲で無限に広がらない）。`test-agents.sh` が検査する
+- **配布**: install は `~/.claude/agents/`、export は `<対象>/.claude/agents/`。`verify.sh` に `[エージェント]` 節（自動導出）
+- **回帰テスト `test-agents.sh` を新設（57ケース）**: frontmatter（name ↔ ファイル名・tools・model）と**自走の要件**（目標／ループ／終了条件／停止・差し戻し条件）を検査する。これが無いと「1 回実行して返すだけ」の定義に退化しても気づけない
+- **`check_docs.py` を拡張**: 掲載漏れ・frontmatter・行数目安（`AGENT_MAX=120`）・目録同期・件数に agents を追加
+- **`instruction-guard.py` の SyntaxError を修正**: f-string 式の中に `\w` を書いており、**Python 3.11 以下では読み込み自体が失敗していた**（PEP 701 は 3.12 から）。CI が `python-version: 3.12` 固定のため検出されず、A-13 を強制する当のフックが古い系で無効化されていた。回帰テスト 22 件の FAIL が解消（`test-hooks.sh` 90/22 → 112/0）
+- **`test-check-docs.sh` のケース数ハードコードを更新**: `test-install.sh=118`・`test-agents.sh=57` を追加（6 件の FAIL が解消）
+- 回帰テスト 11 本すべて FAIL=0（合計 522 ケース）、`check-docs` NG=0、`check-design` NG=0
+
 ## Ver.8.0.0（2026-09-21）— 構成管理: 番号付きの構成へ、Claude Code と Codex を分ける（M24）
 
 直下に配布物・計画・保守資料が役割の区別なく並び、Claude Code 用と Codex 用の区別も無かったため、SIer の構成管理（ISO 10007:2017 の構成品目の識別）に倣って切り直します。**互換性のない変更**: キットの checkout 内のパスがすべて変わります。導入先側の置き場所（`~/.claude/{skills,commands,hooks,rules}`・`<対象>/.claude/...`・`<対象>/scripts/`）は変わりません。
