@@ -3,7 +3,7 @@
 #
 # scripts/install.sh（~/.claude へのグローバル導入。自分のPC上で複数プロジェクトを
 # 横断する日常運用向け）とは別の用途。こちらは対象プロジェクトの直下に
-# .claude/（skills・commands・hooks・settings.json・INDEX.md）と AGENTS.md・CLAUDE.md
+# .claude/（skills・commands・hooks・settings.json・INDEX.md・docs）と AGENTS.md・CLAUDE.md
 # を書き出す。生成物は対象プロジェクトのgitにコミットする想定で、Codex・
 # リモート/エフェメラルなClaude Code環境・teammateのclone先でも
 # install不要でそのまま効く。
@@ -121,6 +121,15 @@ echo "✅ .claude/KIT_VERSION: $KIT_VERSION"
 # INDEX.md（フルコピーなのでDAILY/LIBRARYの地図として同梱する）
 cp "$KIT_DIR/INDEX.md" "$TARGET/.claude/INDEX.md"
 echo "✅ INDEX.md 同梱"
+
+# 利用者向け資料（docs/ 直下: 利用ガイド・操作マニュアルほか）。INDEX・templates と同じく .claude/ 配下へ
+mkdir -p "$TARGET/.claude/docs"
+DOCS_N=0
+for f in "$KIT_DIR/docs/"*; do
+  [ -f "$f" ] || continue
+  cp "$f" "$TARGET/.claude/docs/"; DOCS_N=$((DOCS_N+1))
+done
+echo "✅ 利用者向け資料: ${DOCS_N}個（.claude/docs/。まず 利用ガイド.html を開く）"
 
 # テンプレート（dev-lifecycle の工程雛形など。スキル本文から参照されるため同梱する）
 mkdir -p "$TARGET/.claude/templates"

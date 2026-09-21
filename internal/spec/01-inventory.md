@@ -138,9 +138,9 @@
 |---|---|---|
 | `install-guard.sh` | 5 | 指示優先 3 hook の最小導入（薄いラッパ）。Claude Code 全体に効かせる入口（M22） |
 | `install_guard.py` | 98 | 3 hook を `~/.claude/hooks/` に置き、既存 settings.json の hooks に配線だけを merge（冪等・`.bak`・壊れた JSON は触らず exit 1） |
-| `install.sh` | 71 | `~/.claude` へ配置（CLAUDE.md・skills・commands・hooks・rules）。既存は `.bak` 退避、rules は同名既存をスキップ |
+| `install.sh` | 80 | `~/.claude` へ配置（CLAUDE.md・skills・commands・hooks・rules）。既存は `.bak` 退避、rules は同名既存をスキップ |
 | `verify.sh` | 55 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
-| `export-project.sh` | 166 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
+| `export-project.sh` | 175 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
 | `token-audit.sh` | 7 | トークン監査の薄いラッパ |
 | `token_audit.py` | 236 | 床（常時読み込み）の推定 tok・実測ログ集計・hook/設定の配線・MCP 数・スキル肥大。配線漏れは NG |
@@ -180,7 +180,7 @@
 | `test-hooks.sh` | 423 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
-| `test-install.sh` | 168 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
+| `test-install.sh` | 175 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
 | `test-git-gates.sh` | 124 | **git ゲート回帰テスト 27ケース**（pre-commit / ui-hash.py / pre-commit-ui-gate.sh の全分岐を一時 git リポジトリで） |
 | `check_docs.py` | 445 | **文書整合検査の本体**（8検査: 参照コスト・掲載漏れ・ケース数・参照切れ・frontmatter・常時読込 rules 行数・行数目安・spec 同期）。NG>0 で exit 1 |
 | `check-docs.sh` | 5 | `check_docs.py` の薄いラッパ |

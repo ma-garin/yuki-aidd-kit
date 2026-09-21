@@ -56,6 +56,10 @@ expect_file "phase-hash.py も同じ場所に置かれる（check_approval.py �
 V=$(cat "$FAKE_HOME/.claude/KIT_VERSION" 2>/dev/null)
 expect_count "KIT_VERSION が <版> <commit> <日付> の3フィールド" 3 "$(printf '%s' "$V" | wc -w)"
 expect_out  "KIT_VERSION の版が VERSION ファイルと一致" "$(cat "$KIT_DIR/VERSION")" "$V"
+DOCS_N=$(find "$KIT_DIR/docs" -maxdepth 1 -type f ! -name '.*' | wc -l | tr -d " ")
+expect_count "利用者向け資料 $DOCS_N 個を ~/.claude/docs/aidd-kit/ へ（docs/ 直下と同数）" "$DOCS_N" "$(find "$FAKE_HOME/.claude/docs/aidd-kit" -maxdepth 1 -type f | wc -l)"
+expect_file "利用ガイド.html を配置（グローバル）" "$FAKE_HOME/.claude/docs/aidd-kit/利用ガイド.html"
+expect_file "操作マニュアル.html を配置（グローバル）" "$FAKE_HOME/.claude/docs/aidd-kit/操作マニュアル.html"
 
 OUT=$(run_home bash "$KIT_DIR/scripts/verify.sh" 2>&1); RC=$?
 expect_exit "install 直後の verify.sh が exit 0（NG=0）" 0 "$RC"
@@ -120,6 +124,9 @@ expect_out "effortLevel=high（xhigh から 1 段下げ。設計判断のとき�
 expect_out "autoCompactWindow=200k（Sonnet 5 の 1M を放置しない）" "200k" "$SJ"
 expect_out "bashOutputMaxChars=12000（超過分はファイルへ退避）" "12000" "$SJ"
 expect_count ".claude/KIT_VERSION が3フィールド" 3 "$(wc -w < "$P/.claude/KIT_VERSION")"
+expect_count "利用者向け資料 $DOCS_N 個を .claude/docs/ へ（docs/ 直下と同数）" "$DOCS_N" "$(find "$P/.claude/docs" -maxdepth 1 -type f | wc -l)"
+expect_file "利用ガイド.html を配置（プロジェクト）" "$P/.claude/docs/利用ガイド.html"
+expect_file "操作マニュアル.html を配置（プロジェクト）" "$P/.claude/docs/操作マニュアル.html"
 # 再実行で退避
 OUT=$(bash "$KIT_DIR/scripts/export-project.sh" "$P" 2>&1)
 expect_file "再実行で CLAUDE.md.bak" "$P/CLAUDE.md.bak"

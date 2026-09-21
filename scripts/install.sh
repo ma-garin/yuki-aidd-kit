@@ -60,6 +60,15 @@ done
 echo "✅ Rules: ${RULES_OK}個（~/.claude/rules/aidd-kit/）"
 
 # 版の刻印（verify.sh が表示。配布先と同じ書式: <VERSION> <commit> <日付>）
+# 利用者向け資料（docs/ 直下: 利用ガイド・操作マニュアルほか）。共有の ~/.claude では rules と同じく aidd-kit/ で名前空間を分ける
+mkdir -p "$CLAUDE_DIR/docs/aidd-kit"
+DOCS_N=0
+for f in "$KIT_DIR/docs/"*; do
+  [ -f "$f" ] || continue
+  cp "$f" "$CLAUDE_DIR/docs/aidd-kit/"; DOCS_N=$((DOCS_N+1))
+done
+echo "✅ 利用者向け資料: ${DOCS_N}個（$CLAUDE_DIR/docs/aidd-kit/。まず 利用ガイド.html を開く）"
+
 printf '%s\n' "$KIT_VERSION" > "$CLAUDE_DIR/KIT_VERSION"
 echo "✅ KIT_VERSION: $KIT_VERSION"
 
