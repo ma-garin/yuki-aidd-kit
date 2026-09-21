@@ -22,6 +22,19 @@ def load_guard():
     return mod
 
 
+def last_instruction(g, lines: list[str]) -> str | None:
+    for line in reversed(lines):
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(e, dict) and not e.get("isSidechain"):
+            inst = g.instruction_of(e)
+            if inst is not None:
+                return inst
+    return None
+
+
 def main() -> int:
     try:
         data = json.load(sys.stdin)
@@ -29,22 +42,23 @@ def main() -> int:
         return 0
     if data.get("stop_hook_active"):
         return 0
+    # 最後の assistant エントリはこのフックの後に transcript へ書かれる。transcript で判定すると
+    # 1 つ前の途中報告を「最後の応答」と誤認し、日本語で答えていても差し戻す（2026-09-21 に発生）。
+    # 判定は入力の last_assistant_message だけで行い、無ければ判定できないので通す。
+    msg = data.get("last_assistant_message")
+    if not isinstance(msg, str) or not msg.strip():
+        return 0
+    g = load_guard()
+    if g.has_ja(msg):
+        return 0
     tp = data.get("transcript_path", "")
     if not tp or not Path(tp).is_file():
         return 0
-    g = load_guard()
     try:
-        verdict = g.judge(g.tail_lines(Path(tp)))
+        inst = last_instruction(g, g.tail_lines(Path(tp)))
     except OSError:
         return 0
-    if verdict is None:
-        return 0
-    kind, inst = verdict
-    # Stop は「応答し終えたから止まる」時点で動く。ところが最後の assistant エントリは
-    # このフックの後に transcript へ書かれるため、'unanswered' は「本当に無応答」なのか
-    # 「まだ書き込まれていない」のか区別できない。毎ターン誤って差し戻すので採らない。
-    # 無応答の検出は PreToolUse 側（instruction-guard.py）が担う。
-    if kind == "unanswered":
+    if inst is None or not g.has_ja(inst):
         return 0
     head = " ".join(inst.split())[:80]
     reason = f"[reply-language] 最後の応答に日本語が無い。指示「{head}」は日本語。日本語で出し直す（A-13）"

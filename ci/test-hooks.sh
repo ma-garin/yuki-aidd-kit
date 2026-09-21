@@ -239,8 +239,13 @@ expect_empty "バックグラウンド完了通知は対象外" "$OUT" "$RC"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "Stop フックの差し戻し文は対象外" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_text "Done."; } > "$TRJ"
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"Done.","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
 expect_contains "Stop: 最後の応答に日本語が無ければ block で続行させる" '"decision": "block"' "$OUT"
+# transcript の最後は 1 つ前の英語の途中報告でも、実際の最後の応答（last_assistant_message）が日本語なら通す
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"報告します。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 最後の応答が日本語なら transcript が古くても止めない" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: last_assistant_message が無ければ判定せず通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: stop_hook_active なら何もしない（無限ループ防止）" "$OUT" "$RC"
 # 最後の assistant エントリは Stop フックの後に transcript へ書かれる。未応答か未書込かを
