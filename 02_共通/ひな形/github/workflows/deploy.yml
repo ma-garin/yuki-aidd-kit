@@ -1,0 +1,34 @@
+# GitHub Pages 自動デプロイ
+# .github/workflows/deploy.yml に配置
+# 01_利用者向け資料/ 配下を GitHub Pages に公開する（PWA向け）
+# 起動は手動のみ（workflow_dispatch）。PR や push で自動実行しない: ゲートは要求した時だけ動かす（rules/speed-harness.md H-7）。
+# Actions 画面の「Run workflow」から起動する。
+
+name: Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs   # PWAはdocs/、ルート公開なら ./ に変更
+      - id: deployment
+        uses: actions/deploy-pages@v4

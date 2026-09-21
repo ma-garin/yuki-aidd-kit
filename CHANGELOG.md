@@ -1,7 +1,19 @@
 # CHANGELOG — yuki-aidd-kit
 
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
-各版の作業台帳は `internal/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
+各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
+
+## Ver.8.0.0（2026-09-21）— 構成管理: 番号付きの構成へ、Claude Code と Codex を分ける（M24）
+
+直下に配布物・計画・保守資料が役割の区別なく並び、Claude Code 用と Codex 用の区別も無かったため、SIer の構成管理（ISO 10007:2017 の構成品目の識別）に倣って切り直します。**互換性のない変更**: キットの checkout 内のパスがすべて変わります。導入先側の置き場所（`~/.claude/{skills,commands,hooks,rules}`・`<対象>/.claude/...`・`<対象>/scripts/`）は変わりません。
+
+- **命名規則**: 直下のフォルダは「番号_日本語名」。番号 00 は実行の入口、01〜04 は配布、05〜06 は非配布。英語は外部仕様で名前が決まるもの（README.md・CHANGELOG.md・VERSION・Claude Code の `skills/` 等）だけ
+- **対応**: `scripts/`→`00_導入/`、`docs/`→`01_利用者向け資料/`（事例は `サンプル/図書貸出/`）、`rules/`・`templates/`・`tools/`→`02_共通/{rules,ひな形,ツール}/`、`skills/`・`commands/`・`hooks/`・`CLAUDE.md.template`→`03_ClaudeCode/`、`AGENTS.md.template`→`04_Codex/`、PRD・Roadmap・Vision→`05_プロジェクト管理/{要求仕様,ロードマップ,構想}.md`、`internal/`・`ci/`→`06_保守者向け/`（`内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`）
+- **構成管理の文書を新設**: `05_プロジェクト管理/構成管理/構成管理計画書.md`（ISO 10007:2017 の計画・識別・変更管理・状況の記録・監査）と `構成品目一覧.md`（CI-00〜）
+- **利用者向け資料を配る**: export は `<対象>/.claude/docs/`、install は `~/.claude/docs/aidd-kit/`
+- **hook の誤動作を解消**: `instruction-guard` は deny をやめ additionalContext で通知（応答済みでも毎回エラー表示していた）、サブエージェント内は対象外。`reply-language` は `last_assistant_message` で判定
+- **既存 FAIL 63 件 → 0**: 回帰テストの GNU 専用 `sed -i`・`touch -d` を BSD/GNU 共通に。check_docs は手元の生成物を除外し、日本語名を NFC で比較。CHANGELOG の過去の版の旧パスは参照切れ検査から除外
+- 回帰テスト 10 本すべて FAIL=0、`check-docs` NG=0
 
 ## Ver.7.1.0（2026-09-21）— トークン消費を構造から削る
 
@@ -122,7 +134,7 @@ AIDD では「プロセスが正しく回っているか」を見ても、企業
 - **`skills/design-system/SKILL.md` を 473 → 115 行に**: 値の唯一の真実源を `templates/tokens.css` に一本化し、決めの理由は `references/tokens.md`、部品の使い分けと落とし穴（実不具合由来 7 件）は `references/components.md` へ。`check-docs.sh` の「SKILL ≦ 200 行」を **NG に昇格**
 - `tokens.css` に `--color-medium-text` / `--color-scrim` / `--color-tooltip-bg/-text` / `--color-knob` を追加（直値解消のため）
 - **`internal/lessons.md`**（新設）: キット自身の改善ログ。本セッションと移行準備が最初のエントリ。移行後の週次 `/usage` 記録欄付き
-- **`docs/examples/library-loan/`**（新設）: 事例「社内図書館の貸出管理を Excel から Web へ。HTML でモック」。依頼文 1 行からキットの手順だけで作った完成品・ソース・仕様・引き継ぎメモ。`docs/利用ガイド.html` の「ハンズオン」章の教材。この検証でキットの欠陥 3 件（F-14〜F-16）を見つけて是正
+- **`examples/library-loan/`**（新設）: 事例「社内図書館の貸出管理を Excel から Web へ。HTML でモック」。依頼文 1 行からキットの手順だけで作った完成品・ソース・仕様・引き継ぎメモ。`docs/利用ガイド.html` の「ハンズオン」章の教材。この検証でキットの欠陥 3 件（F-14〜F-16）を見つけて是正
 - `export-project.sh` の settings.json に `block-explore.sh`（Read/Grep/Glob）を配線。グローバル導入と配布先で `/implement` の振る舞いが同じになった
 
 ## Ver.6.3 での主な更新（2026-08-25）— デザイン: トークン実物・画面の作り方・フレームワーク別適用
@@ -189,7 +201,7 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 
 - `context-compression` スキルと `/compact-work` コマンドを追加（3層要約・grep/glob優先・決定論的作業のスクリプト化）
 - 全資産を監査し修正を適用（`internal/AUDIT-2026-07.md`）。特に **hooks が入力を受け取れず無言で機能停止していた不具合を修復**し、`ci/test-hooks.sh` で回帰テスト化
-- キット自体の自己文書化: `internal/Vision.md` / `internal/PRD.md` / `internal/Roadmap.md`（前提知識ゼロのモデルが開発を継続できる作業台帳）
+- キット自体の自己文書化: `project/Vision.md` / `project/PRD.md` / `project/Roadmap.md`（前提知識ゼロのモデルが開発を継続できる作業台帳）
 - `templates/design-system.md`: コード無しで見た目を再現するための視覚的指示書（Webアプリ／HTMLスライド／管理画面）
 - `INDEX.md` を2層＋タグ＋参照コストで再構成。ECC 対応表の真実源を `docs/ECC-ASSET-MAP.md` に一本化
 - `verify.sh` のチェックリストをリポジトリ実体からの自動導出に変更（資産追加時の更新不要）
