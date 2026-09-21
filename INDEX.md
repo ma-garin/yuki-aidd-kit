@@ -10,15 +10,18 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 | **DAILY** | どのプロジェクトでも進め方を制御する横断資産 | セッション開始時・作業の節目に該当スキルを読む |
 | **LIBRARY** | 特定のプロジェクト種別・場面でだけ効く資産 | タグが今の作業に一致した時だけ開く |
 
-## 配置（7.0.0 — 何を配り、何を配らないか）
+## 配置（8.0.0 — 何を配り、何を配らないか）
 
 | ディレクトリ | 中身 | 導入先へ |
 |---|---|---|
-| `agent/`（`skills/` `commands/` `hooks/` `rules/`）・`templates/` | 規約固定の配布物（install で `~/.claude/`、export で `<対象>/.claude/`） | 配る |
+| `agent/`（`skills/` `commands/` `hooks/` `rules/`） | Claude Code の規約どおりの配布物（install で `~/.claude/` 直下、export で `<対象>/.claude/` 直下。`agent/` の段は導入先に作らない） | 配る |
+| `templates/` | 雛形（工程文書・テスト文書・デザイン・GitHub 用） | 配る（export で `<対象>/.claude/templates/`） |
 | `tools/` | 導入先の `scripts/` に置かれて動く道具（trace-check・quality_harness・check-approval・test-metrics …） | 配る |
+| `docs/` | 利用者向け文書（利用ガイド・操作マニュアル・claude-projects-setup・OPERATING-MODE・ECC-ASSET-MAP） | 配る（export で `<対象>/.claude/docs/`、install で `~/.claude/docs/aidd-kit/`） |
+| `examples/` | 事例（貸出管理モック。ハンズオン教材） | 読む |
 | `scripts/` | キットの checkout から実行する入口（install / export / init-* / verify / check-design / token-audit） | 実行元 |
-| `docs/` | 利用者向け文書（利用ガイド・操作マニュアル・事例） | 読む |
-| `internal/` | 保守者専用（spec・rules の根拠・作業台帳・PRD・Vision・lessons） | 配らない |
+| `project/` | キット開発の計画（PRD・Roadmap・Vision） | 配らない |
+| `internal/` | 保守者専用（spec・rules の根拠・lessons・maintainer-tendencies・監査レポート） | 配らない |
 | `ci/` | 回帰テスト 10 本と check-docs（文書整合） | 配らない |
 
 ## クイックスタート
@@ -181,7 +184,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`docs/ECC-ASSET-MAP
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `project/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 298行 |
+| `project/Roadmap.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 310行 |
 | `internal/maintainer-tendencies.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
 | `project/Vision.md` | キットの目的・到達点・Non-Goals | 47行 |
 | `project/PRD.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |

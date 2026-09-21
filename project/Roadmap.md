@@ -296,3 +296,15 @@ istqb_genai_study・qa_viewpoint の記録から 14 の傾向を抽出（`intern
 - [x] `ci/check_docs.py`: 新ディレクトリの参照切れ・目録解決、`scripts/<道具>`＝導入先パスの判定、生成レポート 6 種の一元除外
 - [x] 各段で回帰テスト 10 本（PASS 420）と `ci/check-docs.sh` NG=0。`git mv` で履歴保持
 - 残: `agents/` は定義が無いため未作成。日本語ファイル名（`利用ガイド.html`）は macOS の NFD 正規化差分に注意（git の `core.precomposeunicode` は macOS 既定 true）。README の利用節（推奨する使い方・ECC 連携・合言葉）を INDEX／利用ガイドへ寄せるかは保守者判断
+
+## M24: 構成管理 — 配布物を agent/ に束ね、計画と事例を分ける（完了 2026-09-21・Ver.8.0.0）
+
+背景: M23 の後も直下に配布物 4 種・計画文書・事例が並び、キット内の場所と導入先の場所の区別が付きにくかった。保守者承認のうえ M23 と同じ手順（`git mv`・各段で回帰テスト）で実施。
+
+- [x] 前段: instruction-guard の同一指示 deny をセッション 1 回に限る修正を単独コミット（移動より先）
+- [x] `rules/ skills/ commands/ hooks/` → `agent/`。キット側参照（scripts・ci・kit-ci・README/INDEX）を更新、`.claude/settings.json` の配線を同一コミットで更新。導入先側のパスは不変
+- [x] internal/ の PRD・Roadmap・Vision → `project/`、旧 docs/examples/library-loan → `examples/library-loan`
+- [x] install / export-project が `docs/` 直下の利用者向け資料を配る（`~/.claude/docs/aidd-kit/`・`<対象>/.claude/docs/`）。test-install に検証 6 ケース
+- [x] INDEX「配置」表を新構成に、VERSION 8.0.0、CHANGELOG
+- [x] 各段で回帰テスト 10 本と check-docs。合格基準は「FAIL 数・NG 数が ec4bb97 を超えない」（既存 FAIL 63 件は範囲外）
+- 残: 既存 FAIL 63 件（test-hooks 8・test-check-approval 37・test-check-docs 10・test-test-metrics 8）。配布物内の文書・コメントに残る `skills/…` 等の表記は配布物の名前として据え置き（check_docs が `agent/` で解決）

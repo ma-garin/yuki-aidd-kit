@@ -3,6 +3,17 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
+## Ver.8.0.0（2026-09-21）— 構成管理: 配布物を agent/ に束ね、計画と事例を分ける（M24）
+
+直下に配布物 4 種・計画文書・事例が並び、「キットの checkout の中の場所」と「導入先に置かれる場所」の区別が付きにくかったため、役割でもう一段切り直します。**互換性のない変更**: キットの checkout 内のパスが変わります（`skills/` → `agent/skills/` ほか）。キットのパスを直接参照している外部スクリプトは要更新。導入先側の置き場所（`~/.claude/{skills,commands,hooks,rules}`・`<対象>/.claude/...`・`<対象>/scripts/`）は変わりません。
+
+- **配布物を `agent/` に**: `rules/ skills/ commands/ hooks/` → `agent/rules/ agent/skills/ agent/commands/ agent/hooks/`。install / export / verify / `install_guard.py --hooks-dir` の既定値 / token_audit / check_docs / 回帰テスト / kit-ci を更新。`.claude/settings.json` の hook 配線は移動と同一コミット（F-26 の再発防止）
+- **計画文書を `project/` に**: internal/ の PRD・Roadmap・Vision → `project/`。`internal/` は spec・根拠・lessons・監査だけ
+- **事例を `examples/` に**: 旧 docs/examples/library-loan → `examples/library-loan`（`build.py` のキット位置を追随）
+- **利用者向け資料を配る**: `export-project.sh` は `<対象>/.claude/docs/`、`install.sh` は `~/.claude/docs/aidd-kit/` へ `docs/` 直下を置く。`test-install.sh` に 6 ケース追加（108）
+- `check_docs.py`: 文書中の `skills/…` `rules/…` 等は配布物の名前（キット内は `agent/`、導入先は `.claude/`）として `agent/` でも解決する。目録解決に `agent/*`・`project/`・`examples/` を追加
+- 各段で回帰テスト 10 本と `ci/check-docs.sh` を実行し、FAIL 数・NG 数が 7.1.0（ec4bb97）を超えないことを確認（既存 FAIL: test-hooks 8・test-check-approval 37・test-check-docs 10・test-test-metrics 8 は据え置き）。`git mv` で履歴は保持
+
 ## Ver.7.1.0（2026-09-21）— トークン消費を構造から削る
 
 保守者のセッション実測（cache_read がトークンの 94.87%）を受け、1 ターンごとに文脈全量を読み直す構造に効く順で手を入れます。根拠と引用禁止の数値は `internal/rules-rationale/token-economics.md`。
