@@ -370,6 +370,40 @@ else
   echo "  ❌ .claude/settings.json が無い"; FAIL=$((FAIL+1))
 fi
 
+echo "[block-ci.py]"
+for T in ScheduleWakeup CronCreate RemoteTrigger mcp__x__send_later mcp__github__subscribe_pr_activity; do
+  OUT=$(json_tool "$T" | python3 "$HOOKS/block-ci.py")
+  expect_contains "$T を deny" '"permissionDecision": "deny"' "$OUT"
+done
+OUT=$(printf '{"tool_name":"Skill","tool_input":{"skill":"loop"}}' | python3 "$HOOKS/block-ci.py")
+expect_contains "Skill loop を deny" '"permissionDecision": "deny"' "$OUT"
+OUT=$(bash_json "git push && gh run watch 123" | python3 "$HOOKS/block-ci.py")
+expect_contains "gh run watch を deny" '"permissionDecision": "deny"' "$OUT"
+OUT=$(bash_json "gh pr checks 5 --watch" | python3 "$HOOKS/block-ci.py")
+expect_contains "gh pr checks --watch を deny" '"permissionDecision": "deny"' "$OUT"
+OUT=$(bash_json "CI_REQUESTED=1 gh workflow run ci.yml" | python3 "$HOOKS/block-ci.py"); RC=$?
+expect_empty "CI_REQUESTED=1 なら素通り" "$OUT" "$RC"
+OUT=$(bash_json "gh pr checks 5" | python3 "$HOOKS/block-ci.py"); RC=$?
+expect_empty "gh pr checks（待機なし）は素通り" "$OUT" "$RC"
+OUT=$(bash_json "git commit -m 'gh run watch を禁止'" | python3 "$HOOKS/block-ci.py"); RC=$?
+expect_empty "引用文字列内の gh run watch は素通り" "$OUT" "$RC"
+OUT=$(json_tool "Read" | python3 "$HOOKS/block-ci.py"); RC=$?
+expect_empty "無関係なツールは素通り" "$OUT" "$RC"
+expect_contains "配布用 settings.json に block-ci.py が配線されている" "block-ci.py" "$(cat "$HOOKS/settings.json")"
+
+echo "[statusline.py トークン表示]"
+TJ="$TMP/t.jsonl"
+printf '%s\n' '{"type":"assistant","message":{"id":"m1","usage":{"input_tokens":10,"cache_read_input_tokens":1000,"output_tokens":200}}}' \
+  '{"type":"assistant","message":{"id":"m1","usage":{"input_tokens":10,"cache_read_input_tokens":1000,"output_tokens":200}}}' \
+  '{"type":"assistant","message":{"id":"m2","usage":{"cache_read_input_tokens":2000,"output_tokens":400}}}' > "$TJ"
+OUT=$(printf '{"transcript_path":"%s"}' "$TJ" | HOME="$TMP" python3 "$HOOKS/statusline.py")
+expect_contains "同一 id を 1 回と数え累計・1 応答あたり出力・応答数を出す" "Σ4k 出力300/t 2t" "$OUT"
+printf '%s\n' '{"type":"assistant","message":{"id":"m3","usage":{"output_tokens":2600}}}' >> "$TJ"
+OUT=$(printf '{"transcript_path":"%s"}' "$TJ" | HOME="$TMP" python3 "$HOOKS/statusline.py")
+expect_contains "差分だけ読み足し、1 応答 1000 超で ⚠" "⚠ Σ6k 出力1,066/t 3t" "$OUT"
+OUT=$(python3 "$KIT_DIR/scripts/token_report.py" "$TJ")
+expect_contains "token_report.py が区分別の表を出す" "| cache_read | 3,000 |" "$OUT"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 if [ "$FAIL" -eq 0 ]; then

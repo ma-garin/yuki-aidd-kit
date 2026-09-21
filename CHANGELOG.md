@@ -3,6 +3,19 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `internal/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
+## Ver.7.1.0（2026-09-21）— トークン消費を構造から削る
+
+保守者のセッション実測（cache_read がトークンの 94.87%）を受け、1 ターンごとに文脈全量を読み直す構造に効く順で手を入れます。根拠と引用禁止の数値は `internal/rules-rationale/token-economics.md`。
+
+- **H-0 出力量**（`speed-harness.md`）: 相槌・前置き・締めの申し出を書かない。完了報告 3 行・表 1 個まで。本文での途中報告をやめ進捗はステータスラインへ（H-8 から本文の進捗行を削除）
+- **H-9 自己ウェイク・CI 待ちの禁止**: 新 hook `block-ci.py`（PreToolUse 全ツール）が ScheduleWakeup / CronCreate / RemoteTrigger / send_later / create_trigger / subscribe_pr_activity / watch_url / Skill loop・schedule と `gh run watch` 等を deny。Bash は `CI_REQUESTED=1` で許可
+- **H-10 往復と読み込みの規律**: 「次の行動を変えない実行はしない」・絞ってから取る・範囲読み・セッション途中で CLAUDE.md / settings.json / MCP を書き換えない・設定はバイナリで確かめる
+- **委譲の採算式**（`model-routing.md`・H-4）: 既定は自分でやる。（文脈に載る量）×（残りターン）＞ 委譲の総消費（57k〜90k/本）のときだけ委譲。返答は 1 語＋ファイルパス
+- **設定**: `env.BASH_MAX_OUTPUT_LENGTH` → `bashOutputMaxChars: 12000`（前者は単独では読み戻し幅だけ）、`CLAUDE_CODE_GOAL_CHECKIN_MINUTES=0`（待機中の自動チェックイン停止）。いずれも claude-code バイナリで実在と意味を確認。`token_audit.py` の必須キーも追随
+- **可視化**: `statusline.py` がセッションの累計消費を差分読みで常時表示（`⚠ Σ268.4M 出力1,341/t 660t`）。`scripts/token_report.py` が区分別のトークン・構成比・**費用比**を出す（cache_read はトークン 9 割でも費用では 4 割程度になりうる）
+- 不採用: `.claudeignore`・`DISABLE_AUTOCOMPACT`（バイナリに無い）、`promptCacheTtl` の固定（ターン間隔の分布が未計測）
+- 回帰テスト: `test-hooks.sh` に block-ci 13・statusline/token_report 3 ケース（main 由来の既存 FAIL 8 は据え置き）
+
 ## Ver.7.0.0（2026-09-20）— 構成管理: 配布物と保守者専用を分ける（M23）
 
 リポジトリ直下に「配る／配らない／キットから実行する」の別が無く、hook の配線がディレクトリ移動で丸ごと止まる事故（`internal/spec/09` F-26）の温床になっていました。ディレクトリを役割で切り直します。**互換性のない変更**: 回帰テストは `./scripts/test-*.sh` から `./ci/test-*.sh` に、文書整合検査は `./ci/check-docs.sh` に。導入先側の置き場所（`<対象>/.claude/`・`<対象>/scripts/`）は変わりません。

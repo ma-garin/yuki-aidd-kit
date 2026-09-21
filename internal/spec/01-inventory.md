@@ -10,8 +10,8 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `README.md` | 124 | 人間向けの入口（7.0.0 で導入に絞った）: 導入2方式・取り扱い説明書・推奨フロー・ECC 連携・構成ツリー・作り込みの入口・合言葉。版歴は `CHANGELOG.md` |
-| `CHANGELOG.md` | 182 | 版ごとの変更内容（Ver.5.0〜7.0.0。7.0.0 で README から分離）。版の真実源は `VERSION` |
-| `INDEX.md` | 226 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
+| `CHANGELOG.md` | 195 | 版ごとの変更内容（Ver.5.0〜7.0.0。7.0.0 で README から分離）。版の真実源は `VERSION` |
+| `INDEX.md` | 227 | **全資産の索引**。DAILY/LIBRARY 2層＋タグ＋参照コスト。エージェントはまずここを読む |
 | `CLAUDE.md.template` | 30 | `@AGENTS.md` ＋ Claude Code 固有（実装モード・hooks で強制されるもの・トークン/モデル）。共通規約は持たない（M16） |
 | `AGENTS.md.template` | 80 | **共通規約の本体**（Codex は直接、Claude Code は import で読む）。速度・必須プロセス・応答・環境・**読む範囲のルーティング表**・完了条件・工程・禁止・コミット・QA（M16） |
 | `.gitignore` | 29 | 秘密情報・ビルド成果物・テスト出力・`.playwright-mcp/`・検査の生成レポートを除外 |
@@ -25,7 +25,7 @@
 | ファイル | 行 | 役割 |
 |---|---|---|
 | `absolute-rules.md` | 22 | **A-1〜A-10** を「発動 / 出力 / 要点」の表で（M16 で 112→19 行）。根拠は `internal/rules-rationale/absolute-rules.md` |
-| `speed-harness.md` | 53 | **H-1〜H-8** の規範だけ（M16 で 115→51 行）。出所・失敗事例・実測記録は `internal/rules-rationale/speed-harness.md` |
+| `speed-harness.md` | 61 | **H-0〜H-10** の規範だけ（M16 で 115→51 行、7.1.0 で H-0・H-9・H-10 を追加）。トークン消費の根拠は `internal/rules-rationale/token-economics.md`。出所・失敗事例・実測記録は `internal/rules-rationale/speed-harness.md` |
 | `model-routing.md` | 16 | **Pro＋Sonnet の規律**（M16 新設）: 既定 Sonnet・Opus 3条件・effort・`/clear`・委譲・上限時・週1 `/usage` |
 | `functional-integrity.md` | 17 | 実行経路を確認するまで「完了」と言わない。**`paths:` 付き＝コード/UI を触ったときだけ読み込み**（M16） |
 
@@ -107,11 +107,11 @@
 
 ---
 
-## hooks/（17件・1,118行）
+## hooks/（18件・1,262行）
 
 | ファイル | 行 | 役割 |
 |---|---|---|
-| `settings.json` | 137 | 配線定義。statusLine ＋ PreToolUse(Write/Edit, Read/Grep/Glob, Bash) ＋ PostToolUse ＋ Stop |
+| `settings.json` | 148 | 配線定義。`bashOutputMaxChars`・`CLAUDE_CODE_GOAL_CHECKIN_MINUTES=0` を含む。statusLine ＋ PreToolUse(Write/Edit, Read/Grep/Glob, Bash) ＋ PostToolUse ＋ Stop |
 | `pre-write-check.sh` | 35 | PreToolUse Write/Edit。秘密情報ファイル名・単一HTML の CSS/JS 分割を**警告のみ**（exit 0） |
 | `post-write-html.sh` | 34 | PostToolUse。HTML 保存後に行数/KB を報告、500行超で部分編集を推奨、localStorage 未使用を助言 |
 | `block-explore.sh` | 40 | PreToolUse Read/Grep/Glob。`.claude/mode` 存在時に **exit 2** で探索を物理ブロック |
@@ -125,8 +125,9 @@
 | `pre-compact.py` | 34 | PreCompact。残す／捨てる／形式の指示を注入 |
 | `log-instructions.py` | 35 | InstructionsLoaded。時刻＋入力 JSON をログへ追記。集計は token-audit.sh |
 | `block-gates.py` | 54 | PreToolUse Bash。pytest / make test・verify-ui・lint 等を JSON で `deny`。ヒアドキュメントと引用文字列を除去してコマンド開始位置だけ照合（誤検知対策） |
+| `block-ci.py` | 57 | PreToolUse 全ツール。自己ウェイク・定期実行のツール（MCP 接頭辞を問わず末尾一致）と Skill loop/schedule、Bash の CI 起動・待機を deny。Bash は `CI_REQUESTED=1` で許可 |
 | `progress.py` | 44 | 手動連結。`start/step/done` で `.claude/progress.json` を管理 |
-| `statusline.py` | 63 | statusLine。進行中タスクの経過/見積/残りを表示し、従来表示（`~/.claude/statusline.sh`）へ素通し |
+| `statusline.py` | 109 | statusLine。進行中タスクの経過/見積/残りと累計消費（transcript を差分読み、`~/.claude/.statusline-tokens.json` に位置を保存）を表示し、従来表示（`~/.claude/statusline.sh`）へ素通し |
 | `session-summary.sh` | 25 | Stop。未コミット件数と implement.md の未更新を通知 |
 
 ---
@@ -139,10 +140,11 @@
 | `install_guard.py` | 98 | 3 hook を `~/.claude/hooks/` に置き、既存 settings.json の hooks に配線だけを merge（冪等・`.bak`・壊れた JSON は触らず exit 1） |
 | `install.sh` | 71 | `~/.claude` へ配置（CLAUDE.md・skills・commands・hooks・rules）。既存は `.bak` 退避、rules は同名既存をスキップ |
 | `verify.sh` | 55 | 配置確認。**チェックリストをリポジトリ実体から自動導出**（資産追加時の更新不要）。NG>0 で exit 1、版を表示 |
-| `export-project.sh` | 164 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
+| `export-project.sh` | 166 | プロジェクト配布。`.claude/`（skills/commands/hooks/rules/settings/INDEX/templates）＋`AGENTS.md`/`CLAUDE.md`＋ゲートスクリプト |
 | `init-project.sh` | 102 | 新規プロジェクト雛形（pwa / html / streamlit）。.gitignore・CLAUDE.md・CURRENT_STATE・SDD 3ファイル |
 | `token-audit.sh` | 7 | トークン監査の薄いラッパ |
 | `token_audit.py` | 236 | 床（常時読み込み）の推定 tok・実測ログ集計・hook/設定の配線・MCP 数・スキル肥大。配線漏れは NG |
+| `token_report.py` | 79 | セッション JSONL から消費構造を実測（区分別のトークン・構成比・費用比・1 応答あたり出力）。同一 message.id は 1 回だけ数える |
 | `init-lifecycle.sh` | 117 | 工程文書11本を `docs/lifecycle/` へ。`--github` で Issue/PR/CI も。既存は上書きしない |
 | `init-test-docs.sh` | 37 | テスト文書6本＋CSV＋機能契約＋ゲートスクリプト3本を配置。`--ci` で `test-gates.yml` |
 | `audit-app-workspace.sh` | 55 | アプリ群の棚卸し（トップレベル・manifest・拡張子集計・ECC DAILY 推奨） |
@@ -175,7 +177,7 @@
 | `test-test-metrics.sh` | 173 | test-metrics の回帰テスト（雛形・実データ・unread・欠陥表なし・基準表・偏り・履歴・報告書置換・CSV） |
 | `test-token-audit.sh` | 56 | token-audit の回帰テスト（キット自身 NG=0・配布先・配線漏れ・ログ集計・MCP 過多） |
 | `test-check-approval.sh` | 239 | check-approval の回帰テスト。配布雛形 NG=0 と各検査の NG ケース |
-| `test-hooks.sh` | 363 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
+| `test-hooks.sh` | 415 | **hooks 回帰テスト 19ケース**。AUDIT A-01（hooks が無言で機能停止）の再発防止 |
 | `test-trace-check.sh` | 179 | **trace-check 回帰テスト 15ケース**。雛形が最初から NG=0 で始まることも検証 |
 | `test-quality-harness.sh` | 89 | **quality_harness 回帰テスト 11ケース**。雛形契約が新規プロジェクトで PASS することも検証 |
 | `test-install.sh` | 168 | **入口スクリプト回帰テスト 73ケース**（install / verify / export / init-project / init-test-docs）。HOME を差し替え、実 `~/.claude` には触らない |
@@ -305,6 +307,7 @@
 | `rules-rationale/absolute-rules.md` | 165 | `rules/absolute-rules.md` の圧縮前原文（根拠・言い回し）。毎回は読まない（M16） |
 | `rules-rationale/speed-harness.md` | 127 | `rules/speed-harness.md` の圧縮前原文（実測・失敗事例）と **H-6 の実測記録の追記先**（M16） |
 | `rules-rationale/model-routing.md` | 31 | `rules/model-routing.md` 各行の根拠（一次情報の出典）と未確認事項（M16） |
+| `rules-rationale/token-economics.md` | 39 | トークン消費の構造（実測・解釈・委譲の採算式・バイナリで確かめた設定・引用禁止の数値）。H-0・H-9・H-10 の根拠（7.1.0） |
 | `internal/lessons.md` | 183 | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。`templates/lessons.md` は配布雛形で別物） |
 
 ---

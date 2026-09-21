@@ -8,7 +8,7 @@ NG>0 で exit 1、WARN のみは exit 0。
                           換算は internal/spec/11 D-1（日本語 1.0 tok/char・ASCII 0.27 tok/char）。**推定**であり実測は /context
   2. 実測ログ            .claude/instructions-loaded.log（log-instructions.py）があればファイル別の読み込み回数
   3. 仕組みの配線        settings.json に filter-output / pre-read-guard / context-guard / pre-compact が配線されているか、
-                          effortLevel / autoCompactWindow / BASH_MAX_OUTPUT_LENGTH があるか（無ければ NG）
+                          effortLevel / autoCompactWindow / bashOutputMaxChars があるか（無ければ NG）
   4. MCP                 .mcp.json / settings の mcpServers の数。MCP_WARN_COUNT（既定 3）超で WARN（CLI で代替できないか）
   5. スキルの肥大        SKILL.md が SKILL_WARN_LINES（既定 150）超で WARN（check-docs.sh の 200 行 NG より手前で気づく）
   6. 手元でしか測れないもの  /context /usage /doctor のコマンドを印字するだけ
@@ -24,9 +24,9 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-HOOKS_REQUIRED = ("filter-output.py", "pre-read-guard.py", "context-guard.py", "pre-compact.py")
-SETTINGS_REQUIRED = ("effortLevel", "autoCompactWindow")
-ENV_REQUIRED = ("BASH_MAX_OUTPUT_LENGTH",)
+HOOKS_REQUIRED = ("block-ci.py", "filter-output.py", "pre-read-guard.py", "context-guard.py", "pre-compact.py")
+SETTINGS_REQUIRED = ("effortLevel", "autoCompactWindow", "bashOutputMaxChars")
+ENV_REQUIRED: tuple[str, ...] = ()  # BASH_MAX_OUTPUT_LENGTH は単独では読み戻し幅だけ（bashOutputMaxChars が置き換える）
 FLOOR_WARN_TOKENS = 8000        # internal/spec/11 D-1: M16 後の床 ≒ 5,400。超えたら WARN
 MCP_WARN_COUNT = 3
 SKILL_WARN_LINES = 150
@@ -151,7 +151,7 @@ def check_wiring(root: Path, r: Result) -> None:
         if k not in (s.get("env") or {}):
             r.add(True, "配線", path.name, f"env.{k} が無い")
     r.info.append(f"settings: {path}（effortLevel={s.get('effortLevel')} autoCompactWindow={s.get('autoCompactWindow')} "
-                  f"BASH_MAX_OUTPUT_LENGTH={(s.get('env') or {}).get('BASH_MAX_OUTPUT_LENGTH')}）")
+                  f"bashOutputMaxChars={s.get('bashOutputMaxChars')}）")
 
 
 def check_mcp(root: Path, r: Result) -> None:

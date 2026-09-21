@@ -387,7 +387,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ├── rules/aidd-kit/      ← 規律 4 本
 ├── skills/              ← 手順書 20 本（各フォルダに SKILL.md）
 ├── commands/            ← スラッシュコマンド 18 本
-├── hooks/               ← 見張り役 16 本
+├── hooks/               ← 見張り役 17 本
 └── settings.json        ← hooks を Claude Code に登録する設定</code></pre>
         </div>
       </section>
@@ -1019,7 +1019,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
             <tr><td><code>pre-read-guard.py</code></td><td>ロックファイル・minified・<code>node_modules</code>・生成レポートは読ませない（grep で該当行だけ）。800 行超のファイルを丸ごと読もうとしたら先頭 300 行に</td><td><code>offset</code> / <code>limit</code> を指定して読む</td></tr>
             <tr><td><code>context-guard.py</code></td><td>55 分以上空けて再開したとき（キャッシュが切れて全履歴を再処理する）と、会話が 4 MB を超えたときに「<code>/clear</code> か要約から」「<code>/compact</code>」を思い出させる。<strong>止めはしない</strong></td><td>—</td></tr>
             <tr><td><code>pre-compact.py</code></td><td>圧縮のとき「決定事項・変更ファイル・未解決・テスト集計は残す／ツール出力の本文は捨てる」を指示</td><td>—</td></tr>
-            <tr><td>設定 3 つ</td><td><code>effortLevel=high</code>（考える深さを 1 段下げる）／<code>autoCompactWindow=200k</code>（Sonnet 5 の 1M を放置しない）／<code>BASH_MAX_OUTPUT_LENGTH=12000</code>（絞れなかった出力の上限）</td><td>設計判断のときだけ <code>/effort xhigh</code>、終わったら戻す</td></tr>
+            <tr><td>設定 3 つ</td><td><code>effortLevel=high</code>（考える深さを 1 段下げる）／<code>autoCompactWindow=200k</code>（Sonnet 5 の 1M を放置しない）／<code>bashOutputMaxChars=12000</code>（超過分はファイルへ退避）</td><td>設計判断のときだけ <code>/effort xhigh</code>、終わったら戻す</td></tr>
           </tbody>
         </table>
 

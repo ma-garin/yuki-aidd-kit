@@ -39,7 +39,7 @@ open docs/利用ガイド.html                      # ユーザーガイド（�
 open docs/操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（ci/ は配布しない）
-./ci/test-hooks.sh                            # hooks の回帰テスト（83ケース）
+./ci/test-hooks.sh                            # hooks の回帰テスト（104ケース）
 ./ci/test-install.sh                          # 導入・配布・初期化の回帰テスト（102ケース）
 ./ci/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
 ./ci/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
@@ -93,7 +93,7 @@ python3 scripts/quality_harness.py            # 機能契約ハーネス（契�
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
 | `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 22行 |
-| `speed-harness` | H-1〜H-8: 着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示 | #speed #process | 53行 |
+| `speed-harness` | H-0〜H-10: 出力量・着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示・自己ウェイク禁止・往復と読み込みの規律 | #speed #process #token | 61行 |
 | `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 16行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
 
@@ -108,6 +108,7 @@ python3 scripts/quality_harness.py            # 機能契約ハーネス（契�
 | `block-phase.py` | PreToolUse Write/Edit | 前工程が未承認のまま次工程の成果物を書くのを deny（`.claude/phase-gate` あり時のみ）。承認記録への書き込みは常に許可 |
 | `filter-output.py` | PreToolUse Bash | テスト・install・build・`git log`・`git diff` の出力を Claude が読む前に絞る（`updatedInput`）。全量は `FULL_OUTPUT=1` |
 | `block-gates.py` | PreToolUse Bash | pytest / make test / lint をユーザー要求時（`GATES_REQUESTED=1`）以外は deny |
+| `block-ci.py` | PreToolUse（全ツール） | ScheduleWakeup・CronCreate・send_later 等の自己ウェイク／定期実行と、`gh run watch` 等の CI 起動・待機を deny（Bash は `CI_REQUESTED=1` で許可） |
 | `instruction-guard.py` | PreToolUse（全ツール） | 保守者の発言（ターン冒頭・途中の queued_command・enqueue）に日本語で応答するまで deny。理由に指示の先頭を載せる（読み飛ばし防止）。バイパス無し |
 | `reply-language.py` | Stop | 最後の応答に日本語が無い／指示に未応答のまま終わろうとしたら block で続行させる（stop_hook_active で 1 回だけ） |
 | `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
@@ -115,7 +116,7 @@ python3 scripts/quality_harness.py            # 機能契約ハーネス（契�
 | `pre-compact.py` | PreCompact | 圧縮時に「残す／捨てる」を注入 |
 | `log-instructions.py` | InstructionsLoaded | 指示ファイルの読み込みを `.claude/instructions-loaded.log` に記録（実測用。Claude には返さない） |
 | `progress.py` | 手動（bash に連結） | `start/step/done` で progress.json を管理 |
-| `statusline.py` | statusLine | 進行中タスクの経過/見積/残りを表示。無ければ従来表示へ素通し |
+| `statusline.py` | statusLine | 進行中タスクの経過/見積/残りと、セッションの累計消費（差分読み）を表示。従来表示へ素通し |
 | `session-summary.sh` | Stop | セッション終了サマリ |
 
 回帰テスト: `./ci/test-hooks.sh`

@@ -1,8 +1,9 @@
 {
   "effortLevel": "high",
   "autoCompactWindow": "200k",
+  "bashOutputMaxChars": 12000,
   "env": {
-    "BASH_MAX_OUTPUT_LENGTH": "12000"
+    "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0"
   },
   "statusLine": {
     "type": "command",
@@ -11,6 +12,16 @@
   },
   "hooks": {
     "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/block-ci.py",
+            "timeout": 5,
+            "statusMessage": "自己ウェイク・CI 待ちでないか確認中"
+          }
+        ]
+      },
       {
         "hooks": [
           {

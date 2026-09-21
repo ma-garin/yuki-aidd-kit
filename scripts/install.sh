@@ -33,7 +33,7 @@ echo "✅ コマンド: $(ls "$KIT_DIR/commands" | wc -l)個"
 cp "$KIT_DIR/hooks/"*.sh "$KIT_DIR/hooks/"*.py "$CLAUDE_DIR/hooks/"
 chmod +x "$CLAUDE_DIR/hooks/"*.sh "$CLAUDE_DIR/hooks/"*.py
 if [ -f "$CLAUDE_DIR/settings.json" ]; then
-  echo "⚠ settings.json が既存。hooks / statusLine と、トークン節約の 3 キー（effortLevel=high / autoCompactWindow=200k / env.BASH_MAX_OUTPUT_LENGTH=12000）を手動でマージしてください（参照: hooks/settings.json）"
+  echo "⚠ settings.json が既存。hooks / statusLine と、トークン節約の 3 キー（effortLevel=high / autoCompactWindow=200k / bashOutputMaxChars=12000）と env.CLAUDE_CODE_GOAL_CHECKIN_MINUTES=0を手動でマージしてください（参照: hooks/settings.json）"
 else
   cp "$KIT_DIR/hooks/settings.json" "$CLAUDE_DIR/settings.json"
 fi
