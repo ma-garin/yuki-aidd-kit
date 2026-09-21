@@ -201,7 +201,7 @@ def judge(root: Path, phase: int, r: Result) -> str:
     p = root / APPROVAL_DIR / f"phase-{phase}.md"
     if not p.is_file():
         r.add(True, "未承認", tgt, f"承認記録がありません（{APPROVAL_DIR}/phase-{phase}.md）。"
-                                  f"`./00_導入/init-lifecycle.sh .` で雛形を置けます")
+                                  f"`./00_導入/02_プロジェクト配布/init-lifecycle.sh .` で雛形を置けます")
         return "未承認"
 
     a = Approval(phase, p, p.read_text(encoding="utf-8", errors="replace"))
@@ -344,7 +344,7 @@ def main() -> int:
     if not (root / LIFECYCLE_DIR).is_dir():
         if not a.quiet:
             print(f"ℹ 工程文書ディレクトリが無いためスキップ: {LIFECYCLE_DIR}")
-            print("  （工程で進める場合: ./00_導入/init-lifecycle.sh <対象>）")
+            print("  （工程で進める場合: ./00_導入/02_プロジェクト配布/init-lifecycle.sh <対象>）")
         return 0
 
     # --gate n: 直前の着手済み工程だけを見る

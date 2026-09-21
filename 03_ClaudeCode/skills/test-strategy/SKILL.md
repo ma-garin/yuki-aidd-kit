@@ -79,7 +79,7 @@ description: プロジェクトのテスト活動全体（テストレベル L1�
 | ゲートの無断実行 | 要求されていない pytest / make test | `hooks/block-gates.py` |
 | 秘密情報 | API キー等の混入 | `scripts/pre-commit` |
 
-## ISO/IEC/IEEE 29119 文書との対応（雛形: `02_共通/ひな形/test/`、配置: `./00_導入/init-test-docs.sh <対象>`）
+## ISO/IEC/IEEE 29119 文書との対応（雛形: `02_共通/ひな形/test/`、配置: `./00_導入/02_プロジェクト配布/init-test-docs.sh <対象>`）
 
 | 29119-3 文書 | 雛形 | 何を書くか | `dev-lifecycle` との分担 |
 |---|---|---|---|

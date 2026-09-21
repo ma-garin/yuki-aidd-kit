@@ -4,7 +4,7 @@
 
 ## 実行内容
 
-1. `./00_導入/token-audit.sh` を実行する（配布先では `.claude/` の settings と rules を見る）
+1. `./00_導入/03_点検/token-audit.sh` を実行する（配布先では `.claude/` の settings と rules を見る）
    - 床（常時読み込みの推定 tok）／実測ログの集計／hook と設定の配線／MCP 数／スキルの肥大
    - NG（配線漏れ）があれば `export-project.sh` の再実行を提案する。WARN は理由と対処を 1 行ずつ
 2. 手元でしか測れないものは**コマンドを提示して人に実行してもらう**（AI が代わりに測れない）

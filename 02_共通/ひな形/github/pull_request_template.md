@@ -1,7 +1,7 @@
 <!--
 AIDD Kit の工程ライフサイクル用 PR テンプレート。
 配置先: <project>/.github/pull_request_template.md
-（./00_導入/init-lifecycle.sh <target> --github で自動配置）
+（./00_導入/02_プロジェクト配布/init-lifecycle.sh <target> --github で自動配置）
 規約: skills/dev-lifecycle/SKILL.md
 -->
 

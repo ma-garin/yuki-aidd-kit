@@ -25,9 +25,9 @@ ECC を全部読むのではなく、対象プロジェクトに合う資産だ�
 
 ## Project Presets
 
-プロジェクト別のプリセット（ECC DAILY / LIBRARY / 併用 Kit skills）の真実源は、キットリポジトリの **`01_利用者向け資料/ECC-ASSET-MAP.md`** の Project Mapping。このスキルには複製しない（二重管理で乖離した実績があるため）。
+プロジェクト別のプリセット（ECC DAILY / LIBRARY / 併用 Kit skills）の真実源は、キットリポジトリの **`01_利用者向け資料/05_ECC資産対応表.md`** の Project Mapping。このスキルには複製しない（二重管理で乖離した実績があるため）。
 
-1. `01_利用者向け資料/ECC-ASSET-MAP.md` の Project Mapping から対象プロジェクトの項を読む
+1. `01_利用者向け資料/05_ECC資産対応表.md` の Project Mapping から対象プロジェクトの項を読む
 2. 該当プロジェクトが無い場合は、「最初に見る証拠」で技術スタックを確認して MAP の DAILY / LIBRARY 表から選び、MAP への追記案を出す
 
 ## 出力フォーマット

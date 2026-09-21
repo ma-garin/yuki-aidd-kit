@@ -1,7 +1,7 @@
 # 工程承認記録（approvals/）
 
 各工程の完了を**人間が承認した記録**。`docs/lifecycle/approvals/phase-0.md` 〜 `phase-9.md` に1工程1ファイルで置く。
-`./00_導入/init-lifecycle.sh <対象>` が `phase-approval.md` から10本を生成する。
+`./00_導入/02_プロジェクト配布/init-lifecycle.sh <対象>` が `phase-approval.md` から10本を生成する。
 
 ## なぜ必要か
 

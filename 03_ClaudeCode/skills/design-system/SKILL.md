@@ -21,7 +21,7 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
 | アイコン | `02_共通/ひな形/components/icons.js`（同梱。外部 CDN を読まない） |
 | フレームワーク別の置き場所・読み込み順（React / Tailwind / Streamlit / Flask・Django） | `02_共通/ひな形/ui/README.md`（1枚表）。他スキルとの分担は `references/frameworks.md` |
 | コードを見ずに見た目を再現する指示書 | `02_共通/ひな形/design-system.md` |
-| 直値・未定義トークン・CDN・`alert()` の機械検査 | `00_導入/check-design.sh <対象パス>` |
+| 直値・未定義トークン・CDN・`alert()` の機械検査 | `00_導入/03_点検/check-design.sh <対象パス>` |
 
 ## トークン運用の規律（直値を書かない）
 
@@ -104,7 +104,7 @@ description: AIDDツール群に一貫したビジュアルデザインを適用
 2. 骨格は `layout.css` のクラス、部品は `components.css` のクラスを**そのまま使う**。無い部品が要るときだけ `var(--*)` で書き足し、汎用なら `components.css` に戻す
 3. 操作フィードバックは `feedback.js`、アイコンは `icons.js`。`alert()` / `confirm()` / CDN を書かない
 4. 部品の使い分けで迷ったら `references/components.md`（ツールチップの画面端・空状態の2用途・フォームエラーの2段構え・モーダルの3経路 など）
-5. `./00_導入/check-design.sh <対象>` を NG=0 にする
+5. `./00_導入/03_点検/check-design.sh <対象>` を NG=0 にする
 6. `uiux_review` で全状態（通常・実行中・失敗・0 件・狭い画面・モーダル）をライト／ダーク両方で実機で開く。「作った」を「効いている」と報告しない
 
 - ナビ・一覧・設定の**並びは利用者の目的の時系列**（初めて開く → 試す → 自分のデータで使う → 結果を読む → 日々使う → 深く知る）。機能を追加した順にしない。並びを変える判断は ISO 9241-110 / Nielsen の原則名で書き、捨てた案も残す（`02_共通/ひな形/ADR-template.md`）

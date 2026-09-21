@@ -14,7 +14,7 @@ dev-lifecycle スキルに従い、指定工程の成果物を生成・更新し
    - 前工程の出口基準が未達なら**着手せず差し戻す**。次工程の作業で埋めない
 3. **前工程の成果物だけを入力にする**
    - 例: 単体テストは `03-detailed-design.md` の `DD-xxx` から作る。実装コードを読んでから作らない（実装の写しになり欠陥を検出できない）
-4. **成果物を生成・更新する**（`docs/lifecycle/` の該当ファイル。雛形は `./00_導入/init-lifecycle.sh .`）
+4. **成果物を生成・更新する**（`docs/lifecycle/` の該当ファイル。雛形は `./00_導入/02_プロジェクト配布/init-lifecycle.sh .`）
    - ID は所有ファイル内の見出し先頭または表の第1セルに置く。他工程で再定義しない
 5. **`traceability-matrix.md` を更新し `./scripts/trace-check.sh docs/lifecycle` を実行する**
 6. **`/phase-review <工程番号>` で AI 3 役の指摘を出し切る**（`skills/phase-approval`）

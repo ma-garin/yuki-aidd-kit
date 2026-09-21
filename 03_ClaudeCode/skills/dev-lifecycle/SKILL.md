@@ -24,7 +24,7 @@ description: RFD から保守運用までの開発工程（V字モデル）を A
 
 ## 10工程・成果物・ID
 
-成果物は `docs/lifecycle/` に置く（`./00_導入/init-lifecycle.sh <対象>` で雛形を配置）。
+成果物は `docs/lifecycle/` に置く（`./00_導入/02_プロジェクト配布/init-lifecycle.sh <対象>` で雛形を配置）。
 
 | # | 工程 | 成果物 | 付番 | 主な判定 |
 |---|---|---|---|---|
@@ -88,7 +88,7 @@ description: RFD から保守運用までの開発工程（V字モデル）を A
 ## 進め方（AI への標準手順）
 
 1. `/rfd <テーマ>` で論点を出し、決定を人間から取る
-2. `./00_導入/init-lifecycle.sh <対象>` で `docs/lifecycle/` に雛形を配置
+2. `./00_導入/02_プロジェクト配布/init-lifecycle.sh <対象>` で `docs/lifecycle/` に雛形を配置
 3. `/lifecycle <工程名>` で当該工程の成果物を生成・更新する（前工程の ID のみを入力とする）
 4. `/trace` で追跡表を更新し `trace-check.sh` を通す
 5. `/phase-review <工程番号>` で AI 3 役の指摘を出し切り、**人間が承認記録を埋める**

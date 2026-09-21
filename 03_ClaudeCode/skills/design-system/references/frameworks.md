@@ -14,7 +14,7 @@
 | アイコン | `02_共通/ひな形/components/icons.js`（外部 CDN を読まない） |
 | Tailwind | `02_共通/ひな形/ui/tailwind.config.js`（`theme.extend` を CSS 変数参照で。既定パレット禁止） |
 | Streamlit | `02_共通/ひな形/ui/streamlit-config.toml` + `02_共通/ひな形/ui/streamlit_theme.py`（`apply_theme()` 1箇所に集約） |
-| 直値・未定義トークン・CDN・`alert()` の機械検査 | `00_導入/check-design.sh <対象パス>` |
+| 直値・未定義トークン・CDN・`alert()` の機械検査 | `00_導入/03_点検/check-design.sh <対象パス>` |
 
 ## 分担（どのスキル・資産を使うか）
 
@@ -26,7 +26,7 @@
 | HTML/JS/CSS・React の実装規約 | ECC `frontend-patterns` / `react-patterns` / `vite-patterns` | 規約。デザイン値は持たない |
 | 独創的な UI を新規生成したい | `frontend-design`（第三者製・グローバル） | **起動時に本キットのトークンを渡す**。渡さないと汎用 AI 風の配色になる |
 | ブランド・ロゴ・三層トークン設計 | `ckm:design` / `ckm:design-system`（第三者製） | 新規ブランドを起こす時だけ。既存 AIDD ツール群には使わない |
-| 作った画面の検証 | `uiux_review` ＋ `00_導入/check-design.sh` | 全状態を実機で開く（360 / 768 / 1366×768 / 1920×1080、ライト＋ダーク） |
+| 作った画面の検証 | `uiux_review` ＋ `00_導入/03_点検/check-design.sh` | 全状態を実機で開く（360 / 768 / 1366×768 / 1920×1080、ライト＋ダーク） |
 
 ## 共通の落とし穴
 

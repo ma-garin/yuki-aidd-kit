@@ -26,7 +26,7 @@ done
 
 if [ ! -d "$DIR" ]; then
   echo "ℹ 対象ディレクトリが存在しないためスキップ: $DIR"
-  echo "  （工程文書を作る場合: ./00_導入/init-lifecycle.sh <対象プロジェクトのパス>）"
+  echo "  （工程文書を作る場合: ./00_導入/02_プロジェクト配布/init-lifecycle.sh <対象プロジェクトのパス>）"
   exit 0
 fi
 
