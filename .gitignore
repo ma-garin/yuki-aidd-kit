@@ -27,3 +27,7 @@ check-design-report.md
 check-approval-report.md
 token-audit-report.md
 test-metrics-report.md
+
+# hook の作業ファイル（ツール実行時間の計測・進捗表示）
+tool-time.json
+progress.json

@@ -265,6 +265,30 @@ OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant
 expect_empty "Stop: 相槌に続けて内容があれば通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌でも stop_hook_active なら止めない（無限ループ防止）" "$OUT" "$RC"
+# --- tool-timer.py: 見積の「実績」をツール実行時間で測る（入力待ち・思考時間を含まない） ---
+TT="$HOOKS/tool-timer.py"
+python3 "$TT" reset
+printf '{"tool_name":"Bash","tool_use_id":"a"}' | python3 "$TT" pre
+printf '{"tool_name":"Read","tool_use_id":"b"}' | python3 "$TT" pre
+sleep 1
+printf '{"tool_name":"Bash","tool_use_id":"a"}' | python3 "$TT" post
+printf '{"tool_name":"Read","tool_use_id":"b"}' | python3 "$TT" post
+OUT=$(python3 "$TT" report)
+expect_contains "tool-timer: 並列2本の 1 秒を二重に数えない（実行区間で測る）" "ツール実行 1秒 / 2 回" "$OUT"
+sleep 2   # 入力待ちに相当する空白。加算されないこと
+printf '{"tool_name":"Bash","tool_use_id":"c"}' | python3 "$TT" pre
+sleep 1
+printf '{"tool_name":"Bash","tool_use_id":"c"}' | python3 "$TT" post
+OUT=$(python3 "$TT" report)
+expect_contains "tool-timer: ツールが走っていない時間は加算しない" "ツール実行 2秒 / 3 回" "$OUT"
+OUT=$(printf '{"tool_name":"Bash","tool_use_id":"zz"}' | python3 "$TT" post; python3 "$TT" report)
+expect_contains "tool-timer: 対になる pre が無い post で件数も時間も増えない" "ツール実行 2秒 / 3 回" "$OUT"
+OUT=$(printf 'not json' | python3 "$TT" pre; echo "rc=$?")
+expect_contains "tool-timer: 壊れた入力でも作業を止めない" "rc=0" "$OUT"
+python3 "$TT" reset
+OUT=$(python3 "$TT" report)
+expect_contains "tool-timer: reset で計測が 0 に戻る" "ツール実行 0秒 / 0 回" "$OUT"
+rm -f "$HOOKS/../tool-time.json"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?
