@@ -11,7 +11,9 @@
   python3 .claude/hooks/tool-timer.py pre     # PreToolUse に配線（stdin に hook の JSON）
   python3 .claude/hooks/tool-timer.py post    # PostToolUse に配線
   python3 .claude/hooks/tool-timer.py report  # 実績を1行で出す（見積と並べて報告する）
-  python3 .claude/hooks/tool-timer.py reset   # 次の作業の計測を始める（見積を出した直後に叩く）
+  python3 .claude/hooks/tool-timer.py elapsed # このターンの経過分（見積との突合用。数値のみ）
+  python3 .claude/hooks/tool-timer.py reset          # ターンの計測を 0 に戻す（UserPromptSubmit に配線済み）
+  python3 .claude/hooks/tool-timer.py reset-session  # 通算も 0 に戻す（新しい作業を始めるとき）
 
 記録先は `.claude/tool-time.json`。hook は失敗しても作業を止めない（常に exit 0）。
 """
@@ -21,7 +23,10 @@ import sys
 import time
 
 _FILE = pathlib.Path(__file__).resolve().parent.parent / "tool-time.json"
-_EMPTY = {"total_sec": 0.0, "count": 0, "inflight": {}, "since": None, "window_start": None}
+# total_* はターン単位（UserPromptSubmit の reset で 0 に戻る）。session_* は通算で、
+# reset では消えない（複数ターンにまたがる作業の実績を出すため。2026-09-22 の残課題）
+_EMPTY = {"total_sec": 0.0, "count": 0, "inflight": {}, "since": None, "window_start": None,
+          "session_sec": 0.0, "session_count": 0}
 
 
 def load() -> dict:
@@ -63,10 +68,33 @@ def read_payload() -> dict:
     return data if isinstance(data, dict) else {}
 
 
-def fmt(total: float, count: int) -> str:
+def span_of(total: float) -> str:
     m, s = divmod(int(round(total)), 60)
-    span = f"{m}分{s}秒" if m else f"{s}秒"
-    return f"実績: ツール実行 {span} / {count} 回（入力待ち・思考時間を含まない）"
+    return f"{m}分{s}秒" if m else f"{s}秒"
+
+
+def fmt(data: dict) -> str:
+    """実績の1行。ツール実行時間（保守者の定義）と経過時間（見積と比べられる方）を並べる。
+
+    見積は完了予定時刻＝経過時間で出すのに、実績をツール実行時間だけで出すと単位が違って
+    予実が比較できない。両方を出す（2026-09-22）。
+    """
+    turn = f"実績: ツール実行 {span_of(float(data['total_sec']))} / {int(data['count'])} 回"
+    since = data.get("since")
+    if isinstance(since, (int, float)):
+        turn += f"、経過 {span_of(max(0.0, time.time() - since))}"
+    sc = int(data["session_count"])
+    if sc > int(data["count"]):
+        turn += f"（通算 ツール実行 {span_of(float(data['session_sec']))} / {sc} 回）"
+    return turn + "。ツール実行は入力待ち・思考時間を含まない"
+
+
+def elapsed_min(data: dict) -> float | None:
+    """このターンの経過分。見積（分）と突き合わせる用。"""
+    since = data.get("since")
+    if not isinstance(since, (int, float)) or int(data["count"]) == 0:
+        return None
+    return max(0.0, time.time() - since) / 60.0
 
 
 def main() -> int:
@@ -85,16 +113,26 @@ def main() -> int:
         data = load()
         if data["inflight"].pop(key_of(read_payload()), None) is not None:
             data["count"] = int(data["count"]) + 1
+            data["session_count"] = int(data["session_count"]) + 1
         if not data["inflight"]:
             start = data.get("window_start")
             if isinstance(start, (int, float)):
-                data["total_sec"] = float(data["total_sec"]) + max(0.0, time.time() - start)
+                span = max(0.0, time.time() - start)
+                data["total_sec"] = float(data["total_sec"]) + span
+                data["session_sec"] = float(data["session_sec"]) + span
             data["window_start"] = None
         save(data)
     elif cmd == "report":
-        data = load()
-        print(fmt(float(data["total_sec"]), int(data["count"])))
+        print(fmt(load()))
+    elif cmd == "elapsed":
+        m = elapsed_min(load())
+        print("" if m is None else f"{m:.2f}")
     elif cmd == "reset":
+        # ターンの計測だけ 0 に戻す。通算（session_*）は引き継ぐ
+        old = load()
+        save(dict(_EMPTY, inflight={}, since=time.time(),
+                  session_sec=float(old["session_sec"]), session_count=int(old["session_count"])))
+    elif cmd == "reset-session":
         save(dict(_EMPTY, inflight={}, since=time.time()))
     else:
         return 1

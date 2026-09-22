@@ -16,10 +16,14 @@ import sys
 from pathlib import Path
 
 GUARDS = (
-    # (ファイル, イベント, matcher(None=全ツール), 追加の設定)
-    ("instruction-guard.py", "PreToolUse", None, {"timeout": 5, "statusMessage": "保守者の指示に応答済みか確認中"}),
-    ("prompt-priority.py", "UserPromptSubmit", None, {"timeout": 5}),
-    ("reply-language.py", "Stop", None, {"timeout": 5}),
+    # (ファイル, イベント, matcher(None=全ツール), 追加の設定, 引数)
+    # tool-timer は reply-language が実績を読むための計測器。3 hook と同時に入れないと実績が空になる
+    ("tool-timer.py", "PreToolUse", None, {"timeout": 5}, "pre"),
+    ("tool-timer.py", "PostToolUse", None, {"timeout": 5}, "post"),
+    ("tool-timer.py", "UserPromptSubmit", None, {"timeout": 5}, "reset"),
+    ("instruction-guard.py", "PreToolUse", None, {"timeout": 5, "statusMessage": "保守者の指示に応答済みか確認中"}, ""),
+    ("prompt-priority.py", "UserPromptSubmit", None, {"timeout": 5}, ""),
+    ("reply-language.py", "Stop", None, {"timeout": 5}, ""),
 )
 
 
@@ -44,6 +48,8 @@ def main() -> int:
 
     copied = []
     for name, *_ in GUARDS:
+        if name in copied:
+            continue   # 同じファイルを複数イベントに配線する（tool-timer）
         src = hooks_src / name
         if not src.is_file():
             print(f"❌ {src} が無い（キットの hooks を指定する）")
@@ -68,11 +74,12 @@ def main() -> int:
 
     hooks = settings.setdefault("hooks", {})
     added = []
-    for name, event, matcher, extra in GUARDS:
+    for name, event, matcher, extra, arg in GUARDS:
         entries = hooks.setdefault(event, [])
-        if already_wired(entries, name):
+        if already_wired(entries, f"{name} {arg}".strip()):
             continue
-        h = {"type": "command", "command": f"python3 ~/.claude/hooks/{name}", **extra}
+        cmd = f"python3 ~/.claude/hooks/{name}" + (f" {arg}" if arg else "")
+        h = {"type": "command", "command": cmd, **extra}
         entry = {"hooks": [h]}
         if matcher:
             entry["matcher"] = matcher
