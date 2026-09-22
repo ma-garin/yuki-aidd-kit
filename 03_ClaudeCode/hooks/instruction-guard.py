@@ -34,6 +34,16 @@ from pathlib import Path
 TAIL_KB = int(os.environ.get("INSTRUCTION_GUARD_TAIL_KB", "512"))
 JA_RE = re.compile(r"[぀-ヿ一-鿿]")
 ESTIMATE_RE = re.compile(r"見積[:：]")
+# 自分が選択肢・可否を問うたまま、答えを待たずに着手したことを検出する（保守者の傾向 #39）。
+# 2026-09-22: A か B かを尋ねた直後に A を実装し、「いつ作業をして良いと許可をした」と指摘された。
+# A-7 は設計文書の承認しか扱っておらず、「直せ」を実装の許可と解釈する余地が残っていた。
+ASKED_RE = re.compile(
+    r"(どちらにしますか|どれにしますか|どうしますか|いずれ(に|を)しますか|"
+    r"(可否|判断|指示|選択)を(お願い|ください|下さい)|"
+    r"入れますか|やりますか|進めてよい|よろしいですか|確認をお願い|"
+    r"^\s*-\s*\*\*?A[:：]|^\s*\*\*A[:：])", re.M)
+# 問いを取り下げた・許可が出た後に自分が書く言葉（これがあれば待ちは解けている）
+RESOLVED_RE = re.compile(r"(着手します|実装します|進めます|採用します|了解。|指定|決定|の指示|許可)")
 TAG_BLOCK_RE = re.compile(r"<([a-zA-Z][\w-]*)(?:\s[^>]*)?>.*?</\1>", re.S)
 
 # 人ではなく機械（サブエージェント・ハーネス・このフック自身）が書いた本文の印。
@@ -122,7 +132,7 @@ def tail_lines(path: Path) -> list[str]:
 
 
 def judge(lines: list[str]) -> tuple[str, str] | None:
-    """(kind, detail) を返す。None は許可。kind は 'unanswered' | 'language' | 'estimate'。"""
+    """(kind, detail) を返す。None は許可。kind は 'unanswered' | 'language' | 'estimate' | 'awaiting'。"""
     reply: str | None = None
     replies: list[str] = []  # 指示より後のアシスタント応答すべて（見積もり行の有無を見る）
     for line in reversed(lines):
@@ -152,6 +162,9 @@ def judge(lines: list[str]) -> tuple[str, str] | None:
             return ("language", inst)
         if not any(ESTIMATE_RE.search(r) for r in replies):
             return ("estimate", inst)
+        # 直近の自分の応答が問いで終わっており、保守者がそれに答えていないなら待つ
+        if reply is not None and ASKED_RE.search(reply) and not RESOLVED_RE.search(reply):
+            return ("awaiting", " ".join(reply.split())[-120:])
         return None
     return None
 
@@ -208,6 +221,11 @@ def main() -> int:
     if kind == "estimate":
         return notify(f"[instruction-guard] 指示「{head}」への応答に見積もりが無い。"
                       "作業を続ける前に `見積: N分（HH:MM 完了予定）` を出す（A-2。例外なし）")
+    if kind == "awaiting":
+        return notify("[instruction-guard] 自分で選択肢・可否を問うた直後に着手しようとしている。"
+                      f"直近の応答の末尾: 「…{head}」。**答えを待つ**（保守者の傾向 #39。"
+                      "2026-09-22 に A/B を尋ねた直後に A を実装し「いつ作業をして良いと許可をした」と"
+                      "指摘された）。答えが来ているなら、その指示に沿っていることを 1 行で示してから進む")
     return notify(f"[instruction-guard] 指示「{head}」は日本語。日本語で応答し直す（A-13）")
 
 
