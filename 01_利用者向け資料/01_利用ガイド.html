@@ -408,6 +408,20 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ├── hooks/               ← 見張り役 19 本
 └── settings.json        ← hooks を Claude Code に登録する設定</code></pre>
         </div>
+        <div class="card">
+          <h3>見張り役に止められたら（8.2.0〜）</h3>
+          <p>
+            hooks は「規約を読ませる」のではなく「守れていない状態を止める」役です。
+            止められたら安全装置が働いた結果として受け入れ、理由に書かれた<strong>次にやること</strong>に従ってください。
+          </p>
+          <ul>
+            <li><code>git add -A</code> や <code>rm -rf</code> のような<strong>取り返しのつかない操作</strong>は実行前に止まり、代わりの手順が出ます</li>
+            <li>「承知しました」だけの返事や、<strong>実測の無い完了報告</strong>は差し戻されます</li>
+            <li>見積は毎回<strong>実測され</strong>、次の見積に補正がかかります（体感で分を置いて外し続けないため）</li>
+            <li>時刻は日本時間に固定されています（リモート環境は既定が UTC のため）</li>
+          </ul>
+          <p>詳しい一覧は操作マニュアルの「止められたとき」章にあります。</p>
+        </div>
       </section>
 
       <section id="export">

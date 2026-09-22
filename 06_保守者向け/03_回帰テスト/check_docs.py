@@ -318,7 +318,11 @@ def check_user_docs(root: Path, r: Result) -> None:
     散文の規約で、機械が見ていなかった。2026-09-22 に hooks を 2 本足して README も CHANGELOG も
     更新しないまま完了と報告した。資産名がどの利用者向け文書にも出てこなければ申告漏れとみなす。
     """
-    docs = "\n".join(read(root / d) for d in USER_DOCS if (root / d).is_file())
+    # CHANGELOG は「版に何を入れたか」の記録で、使い方の説明ではない。
+    # 名前が CHANGELOG にあるだけで反映済みと数えると、利用者は何も分からないまま通る
+    # （2026-09-22: README と CHANGELOG だけ直して HTML 2 冊を放置したのがこれで通った）。
+    docs = "\n".join(read(root / d) for d in USER_DOCS
+                     if d != "CHANGELOG.md" and (root / d).is_file())
     if not docs:
         return
     targets: list[tuple[str, str]] = []
