@@ -19,11 +19,15 @@
 記録先は `.claude/tool-time.json`。hook は失敗しても作業を止めない（常に exit 0）。
 """
 import json
+import os
 import pathlib
 import sys
 import time
 
-_FILE = pathlib.Path(__file__).resolve().parent.parent / "tool-time.json"
+# 記録先。AIDD_TOOL_TIME で差し替えられる（回帰テストが稼働中セッションの計測を壊さないため。
+# テストは $HOOKS を直接叩くので、既定のままだと reset-session や rm で実データが消える）
+_FILE = pathlib.Path(os.environ.get("AIDD_TOOL_TIME")
+                     or pathlib.Path(__file__).resolve().parent.parent / "tool-time.json")
 # total_* はターン単位（UserPromptSubmit の reset で 0 に戻る）。session_* は通算で、
 # reset では消えない（複数ターンにまたがる作業の実績を出すため。2026-09-22 の残課題）
 _EMPTY = {"total_sec": 0.0, "count": 0, "inflight": {}, "since": None, "window_start": None,

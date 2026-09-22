@@ -10,6 +10,8 @@ KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 HOOKS="$KIT_DIR/03_ClaudeCode/hooks"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
+# 計測の記録先を隔離する。既定のままだと稼働中セッションの実績を壊す（2026-09-22）
+export AIDD_TOOL_TIME="$TMP/tool-time.json"
 PASS=0; FAIL=0
 
 json() { printf '{"tool_name":"Write","tool_input":{"file_path":"%s"}}' "$1"; }
@@ -291,7 +293,6 @@ expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 3秒","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 3 分未満の見積は誤差が支配するので突合しない" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
-rm -f "$HOOKS/../tool-time.json"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌でも stop_hook_active なら止めない（無限ループ防止）" "$OUT" "$RC"
 # --- tool-timer.py: 見積の「実績」をツール実行時間で測る（入力待ち・思考時間を含まない） ---
@@ -329,7 +330,11 @@ expect_contains "tool-timer: reset で通算は消えない（複数ターンの
 python3 "$TT" reset-session
 OUT=$(python3 "$TT" report --full)
 expect_contains "tool-timer: reset-session で通算も消える" "ツール 0秒 / 0回" "$OUT"
-rm -f "$HOOKS/../tool-time.json"
+# 記録先の隔離。既定のままだとテストが稼働中セッションの実績を壊す（2026-09-22）
+expect_contains "tool-timer: AIDD_TOOL_TIME の隔離が効いている（本番を壊さない）" "$TMP" "$AIDD_TOOL_TIME"
+AIDD_TOOL_TIME="$TMP/other.json" python3 "$TT" reset-session
+OUT=$(AIDD_TOOL_TIME="$TMP/other.json" python3 "$TT" report --full)
+expect_contains "tool-timer: 記録先を替えれば別の計測になる" "ツール 0秒 / 0回" "$OUT"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?
