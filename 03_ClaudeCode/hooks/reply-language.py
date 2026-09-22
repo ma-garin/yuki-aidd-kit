@@ -39,13 +39,13 @@ def is_filler_only(msg: str) -> bool:
 
 
 _TIMER = Path(__file__).resolve().parent / "tool-timer.py"
-ACTUAL_RE = re.compile(r"実績[:：]")
+ACTUAL_RE = re.compile(r"実測[:：]")
 
 
 def missing_actual(msg: str) -> str | None:
-    """このターンでツールを使ったのに実績行が無ければ、貼るべき実績の1行を返す。
+    """このターンでツールを使ったのに実測行が無ければ、貼るべき実測の1行を返す。
 
-    見積（A-2）は実績と対で初めて意味を持つ。数えているのに書かないのを止める。
+    見積（A-2）は実測と対で初めて意味を持つ。数えているのに書かないのを止める。
     計測器が無い・0 回（会話だけのターン）なら None。
     """
     if ACTUAL_RE.search(msg):
@@ -141,8 +141,7 @@ def main() -> int:
         return 0
     missing = missing_actual(msg)
     if missing is not None:
-        reason = (f"[reply-language] ツールを使ったのに応答の最後に実績が無い。{missing} を末尾に足して出し直す"
-                  "（A-2。見積と実績を必ず並べる）")
+        reason = (f"[reply-language] 応答の最後に実測が無い。`見積: N分 / {missing}` の形で1行だけ足す（A-2）")
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     if is_filler_only(msg):

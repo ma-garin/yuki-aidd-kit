@@ -273,10 +273,10 @@ python3 "$HOOKS/tool-timer.py" reset
 printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py" pre
 printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py" post
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。テストは全て PASS です。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
-expect_contains "Stop: ツールを使ったのに実績が無ければ差し戻す" "応答の最後に実績が無い" "$OUT"
-expect_contains "Stop: 差し戻し文に貼るべき実測値を含める" "実績: " "$OUT"
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 1秒","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
-expect_empty "Stop: 実績があれば通す" "$OUT" "$RC"
+expect_contains "Stop: ツールを使ったのに実測が無ければ差し戻す" "応答の最後に実測が無い" "$OUT"
+expect_contains "Stop: 差し戻し文に貼るべき実測値を含める" "実測: " "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 実測があれば通す" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"はい、そうです。それは 3 番の仕様です。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: ツールを使っていないターンは実績を求めない" "$OUT" "$RC"
@@ -285,12 +285,12 @@ expect_empty "Stop: ツールを使っていないターンは実績を求めな
 python3 "$HOOKS/tool-timer.py" reset-session
 printf '{"tool_name":"Bash","tool_use_id":"g1"}' | python3 "$HOOKS/tool-timer.py" pre
 printf '{"tool_name":"Bash","tool_use_id":"g1"}' | python3 "$HOOKS/tool-timer.py" post
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 3秒","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
 expect_contains "Stop: 見積が経過の 3 倍超なら過大見積として差し戻す" "過大見積" "$OUT"
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 3秒。差異は読む対象が 5 ファイルに収束したため","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満。差異は読む対象が 5 ファイルに収束したため","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
 { u_text "調査して"; a_text "見積: 1分（23:00 完了予定）"; } > "$TRJ"
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 3秒","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 3 分未満の見積は誤差が支配するので突合しない" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
@@ -320,7 +320,7 @@ expect_contains "tool-timer: 対になる pre が無い post で件数が増え�
 OUT=$(printf 'not json' | python3 "$TT" pre; echo "rc=$?")
 expect_contains "tool-timer: 壊れた入力でも作業を止めない" "rc=0" "$OUT"
 OUT=$(python3 "$TT" report --full)
-expect_contains "tool-timer: 既定は経過時間だけの最短形" "実績: " "$(python3 "$TT" report)"
+expect_contains "tool-timer: 既定は分だけの最短形" "実測: " "$(python3 "$TT" report)"
 OUT=$(python3 "$TT" elapsed)
 expect_contains "tool-timer: elapsed は数値だけを返す" "." "$OUT"
 python3 "$TT" reset
