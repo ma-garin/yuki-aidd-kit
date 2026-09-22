@@ -161,12 +161,13 @@
       <nav>
         <ol class="nav-list">
           <li><a href="#intro">まず 3 分：これは何？</a></li>
-          <li><a href="#words">先に知っておく言葉 8 つ</a></li>
+          <li><a href="#words">先に知っておく言葉 9 つ</a></li>
           <li><a href="#inside">箱の中身を一言ずつ</a></li>
           <li><a href="#prereq">導入の前に確認すること</a></li>
           <li><a href="#install">導入 A：自分のパソコンに入れる</a></li>
           <li><a href="#export">導入 B：プロジェクトに同梱する</a></li>
           <li><a href="#first">はじめての会話</a></li>
+          <li><a href="#agents">まるごと任せる（エージェント）</a></li>
           <li><a href="#promises">AI との 3 つの約束</a></li>
           <li><a href="#handson">ハンズオン：事例を通しでやる</a></li>
           <li><a href="#daily">1 日の流れ</a></li>
@@ -190,12 +191,13 @@
         <summary>目次を開く</summary>
         <ol class="nav-list">
           <li><a href="#intro">まず 3 分：これは何？</a></li>
-          <li><a href="#words">先に知っておく言葉 8 つ</a></li>
+          <li><a href="#words">先に知っておく言葉 9 つ</a></li>
           <li><a href="#inside">箱の中身を一言ずつ</a></li>
           <li><a href="#prereq">導入の前に確認すること</a></li>
           <li><a href="#install">導入 A：自分のパソコンに入れる</a></li>
           <li><a href="#export">導入 B：プロジェクトに同梱する</a></li>
           <li><a href="#first">はじめての会話</a></li>
+          <li><a href="#agents">まるごと任せる（エージェント）</a></li>
           <li><a href="#promises">AI との 3 つの約束</a></li>
           <li><a href="#handson">ハンズオン：事例を通しでやる</a></li>
           <li><a href="#daily">1 日の流れ</a></li>
@@ -265,8 +267,8 @@
       </section>
 
       <section id="words">
-        <h2><span class="h2-ic">2</span>先に知っておく言葉 8 つ</h2>
-        <p>この 8 つだけ分かれば、あとの説明が読めます。詳しい用語集は<a href="#glossary">最後</a>にあります。</p>
+        <h2><span class="h2-ic">2</span>先に知っておく言葉 9 つ</h2>
+        <p>この 9 つだけ分かれば、あとの説明が読めます。詳しい用語集は<a href="#glossary">最後</a>にあります。</p>
         <table>
           <thead><tr><th>言葉</th><th>ざっくり言うと</th></tr></thead>
           <tbody>
@@ -276,6 +278,7 @@
             <tr><td><strong>リポジトリ（repo）</strong></td><td>プロジェクトのファイル一式と、その変更履歴をまとめたもの。<code>git clone</code> はそれを自分のパソコンに丸ごとコピーする命令です</td></tr>
             <tr><td><strong><code>~/.claude/</code></strong></td><td>自分のホームフォルダにある、Claude Code の設定置き場。<code>~</code> はホームフォルダ（Mac なら「ユーザ › あなたの名前」）の略。ここに置いたものは、どのプロジェクトを開いても効きます</td></tr>
             <tr><td><strong>スキル</strong></td><td>「UI を作るときはこう」「テストはこう回す」という場面別の手順書。AI はあなたの言葉を見て、合う手順書を自分で開きます</td></tr>
+            <tr><td><strong>エージェント</strong></td><td>手順書を<strong>使う側</strong>。目標を渡すと、どの手順書を開くか・次に何をするかを自分で決め、検査が通るまで繰り返します。「〇〇を作って」と言うだけで最後まで進むのはこれです（Claude Code のみ）</td></tr>
             <tr><td><strong>hook（フック）</strong></td><td>AI が何かする直前・直後に自動で走る小さなプログラム。「頼んでいないテストは走らせない」のように、口約束ではなく機械で止めます</td></tr>
             <tr><td><strong>ゲート</strong></td><td>「通らないと先に進めない検査」のこと。テスト、秘密情報の検査、文書のズレ検査など。このキットでは<strong>人が「回して」と言ったときだけ</strong>回ります</td></tr>
           </tbody>
@@ -293,14 +296,17 @@ Claude Code / Codex
    ├─ AGENTS.md ……… 共通の約束事（速度優先、目的を 1 行書く、未確認を「完了」と言わない…）
    ├─ rules/ ……………… 規律 3 本（進め方 / 速さの出し方 / どのモデルを使うか）
    │
-   │  ② あなたの言葉に合わせて開く（必要なときだけ）
+   │  ② まるごと任せるなら、ここが受ける
+   ├─ agents/ ………… 自分で工程を進める 5 体（「〇〇を作って」→ aidd-lead が受けて最後まで回す）
+   │
+   │  ③ あなたの言葉に合わせて開く（必要なときだけ）
    ├─ skills/ …………… 19 の手順書（「設定画面」→ design-system と uiux_review が開く）
    ├─ commands/ ……… /plan /implement /qa-review のようなスラッシュコマンド 18 個
    │
-   │  ③ 裏で見張る（機械）
+   │  ④ 裏で見張る（機械）
    ├─ hooks/ …………… 7 個（頼んでいないテストを止める、調べ直しを止める、進み具合を表示）
    │
-   │  ④ 人が使う道具
+   │  ⑤ 人が使う道具
    ├─ 00_導入/ ………… 導入・配布（install / export / init / verify / check-design）
    ├─ 02_共通/ツール/ …………… あなたのプロジェクトの scripts/ に置かれて動く道具（trace-check / check-approval / test-metrics …）
    └─ 02_共通/ひな形/ …… 雛形（工程文書・テスト文書・デザインの CSS と部品）</pre></div>
@@ -308,6 +314,7 @@ Claude Code / Codex
         <div class="grid-2">
           <div class="card"><h4>AGENTS.md / CLAUDE.md（共通の約束事）</h4><p>AI が毎回いちばん最初に読む 1 枚。「やりたいこと → 最初に使う手順書」の対応表もここ。CLAUDE.md は AGENTS.md を読み込む 1 行と、Claude Code だけで効く設定を持つ小さなファイルです。</p></div>
           <div class="card"><h4>rules/（規律 4 本）</h4><p>毎回読むのは 3 本だけ（合計 100 行以下に抑えてあります）。4 本目の「機能完全性」は、コードや画面を触ったときだけ読まれます。</p></div>
+          <div class="card"><h4>agents/（5 体のエージェント）</h4><p>「図書管理システムを作って」のように<strong>成果物ごと頼む</strong>と、<code>aidd-lead</code> が受けて、種類の判定・工程分け・設計・実装・画面・テストまで自分で進めます。どの手順書を使うかを、あなたが選ぶ必要はありません。</p></div>
           <div class="card"><h4>skills/（20 の手順書）</h4><p>毎日の進め方を決める 13 本と、プロジェクトの種類で選ぶ 7 本。1 本 200 行以下。AI はあなたの言葉で「どれを開くか」を決めます。</p></div>
           <div class="card"><h4>commands/（18 のコマンド）</h4><p>会話の中で <code>/plan</code> のように打つと決まった手順が走ります。よく使うのは <code>/plan</code> <code>/implement</code> <code>/qa-review</code> <code>/retro</code>。</p></div>
           <div class="card"><h4>hooks/（7 の見張り）</h4><p>「頼んでいないテストを拒否」「実装中の調べ直しを拒否」「1 分超の作業の進み具合を表示」など。口約束を機械にしたものです。</p></div>
@@ -494,8 +501,67 @@ uiux_review で通常・0 件・狭い画面の 3 状態を実機で開いて確
         </div>
       </section>
 
+      <section id="agents">
+        <h2><span class="h2-ic">6</span>まるごと任せる（エージェント）</h2>
+
+        <p>ここまでは「手順書を AI に選ばせる」使い方でした。もう一段上があります。<strong>作りたいものを言うだけ</strong>で、あとは任せる使い方です。</p>
+
+        <div class="chat">
+          <div class="you"><span class="who">あなた</span>図書管理システムを作って</div>
+          <div class="ai"><span class="who">AI</span>目的: 図書管理システムを受け入れテストに出せる状態にする
+（aidd-lead が受け、種別を判定 → 単一 HTML ツールと判断。工程を分けて進める方式を選択）
+まず要件定義（工程1）を起こしました。貸出・返却・検索・一覧の 4 機能、受入基準つきです。
+判断が要る点: ①延滞の扱いは今回の範囲に入れますか ②利用者の登録は手入力でよいですか
+残課題: 上記 2 点の合意待ち。合意後は基本設計から受け入れ準備まで止まらずに進みます</div>
+        </div>
+
+        <h3>あなたが出てくるのは 2 回だけ</h3>
+        <p>「デザインはどうする」「次はテストして」と指示を出す必要はありません。<strong>途中の工程はエージェントが自分で回して収束させます。</strong></p>
+        <div class="diagram"><pre>あなた「図書管理システムを作って」
+   │
+   ▼
+ aidd-lead（統括）── 種類を判定し、進め方を決める
+   │
+   ├─ 工程1 要件定義 ─────────────▶ ★あなたの合意を待つ（1 回目）
+   │
+   ├─ 工程2・3 設計   ─ spec-agent   ─┐
+   ├─ 工程4   実装＋画面 ─ build-agent ─┼─▶ gate-agent が出口で点検
+   ├─ 工程5〜7 テスト  ─ verify-agent ─┘        │
+   │                                            ├─ 直しが要る → 担当へ戻す（2 周まで）
+   │                                            └─ 問題なし  → 次の工程へ
+   │
+   └─ 工程8 受け入れテスト ───────────▶ ★あなたの判定を待つ（2 回目）</pre></div>
+
+        <div class="grid-2">
+          <div class="card"><h4>デザインも勝手に動きます</h4><p>「デザインをどうするか」を聞かれません。<code>build-agent</code> が実装と一緒に、キットの色・部品を当てて、通常／実行中／失敗／0 件／狭い画面／モーダルの<strong>全部の状態</strong>を作ります。</p></div>
+          <div class="card"><h4>テストは直すところまでやります</h4><p><code>verify-agent</code> は「テストを書いた」「落ちました」で終わりません。落ちた原因を分類して直し、また実行します。重大な不具合が残ゼロになるまで繰り返します。</p></div>
+          <div class="card"><h4>止まる条件は機械が決めます</h4><p>「できた気がする」では終わりません。<code>trace-check.sh</code>（要件がテストまで漏れていないか）、<code>check-design.sh</code>（見た目が揃っているか）などの検査が通るまで回ります。</p></div>
+          <div class="card"><h4>2 周で直らなければ聞きに来ます</h4><p>同じところで 2 回やり直しても収束しなければ、そこで止めてあなたに上げます。「何が起きたか／試した 2 案／判断してほしいこと」の 3 行で来ます。</p></div>
+        </div>
+
+        <h3>AI は判子を押しません</h3>
+        <p>途中の工程は「AI の点検は済み・承認待ち」として積み上がります。<strong>承認欄は空のままです。</strong>受け入れのときに、あなたがまとめて判断します。AI が承認してしまうと、第三者が検証した意味が消えるためです。</p>
+
+        <h3>5 体の役割</h3>
+        <table>
+          <thead><tr><th>名前</th><th>担当</th><th>何が終わりか</th></tr></thead>
+          <tbody>
+            <tr><td><code>aidd-lead</code></td><td>統括。種類の判定・進め方の選択・全体の駆動</td><td>受け入れの材料が揃う</td></tr>
+            <tr><td><code>spec-agent</code></td><td>基本設計・詳細設計</td><td>要件がすべて設計に落ちている</td></tr>
+            <tr><td><code>build-agent</code></td><td>実装と画面（デザイン込み）</td><td>見た目が揃い、操作が最後まで通る</td></tr>
+            <tr><td><code>verify-agent</code></td><td>単体・結合・システムテスト</td><td>重大な不具合が残ゼロ</td></tr>
+            <tr><td><code>gate-agent</code></td><td>各工程の出口の点検</td><td>差し戻しが 0 件</td></tr>
+          </tbody>
+        </table>
+
+        <div class="note"><p><strong>手動で進めたいときは、これまでどおりで構いません。</strong>「まず設計だけ見たい」「この画面だけ直したい」のように範囲を区切って頼めば、エージェントは出てこず、手順書（skills）とコマンドで進みます。任せるか自分で進めるかは、その時の頼み方で決まります。</p></div>
+
+        <div class="note"><p><strong>Codex では使えません。</strong>エージェントは Claude Code だけの仕組みです。Codex では同じ中身が手順書（skills）として入っているので、これまでどおり <code>$名前</code> で呼んで進めます。</p></div>
+      </section>
+
+
       <section id="promises">
-        <h2><span class="h2-ic">6</span>AI との 3 つの約束</h2>
+        <h2><span class="h2-ic">7</span>AI との 3 つの約束</h2>
         <p>使っていると「AI が止まった」「拒否された」と感じる場面があります。全部このキットの<strong>わざとそうしている</strong>約束です。理由を知っておくと慌てません。</p>
 
         <h3>約束 1：テストや検査は「頼んだときだけ」回る</h3>
@@ -622,10 +688,11 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
       </section>
 
       <section id="daily">
-        <h2><span class="h2-ic">7</span>1 日の流れ</h2>
+        <h2><span class="h2-ic">8</span>1 日の流れ</h2>
         <table>
           <thead><tr><th>いつ</th><th>やること</th><th>言い方</th></tr></thead>
           <tbody>
+            <tr><td><strong>まるごと任せるとき</strong></td><td>作るものだけ言う。工程・デザイン・テストは任せる</td><td>「〇〇システムを作って」→ <code>aidd-lead</code> が受け、要件定義と受け入れの 2 回だけ聞きに来る</td></tr>
             <tr><td>朝・始めるとき</td><td>前回の続きを思い出させる</td><td>「CURRENT_STATE.md を読んで、今日やることを 3 つ挙げて」</td></tr>
             <tr><td>作業に入る前</td><td>方針を決める</td><td><code>/plan 〇〇機能を追加したい</code> → PLAN.md を読んで OK を出す</td></tr>
             <tr><td>作るとき</td><td>実装モードで作らせる</td><td><code>/implement</code></td></tr>
@@ -643,11 +710,12 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
       </section>
 
       <section id="phrases">
-        <h2><span class="h2-ic">8</span>こんな時はこう言う</h2>
-        <p>手順書（スキル）の名前を覚える必要はありません。<strong>やりたいことを普通の言葉で言えば</strong>、AI が合う手順書を開きます。とはいえ「何が開くか」を知っていると狙って使えるので、対応表を置いておきます。</p>
+        <h2><span class="h2-ic">9</span>こんな時はこう言う</h2>
+        <p>手順書（スキル）の名前を覚える必要はありません。<strong>やりたいことを普通の言葉で言えば</strong>、AI が合う手順書を開きます。作るものごと任せるなら 1 行目のエージェントに投げるだけで済みます。とはいえ「何が開くか」を知っていると狙って使えるので、対応表を置いておきます。</p>
         <table>
           <thead><tr><th>やりたいこと</th><th>言い方の例</th><th>裏で開く手順書・コマンド</th></tr></thead>
           <tbody>
+            <tr><td><strong>成果物をまるごと作ってほしい</strong></td><td>「図書管理システムを作って」</td><td><code>aidd-lead</code>（エージェント）。種類の判定から受け入れ準備まで自分で進む。あなたは要件定義の合意と受け入れ判定だけ</td></tr>
             <tr><td>進め方を決めたい</td><td>「この案件は工程を分けるべき？」</td><td><code>dev-lifecycle</code> の判断表。分けるなら <code>/rfd</code> → <code>/lifecycle</code>、軽ければ <code>/sdd-start</code></td></tr>
             <tr><td>画面を作る・直す</td><td>「設定画面を作って」「ボタンの見た目を揃えて」</td><td><code>design-system</code>（用意済み CSS を読み込む）→ <code>uiux_review</code></td></tr>
             <tr><td>テストの方針を決める</td><td>「このプロジェクトのテスト戦略を決めて」</td><td><code>test-strategy</code>。コードは <code>test-automation</code>、画面操作の自動テストは <code>/e2e-cycle</code></td></tr>
@@ -663,7 +731,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
       </section>
 
       <section id="gates">
-        <h2><span class="h2-ic">9</span>品質チェックの回し方（すべて手動）</h2>
+        <h2><span class="h2-ic">10</span>品質チェックの回し方（すべて手動）</h2>
         <div class="callout danger">
           <div class="callout-title">このキットの方針：自動で勝手に動くものは無い</div>
           <p>検査は<strong>人が起動したときだけ</strong>動きます。GitHub Actions のワークフロー（キット自身の <code>kit-ci.yml</code> と、配布用サンプル 4 本）も、GitHub の Actions 画面で「Run workflow」を押したときだけ走り、コミットや PR で勝手に走ることはありません。AI にも「テストを回して」と言ったときだけ回させます。</p>
@@ -1113,6 +1181,8 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
             <tr><td>AGENTS.md / CLAUDE.md</td><td>AI が毎回最初に読む共通の約束事。本体は AGENTS.md 一本。CLAUDE.md は「AGENTS.md を読め」の 1 行 ＋ Claude Code だけで効く設定</td></tr>
             <tr><td>rules（規律）</td><td><code>.claude/rules/</code> に置く短い約束事。<code>paths:</code> 指定が無いものは毎回、有るものは該当ファイルを触ったときだけ読まれる</td></tr>
             <tr><td>スキル（SKILL.md）</td><td>場面別の手順書。先頭の説明文に含まれる言葉で自動的に開く</td></tr>
+            <tr><td>エージェント（agents/）</td><td>手順書を使って自分で進める実行役。目標・繰り返し・終わりの条件を持つ。Claude Code のみ。統括は <code>aidd-lead</code></td></tr>
+            <tr><td>aidd-lead</td><td>成果物ごとの依頼を受ける統括エージェント。種類の判定・工程分け・差し戻しの割り振りを自分で決め、要件定義の合意と受け入れ判定だけ人に聞く</td></tr>
             <tr><td>スラッシュコマンド</td><td>会話中に <code>/plan</code> のように打つと決まった手順が走るもの。キットには 18 個</td></tr>
             <tr><td>hook（フック）</td><td>AI の操作の直前・直後に自動で走る小さなプログラム。口約束を機械で強制する</td></tr>
             <tr><td>ゲート</td><td>通らないと先に進めない検査。このキットでは人が頼んだときだけ回る</td></tr>
@@ -1138,7 +1208,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
       <section id="next">
         <h2><span class="h2-ic">→</span>次に読むもの</h2>
         <ol>
-          <li><a href="02_操作マニュアル.html">取り扱い説明書</a> — スキル 20 本の選び方・コマンド 18 本の一覧・ECC との関係・プロジェクト別の使い分け・困った時（13 章）</li>
+          <li><a href="02_操作マニュアル.html">取り扱い説明書</a> — エージェント 5 体・スキル 20 本の選び方・コマンド 18 本の一覧・ECC との関係・プロジェクト別の使い分け・困った時</li>
           <li><code>README.md</code> — 版ごとに何が増えたか、フォルダ構成の全体図</li>
           <li><code>INDEX.md</code> — 全ファイルの地図。1 行要約と「読むと何行か」</li>
           <li><code>01_利用者向け資料/04_運用モード.md</code> — 日常の標準作業モード（種別判定・読む範囲・実装ループ・完了判定）</li>

@@ -629,6 +629,7 @@
           <li><a href="#what">何をする道具か</a></li>
           <li><a href="#first">最初にやること</a></li>
           <li><a href="#deploy">導入方式（2種類）</a></li>
+          <li><a href="#agents">エージェントに任せる</a></li>
           <li><a href="#daily">毎日の使い方</a></li>
           <li><a href="#lifecycle">開発工程（RFD〜運用）</a></li>
           <li><a href="#skills">スキルの選び方</a></li>
@@ -651,6 +652,7 @@
           <li><a href="#what">何をする道具か</a></li>
           <li><a href="#first">最初にやること</a></li>
           <li><a href="#deploy">導入方式（2種類）</a></li>
+          <li><a href="#agents">エージェントに任せる</a></li>
           <li><a href="#daily">毎日の使い方</a></li>
           <li><a href="#lifecycle">開発工程（RFD〜運用）</a></li>
           <li><a href="#skills">スキルの選び方</a></li>
@@ -937,6 +939,80 @@ git commit -m "chore: add AIDD Kit"</code></pre>
           </div>
           <div class="chapter-nav">
             <a class="chapter-nav-prev" href="#first">← 前へ</a>
+            <a class="chapter-nav-next" href="#agents">次へ →</a>
+          </div>
+        </section>
+
+        <section id="agents">
+          <h2><span class="h2-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></span>エージェントに任せる</h2>
+          <p>
+            スキルやコマンドは「AIに渡す手順書」でした。エージェントはその手順書を<strong>使う側</strong>です。
+            作りたいものを伝えるだけで、どの手順書を開くか・次に何をするかを自分で決め、検査が通るまで繰り返します。
+            Claude Code だけの仕組みで、<code>~/.claude/agents/</code>（または <code>&lt;対象&gt;/.claude/agents/</code>）に 5 体入ります。
+          </p>
+
+          <h3>使い方</h3>
+          <pre><code>図書管理システムを作って</code></pre>
+          <p>
+            これだけです。「デザインはどうする」「次はテストして」と指示を出す必要はありません。
+            <strong>あなたが出てくるのは要件定義の合意と、受け入れ判定の 2 回だけ</strong>です。
+          </p>
+
+          <div class="flow-v">
+            <div class="flow-row"><span class="flow-num">1</span><div class="flow-body"><code>aidd-lead</code> が受ける。種類（PWA / 単一HTML / Streamlit）を判定し、工程を分けるかどうかを決める</div></div>
+            <div class="flow-row"><span class="flow-num">★</span><div class="flow-body"><strong>要件定義をあなたに出す。ここで止まる</strong>（受入基準の解釈が意図と合っているかは人しか判定できないため）</div></div>
+            <div class="flow-row"><span class="flow-num">2</span><div class="flow-body"><code>spec-agent</code> が基本設計・詳細設計。要件がテストまで漏れなく落ちるまで自分で直す</div></div>
+            <div class="flow-row"><span class="flow-num">3</span><div class="flow-body"><code>build-agent</code> が実装と画面。<span class="term">デザイン<span class="term-tip">色・余白・部品。キットの CSS を読み込む形で当てるので、指示しなくても揃います。</span></span>も一緒に当て、通常・実行中・失敗・0件・狭い画面・モーダルの全状態を作る</div></div>
+            <div class="flow-row"><span class="flow-num">4</span><div class="flow-body"><code>verify-agent</code> が単体・結合・システムテスト。落ちたら原因を分類して直し、また実行する。重大な不具合が残ゼロになるまで</div></div>
+            <div class="flow-row"><span class="flow-num">◆</span><div class="flow-body">各工程の出口で <code>gate-agent</code> が点検。直しが要れば担当へ戻す（同じところは 2 周まで）</div></div>
+            <div class="flow-row"><span class="flow-num">★</span><div class="flow-body"><strong>受け入れテストの材料を揃えてあなたに出す。ここで止まる</strong></div></div>
+          </div>
+
+          <h3>終わりの条件は機械が決める</h3>
+          <p>
+            「できた気がする」では止まりません。各エージェントの終了条件は、キットに元からある検査スクリプトの合否に接続してあります。
+          </p>
+          <table>
+            <thead><tr><th>エージェント</th><th>担当</th><th>終わりの条件</th></tr></thead>
+            <tbody>
+              <tr><td><code>aidd-lead</code></td><td>統括</td><td>受け入れの材料が揃う</td></tr>
+              <tr><td><code>spec-agent</code></td><td>基本設計・詳細設計</td><td><code>trace-check.sh</code> が NG=0（要件がテストまで漏れていない）</td></tr>
+              <tr><td><code>build-agent</code></td><td>実装＋画面</td><td><code>check-design.sh</code> が NG=0 ＋ 操作が最後まで通る</td></tr>
+              <tr><td><code>verify-agent</code></td><td>単体・結合・システムテスト</td><td>重大な不具合が残ゼロ ＋ <code>test-metrics.sh --gate</code> が合格</td></tr>
+              <tr><td><code>gate-agent</code></td><td>各工程の出口</td><td>差し戻しが 0 件</td></tr>
+            </tbody>
+          </table>
+
+          <h3>AIは判子を押しません</h3>
+          <p>
+            途中の工程は「AIの点検は済み・承認待ち」として積み上がります。<strong>承認欄は空のまま</strong>で、受け入れのときにあなたがまとめて判断します。
+            AIが承認してしまうと、第三者が検証した意味が消えるためです。
+          </p>
+
+          <h3>2周で直らなければ聞きに来ます</h3>
+          <p>
+            同じところで 2 回やり直しても収束しない場合、そこで止めてあなたに上げます。
+            「何が起きたか／試した 2 案とその結果／判断してほしいこと」の 3 行で来ます。
+            要件そのものに矛盾や抜けを見つけたときも、勝手に解釈せず聞きに来ます。
+          </p>
+
+          <h3>任せたくないとき</h3>
+          <p>
+            これまでどおり、スキルとコマンドで進められます。
+            「まず設計だけ見たい」「この画面だけ直したい」のように<strong>範囲を区切って頼めば</strong>、エージェントは出てきません。
+            任せるか自分で進めるかは、その時の頼み方で決まります。
+          </p>
+
+          <div class="callout">
+            <div class="callout-title">Codex では使えません</div>
+            <p>
+              エージェントは Claude Code だけの仕組みです。Codex には同じ中身がスキルとして入っているので、
+              これまでどおり <code>$名前</code> で呼んで、工程はご自身で進めてください。
+            </p>
+          </div>
+
+          <div class="chapter-nav">
+            <a class="chapter-nav-prev" href="#deploy">← 前へ</a>
             <a class="chapter-nav-next" href="#daily">次へ →</a>
           </div>
         </section>
@@ -944,7 +1020,8 @@ git commit -m "chore: add AIDD Kit"</code></pre>
         <section id="daily">
           <h2><span class="h2-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3M21 3v6h-6"/></svg></span>毎日の使い方</h2>
           <p>
-            普段の開発は、次の流れで進めます。難しい単語はその場で説明を添えています。
+            <strong>成果物をまるごと任せるなら、前の章のエージェントに投げるだけで済みます。</strong>
+            ここは、自分で範囲を区切って進めるときの流れです。難しい単語はその場で説明を添えています。
           </p>
           <div class="flow-v">
             <div class="flow-row"><span class="flow-num">1</span><div class="flow-body">対象プロジェクトの `AGENTS.md` または `README.md` を読む（プロジェクトの取扱説明書を確認する）</div></div>
@@ -965,7 +1042,7 @@ git commit -m "chore: add AIDD Kit"</code></pre>
             これで、いきなり大きな調査や実装に入る事故を減らせます。
           </p>
           <div class="chapter-nav">
-            <a class="chapter-nav-prev" href="#deploy">← 前へ</a>
+            <a class="chapter-nav-prev" href="#agents">← 前へ</a>
             <a class="chapter-nav-next" href="#lifecycle">次へ →</a>
           </div>
         </section>
@@ -1515,6 +1592,10 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
               <tr>
                 <td>LIBRARY</td>
                 <td>必要になった時だけ読むもの。削除ではなく、参照用として残す。</td>
+              </tr>
+              <tr>
+                <td>Agent（エージェント）</td>
+                <td>手順書（Skill）を<strong>使う側</strong>。目標を渡すと、どの手順書を開くか・次に何をするかを自分で決め、検査が通るまで繰り返す。Claude Code のみ。統括は <code>aidd-lead</code>。</td>
               </tr>
               <tr>
                 <td>Skill</td>
