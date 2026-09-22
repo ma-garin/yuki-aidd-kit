@@ -115,3 +115,7 @@ description: "AIDDツール群に一貫したビジュアルデザインを適�
 - `02_共通/ひな形/ui/components.css` / `02_共通/ひな形/ui/layout.css`（部品と骨格。`var(--*)` のみ）
 - `02_共通/ひな形/ui/tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py`（フレームワーク別）
 - `02_共通/ひな形/components/feedback.js` / `icons.js` / `demo.html` / `demo-shell.html`（操作フィードバック・アイコン・実機確認ページ）
+
+## 適用範囲と引き継ぎ
+
+**次に渡す先**: 実装は対象別に `single-html-tool` / `personal-pwa` / `streamlit-rag-app`、確認は `uiux_review`、値の検査は `00_導入/03_点検/check-design.sh`。

@@ -13,6 +13,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   6. 常時読込     rules/*.md で paths: frontmatter の無いものの合計行数 ≦ RULES_ALWAYS_MAX
   7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX / agents ≦ AGENT_MAX（05_プロジェクト管理/要求仕様.md 使用性）
   9. 常時読込     03_ClaudeCode/CLAUDE.md.template ＋ 04_Codex/AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
+ 12. スキル範囲  skills/*/SKILL.md に「次に渡す先」（NG）と「使わない場面」（WARN）があるか
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
   8. spec 同期    06_保守者向け/01_内部仕様/01_構成品目目録.md の行数 ↔ 実測、実ファイルが目録に載っているか
 
@@ -305,6 +306,24 @@ COUNT_PATTERNS = (
     ("hooks", re.compile(r"(?:hooks?|見張り役)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件)")),
     ("agents", re.compile(r"(?:エージェント|agents?/?)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件|体)")),
 )
+def check_skill_scope(root: Path, r: Result) -> None:
+    """検査12: スキルが「次に渡す先」を持つか（NG）、「使わない場面」を持つか（WARN）。
+
+    キットの設計目標は「どのスキルを使うかを人間に選ばせない」。そのためには各スキルが
+    自分の外側（次に誰へ渡すか）を知っている必要がある。外部の指示ファイル採点ツール
+    （Schliff）が全スキルに対して同じ欠落を指摘した（2026-09-22）。
+    """
+    for d in sorted((root / "03_ClaudeCode/skills").glob("*/")):
+        f = d / "SKILL.md"
+        if not f.is_file():
+            continue
+        body = read(f)
+        if "次に渡す先" not in body:
+            r.add(True, "スキル範囲", f"skills/{d.name}/SKILL.md", "「次に渡す先」が無い（引き継ぎ先を書く）")
+        if not any(k in body for k in ("使わない場面", "使わない", "対象外", "適用しない")):
+            r.add(False, "スキル範囲", f"skills/{d.name}/SKILL.md", "「使わない場面」が無い（負の適用範囲を書く）")
+
+
 COUNT_DOCS = ("README.md", "INDEX.md", "01_利用者向け資料/01_利用ガイド.html", "01_利用者向け資料/02_操作マニュアル.html")
 
 
@@ -469,6 +488,7 @@ def main() -> int:
     check_counts(root, r)
     check_absolute_paths(root, r)
     check_size_targets(root, r, a.strict or SIZE_STRICT)
+    check_skill_scope(root, r)
     check_spec_inventory(root, r)
 
     report = Path(a.report)

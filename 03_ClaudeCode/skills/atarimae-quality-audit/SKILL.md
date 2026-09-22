@@ -69,3 +69,8 @@ Web は Playwright/`chromium-cli` で駆動（このキットの `test-automatio
 ## 関連（このキット内）
 `qa-review-standards`(ISO/ISTQB の基準) → 何を欠陥とみなすか。本スキル → どう発見し系統的に直すか。
 `test-automation` → 動作をテストで固定。`done-gate` → 完了判定。`accessibility`(ECC) → alt/label/WCAG。
+
+## 適用範囲と引き継ぎ
+
+**使わない場面**: 新規実装の設計には使わない（`design-system` / `dev-lifecycle`）。UI の状態確認は `uiux_review`。
+**次に渡す先**: 見つけた欠落の修正後は `done-gate`、UI なら `uiux_review` で実機確認。

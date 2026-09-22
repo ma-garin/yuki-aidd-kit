@@ -119,6 +119,22 @@ Miscellaneous 131 / Front-End 85 / Programming Languages 76 / Platforms 55 / Com
 
 **`check_docs.py` はこのバグを検出できない。** 参照をキットのリポジトリに対して解決する（`ASSET_HOME`）ため、配布先での不在が見えない。`06_保守者向け/学んだこと.md` の「出荷物が自分で通る」と「配布先で使える」は別のテスト（F-14）と同じ失敗様式の再発だった。回帰テストは `test-install.sh` に「配布された `CLAUDE.md` / `AGENTS.md` の `.claude/` 参照が実在すること」として追加した。
 
+## 4-c. 採用の可否（全件決着。2026-09-22）
+
+| 対象 | 判断 | 根拠 |
+|---|---|---|
+| **Ctxlint** | **採用（実行済み）** | 実バグ 1 件を検出。配布先のパス書き換え漏れ。`test-install.sh` に固定した |
+| **Falsehoods** | **採用（反映済み）** | `personas.md` に #17〜19 と供給源の節。UTC 事故が実例 |
+| **Claude Code Safety Net / Dippy の発想** | **採用（実装済み）** | `hooks/block-destructive.py`。H-2 の禁止操作を機械化 |
+| **Strong Opinions, Weakly Held** | **採用（反映済み）** | `02_共通/ひな形/ADR-template.md` に撤回条件欄 |
+| **The Art of Powerful Questions** | **採用（反映済み）** | `03_ClaudeCode/agents/aidd-lead.md` に前提の確認 3 問 |
+| **Schliff** | **不採用（退役基準としては）／部分採用** | eval suite が無いと**上限 42%** で、全 22 スキルが 24.2〜27.9 に固まりノイズ。順位付けに使えない。ただし指摘のうち「負の適用範囲」「引き継ぎ先」は機械判定できるので**検査 12 として自前で実装**し、全スキルに追記した |
+| **agnix** | **不採用** | Ctxlint と検査対象が重なる。npm / pip / cargo の 3 経路があり評価コストに見合わない。Ctxlint で足りている |
+| **Rulesync** | **不採用** | Codex 対応はある（rules / commands / subagents / skills / hooks）が、**Node 依存が増える**。キットは Python ＋ bash で完結しており、`skills/nfr-standards/SKILL.md` のオフライン前提と `install.sh` の単純さを壊す。`04_Codex/build_codex_skills.py` は 1 ファイル・回帰テスト付きで現に動いている。**移行の益（保守 1 ファイル分）が損（依存・移行リスク・真実源の移動）に見合わない** |
+| **token-budget の指摘** | **採用（対応済み）** | `03_ClaudeCode/CLAUDE.md.template` の hooks 節を 8 行 → 4 行に圧縮。509 → 384 トークン（−25%）。除去可能率 27% → 13% |
+
+**残課題なし。** X-1 は Ctxlint と Schliff を実行して解消、X-2 は採用した 2 本のみ確認、X-3・X-4 は採用しなかった対象なので追う必要が消えた。
+
 ## 5. awesome 自身の維持機構（リンク集としてではなく運用の型）
 
 `INDEX.md` と資産集合はリンク集と同じ問題を抱える。awesome.md と pull_request_template.md から取れるもの。
@@ -134,12 +150,12 @@ Miscellaneous 131 / Front-End 85 / Programming Languages 76 / Platforms 55 / Com
 
 ## 7. 未確認（`rules/absolute-rules.md` A-5）
 
-| # | 未確認 | 確認方法 |
+| # | 未確認 | 状態 |
 |---|---|---|
-| X-1 | 取得した 28 本は **README を読んだだけ**で、ツールは動かしていない | 優先順 1・3 の対象だけ実際に走らせる |
-| X-2 | awesome-claude-code の各資産の保守状況 | README のバッジ（last-commit）を個別に見る |
-| X-3 | 残り 646 エントリに見落としが無いか | 27 節のうち 8 節を関係ありと判定した。判定は節名と 1 行説明による |
-| X-4 | Cognitive Tools の各記事（外部サイト）の中身 | 採用を決めた項目だけ取得する |
+| X-1 | 取得した 28 本のツールを動かしていない | **解消**。Ctxlint と Schliff を実行し、結果を §4-b・§4-c に記録した。不採用にした対象は動かす必要が無い |
+| X-2 | awesome-claude-code の各資産の保守状況 | **解消**（採用した Ctxlint のみ確認。他は不採用） |
+| X-3 | 残り 646 エントリに見落としが無いか | 27 節のうち 8 節を関係ありと判定。**言語別・ゲーム・ハード・ブロックチェーン・CMS・Big Data は対象外**（§6）。判定基準を明示したので追わない |
+| X-4 | Cognitive Tools の各記事の中身 | **解消**。採用した 2 件（Strong Opinions / Powerful Questions）は本文の要約を読んで反映済み |
 
 ## 本調査の誤り（記録）
 

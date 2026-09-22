@@ -159,9 +159,14 @@ def main() -> int:
         raw = timer("elapsed")
         if est is not None and raw:
             try:
-                note = gap_note(est, float(raw))
+                elapsed = float(raw)
             except ValueError:
-                note = None
+                elapsed = None
+            note = None
+            if elapsed is not None:
+                # 予実を履歴に積む。次の見積の校正に使う（prompt-priority が係数を注入する）
+                timer("record", str(est), f"{elapsed:.2f}")
+                note = gap_note(est, elapsed)
             if note:
                 reason = (f"[reply-language] 予実が離れている: {note}。原因を 1 行で書き、"
                           "`06_保守者向け/02_設計判断の根拠/speed-harness.md` の実測記録に追記してから報告する"

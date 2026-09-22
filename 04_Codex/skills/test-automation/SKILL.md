@@ -53,3 +53,8 @@ pytest tests/test_smoke.py            # Playwright（要 playwright install）
 ## 注意
 - テストは実装と独立に書く（Verifier原則）。実装に合わせてテストを緩めない
 - flaky test（待ち時間依存）はexpect/wait_forで明示的に待つ。time.sleep禁止
+
+## 適用範囲と引き継ぎ
+
+**使わない場面**: テストの設計・レベルの切り分けには使わない（`test-strategy`）。画面の状態確認は `uiux_review`。
+**次に渡す先**: E2E の反復は `e2e-cycle`、完了判定は `done-gate`。

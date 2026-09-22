@@ -53,3 +53,7 @@ spec-initの一文の質が全体を決める。requirements後のレビュー�
 npx ecc-agentshield scan         # CIに組み込み継続検査
 ```
 不要な言語スキルは入れない。SQLite追跡で増分更新・ロールバック可能。
+
+## 適用範囲と引き継ぎ
+
+**次に渡す先**: 工程分割が要る案件は `dev-lifecycle` へ移す。実装後は `test-automation` と `done-gate`。

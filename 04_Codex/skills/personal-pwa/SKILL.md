@@ -28,3 +28,8 @@ description: "個人用PWA（家計簿・キャッシュフロー・日記・ス
 - 小規模なのでガバナンスは spec-first（sdd-ecc-workflowスキル参照）
 - 1機能1コミット、GitHub Pagesへの反映確認まで含めて完了とする
 - 既存PWAの改修時はlocalStorageマイグレーション関数を必ず用意
+
+## 適用範囲と引き継ぎ
+
+**使わない場面**: 業務アプリ・複数人で使うものには使わない（`streamlit-rag-app`）。配布用の単一ファイルは `single-html-tool`。
+**次に渡す先**: 画面の見た目は `design-system`、公開前は `uiux_review` と `done-gate`。

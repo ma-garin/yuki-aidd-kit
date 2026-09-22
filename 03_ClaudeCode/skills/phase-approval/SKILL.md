@@ -91,3 +91,8 @@ Agent への並列委譲はトークンが**約 7 倍**になり、Pro＋Sonnet 
 | ISO 25010 / ISTQB severity / ツアー | `skills/qa-review-standards` |
 | ID 体系と追跡表の検査 | `skills/dev-lifecycle/references/traceability.md` |
 | 完了判定のチェックリスト | `skills/done-gate` |
+
+## 適用範囲と引き継ぎ
+
+**使わない場面**: 工程を分けていない案件には使わない（`done-gate`）。AI は approver 欄を埋めない。
+**次に渡す先**: 指摘が出たら担当工程へ差し戻す。承認記録の判定は `scripts/check-approval.sh`。

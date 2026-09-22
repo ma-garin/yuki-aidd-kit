@@ -197,3 +197,4 @@ for pid in $(lsof -ti:PORT); do kill "$pid"; done
 ```
 
 起動ログが出ていることと、応答サイズが期待どおりかを確認する。
+**次に渡す先**: 完了判定は `done-gate`、値の逸脱は `00_導入/03_点検/check-design.sh`、観点の規格は `qa-review-standards`。使わない場面: 画面が無いものには使わない。

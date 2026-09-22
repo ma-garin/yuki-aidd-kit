@@ -52,3 +52,7 @@ severityとpriorityを混同しない。priorityは別軸（ビジネス判断�
 
 ## 報告フォーマット
 指摘1件 = `{id, category(25010), severity(ISTQB), evidence, 再現手順, 改善案}`。Jira CSV / GitHub Issuesへのエクスポートを想定したフラット構造にする。
+
+## 適用範囲と引き継ぎ
+
+**次に渡す先**: 画面を実際に開く確認は `uiux_review`、テストの妥当性は `test-strategy`、ペルソナ検証は `references/personas.md`。

@@ -30,3 +30,8 @@ description: Streamlit + RAGベースの業務アプリ（業務支援エージ�
 - プロンプトはコード内ハードコードせず定数モジュール or 外部ファイルに分離
 - session_stateのキーは `{module}_{name}` 形式で衝突を防ぐ
 - 改修時は対象モジュールのみ読む（16モジュール全読み禁止 → トークン規律）
+
+## 適用範囲と引き継ぎ
+
+**使わない場面**: 個人用の小さな道具には使わない（`personal-pwa` / `single-html-tool`）。RAG が不要なら実装規律の節だけ使う。
+**次に渡す先**: 評価は `agent-eval`、画面は `design-system` と `uiux_review`。

@@ -112,3 +112,8 @@ description: RFD から保守運用までの開発工程（V字モデル）を A
 ## 出力
 
 工程実行時は必ず「①対象工程と入口基準の充足（前工程の承認を含む）②生成/更新した成果物のパス③採番した ID の一覧④`trace-check.sh` の結果⑤`check-approval.sh` の結果⑥出口基準の未達項目」を提示する。未達がある場合、その工程を完了と判定しない。**AI が承認したことにしない。**
+
+## 適用範囲と引き継ぎ
+
+**使わない場面**: 個人 PWA・単一 HTML・PoC には使わない（重い。`sdd-ecc-workflow` の spec/plan/tasks で足りる）。
+**次に渡す先**: 工程の出口は `phase-approval`、テストは `test-strategy` / `test-automation`、追跡は `scripts/trace-check.sh`。
