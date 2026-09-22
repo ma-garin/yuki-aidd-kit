@@ -34,9 +34,6 @@ from pathlib import Path
 TAIL_KB = int(os.environ.get("INSTRUCTION_GUARD_TAIL_KB", "512"))
 JA_RE = re.compile(r"[぀-ヿ一-鿿]")
 ESTIMATE_RE = re.compile(r"見積[:：]")
-# 見積は往復数で出す（speed-harness H-1「自分 n 往復 + 委譲 m 本 ≒ X 分」）。
-# 分だけを体感で置くと当たらない（2026-09-22 の指摘。lessons の「見積 50 分 / 実測 12 分」も同じ原因）
-ROUNDTRIP_RE = re.compile(r"見積[:：][^\n]*?\d+\s*(?:往復|本)")
 TAG_BLOCK_RE = re.compile(r"<([a-zA-Z][\w-]*)(?:\s[^>]*)?>.*?</\1>", re.S)
 
 # 人ではなく機械（サブエージェント・ハーネス・このフック自身）が書いた本文の印。
@@ -155,8 +152,6 @@ def judge(lines: list[str]) -> tuple[str, str] | None:
             return ("language", inst)
         if not any(ESTIMATE_RE.search(r) for r in replies):
             return ("estimate", inst)
-        if not any(ROUNDTRIP_RE.search(r) for r in replies):
-            return ("roundtrip", inst)
         return None
     return None
 
@@ -212,11 +207,7 @@ def main() -> int:
                       "作業するなら 1 行目を `見積: N分（HH:MM 完了予定）` にする（A-13・A-2）")
     if kind == "estimate":
         return notify(f"[instruction-guard] 指示「{head}」への応答に見積もりが無い。"
-                      "作業を続ける前に `見積: 自分 n 往復（≒N分。HH:MM 完了予定）` を出す（A-2。例外なし）")
-    if kind == "roundtrip":
-        return notify(f"[instruction-guard] 指示「{head}」への見積が分だけで、往復数が無い。"
-                      "`見積: 自分 n 往復 + 委譲 m 本（≒N分。HH:MM 完了予定）` の形で出し直す"
-                      "（H-1。分は体感で当たらない。往復数を数えてから分に換算する）")
+                      "作業を続ける前に `見積: N分（HH:MM 完了予定）` を出す（A-2。例外なし）")
     return notify(f"[instruction-guard] 指示「{head}」は日本語。日本語で応答し直す（A-13）")
 
 

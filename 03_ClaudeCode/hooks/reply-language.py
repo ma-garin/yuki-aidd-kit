@@ -48,16 +48,60 @@ def missing_actual(msg: str) -> str | None:
     見積（A-2）は実績と対で初めて意味を持つ。数えているのに書かないのを止める。
     計測器が無い・0 回（会話だけのターン）なら None。
     """
-    if ACTUAL_RE.search(msg) or not _TIMER.is_file():
+    if ACTUAL_RE.search(msg):
         return None
-    try:
-        out = subprocess.run([sys.executable, str(_TIMER), "report"], capture_output=True,
-                             text=True, timeout=5).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        return None
+    out = timer("report")
     if not out or "/ 0 回" in out:
         return None
     return out
+
+
+# 見積の分と、差異を説明した形跡。H-6「見積の 1.5 倍を超えたら原因 1 行」を両方向に広げる
+# （このセッションで起きたのは逆向きの乖離＝見積 40 分に対し実測 6 分。過大見積も同じ害）
+EST_RE = re.compile(r"見積[:：]\s*(\d+)\s*分")
+GAP_RE = re.compile(r"(差異|超過|再見積|見込み違い|見積より)")
+GAP_MIN_EST = 3   # 3 分未満の見積は誤差が支配するので見ない
+
+
+def timer(*args: str) -> str:
+    if not _TIMER.is_file():
+        return ""
+    try:
+        return subprocess.run([sys.executable, str(_TIMER), *args], capture_output=True,
+                              text=True, timeout=5).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def estimate_min(g, lines: list[str]) -> int | None:
+    """直近の人の発言より後のアシスタント応答から、見積の分を拾う。"""
+    for line in reversed(lines):
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(e, dict):
+            continue
+        a = g.assistant_text_of(e)
+        if a:
+            m = EST_RE.search(a)
+            if m:
+                return int(m.group(1))
+            continue
+        if g.instruction_of(e) is not None:
+            return None
+    return None
+
+
+def gap_note(est: int, elapsed: float) -> str | None:
+    """見積と経過が離れていて、説明が要る場合にその一文を返す。"""
+    if est < GAP_MIN_EST:
+        return None
+    if elapsed > est * 1.5:
+        return f"見積 {est} 分に対し経過 {elapsed:.0f} 分（1.5 倍超）"
+    if elapsed * 3 < est:
+        return f"見積 {est} 分に対し経過 {elapsed:.0f} 分（3 分の 1 未満＝過大見積）"
+    return None
 
 
 def load_guard():
@@ -106,6 +150,24 @@ def main() -> int:
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     g = load_guard()
+    tp0 = data.get("transcript_path", "")
+    if not GAP_RE.search(msg) and tp0 and Path(tp0).is_file():
+        try:
+            est = estimate_min(g, g.tail_lines(Path(tp0)))
+        except OSError:
+            est = None
+        raw = timer("elapsed")
+        if est is not None and raw:
+            try:
+                note = gap_note(est, float(raw))
+            except ValueError:
+                note = None
+            if note:
+                reason = (f"[reply-language] 予実が離れている: {note}。原因を 1 行で書き、"
+                          "`06_保守者向け/02_設計判断の根拠/speed-harness.md` の実測記録に追記してから報告する"
+                          "（H-6。見積の作り方を直さないと次も外す）")
+                print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+                return 0
     if g.has_ja(msg):
         return 0
     tp = data.get("transcript_path", "")

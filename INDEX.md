@@ -130,7 +130,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `instruction-guard.py` | PreToolUse（全ツール） | 保守者の発言（ターン冒頭・途中の queued_command・enqueue）に日本語で応答するまで deny。理由に指示の先頭を載せる（読み飛ばし防止）。バイパス無し |
 | `reply-language.py` | Stop | 最後の応答に日本語が無い／指示に未応答のまま終わろうとしたら block で続行させる（stop_hook_active で 1 回だけ） |
 | `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
-| `tool-timer.py` | PreToolUse / PostToolUse | ツール実行時間を積算する（見積の実績の真実源。`report` で1行。入力待ち・思考時間は含まない） |
+| `tool-timer.py` | PreToolUse / PostToolUse / UserPromptSubmit | ツール実行時間と経過時間を積算する（見積の実績の真実源。`report` で1行、`reset-session` で通算も 0 に。入力待ち・思考時間は含まない） |
 | `context-guard.py` | UserPromptSubmit | 55 分以上空いた再開・4 MB 超の会話で `/clear` `/compact` を促す注入（止めない） |
 | `pre-compact.py` | PreCompact | 圧縮時に「残す／捨てる」を注入 |
 | `log-instructions.py` | InstructionsLoaded | 指示ファイルの読み込みを `.claude/instructions-loaded.log` に記録（実測用。Claude には返さない） |
