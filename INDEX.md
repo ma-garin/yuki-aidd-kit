@@ -40,7 +40,7 @@ open 01_利用者向け資料/01_利用ガイド.html                      # ユ
 open 01_利用者向け資料/02_操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（06_保守者向け/ は配布しない）
-./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（171ケース）
+./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（173ケース）
 ./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（120ケース）
 ./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（57ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
@@ -128,7 +128,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `block-gates.py` | PreToolUse Bash | pytest / make test / lint をユーザー要求時（`GATES_REQUESTED=1`）以外は deny |
 | `block-ci.py` | PreToolUse（全ツール） | ScheduleWakeup・CronCreate・send_later 等の自己ウェイク／定期実行と、`gh run watch` 等の CI 起動・待機を deny（Bash は `CI_REQUESTED=1` で許可） |
 | `instruction-guard.py` | PreToolUse（全ツール） | 保守者の発言（ターン冒頭・途中の queued_command・enqueue）に日本語で応答するまで deny。理由に指示の先頭を載せる（読み飛ばし防止）。バイパス無し |
-| `reply-language.py` | Stop | 最後の応答に日本語が無い／指示に未応答のまま終わろうとしたら block で続行させる（stop_hook_active で 1 回だけ） |
+| `reply-language.py` | Stop | 日本語・相槌のみ・実測の無い報告・散文 12 行超・予実の乖離で block（傾向 #32〜36） |
 | `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
 | `block-destructive.py` | PreToolUse(Bash) | 取り返しのつかない操作を deny（reset --hard / clean -fd / stash drop / checkout -- / push --force / add -A / rm -rf）。代替手段を理由に載せる |
 | `tool-timer.py` | PreToolUse / PostToolUse / UserPromptSubmit | 経過時間を積算する（実測の真実源。`report` が `実測: N分` の1行、`--full` で内訳、`reset-session` で通算も 0 に） |
@@ -202,7 +202,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け
 | ファイル | 1行要約 | コスト |
 |---|---|---|
 | `05_プロジェクト管理/ロードマップ.md` | キット開発の作業台帳。**開発を継続するモデルはまずこれ** | 310行 |
-| `06_保守者向け/保守者の傾向.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 81行 |
+| `06_保守者向け/保守者の傾向.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 106行 |
 | `05_プロジェクト管理/構想.md` | キットの目的・到達点・Non-Goals | 47行 |
 | `05_プロジェクト管理/要求仕様.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |
 | `06_保守者向け/学んだこと.md` | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。数値は実測だけ） | 215行 |

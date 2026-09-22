@@ -33,6 +33,25 @@ FILLER_RE = re.compile(
 NOISE_RE = re.compile(r"[\s。、．，・…!?！？「」『』（）()\[\]\-—ー:：;；]+")
 
 
+# 報告の長さの上限（見出し・表・コードブロックを除いた本文の行数）。
+# 「つまり何か」を先に 1 文で言わず、経緯から書き始めると読み手の時間を奪う
+# （2026-09-22: 1 セッションで「つまりどういうことか」「長い」を 4 回言わせた。傾向 #32）
+BODY_MAX_LINES = 12
+_BLOCK_RE = re.compile(r"```.*?```", re.S)
+_SKIP_LINE_RE = re.compile(r"^\s*(#{1,6}\s|\||[-*]\s|\d+\.\s|>\s|$)")
+
+
+def body_lines(msg: str) -> list[str]:
+    """見出し・表・箇条書き・コードブロックを除いた散文の行。"""
+    t = _BLOCK_RE.sub("", msg)
+    return [l for l in t.splitlines() if not _SKIP_LINE_RE.match(l)]
+
+
+def too_long(msg: str) -> int | None:
+    n = len(body_lines(msg))
+    return n if n > BODY_MAX_LINES else None
+
+
 def is_filler_only(msg: str) -> bool:
     """相槌と記号を取り除いて何も残らないか。"""
     return NOISE_RE.sub("", FILLER_RE.sub("", msg)) == ""
@@ -142,6 +161,13 @@ def main() -> int:
     missing = missing_actual(msg)
     if missing is not None:
         reason = (f"[reply-language] 応答の最後に実測が無い。`見積: N分 / {missing}` の形で1行だけ足す（A-2）")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+        return 0
+    n = too_long(msg)
+    if n is not None:
+        reason = (f"[reply-language] 散文が {n} 行ある（上限 {BODY_MAX_LINES}）。"
+                  "**1 文で「つまり何か」を先に書き、詳細は表か箇条書きにする**。"
+                  "経緯・分析・弁明は求められたときだけ（H-0・A-9）")
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     if is_filler_only(msg):

@@ -288,6 +288,15 @@ for FILLER in "承知しました。" "了解。" "指示待ちです。" "（�
 done
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"了解。破棄しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌に続けて内容があれば通す" "$OUT" "$RC"
+# 報告の長さ: 散文が長いと差し戻す（傾向 #32。「つまり何か」を先に 1 文で）
+python3 "$HOOKS/tool-timer.py" reset-session
+LONG=$(python3 -c 'print("\n".join(f"経緯の説明その{i}です。" for i in range(1,16)) + "\n実測: 1分")')
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":%s}' "$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$LONG")" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: 散文が 12 行を超えたら差し戻す" "1 文で" "$OUT"
+SHORT=$(python3 -c 'print("つまり、キットは自分で直るようになりました。\n\n" + "\n".join("- 箇条書きの行" for _ in range(14)) + "\n\n実測: 1分")')
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":%s}' "$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$SHORT")" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 箇条書き・表・見出しは行数に数えない" "$OUT" "$RC"
+
 # 実績の必須化: ツールを使ったターンは末尾に実績を出す（A-2）
 python3 "$HOOKS/tool-timer.py" reset
 printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py" pre
