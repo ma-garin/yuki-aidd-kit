@@ -60,6 +60,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
   "statusLine": { "type": "command", "command": "python3 .claude/hooks/statusline.py", "padding": 2 },
   "hooks": {
     "PreToolUse": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py pre", "timeout": 5 } ] },
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/instruction-guard.py", "timeout": 5, "statusMessage": "保守者の指示に応答済みか確認中" } ] },
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/block-ci.py", "timeout": 5, "statusMessage": "自己ウェイク・CI 待ちでないか確認中" } ] },
       {
@@ -95,6 +96,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/log-instructions.py", "timeout": 5 } ] }
     ],
     "PostToolUse": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py post", "timeout": 5 } ] },
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [

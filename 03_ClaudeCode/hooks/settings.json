@@ -17,6 +17,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 ~/.claude/hooks/tool-timer.py pre",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "python3 ~/.claude/hooks/block-ci.py",
             "timeout": 5,
             "statusMessage": "自己ウェイク・CI 待ちでないか確認中"
@@ -120,6 +129,15 @@
       }
     ],
     "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/tool-timer.py post",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [

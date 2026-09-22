@@ -9,9 +9,29 @@
         "hooks": [
           {
             "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/tool-timer.py\"; [ -f \"$f\" ] && exec python3 \"$f\" pre || exit 0'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/instruction-guard.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
             "timeout": 5,
             "statusMessage": "保守者の指示に応答済みか確認中"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/tool-timer.py\"; [ -f \"$f\" ] && exec python3 \"$f\" post || exit 0'",
+            "timeout": 5
           }
         ]
       }
