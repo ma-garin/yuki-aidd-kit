@@ -5,13 +5,35 @@ instruction-guard.py（PreToolUse）はツールを呼ぶ前を見張る。こ�
 最後の人の発言に日本語があり、最後のアシスタント応答に日本語が無い（または応答が無い）場合、
 decision=block で続行させ、日本語で出し直させる。stop_hook_active のときは何もしない（無限ループ防止）。
 判定ロジックは instruction-guard.py と共有する。
+
+合わせて**相槌だけで終わる応答**も止める（H-0「相槌・前置き・締めの申し出を書かない」）。
+「承知しました」「了解」「指示待ちです」だけの応答はトークンを消費して情報を渡さない。
+内容を答えるか動作するかのどちらかに出し直させる（2026-09-22 の指摘）。
 """
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
 sys.dont_write_bytecode = True  # hooks ディレクトリに __pycache__ を作らない
+
+
+# 相槌・謝辞・待機表明だけの応答。これらを除いて何も残らなければ情報がゼロ
+FILLER_RE = re.compile(
+    r"(承知(いた)?し(まし)?た|了解(です|しました|いたしました)?|かしこまりました|"
+    r"(わ|分)かりました|失礼(いた)?しました|申し訳(ありません|ございません)(でした)?|すみません|"
+    r"指示(を)?(お)?待ち(です|しています|します|いたします)?|お待ちしています|"
+    r"無操作|対応します|進めます|はい|ええ|"
+    r"以後(は)?(気をつけます|注意します|守ります|書きません|しません))"
+)
+# 記号・空白・括弧注記。相槌を除いた残りがこれだけなら情報がゼロと判定する
+NOISE_RE = re.compile(r"[\s。、．，・…!?！？「」『』（）()\[\]\-—ー:：;；]+")
+
+
+def is_filler_only(msg: str) -> bool:
+    """相槌と記号を取り除いて何も残らないか。"""
+    return NOISE_RE.sub("", FILLER_RE.sub("", msg)) == ""
 
 
 def load_guard():
@@ -47,6 +69,11 @@ def main() -> int:
     # 判定は入力の last_assistant_message だけで行い、無ければ判定できないので通す。
     msg = data.get("last_assistant_message")
     if not isinstance(msg, str) or not msg.strip():
+        return 0
+    if is_filler_only(msg):
+        reason = ("[reply-language] 相槌だけで終わっている。相槌・謝辞・待機表明は情報を渡さない（H-0）。"
+                  "問いに答える・結果を渡す・動作する のどれかに出し直す")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     g = load_guard()
     if g.has_ja(msg):
