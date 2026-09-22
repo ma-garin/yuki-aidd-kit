@@ -175,6 +175,26 @@ else
   echo "  ❌ InstructionsLoaded を .claude/instructions-loaded.log に追記"; FAIL=$((FAIL+1))
 fi
 
+echo "[block-destructive.py]"
+bd() { printf '{"tool_name":"Bash","tool_input":{"command":%s}}' "$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$1")" | python3 "$HOOKS/block-destructive.py"; }
+bd_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"]["permissionDecisionReason"] if d.strip() else "")' 2>/dev/null; }
+for c in "git reset --hard HEAD" "git clean -fd" "git stash drop" "git checkout -- src/app.py" "git push --force origin main" "git add -A" "git add ." "rm -rf /tmp/x"; do
+  expect_contains "破壊操作を deny: $c" '"permissionDecision": "deny"' "$(bd "$c")"
+done
+expect_contains "deny 理由に代替手段を含む" "代わりに:" "$(bd_reason "$(bd 'git clean -fd')")"
+for c in "git push --force-with-lease origin main" "git add src/app.py" "git status --short" "mv old new" "rm -f /tmp/x.log"; do
+  OUT=$(bd "$c"); RC=$?
+  expect_empty "許可: $c" "$OUT" "$RC"
+done
+OUT=$(bd "echo 'git reset --hard is forbidden'"); RC=$?
+expect_empty "引用内の語では止めない（誤検知しない）" "$OUT" "$RC"
+OUT=$(bd "git commit -m 'docs: git add -A を禁止した'"); RC=$?
+expect_empty "コミットメッセージ内の語では止めない" "$OUT" "$RC"
+OUT=$(printf '{"tool_name":"Write","tool_input":{"file_path":"/tmp/a"}}' | python3 "$HOOKS/block-destructive.py"); RC=$?
+expect_empty "Bash 以外は対象外" "$OUT" "$RC"
+OUT=$(printf 'not json' | python3 "$HOOKS/block-destructive.py"); RC=$?
+expect_empty "壊れた入力でも止めない" "$OUT" "$RC"
+
 echo "[instruction-guard.py / reply-language.py / prompt-priority.py]"
 # 保守者の指示に応答するまでツールを呼ばせない（PreToolUse 全ツール）／最後の応答の言語（Stop）／優先の注入（UserPromptSubmit）
 IG="$TMP/ig"; mkdir -p "$IG"; TRJ="$IG/t.jsonl"

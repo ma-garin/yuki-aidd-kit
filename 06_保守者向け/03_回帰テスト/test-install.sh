@@ -122,6 +122,16 @@ expect_count "rules 4 個（absolute / speed / model-routing / functional-integr
 for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py scripts/test_metrics.py scripts/test-metrics.sh; do
   expect_file "生成物: $f" "$P/$f"
 done
+# CLAUDE.md / AGENTS.md のバッククォート参照が配布先に実在すること。
+# キット内の呼び名のまま配ると、配布先のエージェントが存在しないパスを探す
+# （2026-09-22、ctxlint が stale-file-ref として検出。.claude/mode は実行時マーカーなので除外）
+MISSING=""
+for ref in $(grep -ohE '`[.]claude/[^`]*`' "$P/CLAUDE.md" "$P/AGENTS.md" | tr -d '`' | sort -u); do
+  [ "$ref" = ".claude/mode" ] && continue
+  [ -e "$P/$ref" ] || MISSING="$MISSING $ref"
+done
+expect_count "CLAUDE.md / AGENTS.md の .claude/ 参照が配布先に実在する（不在:$MISSING）" 0 "$(printf '%s' "$MISSING" | wc -w | tr -d ' ')"
+expect_count "キット内の呼び名（02_共通/）が配布物に残らない" 0 "$(grep -c '02_共通/' "$P/CLAUDE.md" "$P/AGENTS.md" | awk -F: '{s+=$2} END {print s+0}')"
 expect_grep "既存 scripts/trace-check.sh はスキップ（内容保持）" "# my own trace-check" "$P/scripts/trace-check.sh"
 expect_out  "スキップした旨を表示" "scripts/trace-check.sh は既存のためスキップ" "$OUT"
 expect_grep "AGENTS.md の INDEX 参照が .claude/INDEX.md に相対化" ".claude/INDEX.md" "$P/AGENTS.md"

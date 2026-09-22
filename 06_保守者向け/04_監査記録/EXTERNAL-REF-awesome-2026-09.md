@@ -103,6 +103,22 @@ Miscellaneous 131 / Front-End 85 / Programming Languages 76 / Platforms 55 / Com
 | 6 | **Schliff のスコア次元を退役基準に流用** | 資産の増加を止める判定軸（E-1） | 益: 判定が主観でなくなる。損: 評価 30 分 |
 | 7 | **Rulesync で Claude / Codex の二重管理を検討** | `04_Codex/build_codex_skills.py` の保守が不要になる可能性 | 益: 保守コスト減。損: 移行リスク大。**慎重に** |
 
+## 4-b. 実行した結果（2026-09-22。X-1 の一部を解消）
+
+**Ctxlint を実際に走らせた。** キット直下には `CLAUDE.md` / `AGENTS.md` の実体が無い（`.template` のみ）ため、`00_導入/02_プロジェクト配布/export-project.sh` で一時ディレクトリへ配布し、その形に対して実行した。
+
+結果: **errors 4 / warnings 8**。うち **1 件は実バグ**だった。
+
+| 指摘 | 判定 | 対応 |
+|---|---|---|
+| `CLAUDE.md` が `02_共通/ひな形/implement-profile.md` を参照するが配布先に存在しない | **実バグ**。export がキット内の呼び名のまま配っていた | `export-project.sh` に `rewrite_paths()` を追加し、`02_共通/ひな形/`→`.claude/templates/`、`rules/`→`.claude/rules/`、`agents/`→`.claude/agents/` を書き換え。回帰テストで固定 |
+| `rules/*.md`・`agents/` に `.claude/` 接頭辞が要る（warning 4 件） | **妥当**。配布先のエージェントには曖昧 | 同上で解消 |
+| `docs/lifecycle/` が存在しない | 誤検知。`init-lifecycle.sh` が作る配布先のパス | 対応しない |
+| `@AGENTS.md` が存在しない | 誤検知。import 構文であってパス参照ではない | 対応しない |
+| token-budget: `CLAUDE.md` 509 トークン（除去可能 27%）／`AGENTS.md` 979 トークン（除去可能 11%、S/N 0.89） | **有用**。`06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-1 の推定値に対する外部の実測 | 未対応（B-10 の材料にする） |
+
+**`check_docs.py` はこのバグを検出できない。** 参照をキットのリポジトリに対して解決する（`ASSET_HOME`）ため、配布先での不在が見えない。`06_保守者向け/学んだこと.md` の「出荷物が自分で通る」と「配布先で使える」は別のテスト（F-14）と同じ失敗様式の再発だった。回帰テストは `test-install.sh` に「配布された `CLAUDE.md` / `AGENTS.md` の `.claude/` 参照が実在すること」として追加した。
+
 ## 5. awesome 自身の維持機構（リンク集としてではなく運用の型）
 
 `INDEX.md` と資産集合はリンク集と同じ問題を抱える。awesome.md と pull_request_template.md から取れるもの。
