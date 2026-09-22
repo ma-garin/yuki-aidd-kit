@@ -1396,6 +1396,34 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
         <section id="quality">
           <h2><span class="h2-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></span>品質チェックの考え方</h2>
           <p>
+            テストは 4 つの段に分かれます。<strong>下の段が通っても、上の段が通ったことにはなりません。</strong>
+            「テストが通った」と「完了した」が別物なのはこのためです。
+          </p>
+          <div class="flow-h">
+            <div class="flow-step"><b>L1 単体</b>関数 1 つが仕様どおりか。速い・数が多い</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><b>L2 結合</b>部品どうしの受け渡しが合うか。API と DB の境界</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><b>L3 システム</b>画面から使って通しで動くか。E2E・性能・表示崩れ</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><b>L4 受け入れ</b>依頼した人が「これでよい」と言うか。<b>人間しか判定できない</b></div>
+          </div>
+          <p>
+            よくある誤解は「L1 が全部 PASS したから完成」です。L1 は<strong>部品が壊れていないこと</strong>しか示しません。
+            画面から操作して初めて分かる不具合（狭い幅で文字が切れる、0 件のとき何も出ない、エラーが握り潰される）は L3 の担当です。
+          </p>
+          <div class="flow-v">
+            <div class="flow-row"><div><b>作った</b></div><div>コードが書けた。まだ何も検証していない</div></div>
+            <div class="flow-row"><div><b>動いた</b></div><div>手元で 1 回動いた。再現性も異常系も未確認</div></div>
+            <div class="flow-row"><div><b>テストが通った</b></div><div>書いたテストが PASS。<b>書いていない観点は検証されていない</b></div></div>
+            <div class="flow-row"><div><b>完了</b></div><div>受入基準を満たし、未検証の項目が「確かめ方」つきで明示されている</div></div>
+          </div>
+          <p>
+            <strong>0 件実行を成功と数えない・件数だけ数えるテストを根拠にしない</strong>のが AIDD Kit の基準です。
+            テストが 1 件も走らずに PASS と出るのは、通っているのではなく<strong>測っていない</strong>だけです。
+          </p>
+
+          <p>
             このキットでは、品質チェックを3つに分けます。
             混ぜると判断がぼやけるので、別々に見ます。
           </p>
