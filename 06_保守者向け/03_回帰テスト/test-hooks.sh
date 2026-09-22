@@ -400,6 +400,19 @@ expect_contains "応答に見積もり行が無いままツールを呼んだら
 { u_text "構成を直して"; a_text "見積: 3分（21:30 完了予定）"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "見積もり行があれば通知しない（分だけでよい）" "$OUT" "$RC"
+# 自分で選択肢・可否を問うた直後に着手しようとしたら待たせる（保守者の傾向 #39）
+{ u_text "直しなさい"; a_text "見積: 3分（21:30 完了予定）A と B があります。どちらにしますか。"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "問いを投げたまま着手したら待たせる" "答えを待つ" "$(ig_reason "$OUT")"
+{ u_text "直しなさい"; a_text "見積: 3分（21:30 完了予定）可否をお願いします。"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "「可否をお願いします」も待ち扱い" "答えを待つ" "$(ig_reason "$OUT")"
+{ u_text "B で"; a_text "見積: 3分（21:30 完了予定）B を採用します。どちらにしますか、は解決済み。"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "答えが出ていれば通す（採用します/指定 等がある）" "$OUT" "$RC"
+{ u_text "直しなさい"; a_text "見積: 3分（21:30 完了予定）修正しました。テストは 5 件 PASS です。"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "問いを含まない報告では止めない" "$OUT" "$RC"
 
 echo "[pre-read-guard.py]"
 # 読む価値の無いファイルを deny、大きすぎるファイルは先頭だけに絞る（PreToolUse Read）

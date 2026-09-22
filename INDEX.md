@@ -40,7 +40,7 @@ open 01_利用者向け資料/01_利用ガイド.html                      # ユ
 open 01_利用者向け資料/02_操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（06_保守者向け/ は配布しない）
-./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（173ケース）
+./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（177ケース）
 ./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（120ケース）
 ./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（57ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
@@ -127,7 +127,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `filter-output.py` | PreToolUse Bash | テスト・install・build・`git log`・`git diff` の出力を Claude が読む前に絞る（`updatedInput`）。全量は `FULL_OUTPUT=1` |
 | `block-gates.py` | PreToolUse Bash | pytest / make test / lint をユーザー要求時（`GATES_REQUESTED=1`）以外は deny |
 | `block-ci.py` | PreToolUse（全ツール） | ScheduleWakeup・CronCreate・send_later 等の自己ウェイク／定期実行と、`gh run watch` 等の CI 起動・待機を deny（Bash は `CI_REQUESTED=1` で許可） |
-| `instruction-guard.py` | PreToolUse（全ツール） | 保守者の発言（ターン冒頭・途中の queued_command・enqueue）に日本語で応答するまで deny。理由に指示の先頭を載せる（読み飛ばし防止）。バイパス無し |
+| `instruction-guard.py` | PreToolUse | 未応答の指示・言語・見積の欠落に加え、**自分が問うた直後の着手**を検出して待たせる（A-13・A-2・A-7） |
 | `reply-language.py` | Stop | 日本語・相槌のみ・実測の無い報告・散文 12 行超・予実の乖離で block（傾向 #32〜36） |
 | `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
 | `block-destructive.py` | PreToolUse(Bash) | 取り返しのつかない操作を deny（reset --hard / clean -fd / stash drop / checkout -- / push --force / add -A / rm -rf）。代替手段を理由に載せる |
