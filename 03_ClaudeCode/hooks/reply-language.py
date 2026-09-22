@@ -13,8 +13,10 @@ decision=block で続行させ、日本語で出し直させる。stop_hook_acti
 import importlib.util
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
+
 
 sys.dont_write_bytecode = True  # hooks ディレクトリに __pycache__ を作らない
 
@@ -34,6 +36,28 @@ NOISE_RE = re.compile(r"[\s。、．，・…!?！？「」『』（）()\[\]\-�
 def is_filler_only(msg: str) -> bool:
     """相槌と記号を取り除いて何も残らないか。"""
     return NOISE_RE.sub("", FILLER_RE.sub("", msg)) == ""
+
+
+_TIMER = Path(__file__).resolve().parent / "tool-timer.py"
+ACTUAL_RE = re.compile(r"実績[:：]")
+
+
+def missing_actual(msg: str) -> str | None:
+    """このターンでツールを使ったのに実績行が無ければ、貼るべき実績の1行を返す。
+
+    見積（A-2）は実績と対で初めて意味を持つ。数えているのに書かないのを止める。
+    計測器が無い・0 回（会話だけのターン）なら None。
+    """
+    if ACTUAL_RE.search(msg) or not _TIMER.is_file():
+        return None
+    try:
+        out = subprocess.run([sys.executable, str(_TIMER), "report"], capture_output=True,
+                             text=True, timeout=5).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if not out or "/ 0 回" in out:
+        return None
+    return out
 
 
 def load_guard():
@@ -69,6 +93,12 @@ def main() -> int:
     # 判定は入力の last_assistant_message だけで行い、無ければ判定できないので通す。
     msg = data.get("last_assistant_message")
     if not isinstance(msg, str) or not msg.strip():
+        return 0
+    missing = missing_actual(msg)
+    if missing is not None:
+        reason = (f"[reply-language] ツールを使ったのに応答の最後に実績が無い。{missing} を末尾に足して出し直す"
+                  "（A-2。見積と実績を必ず並べる）")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     if is_filler_only(msg):
         reason = ("[reply-language] 相槌だけで終わっている。相槌・謝辞・待機表明は情報を渡さない（H-0）。"

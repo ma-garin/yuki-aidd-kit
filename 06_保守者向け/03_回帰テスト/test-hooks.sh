@@ -3,6 +3,8 @@
 # AUDIT-2026-07 A-01（hooks が入力を受け取れず無言で素通りしていた）の再発防止。
 # stdin に Claude Code hooks 形式の JSON を流し、期待出力を検証する。
 # BSD/GNU 共通のその場置換（macOS の sed -i は拡張子引数が必須で GNU と書き方が違う）
+# tool-timer の秒を許容幅で判定する（sleep は負荷で揺れるため、上限 +1 秒まで許す）
+sec_le() { printf '%s' "$1" | python3 -c 'import re,sys;m=re.search(r"ツール実行 (?:(\d+)分)?(\d+)秒",sys.stdin.read());t=(int(m.group(1) or 0)*60+int(m.group(2))) if m else 999;print("OK" if t<=int(sys.argv[1])+1 else f"NG({t}s)")' "$2"; }
 sedi() { local f="${@: -1}"; sed "${@:1:$#-1}" "$f" > "$f.sedi" && mv "$f.sedi" "$f"; }
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 HOOKS="$KIT_DIR/03_ClaudeCode/hooks"
@@ -186,7 +188,7 @@ enqueue() { printf '{"type":"queue-operation","operation":"enqueue","content":"%
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "指示の直後にツールを呼ぶと deny（未応答）" "未応答" "$(ig_reason "$OUT")"
 expect_contains "deny 理由に指示の先頭を載せる（読み飛ばし防止）" "日本語で報告しなさい" "$(ig_reason "$OUT")"
-{ u_text "日本語で報告しなさい"; a_text "目的: 報告します。 見積: 1分（00:01 完了予定）"; a_tool; u_tool; a_tool; } > "$TRJ"
+{ u_text "日本語で報告しなさい"; a_text "目的: 報告します。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; u_tool; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "日本語で応答済みなら許可（ツール結果が続いても素通り）" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_tool; } > "$TRJ"
@@ -197,19 +199,19 @@ expect_contains "同じ指示の 1 回目は deny" "未応答" "$(ig_reason "$OU
 OUT=$(igs "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "同じ指示の 2 回目は許可（応答が transcript に未反映でも閉じ込めない）" "$OUT" "$RC"
 rm -f "${TMPDIR:-/tmp}/instruction-guard-$IGS"
-{ u_text "作業して"; a_text "目的: 作業。 見積: 1分（00:01 完了予定）"; a_tool; u_tool; queued "中間報告をしなさい。今すぐに。"; a_tool; } > "$TRJ"
+{ u_text "作業して"; a_text "目的: 作業。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; u_tool; queued "中間報告をしなさい。今すぐに。"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "途中で届いた発言（queued_command）に未応答なら deny" "中間報告をしなさい" "$(ig_reason "$OUT")"
-{ u_text "作業して"; a_text "目的: 作業。 見積: 1分（00:01 完了予定）"; a_tool; enqueue "止めなさい"; } > "$TRJ"
+{ u_text "作業して"; a_text "目的: 作業。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; enqueue "止めなさい"; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "キュー投入（enqueue）の時点で deny（配達前でも理由に載る）" "止めなさい" "$(ig_reason "$OUT")"
-{ u_text "作業して"; a_text "目的: 作業。 見積: 1分（00:01 完了予定）"; a_tool; u_tool; queued "中間報告をしなさい。"; a_text "中間報告です。 見積: 1分（00:01 完了予定）"; a_tool; } > "$TRJ"
+{ u_text "作業して"; a_text "目的: 作業。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; u_tool; queued "中間報告をしなさい。"; a_text "中間報告です。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "途中の発言に日本語で応答済みなら許可" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_text "Reflections are in place. Now updating."; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "日本語の指示に英語で応答したら通知" "日本語で応答し直す" "$(ig_reason "$OUT")"
-{ u_text "Please fix the test"; a_text "Fixing the test now. 見積: 1分（00:01 完了予定）"; a_tool; } > "$TRJ"
+{ u_text "Please fix the test"; a_text "Fixing the test now. 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "英語の指示に英語で応答は許可（言語は指示に合わせる）" "$OUT" "$RC"
 { u_text "<command-name>/plan</command-name><command-args>x</command-args>"; a_tool; } > "$TRJ"
@@ -226,16 +228,16 @@ expect_empty "deny しない（permissionDecision を返さず画面にエラー
 OUT=$(igj "$IG/none.jsonl" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "transcript が無ければ許可（fail-open）" "$OUT" "$RC"
 # 機械が書いた本文を指示と誤認すると、応答しても新しいエラー文が湧いて解除されない自己参照ループになる
-{ u_text "構成案を出して"; a_text "案は以下です。 見積: 1分（00:01 完了予定）"; a_tool; u_text "Error: [instruction-guard] 保守者の指示に未応答: 「構成案を出して」。"; a_tool; } > "$TRJ"
+{ u_text "構成案を出して"; a_text "案は以下です。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; u_text "Error: [instruction-guard] 保守者の指示に未応答: 「構成案を出して」。"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "フック自身のエラー文を指示として読み直さない（自己参照ループ防止）" "$OUT" "$RC"
-{ u_text "調査して"; a_text "調査します。 見積: 1分（00:01 完了予定）"; a_tool; u_text "<agent-message from=\\\"abc123\\\">[Subagent hand-back] The text below is the final report.</agent-message>"; a_tool; } > "$TRJ"
+{ u_text "調査して"; a_text "調査します。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; u_text "<agent-message from=\\\"abc123\\\">[Subagent hand-back] The text below is the final report.</agent-message>"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "サブエージェントの報告（属性付きタグ）は対象外" "$OUT" "$RC"
-{ u_text "調査して"; a_text "調査します。 見積: 1分（00:01 完了予定）"; a_tool; u_text "<task-notification><status>completed</status></task-notification>"; a_tool; } > "$TRJ"
+{ u_text "調査して"; a_text "調査します。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; u_text "<task-notification><status>completed</status></task-notification>"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "バックグラウンド完了通知は対象外" "$OUT" "$RC"
-{ u_text "やって"; a_text "やります。 見積: 1分（00:01 完了予定）"; a_tool; u_text "Stop hook feedback:[reply-language] 日本語で応答してから終える（A-13）"; a_tool; } > "$TRJ"
+{ u_text "やって"; a_text "やります。 見積: 自分 1 往復（≒1分。00:01 完了予定）"; a_tool; u_text "Stop hook feedback:[reply-language] 日本語で応答してから終える（A-13）"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
 expect_empty "Stop フックの差し戻し文は対象外" "$OUT" "$RC"
 { u_text "日本語で報告しなさい"; a_text "Done."; } > "$TRJ"
@@ -263,6 +265,19 @@ for FILLER in "承知しました。" "了解。" "指示待ちです。" "（�
 done
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"了解。破棄しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌に続けて内容があれば通す" "$OUT" "$RC"
+# 実績の必須化: ツールを使ったターンは末尾に実績を出す（A-2）
+python3 "$HOOKS/tool-timer.py" reset
+printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py" post
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。テストは全て PASS です。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: ツールを使ったのに実績が無ければ差し戻す" "応答の最後に実績が無い" "$OUT"
+expect_contains "Stop: 差し戻し文に貼るべき実測値を含める" "ツール実行" "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: ツール実行 1秒 / 1 回","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 実績があれば通す" "$OUT" "$RC"
+python3 "$HOOKS/tool-timer.py" reset
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"はい、そうです。それは 3 番の仕様です。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: ツールを使っていないターンは実績を求めない" "$OUT" "$RC"
+rm -f "$HOOKS/../tool-time.json"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌でも stop_hook_active なら止めない（無限ループ防止）" "$OUT" "$RC"
 # --- tool-timer.py: 見積の「実績」をツール実行時間で測る（入力待ち・思考時間を含まない） ---
@@ -274,15 +289,19 @@ sleep 1
 printf '{"tool_name":"Bash","tool_use_id":"a"}' | python3 "$TT" post
 printf '{"tool_name":"Read","tool_use_id":"b"}' | python3 "$TT" post
 OUT=$(python3 "$TT" report)
-expect_contains "tool-timer: 並列2本の 1 秒を二重に数えない（実行区間で測る）" "ツール実行 1秒 / 2 回" "$OUT"
+expect_contains "tool-timer: 並列2本の実行回数を数える" "/ 2 回" "$OUT"
+# 秒は負荷で揺れるので幅で見る。各ツールの所要を足す実装なら 2 秒以上になる
+expect_contains "tool-timer: 並列2本の 1 秒を二重に数えない（実行区間で測る）" "OK" "$(sec_le "$OUT" 1)"
 sleep 2   # 入力待ちに相当する空白。加算されないこと
 printf '{"tool_name":"Bash","tool_use_id":"c"}' | python3 "$TT" pre
 sleep 1
 printf '{"tool_name":"Bash","tool_use_id":"c"}' | python3 "$TT" post
 OUT=$(python3 "$TT" report)
-expect_contains "tool-timer: ツールが走っていない時間は加算しない" "ツール実行 2秒 / 3 回" "$OUT"
+expect_contains "tool-timer: 3 本目まで回数を数える" "/ 3 回" "$OUT"
+# 実時間は 1+2+1=4 秒経っているが、ツールが走っていたのは 2 秒だけ
+expect_contains "tool-timer: ツールが走っていない時間は加算しない" "OK" "$(sec_le "$OUT" 2)"
 OUT=$(printf '{"tool_name":"Bash","tool_use_id":"zz"}' | python3 "$TT" post; python3 "$TT" report)
-expect_contains "tool-timer: 対になる pre が無い post で件数も時間も増えない" "ツール実行 2秒 / 3 回" "$OUT"
+expect_contains "tool-timer: 対になる pre が無い post で件数が増えない" "/ 3 回" "$OUT"
 OUT=$(printf 'not json' | python3 "$TT" pre; echo "rc=$?")
 expect_contains "tool-timer: 壊れた入力でも作業を止めない" "rc=0" "$OUT"
 python3 "$TT" reset
@@ -300,8 +319,14 @@ expect_contains "UserPromptSubmit: タイムゾーンが解決できなければ
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "応答に見積もり行が無いままツールを呼んだら通知（A-2）" "見積もりが無い" "$(ig_reason "$OUT")"
 { u_text "構成を直して"; a_text "見積: 3分（21:30 完了予定）"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "見積が分だけで往復数が無ければ通知（H-1）" "往復数が無い" "$(ig_reason "$OUT")"
+{ u_text "構成を直して"; a_text "見積: 自分 5 往復（≒3分。21:30 完了予定）"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
-expect_empty "見積もり行があれば通知しない" "$OUT" "$RC"
+expect_empty "見積に往復数があれば通知しない" "$OUT" "$RC"
+{ u_text "構成を直して"; a_text "見積: 自分 2 往復 + 委譲 3 本（≒8分。21:40 完了予定）"; a_tool; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "見積に委譲本数があれば通知しない" "$OUT" "$RC"
 
 echo "[pre-read-guard.py]"
 # 読む価値の無いファイルを deny、大きすぎるファイルは先頭だけに絞る（PreToolUse Read）

@@ -86,6 +86,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       }
     ],
     "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py reset", "timeout": 5 } ] },
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/prompt-priority.py", "timeout": 5 },
                   { "type": "command", "command": "python3 .claude/hooks/context-guard.py", "timeout": 5 } ] }
     ],
