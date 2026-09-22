@@ -46,6 +46,21 @@ Codex は `AGENTS.md`（export で `<対象>/AGENTS.md`、グローバルは `~/
 2 周で収束しなければエスカレーションする。**AI は `approver` 欄を埋めない。**
 範囲を区切って頼めばエージェントは起動せず、これまでどおりスキルとコマンドで進む。Codex にはサブエージェント構造が無いため、同じ中身をスキルとして使う。
 
+## 機械が止めること（散文の規約ではない）
+
+規約を読んで守らせるのではなく、守れていない状態を hook が止める。導入後に体感が変わるのはこの層。
+
+| 場面 | 何が起きるか |
+|---|---|
+| 見積を出す | 現在時刻（日本時間）と、**過去の予実から出した補正係数**が注入される。体感で分を置かせない |
+| 完了を報告する | 実測（`実測: N分`）が無ければ差し戻される。予実が 1.5 倍／3 分の 1 を超えて離れていても差し戻す |
+| 「承知しました」だけ返す | 情報がゼロの応答として差し戻される |
+| `git add -A` ・ `git clean -fd` ・ `rm -rf` 等 | deny され、**代替手段が理由に出る** |
+| 保守者の発言を読み飛ばす | 次のツール呼び出しが止まる（日本語で答えるまで） |
+
+これらは `00_導入/01_インストール/install-guard.sh` だけでも入る（既存の `settings.json` に merge。冪等）。
+止めずに警告だけ出すものもある（`pre-write-check.sh` が秘密情報ファイルと CSS/JS 分割、`post-write-html.sh` が保存した HTML の所見、`session-summary.sh` が終了時のまとめ）。
+
 ## 取り扱い説明書
 
 HTML 版のガイドを 2 冊同梱しています。**初めて導入するなら `01_利用者向け資料/01_利用ガイド.html`**（概要・導入手順・最初のセッション・毎日の流れ・品質チェック・Pro/Sonnet のコツ）、使い始めてからは `01_利用者向け資料/02_操作マニュアル.html`（スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時）。
@@ -99,7 +114,7 @@ yuki-aidd-kit/
 │   ├── skills/               # スキル（skills/<name>/SKILL.md、一部 references/ 付き）
 │   ├── agents/               # サブエージェント（自走する実行主体。成果物レベルの依頼は aidd-lead が受ける）
 │   ├── commands/             # スラッシュコマンド（/<name>）
-│   └── hooks/                # hooks + settings.json（statusLine 含む）
+│   └── hooks/                # hooks + settings.json（statusLine 含む）。見積の実測と校正は `tool-timer.py`、破壊操作の遮断は `block-destructive.py`
 ├── 04_Codex/                  # Codex 用の配布物
 │   ├── AGENTS.md.template     # 共通規約の本体（Codex は直接、Claude Code は CLAUDE.md の @AGENTS.md で読む）
 │   ├── build_codex_skills.py  # skills・commands から Codex 用スキル 38 本を生成
