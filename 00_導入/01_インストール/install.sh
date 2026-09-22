@@ -6,7 +6,7 @@ CLAUDE_DIR="$HOME/.claude"
 KIT_VERSION="$(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown) $(git -C "$KIT_DIR" rev-parse --short HEAD 2>/dev/null || echo -) $(date -I)"
 
 echo "=== AIDD Kit インストール（版: ${KIT_VERSION}）==="
-mkdir -p "$CLAUDE_DIR/skills" "$CLAUDE_DIR/commands" "$CLAUDE_DIR/hooks" "$CLAUDE_DIR/rules/aidd-kit" "$HOME/.agents/skills"
+mkdir -p "$CLAUDE_DIR/skills" "$CLAUDE_DIR/commands" "$CLAUDE_DIR/agents" "$CLAUDE_DIR/hooks" "$CLAUDE_DIR/rules/aidd-kit" "$HOME/.agents/skills"
 
 # グローバルCLAUDE.md（既存があればバックアップ）
 if [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
@@ -30,6 +30,10 @@ echo "✅ スキル: Claude Code $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)�
 # コマンド
 cp "$KIT_DIR/03_ClaudeCode/commands/"*.md "$CLAUDE_DIR/commands/"
 echo "✅ コマンド: $(ls "$KIT_DIR/03_ClaudeCode/commands" | wc -l)個"
+
+# サブエージェント（自走する実行主体。スキルを真実源として読む。Codex には対応構造が無いので配らない）
+cp "$KIT_DIR/03_ClaudeCode/agents/"*.md "$CLAUDE_DIR/agents/"
+echo "✅ エージェント: $(ls "$KIT_DIR/03_ClaudeCode/agents/"*.md | wc -l | tr -d ' ')個（~/.claude/agents/。成果物レベルの依頼は aidd-lead が受ける）"
 
 # Hooks
 cp "$KIT_DIR/03_ClaudeCode/hooks/"*.sh "$KIT_DIR/03_ClaudeCode/hooks/"*.py "$CLAUDE_DIR/hooks/"

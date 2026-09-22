@@ -29,7 +29,7 @@ backup_if_exists() {
   fi
 }
 
-mkdir -p "$TARGET/.claude/skills" "$TARGET/.claude/commands" "$TARGET/.claude/hooks" "$TARGET/.claude/rules" "$TARGET/.agents/skills"
+mkdir -p "$TARGET/.claude/skills" "$TARGET/.claude/commands" "$TARGET/.claude/agents" "$TARGET/.claude/hooks" "$TARGET/.claude/rules" "$TARGET/.agents/skills"
 
 # スキル一式（フルコピー。DAILY/LIBRARYの絞り込みはINDEX.mdを見て各エージェントが行う）
 cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$TARGET/.claude/skills/"
@@ -40,6 +40,10 @@ echo "✅ スキル: Claude Code $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)�
 # コマンド一式
 cp "$KIT_DIR/03_ClaudeCode/commands/"*.md "$TARGET/.claude/commands/"
 echo "✅ コマンド: $(ls "$KIT_DIR/03_ClaudeCode/commands" | wc -l)個"
+
+# サブエージェント（自走する実行主体。Codex には対応構造が無いため .agents/ には配らない＝スキルのまま縮退する）
+cp "$KIT_DIR/03_ClaudeCode/agents/"*.md "$TARGET/.claude/agents/"
+echo "✅ エージェント: $(ls "$KIT_DIR/03_ClaudeCode/agents/"*.md | wc -l | tr -d ' ')個（.claude/agents/。成果物レベルの依頼は aidd-lead が受ける）"
 
 # Hooks（プロジェクトスコープはリポジトリ相対パスで参照する）
 # 前提: Claude Code のプロジェクトスコープ hooks はプロジェクトルートを

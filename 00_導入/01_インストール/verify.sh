@@ -1,6 +1,6 @@
 #!/bin/bash
 # verify.sh — インストール確認
-# チェックリストはリポジトリ実体（agent/ の skills/ commands/ hooks/）から自動導出する。
+# チェックリストはリポジトリ実体（03_ClaudeCode/ の skills/ commands/ agents/ hooks/）から自動導出する。
 # 資産を追加してもこのファイルの更新は不要（Roadmap M6 で決定）。
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CLAUDE_DIR="$HOME/.claude"
@@ -28,6 +28,12 @@ echo "[コマンド]"
 for f in "$KIT_DIR/03_ClaudeCode/commands/"*.md; do
   c=$(basename "$f" .md)
   check "/$c" "$CLAUDE_DIR/commands/$c.md"
+done
+
+echo "[エージェント]"
+for f in "$KIT_DIR/03_ClaudeCode/agents/"*.md; do
+  a=$(basename "$f" .md)
+  check "$a" "$CLAUDE_DIR/agents/$a.md"
 done
 
 echo "[Hooks]"
