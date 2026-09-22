@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ツール実行時間を積算する PreToolUse / PostToolUse フック。
 
-見積の「実績」を体感でなく実測で出すための計測器（2026-09-22 の指摘: 実績値に定義が無く、
-入力待ちと思考時間が混ざった差し引きを実績と称していた）。
+見積の「実測」を体感でなく計測で出すための計測器（2026-09-22 の指摘: 実測値に定義が無く、
+入力待ちと思考時間が混ざった差し引きを実測と称していた）。
 
 **測るもの**: ツールが走っていた時間の合計だけ。保守者の入力待ち・モデルの思考時間は含まない。
 見積（`rules/absolute-rules.md` A-2）はこの定義の時間に対して出す。
@@ -10,7 +10,7 @@
 使い方:
   python3 .claude/hooks/tool-timer.py pre     # PreToolUse に配線（stdin に hook の JSON）
   python3 .claude/hooks/tool-timer.py post    # PostToolUse に配線
-  python3 .claude/hooks/tool-timer.py report          # 実績を1行（経過時間だけ。報告に貼る）
+  python3 .claude/hooks/tool-timer.py report          # `実測: N分` の1行（報告に貼る）
   python3 .claude/hooks/tool-timer.py report --full   # ツール実行時間・回数・通算も出す
   python3 .claude/hooks/tool-timer.py elapsed # このターンの経過分（見積との突合用。数値のみ）
   python3 .claude/hooks/tool-timer.py reset          # ターンの計測を 0 に戻す（UserPromptSubmit に配線済み）
@@ -29,7 +29,7 @@ import time
 _FILE = pathlib.Path(os.environ.get("AIDD_TOOL_TIME")
                      or pathlib.Path(__file__).resolve().parent.parent / "tool-time.json")
 # total_* はターン単位（UserPromptSubmit の reset で 0 に戻る）。session_* は通算で、
-# reset では消えない（複数ターンにまたがる作業の実績を出すため。2026-09-22 の残課題）
+# reset では消えない（複数ターンにまたがる作業の実測を出すため。2026-09-22 の残課題）
 _EMPTY = {"total_sec": 0.0, "count": 0, "inflight": {}, "since": None, "window_start": None,
           "session_sec": 0.0, "session_count": 0}
 
@@ -78,17 +78,24 @@ def span_of(total: float) -> str:
     return f"{m}分{s}秒" if m else f"{s}秒"
 
 
+def span_min(total: float) -> str:
+    """報告用。分だけ（見積と同じ粒度）。1 分未満はそう書く。"""
+    m = int(round(total / 60.0))
+    return f"{m}分" if m else "1分未満"
+
+
 def fmt(data: dict, full: bool = False) -> str:
-    """実績の1行。既定は経過時間だけ（見積と同じ単位。報告に貼る用）。
+    """実測の1行。既定は分だけ（見積と同じ粒度。報告に貼る用）。
 
     full=True でツール実行時間と回数・通算も出す（内訳を見たいときだけ）。
     報告が長いと読まれないので既定は最短にする（2026-09-22 の指摘）。
     """
     since = data.get("since")
-    elapsed = span_of(max(0.0, time.time() - since)) if isinstance(since, (int, float)) else "-"
+    raw = max(0.0, time.time() - since) if isinstance(since, (int, float)) else None
+    elapsed = span_min(raw) if raw is not None else "-"
     if not full:
-        return f"実績: {elapsed}"
-    out = f"実績: {elapsed}（ツール {span_of(float(data['total_sec']))} / {int(data['count'])}回）"
+        return f"実測: {elapsed}"
+    out = f"実測: {span_of(raw) if raw is not None else '-'}（ツール {span_of(float(data['total_sec']))} / {int(data['count'])}回）"
     sc = int(data["session_count"])
     if sc > int(data["count"]):
         out += f" 通算 {span_of(float(data['session_sec']))} / {sc}回"
