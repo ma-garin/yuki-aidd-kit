@@ -638,6 +638,7 @@
           <li><a href="#projects">プロジェクト別</a></li>
           <li><a href="#quality">品質チェック</a>
 <a href="#rules">速度と完了のルール</a></li>
+<li><a href="#stopped">止められたとき</a></li>
           <li><a href="#trouble">困った時</a></li>
           <li><a href="#words">用語集</a></li>
         </ol>
@@ -661,6 +662,7 @@
           <li><a href="#projects">プロジェクト別</a></li>
           <li><a href="#quality">品質チェック</a>
 <a href="#rules">速度と完了のルール</a></li>
+<li><a href="#stopped">止められたとき</a></li>
           <li><a href="#trouble">困った時</a></li>
           <li><a href="#words">用語集</a></li>
         </ol>
@@ -1527,6 +1529,55 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
         </section>
 
         <section id="trouble">
+          <h2 id="stopped"><span class="h2-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></span>止められたとき（8.2.0〜）</h2>
+          <p>
+            規約を読んで守らせるのではなく、守れていない状態を hook が止めます。
+            止められたら安全装置が正しく働いた結果として受け入れ、回避策を探さないでください。
+            理由には必ず<strong>次にやること</strong>が書かれています。
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>止まる場面</th>
+                <th>止めるもの</th>
+                <th>次にやること</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>git add -A</code> / <code>clean -fd</code> / <code>reset --hard</code> / <code>push --force</code> / <code>rm -rf</code></td>
+                <td><code>block-destructive.py</code></td>
+                <td>理由に代替手段が出ます。<code>git status --short</code> で確認してパスを明示（退避は削除でなく <code>mv</code>）</td>
+              </tr>
+              <tr>
+                <td>「承知しました」だけで終わろうとした</td>
+                <td><code>reply-language.py</code></td>
+                <td>問いに答える・結果を渡す・動作する のどれかにする</td>
+              </tr>
+              <tr>
+                <td>完了報告に実測が無い</td>
+                <td><code>reply-language.py</code></td>
+                <td><code>実測: N分</code> の1行を末尾に貼る（値は <code>tool-timer.py</code> が測っています）</td>
+              </tr>
+              <tr>
+                <td>見積と実測が1.5倍・3分の1以上離れた</td>
+                <td><code>reply-language.py</code></td>
+                <td>原因を1行書く。過大見積も対象です</td>
+              </tr>
+              <tr>
+                <td>保守者の発言を読み飛ばした</td>
+                <td><code>instruction-guard.py</code></td>
+                <td>次のツール実行より先に日本語で答える</td>
+              </tr>
+            </tbody>
+          </table>
+          <h3>見積が自動で校正される</h3>
+          <p>
+            <code>tool-timer.py</code> が毎ターンの経過時間を測り、見積と実測の組を履歴に残します。
+            次に見積を出すとき、<strong>過去の実測 ÷ 見積 の中央値</strong>が係数として提示されるので、素の見積に掛けてから答えます。
+            体感で分を置いて外し続ける、という状態を止めるための仕組みです（履歴が3件たまってから効き始めます）。
+          </p>
+
           <h2><span class="h2-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M4.9 4.9l3.5 3.5M19.1 4.9l-3.5 3.5M4.9 19.1l3.5-3.5M19.1 19.1l-3.5-3.5"/><circle cx="12" cy="12" r="3.2"/></svg></span>困った時の進め方</h2>
           <h3>何から読めばいいか分からない</h3>
           <pre><code>AGENTS.mdとREADME.mdだけ読んで、
