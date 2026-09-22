@@ -41,6 +41,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/tool-timer.py\"; [ -f \"$f\" ] && exec python3 \"$f\" reset || exit 0'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/prompt-priority.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
             "timeout": 5
           }
