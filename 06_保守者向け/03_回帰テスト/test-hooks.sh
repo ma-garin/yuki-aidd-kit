@@ -4,7 +4,7 @@
 # stdin に Claude Code hooks 形式の JSON を流し、期待出力を検証する。
 # BSD/GNU 共通のその場置換（macOS の sed -i は拡張子引数が必須で GNU と書き方が違う）
 # tool-timer の秒を許容幅で判定する（sleep は負荷で揺れるため、上限 +1 秒まで許す）
-sec_le() { printf '%s' "$1" | python3 -c 'import re,sys;m=re.search(r"ツール実行 (?:(\d+)分)?(\d+)秒",sys.stdin.read());t=(int(m.group(1) or 0)*60+int(m.group(2))) if m else 999;print("OK" if t<=int(sys.argv[1])+1 else f"NG({t}s)")' "$2"; }
+sec_le() { printf '%s' "$1" | python3 -c 'import re,sys;m=re.search(r"ツール (?:(\d+)分)?(\d+)秒",sys.stdin.read());t=(int(m.group(1) or 0)*60+int(m.group(2))) if m else 999;print("OK" if t<=int(sys.argv[1])+1 else f"NG({t}s)")' "$2"; }
 sedi() { local f="${@: -1}"; sed "${@:1:$#-1}" "$f" > "$f.sedi" && mv "$f.sedi" "$f"; }
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 HOOKS="$KIT_DIR/03_ClaudeCode/hooks"
@@ -272,8 +272,8 @@ printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py
 printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py" post
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。テストは全て PASS です。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
 expect_contains "Stop: ツールを使ったのに実績が無ければ差し戻す" "応答の最後に実績が無い" "$OUT"
-expect_contains "Stop: 差し戻し文に貼るべき実測値を含める" "ツール実行" "$OUT"
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: ツール実行 1秒 / 1 回","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_contains "Stop: 差し戻し文に貼るべき実測値を含める" "実績: " "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 1秒","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 実績があれば通す" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"はい、そうです。それは 3 番の仕様です。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
@@ -283,12 +283,12 @@ expect_empty "Stop: ツールを使っていないターンは実績を求めな
 python3 "$HOOKS/tool-timer.py" reset-session
 printf '{"tool_name":"Bash","tool_use_id":"g1"}' | python3 "$HOOKS/tool-timer.py" pre
 printf '{"tool_name":"Bash","tool_use_id":"g1"}' | python3 "$HOOKS/tool-timer.py" post
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: ツール実行 0秒 / 1 回","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 3秒","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
 expect_contains "Stop: 見積が経過の 3 倍超なら過大見積として差し戻す" "過大見積" "$OUT"
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: ツール実行 0秒 / 1 回。差異は読む対象が 5 ファイルに収束したため","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 3秒。差異は読む対象が 5 ファイルに収束したため","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
 { u_text "調査して"; a_text "見積: 1分（23:00 完了予定）"; } > "$TRJ"
-OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: ツール実行 0秒 / 1 回","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実績: 3秒","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 3 分未満の見積は誤差が支配するので突合しない" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
 rm -f "$HOOKS/../tool-time.json"
@@ -302,33 +302,33 @@ printf '{"tool_name":"Read","tool_use_id":"b"}' | python3 "$TT" pre
 sleep 1
 printf '{"tool_name":"Bash","tool_use_id":"a"}' | python3 "$TT" post
 printf '{"tool_name":"Read","tool_use_id":"b"}' | python3 "$TT" post
-OUT=$(python3 "$TT" report)
-expect_contains "tool-timer: 並列2本の実行回数を数える" "/ 2 回" "$OUT"
+OUT=$(python3 "$TT" report --full)
+expect_contains "tool-timer: 並列2本の実行回数を数える" "/ 2回" "$OUT"
 # 秒は負荷で揺れるので幅で見る。各ツールの所要を足す実装なら 2 秒以上になる
 expect_contains "tool-timer: 並列2本の 1 秒を二重に数えない（実行区間で測る）" "OK" "$(sec_le "$OUT" 1)"
 sleep 2   # 入力待ちに相当する空白。加算されないこと
 printf '{"tool_name":"Bash","tool_use_id":"c"}' | python3 "$TT" pre
 sleep 1
 printf '{"tool_name":"Bash","tool_use_id":"c"}' | python3 "$TT" post
-OUT=$(python3 "$TT" report)
-expect_contains "tool-timer: 3 本目まで回数を数える" "/ 3 回" "$OUT"
+OUT=$(python3 "$TT" report --full)
+expect_contains "tool-timer: 3 本目まで回数を数える" "/ 3回" "$OUT"
 # 実時間は 1+2+1=4 秒経っているが、ツールが走っていたのは 2 秒だけ
 expect_contains "tool-timer: ツールが走っていない時間は加算しない" "OK" "$(sec_le "$OUT" 2)"
-OUT=$(printf '{"tool_name":"Bash","tool_use_id":"zz"}' | python3 "$TT" post; python3 "$TT" report)
-expect_contains "tool-timer: 対になる pre が無い post で件数が増えない" "/ 3 回" "$OUT"
+OUT=$(printf '{"tool_name":"Bash","tool_use_id":"zz"}' | python3 "$TT" post; python3 "$TT" report --full)
+expect_contains "tool-timer: 対になる pre が無い post で件数が増えない" "/ 3回" "$OUT"
 OUT=$(printf 'not json' | python3 "$TT" pre; echo "rc=$?")
 expect_contains "tool-timer: 壊れた入力でも作業を止めない" "rc=0" "$OUT"
-OUT=$(python3 "$TT" report)
-expect_contains "tool-timer: 経過時間も出す（見積と単位を合わせる）" "経過 " "$OUT"
+OUT=$(python3 "$TT" report --full)
+expect_contains "tool-timer: 既定は経過時間だけの最短形" "実績: " "$(python3 "$TT" report)"
 OUT=$(python3 "$TT" elapsed)
 expect_contains "tool-timer: elapsed は数値だけを返す" "." "$OUT"
 python3 "$TT" reset
-OUT=$(python3 "$TT" report)
-expect_contains "tool-timer: reset はターンの計測だけ 0 に戻す" "ツール実行 0秒 / 0 回" "$OUT"
+OUT=$(python3 "$TT" report --full)
+expect_contains "tool-timer: reset はターンの計測だけ 0 に戻す" "ツール 0秒 / 0回" "$OUT"
 expect_contains "tool-timer: reset で通算は消えない（複数ターンの作業を測る）" "通算 " "$OUT"
 python3 "$TT" reset-session
-OUT=$(python3 "$TT" report)
-expect_contains "tool-timer: reset-session で通算も消える" "ツール実行 0秒 / 0 回" "$OUT"
+OUT=$(python3 "$TT" report --full)
+expect_contains "tool-timer: reset-session で通算も消える" "ツール 0秒 / 0回" "$OUT"
 rm -f "$HOOKS/../tool-time.json"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"

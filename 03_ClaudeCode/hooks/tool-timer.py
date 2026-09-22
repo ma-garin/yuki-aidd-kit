@@ -10,7 +10,8 @@
 使い方:
   python3 .claude/hooks/tool-timer.py pre     # PreToolUse に配線（stdin に hook の JSON）
   python3 .claude/hooks/tool-timer.py post    # PostToolUse に配線
-  python3 .claude/hooks/tool-timer.py report  # 実績を1行で出す（見積と並べて報告する）
+  python3 .claude/hooks/tool-timer.py report          # 実績を1行（経過時間だけ。報告に貼る）
+  python3 .claude/hooks/tool-timer.py report --full   # ツール実行時間・回数・通算も出す
   python3 .claude/hooks/tool-timer.py elapsed # このターンの経過分（見積との突合用。数値のみ）
   python3 .claude/hooks/tool-timer.py reset          # ターンの計測を 0 に戻す（UserPromptSubmit に配線済み）
   python3 .claude/hooks/tool-timer.py reset-session  # 通算も 0 に戻す（新しい作業を始めるとき）
@@ -73,20 +74,21 @@ def span_of(total: float) -> str:
     return f"{m}分{s}秒" if m else f"{s}秒"
 
 
-def fmt(data: dict) -> str:
-    """実績の1行。ツール実行時間（保守者の定義）と経過時間（見積と比べられる方）を並べる。
+def fmt(data: dict, full: bool = False) -> str:
+    """実績の1行。既定は経過時間だけ（見積と同じ単位。報告に貼る用）。
 
-    見積は完了予定時刻＝経過時間で出すのに、実績をツール実行時間だけで出すと単位が違って
-    予実が比較できない。両方を出す（2026-09-22）。
+    full=True でツール実行時間と回数・通算も出す（内訳を見たいときだけ）。
+    報告が長いと読まれないので既定は最短にする（2026-09-22 の指摘）。
     """
-    turn = f"実績: ツール実行 {span_of(float(data['total_sec']))} / {int(data['count'])} 回"
     since = data.get("since")
-    if isinstance(since, (int, float)):
-        turn += f"、経過 {span_of(max(0.0, time.time() - since))}"
+    elapsed = span_of(max(0.0, time.time() - since)) if isinstance(since, (int, float)) else "-"
+    if not full:
+        return f"実績: {elapsed}"
+    out = f"実績: {elapsed}（ツール {span_of(float(data['total_sec']))} / {int(data['count'])}回）"
     sc = int(data["session_count"])
     if sc > int(data["count"]):
-        turn += f"（通算 ツール実行 {span_of(float(data['session_sec']))} / {sc} 回）"
-    return turn + "。ツール実行は入力待ち・思考時間を含まない"
+        out += f" 通算 {span_of(float(data['session_sec']))} / {sc}回"
+    return out
 
 
 def elapsed_min(data: dict) -> float | None:
@@ -123,7 +125,7 @@ def main() -> int:
             data["window_start"] = None
         save(data)
     elif cmd == "report":
-        print(fmt(load()))
+        print(fmt(load(), full="--full" in sys.argv))
     elif cmd == "elapsed":
         m = elapsed_min(load())
         print("" if m is None else f"{m:.2f}")
