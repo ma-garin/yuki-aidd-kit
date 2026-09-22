@@ -56,7 +56,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
   "effortLevel": "high",
   "autoCompactWindow": "200k",
   "bashOutputMaxChars": 12000,
-  "env": { "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0" },
+  "env": { "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0", "TZ": "Asia/Tokyo" },
   "statusLine": { "type": "command", "command": "python3 .claude/hooks/statusline.py", "padding": 2 },
   "hooks": {
     "PreToolUse": [

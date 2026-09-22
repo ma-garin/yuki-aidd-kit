@@ -256,10 +256,22 @@ expect_empty "Stop: 応答が未書込でも止めない（未応答の検出は
 { u_text "日本語で報告しなさい"; a_text "報告します。"; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 日本語で応答していれば何もしない" "$OUT" "$RC"
+# 相槌だけの応答は情報を渡さない（H-0）。内容か動作に出し直させる
+for FILLER in "承知しました。" "了解。" "指示待ちです。" "（無操作）" "以後書きません。" "申し訳ありません。"; do
+  OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"%s","transcript_path":"%s"}' "$FILLER" "$TRJ" | python3 "$HOOKS/reply-language.py")
+  expect_contains "Stop: 相槌だけの応答「$FILLER」を差し戻す（H-0）" '"decision": "block"' "$OUT"
+done
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"了解。破棄しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 相槌に続けて内容があれば通す" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 相槌でも stop_hook_active なら止めない（無限ループ防止）" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?
 expect_contains "UserPromptSubmit: 通常の発言にも見積もりの提示を注入（A-2 例外なし）" "見積: N分" "$(cg_ctx "$OUT")"
+expect_contains "UserPromptSubmit: 見積もりの注入は保守者の時計（既定 Asia/Tokyo）で現在時刻を同梱する" "現在 $(TZ=Asia/Tokyo date '+%H:%M')（Asia/Tokyo）" "$(cg_ctx "$OUT")"
+OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | AIDD_TZ=Bad/Zone python3 "$HOOKS/prompt-priority.py")
+expect_contains "UserPromptSubmit: タイムゾーンが解決できなければ時刻を書かず取得を促す" "先に時刻を取得してから書き" "$(cg_ctx "$OUT")"
 { u_text "構成を直して"; a_text "直します。"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "応答に見積もり行が無いままツールを呼んだら通知（A-2）" "見積もりが無い" "$(ig_reason "$OUT")"

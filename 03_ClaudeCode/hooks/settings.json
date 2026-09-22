@@ -3,7 +3,8 @@
   "autoCompactWindow": "200k",
   "bashOutputMaxChars": 12000,
   "env": {
-    "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0"
+    "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0",
+    "TZ": "Asia/Tokyo"
   },
   "statusLine": {
     "type": "command",
