@@ -50,10 +50,11 @@ def missing_actual(msg: str) -> str | None:
     """
     if ACTUAL_RE.search(msg):
         return None
-    out = timer("report")
-    if not out or "/ 0 回" in out:
+    # 回数の判定は内訳（--full）で行い、返すのは最短形にする
+    if "/ 0回" in timer("report", "--full"):
         return None
-    return out
+    out = timer("report")
+    return out or None
 
 
 # 見積の分と、差異を説明した形跡。H-6「見積の 1.5 倍を超えたら原因 1 行」を両方向に広げる
