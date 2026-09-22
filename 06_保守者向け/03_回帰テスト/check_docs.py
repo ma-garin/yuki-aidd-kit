@@ -13,6 +13,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   6. 常時読込     rules/*.md で paths: frontmatter の無いものの合計行数 ≦ RULES_ALWAYS_MAX
   7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX / agents ≦ AGENT_MAX（05_プロジェクト管理/要求仕様.md 使用性）
   9. 常時読込     03_ClaudeCode/CLAUDE.md.template ＋ 04_Codex/AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
+ 13. 資料未反映  skills / commands / agents / hooks が利用者向け資料に載っているか（WARN。A-3）
  12. スキル範囲  skills/*/SKILL.md に「次に渡す先」（NG）と「使わない場面」（WARN）があるか
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
   8. spec 同期    06_保守者向け/01_内部仕様/01_構成品目目録.md の行数 ↔ 実測、実ファイルが目録に載っているか
@@ -306,6 +307,35 @@ COUNT_PATTERNS = (
     ("hooks", re.compile(r"(?:hooks?|見張り役)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件)")),
     ("agents", re.compile(r"(?:エージェント|agents?/?)[^0-9\n]{0,4}(\d+)\s*(?:本|個|件|体)")),
 )
+USER_DOCS = ("README.md", "CHANGELOG.md", "01_利用者向け資料/01_利用ガイド.html",
+             "01_利用者向け資料/02_操作マニュアル.html")
+
+
+def check_user_docs(root: Path, r: Result) -> None:
+    """検査13: 資産を足したのに利用者向け資料で一度も触れられていないものを出す（WARN）。
+
+    A-3「機能・構成・導入手順を変えたら利用者向け資料の更新を同じ PR に含めるまで完了としない」は
+    散文の規約で、機械が見ていなかった。2026-09-22 に hooks を 2 本足して README も CHANGELOG も
+    更新しないまま完了と報告した。資産名がどの利用者向け文書にも出てこなければ申告漏れとみなす。
+    """
+    docs = "\n".join(read(root / d) for d in USER_DOCS if (root / d).is_file())
+    if not docs:
+        return
+    targets: list[tuple[str, str]] = []
+    for d in sorted((root / "03_ClaudeCode/skills").glob("*/")):
+        targets.append((f"skills/{d.name}", d.name))
+    # コマンドは文書中で `/name` と書かれる。agents / hooks はファイル名そのまま
+    for f in sorted((root / "03_ClaudeCode/commands").glob("*.md")):
+        targets.append((f"commands/{f.name}", f.stem))
+    for sub in ("agents", "hooks"):
+        for f in sorted((root / "03_ClaudeCode" / sub).glob("*")):
+            if f.is_file() and not f.name.startswith(".") and f.name != "settings.json":
+                targets.append((f"{sub}/{f.name}", f.stem if sub == "agents" else f.name))
+    for label, name in targets:
+        if name not in docs:
+            r.add(False, "資料未反映", label, "利用者向け資料（README / CHANGELOG / ガイド / マニュアル）に一度も出てこない")
+
+
 def check_skill_scope(root: Path, r: Result) -> None:
     """検査12: スキルが「次に渡す先」を持つか（NG）、「使わない場面」を持つか（WARN）。
 
@@ -489,6 +519,7 @@ def main() -> int:
     check_absolute_paths(root, r)
     check_size_targets(root, r, a.strict or SIZE_STRICT)
     check_skill_scope(root, r)
+    check_user_docs(root, r)
     check_spec_inventory(root, r)
 
     report = Path(a.report)
