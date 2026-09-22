@@ -1,88 +1,115 @@
 # 外部参照調査 2026-09 — sindresorhus/awesome
 
-対象: https://github.com/sindresorhus/awesome （commit `bc98e51`、2026-09-22 取得）。
-読んだもの: readme.md 866 行 / awesome.md（マニフェスト）/ pull_request_template.md（受け入れ基準）/ contributing.md / create-list.md。
-目的: 保守者の要求「キットをパートナー・メンターの水準まで高める」に対し、**外部で実運用されている維持機構**のうちキットへ移植できるものと、**キットが自作で埋めている領域の既成資産**を特定する。
+対象: https://github.com/sindresorhus/awesome （commit `bc98e51`、2026-09-22 取得）。readme.md 866 行の全エントリを走査した。
+目的: キットの各資産に対し、**外部で 30 日以上運用され選定済みのカタログ**がどこにあるかを対応付ける。awesome の収録条件（30 日以上の運用・未保守項目を含まない・厳選）により、リンク先自体が一次のカタログとして使える。
 
-## 判定軸
+**使い方**: 本ファイルは「どのリストを開けば何が埋まるか」の索引。リンク先の中身は未取得（X-1）。キットへ反映するときは、該当リストを 1 本だけ開いて必要な項目を抜く。
 
-採否は `05_プロジェクト管理/構想.md` の価値判定基準（立ち上がり速度／トークンあたり成果／品質判定の再現性）のどれに寄与するかで決める（`06_保守者向け/保守者の傾向.md` #30）。**寄与を1行で書けないものは「採用しない」に置く。**
-移植の優先順は `06_保守者向け/保守者の傾向.md` の反映先優先順（機械 → `rules/` → `04_Codex/AGENTS.md.template` → スキル）に従う。
+## 1. 直撃するもの（キットと同じ対象を扱っている）
 
-## 結論
+| リスト | キットのどこ | 何が取れるか | 優先 |
+|---|---|---|---|
+| **Claude Code** — github.com/hesreallyhim/awesome-claude-code | `03_ClaudeCode/` 全体（commands 18 本・hooks 18 本・agents 5 本・`03_ClaudeCode/CLAUDE.md.template`） | **他人が書いたスラッシュコマンド・CLAUDE.md・hook・ワークフローの実例集**。キットは自作のみで育ってきたため、①同じ用途を他の人がどう書いているか ②キットに無い型 ③`04_Codex/AGENTS.md.template` との差 を初めて外部と比較できる | ★★★ |
+| **Copilot Agents** — github.com/Code-and-Sorts/awesome-copilot-agents | `03_ClaudeCode/agents/` 5 本 | エージェント定義（目標・ループ・終了条件）の書き方の他流試合 | ★★ |
+| **Gemini CLI** — github.com/Piebald-AI/awesome-gemini-cli | `04_Codex/` | Claude Code 以外のエージェントへの可搬性。`06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-4（強制層が Claude Code 専用）の他事例 | ★★ |
+| **Generative AI** — github.com/steven2358/awesome-generative-ai | `skills/agent-eval/SKILL.md` | 評価・観測ツールの棚（キットは DeepEval / Langfuse で固定） | ★ |
+| **ChatGPT** — github.com/sindresorhus/awesome-chatgpt | — | 直接は使わない。プロンプト資産の整理の仕方の参考 | ☆ |
 
-1. **本体（readme.md の一覧）から得られるものは少ない。** awesome は AI エージェント系を意図的に収録しておらず（Testing 12 件・Learn 16 件に対し AI 開発支援は Copilot Agents 1 件のみ）、AIDD の一般論はここからは取れない。取れるのは**キットが自作で埋めている領域の既成資産**（静的解析・git hook・視覚回帰・プロンプトインジェクション）。
-2. **価値の本体は awesome 自身の維持機構。** 1 人の維持者が外部からの大量の提案を受けながら一覧の品質を保つための4層（マニフェスト／受け入れ基準／機械検査／成熟待ち）が公開されている。キットの `INDEX.md` と資産集合は同じ問題（厳選・陳腐化・書式の揺れ・読まれない規約）を抱えており、**そのまま対応が付く**。
-3. **メンター化に直接効くのは E-1（退役基準）・E-4（成熟ゲート）・E-6（読了証明）の3つ。** キットは「止める仕組み」としてほぼ完成しているが、**減らす仕組みと、相手を観測する仕組みが無い**（§3）。
+## 2. QA・テスト（保守者の本業。キットの中核）
 
----
+| リスト | キットのどこ | 何が取れるか | 優先 |
+|---|---|---|---|
+| **Falsehood** — github.com/kdeldycke/awesome-falsehood | `skills/qa-review-standards/references/personas.md`（16 ペルソナ）・`02_共通/ひな形/test/system_test_cases.csv` | **「プログラマが信じている誤り」の集大成**（名前・時刻・住所・メール・電話・通貨・ファイル名）。境界値と異常系の観点がそのままテスト設計に落ちる。キットの検証ペルソナに「壊れた入力を渡す人」はあるが、**渡す入力の具体リストが無い** | ★★★ |
+| **Testing** — github.com/TheJambo/awesome-testing | `skills/test-strategy/SKILL.md`・`skills/dev-lifecycle/references/test-levels.md` | ISTQB・ISO 29119 で既に埋めた領域。**照合用**（`rules/absolute-rules.md` A-4 網羅性が求める「照合した外部基準」として使える） | ★★ |
+| **Visual Regression Testing** — github.com/mojoaxel/awesome-regression-testing | `02_共通/ツール/ui-hash.py`・`skills/uiux_review/SKILL.md` | `.ui-verified` は「人が見た」ことを縛るが**見た目の差分は測っていない**。視覚回帰を入れると `rules/speed-harness.md` H-3 の2周上限が機械判定になる | ★★★ |
+| **Playwright** — github.com/mxschmitt/awesome-playwright | `skills/e2e-cycle/SKILL.md`・`skills/test-automation/references/playwright_smoke.py` | 上の実装手段。visual comparison / trace viewer / a11y snapshot の利用状況は未確認（X-3） | ★★ |
+| **Code Review** — github.com/joho/awesome-code-review | `03_ClaudeCode/agents/gate-agent.md`（3 役レビュー） | レビュー観点の外部基準。ペルソナの網羅性の裏取り | ★★ |
+| **Empirical Software Engineering** — github.com/dspinellis/awesome-msr | `05_プロジェクト管理/構想.md` の価値判定基準・`06_保守者向け/学んだこと.md` | **証拠に基づくソフトウェア工学研究**。キットの「実測だけを書く」（A-5）を、体感でなく研究結果で裏付ける材料 | ★★ |
+| **Audit Algorithms** — github.com/erwanlemerrer/awesome-audit-algorithms | `skills/agent-eval/SKILL.md`・`skills/qa-review-standards/SKILL.md` | **アルゴリズムの第三者監査**。保守者の第三者検証の役割そのもの。AI 成果物を外から検査する手法の棚 | ★★ |
+| **Fuzzing** — github.com/cpuu/awesome-fuzzing | `02_共通/ツール/quality_harness.py` | 異常系の自動生成。Falsehood と対で使う | ★ |
+| **QA Roadmap** — github.com/fityanos/awesome-quality-assurance-roadmap | — | QA キャリアの道筋。キットの Non-Goals（汎用化しない）に触れるが、**メンター層（§6）の素材にはなる** | ★ |
+| k6 / JMeter / Gatling / Selenium / Appium / CodeRabbit | `skills/nfr-standards/SKILL.md` | 負荷試験はキットが扱っていない領域。必要になったときの入口 | ☆ |
 
-## 1. awesome 本体の運用機構（移植候補 E-1〜E-7）
+## 3. デザイン・UI（`skills/design-system/` ・ `skills/uiux_review/` ・ `skills/personal-pwa/`）
 
-| # | awesome の機構（原文の要点） | キットの現状 | 移植案 | 価値基準 | 損益 |
-|---|---|---|---|---|---|
-| **E-1** | **「収集ではなく厳選」**。"it's a curation, not a collection" / "You should rather leave stuff out than include too much" / 非推奨・未保守の項目は別ファイルへ隔離する | 追加の基準（構想の3基準）はあるが、**退役の基準が無い**。資産は増える一方で、`06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-1 が最大の課題に挙げる常時読み込み層は「減らす規律」を持たない | `05_プロジェクト管理/構想.md` に**退役基準**を1節: ①N セッション参照されない ②代替資産ができた ③配布先で1度も発火しない のいずれかで LIBRARY → 退役候補 → 削除。判定は `/retro` の月次に載せる | トークンあたり成果 | 益: 資産数の単調増加が止まる。損: 判定に月 5〜10 分。**取り消し可能**（git に残る） |
-| **E-2** | **✅/❌ の対句で規則を書く**。PR テンプレートは全項目に正例・反例を並べる（`Add Swift` ✅ / `Add Awesome Swift` ❌ ほか 20 例超） | 規則は表と散文。`06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-2 が「Sonnet は決定表・チェックリスト・禁止リストの形の方が確実に従う」と自ら認定済みだが、**対句の形にはなっていない** | 常時読み込み層（`rules/`）は行数制約があるため触らない。**手順が走る場所**に入れる: `02_共通/ひな形/work-order.md` の「守ること」表と `skills/done-gate/SKILL.md` の各項目に ✅/❌ を1対ずつ | 品質判定の再現性 | 益: 追従率が上がる（Sonnet 移行の直接の備え）。損: 行数 +20〜30 行（発火時のみ＝常時コスト増なし） |
-| **E-3** | **一覧そのものを機械検査する**（awesome-lint。書式・説明文の末尾・入れ子段数・ToC の位置を lint） | `06_保守者向け/03_回帰テスト/check_docs.py` は件数・行数・参照切れ・掲載漏れを見るが、**`INDEX.md` の各エントリの書式は未検査**（1行要約の体裁・タグ・参照コストの欠落を拾えない） | 検査 12 を追加: `INDEX.md` の各資産行が「名前・1行要約・タグ・参照コスト」の4要素を持つか、要約の文末が統一されているか（WARN 始まり） | 立ち上がり速度 | 益: INDEX の劣化を機械が拾う。損: 実装 30〜40 分＋回帰テスト。**取り消し可能** |
-| **E-4** | **30 日の成熟待ち**。"Wait at least 30 days after creating a list before submitting it, to give it a chance to mature." | `skills/retro/SKILL.md` の還流（lessons → キット）に**成熟ゲートが無い**。1 回の作業で得た知見がそのまま規約になり得る | `skills/retro/SKILL.md` の還流条件に1行: **2 プロジェクト以上、または 2 回以上再利用で実証されたものだけ昇格する。1 回限りの知見は `06_保守者向け/学んだこと.md` に留める** | 品質判定の再現性 | 益: 一度きりの事故から規約を作る事故が止まる（キットが実際に踏んだ型）。損: 反映が遅れる。**ほぼ無コスト** |
-| **E-5** | **「対象を説明する。一覧自体を説明しない」**。`- [iOS](…) - Mobile operating system…` ✅ / `- [iOS](…) - Resources and tools for iOS development.` ❌ | スキルの `description` frontmatter は発火条件として書かれており方向は同じ。一方 `INDEX.md` の1行要約には「何が書いてあるか」型の行が混在する | E-3 の検査と同時に、要約を**「いつ発火するか」**に統一する（何が書いてあるかではなく、どの場面で開くか） | 立ち上がり速度 | 益: INDEX を読んだモデルが開くファイルを間違えない。損: 一括書き換え 20〜30 分 |
-| **E-6** | **読了証明を強制する**。"To verify that you've read all the guidelines, please comment on your pull request with just the word `unicorn`." | `rules/speed-harness.md` H-4 の委譲プロンプトは確定情報・再調査禁止・出力先を同梱させるが、**委譲先が指示を読んだ証明が無い**（読み飛ばしを事後にしか検知できない） | H-4 の委譲プロンプト要件に1行: **委譲先の最初の出力で「終了条件」を復唱させる**。復唱が指示と食い違ったら、その本は作業前に差し戻す | 品質判定の再現性 | 益: 委譲の固定費（60〜90 秒・57k〜90k トークン／本）を無駄にする本を着手前に止められる。損: 出力 +1 行。**ほぼ無コスト・最も費用対効果が高い** |
-| **E-7** | **「AI が全部書いた提案は受け付けない」**（"Fully AI-generated pull requests are not accepted." / "Is not AI-generated."）。2026 時点の外部の一次情報 | — | 移植ではなく**裏付け**。`05_プロジェクト管理/構想.md` の evidence-only・`rules/speed-harness.md` H-4「作った本人に検証させない」が外部でも独立に採られている根拠として引用できる（対外説明の材料） | − | 採否の対象外 |
+| リスト | 何が取れるか | 優先 |
+|---|---|---|
+| **Design Principles** — github.com/robinstickel/awesome-design-principles | 判断の根拠になる原則集。`02_共通/ひな形/ADR-template.md` の「捨てた案と理由となる原則」欄（`06_保守者向け/保守者の傾向.md` #27）に入れる原則の出どころ | ★★★ |
+| **Web Accessibility** — github.com/brunopulis/awesome-a11y | ECC の `accessibility` に依存している領域をキット側で持てる。`skills/uiux_review/references/viewpoints.md` の補強 | ★★★ |
+| **Storybook** — github.com/lauthieb/awesome-storybook | `06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-3「デザインを散文でなく出荷物に」の次の一手。`02_共通/ひな形/components/` を実際に見られる形にする | ★★ |
+| **Design systems** — github.com/klaufel/awesome-design-systems | `skills/design-system/SKILL.md` の他流試合。トークン設計の粒度の比較 | ★★ |
+| **Progressive Web Apps** — github.com/TalAter/awesome-progressive-web-apps ／ **Service Workers** — github.com/TalAter/awesome-service-workers ／ **Offline-First** — github.com/pazguille/offline-first | `skills/personal-pwa/SKILL.md`（30 行と薄い）。オフライン前提の設計は `skills/nfr-standards/SKILL.md` の制約と直結 | ★★ |
+| **PageSpeed Metrics** — github.com/csabapalfi/awesome-pagespeed-metrics ／ **Web Performance Budget** — github.com/pajaydev/awesome-web-performance-budget | `skills/nfr-standards/SKILL.md` の数値基準の出典。**指標名と閾値の根拠**（A-5 が要求する一次情報） | ★★ |
+| **No-Login Web Apps** — github.com/aviaryan/awesome-no-login-web-apps | `skills/single-html-tool/SKILL.md` の実例集。ログイン無し・単一ファイルで完結する道具の先行事例 | ★★ |
+| Material Design / Tailwind CSS / Web Typography / Icons / Colorful / Product Design / Web Design / Framer / Motion UI Design | `skills/design-system/references/` の各論。必要になった章だけ開く | ☆ |
 
-### E-2 の具体例（そのまま使える形）
+## 4. 強制層・道具（`03_ClaudeCode/hooks/` ・ `02_共通/ツール/`）
 
-```text
-✅ 終了条件: trace-check.sh NG=0、check-docs.sh NG=0、スクリーンショット 5 枚
-❌ 終了条件: 動作確認が取れたら完了
-```
+| リスト | 何が取れるか | 優先 |
+|---|---|---|
+| **Static Analysis & Code Quality** — github.com/analysis-tools-dev/static-analysis | 検査系（`06_保守者向け/03_回帰テスト/check_docs.py`・`00_導入/03_点検/check_design.py`・`02_共通/ツール/trace-check.sh`）は**全て自作**。`06_保守者向け/学んだこと.md` の「正規表現だけの検査は定義と呼び出しを区別できない」は既成ツールなら踏まない欠陥 | ★★★ |
+| **Git Hooks** — github.com/compscilauren/awesome-git-hooks | `06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-4 の結論「強制は git hook かスクリプトへ寄せる」の実装カタログ。現状の git hook は `02_共通/ツール/pre-commit` と `02_共通/ツール/pre-commit-ui-gate.sh` の 2 本 | ★★★ |
+| **Prompt Injection** — github.com/FonduAI/awesome-prompt-injection | **キットの穴**。`hooks/instruction-guard.py` は保守者の指示を作業より優先させる hook であり、**外部入力（ECC 資産・Web 取得・Issue/PR 本文）が AI を乗っ取る経路には何も無い** | ★★★ |
+| **Regex** — github.com/slevithan/awesome-regex | 検査スクリプトの正規表現の質。上の誤検出の直接の対策 | ★★ |
+| **Shell** — github.com/alebcay/awesome-shell ／ **Command-Line Apps** — github.com/agarrharr/awesome-cli-apps | `00_導入/` の入口スクリプト群と `02_共通/ツール/` の書き方。`rules/speed-harness.md` H-2 の環境チートシートに入れる道具 | ★ |
+| **SRE** — github.com/dastergon/awesome-sre ／ **Prometheus** | `02_共通/ひな形/lifecycle/09-operations.md`（保守運用工程）が薄い領域 | ★ |
+| CI/CD — github.com/cicdops/awesome-ciandcd ／ GitHub Actions | `02_共通/ひな形/github/workflows/` の 4 本。**ただし `06_保守者向け/保守者の傾向.md` #4「自動処理を認めない」に抵触するため、雛形の中身の参考に留める** | ☆ |
 
----
+## 5. 文書・命名（`INDEX.md` ・ `01_利用者向け資料/` ・ `02_共通/ひな形/`）
 
-## 2. キットの穴に当たる一次資料（R-1〜R-7）
+| リスト | 何が取れるか | 優先 |
+|---|---|---|
+| **Naming** — github.com/gruhn/awesome-naming | `06_保守者向け/保守者の傾向.md` #11（文言の規約）の裏付け。変数名・ファイル名・エラー文の命名指針 | ★★ |
+| **Design and Development Guides** — github.com/NARKOZ/guides | 各社のスタイルガイド集。`02_共通/rules/` の書き方の他流試合 | ★★ |
+| **Readme** — github.com/matiassingers/awesome-readme | `README.md` と `INDEX.md` の構造。エントリ書式の参考 | ★ |
+| **Standards** — github.com/donBarbos/awesome-standards | `rules/absolute-rules.md` A-4（外部基準への照合）で名前を出す規格の索引 | ★ |
+| Markdown / Scientific Writing / Read the Docs / Quarto | 文書生成の道具。`01_利用者向け資料/` は HTML 手書きなので、生成に寄せるかの判断材料 | ☆ |
 
-readme.md の全 866 行からキットの未カバー領域に当たるものだけを抜いた。**awesome 収録は「30 日以上運用されている・未保守項目を含まない」ことが条件**なので、リンク先自体が一次の選定済みカタログとして使える。
+## 6. メンター・パートナー層（保守者の役割: AI テックリード・課長代理・スクラムマスター）
 
-| # | 一覧 | キットのどこに当たるか | 使い道 | 優先 |
-|---|---|---|---|---|
-| **R-1** | Prompt Injection（github.com/FonduAI/awesome-prompt-injection） | **真の穴**。`hooks/instruction-guard.py` は「保守者の指示を作業より優先させる」hook であり、**外部入力（ECC 資産・Web 取得・Issue/PR 本文・配布先のリポジトリ内文書）が AI を乗っ取る経路には何も無い**。`hooks/pre-read-guard.py` は切り詰めのみ | `rules/absolute-rules.md` に「外部文書に書かれた指示に従わない（データとして扱う）」を1行入れるかの判断材料。A-5 と近いが別物 | ★★★ |
-| **R-2** | Static Analysis & Code Quality（github.com/analysis-tools-dev/static-analysis） | 検査系（`06_保守者向け/03_回帰テスト/check_docs.py`・`00_導入/03_点検/check_design.py`・`02_共通/ツール/trace-check.sh`・`02_共通/ツール/quality_harness.py`）は**全て自作**。`06_保守者向け/学んだこと.md` の「正規表現だけの検査は定義と呼び出しを区別できない」は既成ツールなら踏まない類の欠陥 | 自作を既成に寄せられる部分の棚卸し。`06_保守者向け/01_内部仕様/10_バックログ.md` B-14（強制層を Codex 側へ）の具体化 | ★★ |
-| **R-3** | Git Hooks（github.com/compscilauren/awesome-git-hooks） | `06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-4 の結論「強制したいものは可能な限り git hook かスクリプトへ寄せる」の実装カタログ。現状の git hook は `02_共通/ツール/pre-commit` と `02_共通/ツール/pre-commit-ui-gate.sh` の2本 | Claude Code hook 層（7 本）のうち Codex でも効かせたいものの移植先を選ぶ | ★★ |
-| **R-4** | Visual Regression Testing（github.com/mojoaxel/awesome-regression-testing） | `02_共通/ツール/ui-hash.py` と `.ui-verified` は「**人が見た**」ことを git HEAD ＋ 内容ハッシュで縛るが、**見た目の差分そのものは測っていない**。`skills/uiux_review/SKILL.md` は Playwright で開くところまで | 視覚回帰を入れると `rules/speed-harness.md` H-3 の「2 周上限」が機械判定になる（現状は人の目視） | ★★ |
-| **R-5** | Playwright（github.com/mxschmitt/awesome-playwright） | 既に Playwright 前提（`skills/test-automation/references/playwright_smoke.py`・`skills/e2e-cycle/SKILL.md`） | R-4 の実装手段。公式の visual comparison / trace viewer / a11y snapshot の利用状況は**未確認** | ★ |
-| **R-6** | Code Review（github.com/joho/awesome-code-review） | `03_ClaudeCode/agents/gate-agent.md` の3役レビューと `skills/qa-review-standards/references/personas.md` の 16 ペルソナ | ペルソナの観点を外部基準に照合する材料（`rules/absolute-rules.md` A-4 網羅性の要求を満たす） | ★ |
-| **R-7** | Testing（github.com/TheJambo/awesome-testing）／Quality Assurance Roadmap（github.com/fityanos/awesome-quality-assurance-roadmap） | `skills/test-strategy/SKILL.md`・`skills/dev-lifecycle/references/test-levels.md`（ISTQB・ISO 29119 準拠済み） | 既に規格で埋めている領域。**追加の価値は薄い**。Roadmap 側は §3 のメンター層の素材になり得るが Non-Goals（汎用化しない）に触れる | ☆ |
+キットは「作業をさせる仕組み」としてほぼ完成している。**保守者自身の判断を支える資産がキットに1つも無い**（`05_プロジェクト管理/構想.md` の Non-Goals にも入っていない＝未検討の領域）。ここが「パートナー・メンター」に最も近い。
 
----
+| リスト | 何が取れるか | 優先 |
+|---|---|---|
+| **Engineering Strategy** — github.com/aleixmorgadas/awesome-engineering-strategy | 技術戦略の立て方と実行。`05_プロジェクト管理/ロードマップ.md` の優先順位付けの型（現状は保守者の勘と `06_保守者向け/01_内部仕様/11_目標運用モデル.md` の運用条件のみ） | ★★★ |
+| **Wardley Maps** — github.com/wardley-maps-community/awesome-wardley-maps | **状況認識のための地図**。「どの資産に投資し、どれを退役させるか」を位置で判断する手法。キットの資産が増え続ける問題に効く | ★★★ |
+| **Engineering Team Management** — github.com/kdeldycke/awesome-engineering-team-management | 開発者からマネジメントへの移行。課長代理の実務（1on1・評価・委譲）の材料 | ★★ |
+| **OKR Methodology** — github.com/domenicosolazzo/awesome-okr | 目標設定。`05_プロジェクト管理/ロードマップ.md` のマイルストーンは作業単位で、**成果の目標が無い** | ★★ |
+| **Product Management** — github.com/dend/awesome-product-management | 何を作らないかの判断。`02_共通/ひな形/lifecycle/00-rfd.md`（RFD）の前段 | ★★ |
+| **Roadmaps** — github.com/liuchong/awesome-roadmaps | 技能の習得順路。メンターとしての「次に何を学ぶか」の提示 | ★ |
+| **Empathy in Engineering** — github.com/KimberlyMunoz/empathy-in-engineering ／ **Mental Health** — github.com/dreamingechoes/awesome-mental-health | パートナーとしての関わり方。**キットの応答スタイルは「厳しく評価する・褒めない」（`06_保守者向け/保守者の傾向.md` #7）で固定されており、これを変えるかは保守者の決定事項** | ☆ |
 
-## 3. 「メンター・パートナー」への差分
+## 7. 設計・アーキテクチャ（`skills/dev-lifecycle/`）
 
-キットは**止める仕組み**（ゲート・hook・検査・止まる条件）としてはほぼ完成している。メンターとして欠けているのは次の3点。うち G-1・G-3 は §1 の機構と同じ発想の裏返し。
+| リスト | 何が取れるか | 優先 |
+|---|---|---|
+| **Software Architecture** — github.com/simskij/awesome-software-architecture | `02_共通/ひな形/lifecycle/02-basic-design.md`・`02_共通/ひな形/ADR-template.md` の設計判断の型 | ★★ |
+| **Domain-Driven Design** — github.com/heynickc/awesome-ddd ／ **Event-Driven Architecture** — github.com/lutzh/awesome-event-driven-architecture ／ **Microservices** | キットが扱っていない規模の設計。現状の対象（個人 PWA・単一 HTML・Streamlit）には過剰 | ☆ |
 
-| # | 欠けているもの | 根拠 | 案 | 価値基準 |
-|---|---|---|---|---|
-| **G-1** | **相手を観測していない** | `06_保守者向け/保守者の傾向.md` は「AI が保守者の基準を学ぶ」一方向の資料。`06_保守者向け/学んだこと.md` はキット作業の学びで、**保守者自身がどこで時間と品質を落としているかの記録が無い**（メンターの前提は相手の観測） | `06_保守者向け/保守者の傾向.md` に第3部「保守者側の再発」: 見積超過の原因・後で撤回した決定・2 回以上出た手戻りを、AI 側の指摘と同じ表形式で。**評価でなく観測として書く**（`rules/absolute-rules.md` A-5 を保守者の記述にも適用し、断定しない） | 品質判定の再現性 |
-| **G-2** | **問い返しの型が無い** | `03_ClaudeCode/commands/plan.md` の「5 つの質問」は AI の自己チェック。メンターは**依頼そのものの前提を疑って返す**。`03_ClaudeCode/agents/aidd-lead.md` の工程1（要件定義）は人間の合意を待つが、**何を確認するかが定まっていない** | `03_ClaudeCode/agents/aidd-lead.md` 工程1 の必須出力に「前提の確認 3 問」: ①この成果物を受け取る人は誰で、何を判断するために使うか ②満たせなければ作り直しになる制約はどれか ③今回やらないと決めることは何か | 立ち上がり速度 |
-| **G-3** | **決定の撤回条件が無い** | awesome マニフェスト "Accept other people's opinion. If there are plenty of users not agreeing with your decision, give it a second thought." に相当するものが無い。`02_共通/ひな形/ADR-template.md` は選択肢と捨てた案を残すが、**その決定を将来どうなったら撤回するかを書かない**。`rules/absolute-rules.md` A-12 は機械ゲートには厳しいが、保守者の判断は検査対象外 | `02_共通/ひな形/ADR-template.md` に「撤回条件」欄1行: この決定を見直すのはどの観測が出たときか（数値・事象で書く）。`06_保守者向け/01_内部仕様/10_バックログ.md` の「採用しなかった案」にも同じ欄 | 品質判定の再現性 |
+## 8. awesome 自身の維持機構（リンク集としてではなく、運用の型として）
 
----
+`INDEX.md` と資産集合はリンク集と同じ問題（厳選・陳腐化・書式の揺れ）を抱える。awesome.md（マニフェスト）と pull_request_template.md から取れるもの。
 
-## 4. 採用しないもの（理由つき。再提案を防ぐ）
+| # | 機構 | キットの現状 | 移植案 |
+|---|---|---|---|
+| E-1 | **「収集ではなく厳選」**。"You should rather leave stuff out than include too much" / 未保守の項目は別ファイルへ隔離 | 追加の基準（構想の3基準）はあるが**退役の基準が無い** | `05_プロジェクト管理/構想.md` に退役基準を1節。判定は `/retro` の月次に載せる |
+| E-2 | **✅/❌ の対句で規則を書く**（PR テンプレートは全項目に正例・反例） | `06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-2 が「Sonnet は決定表・禁止リストの形の方が従う」と自ら認定済みだが**対句の形になっていない** | 常時読み込み層は触らず、`02_共通/ひな形/work-order.md` と `skills/done-gate/SKILL.md` に ✅/❌ を1対ずつ |
+| E-3 | **30 日の成熟待ち** | `skills/retro/SKILL.md` の還流に成熟ゲートが無く、1 回の作業の知見がそのまま規約になり得る | 「2 回以上再利用で実証されたものだけ昇格。1 回限りは `06_保守者向け/学んだこと.md` に留める」 |
+| E-4 | **読了証明**（"comment with just the word `unicorn`"） | `rules/speed-harness.md` H-4 の委譲プロンプトに**読んだ証明が無い**（読み飛ばしを事後にしか検知できない） | 委譲先の最初の出力で終了条件を復唱させ、食い違ったら着手前に差し戻す |
 
-| 対象 | 理由 |
-|---|---|
-| Awesome バッジ・CC0 ライセンス・ToC 規約・title case 等の体裁規約 | 公開一覧のための規約。`05_プロジェクト管理/構想.md` Non-Goals（不特定多数への OSS 公開はしない）に該当 |
-| 「4 件の他 PR をレビューしてから提出」（相互レビュー義務） | 外部コントリビュータが前提。キットは単独保守。**同等の機能は `skills/qa-review-standards/references/personas.md` の多ペルソナ検証が既に果たしている** |
-| Learn / Work セクションの一般リスト（Roadmaps・Product Management・Productivity ほか） | キットは「進め方の資産」であり学習教材ではない。取り込むと `06_保守者向け/01_内部仕様/11_目標運用モデル.md` D-1 の常時読み込み層を悪化させる |
-| CI 系の一覧（GitHub Actions ほか） | `06_保守者向け/保守者の傾向.md` #4「自動処理を認めない。手動で起動する」に抵触 |
-| Design systems / PWA / Web Performance の各一覧 | `skills/design-system/SKILL.md`・`skills/personal-pwa/SKILL.md`・`skills/nfr-standards/SKILL.md` が既に具体値で埋めている。一覧を足しても判断が増えない |
+## 9. 採用しないもの
 
----
+Awesome バッジ・CC0・ToC 規約等の公開一覧の体裁（`05_プロジェクト管理/構想.md` Non-Goals）。相互レビュー義務（単独保守。同等の機能は `skills/qa-review-standards/references/personas.md` の多ペルソナ検証が果たしている）。ブロックチェーン・ゲーム・ハードウェア・言語別の各セクション（対象外）。
 
-## 5. 未確認（`rules/absolute-rules.md` A-5）
+## 10. 未確認（`rules/absolute-rules.md` A-5）
 
 | # | 未確認 | 確認方法 |
 |---|---|---|
-| X-1 | R-1〜R-7 の各リンク先の中身 | 本調査は awesome 本体の readme.md の記述のみを読んだ。**リンク先は未取得**。採用を決めた項目だけ個別に取得する |
-| X-2 | awesome-lint がキットの `INDEX.md` に直接使えるか | awesome-lint は awesome 形式（英語・ToC・バッジ）前提。E-3 は**自前の検査 12 として実装する前提**で書いた |
-| X-3 | Playwright の visual comparison / a11y snapshot をキットが使っていないこと | `skills/e2e-cycle/SKILL.md` と `skills/test-automation/references/playwright_smoke.py` を読んで確認する（本調査では未実施） |
-| X-4 | R-1（プロンプトインジェクション）が実際にキットの運用で発火し得るか | 配布先で AI が読む外部文書（ECC 資産・Issue 本文）の経路を1度洗い出す |
+| X-1 | **各リンク先の中身は未取得**。本調査は readme.md の 1 行説明だけを読んだ | 採用を決めた項目だけ個別に取得する。優先は §1 の Claude Code、§2 の Falsehood、§4 の Static Analysis |
+| X-2 | awesome-claude-code にキットと重複する資産がどれだけあるか | 開いて `03_ClaudeCode/commands/` 18 本・`03_ClaudeCode/hooks/` 18 本と突き合わせる |
+| X-3 | Playwright の visual comparison / a11y snapshot をキットが使っていないこと | `skills/e2e-cycle/SKILL.md` と `skills/test-automation/references/playwright_smoke.py` を読む |
+| X-4 | §6 の各リストが日本の組織文脈で使えるか（多くは英語圏の管理慣行） | 採用時に個別判断 |
+
+## 本調査の誤り（記録）
+
+初回（同日）の結論で「awesome は AI エージェント系を意図的に収録しておらず、本体の一覧から得られるものは少ない」と書いたが**誤り**。Miscellaneous 節に Claude Code・Gemini CLI・Copilot Agents・Generative AI・ChatGPT が収録されている。原因は grep のパターンに "Claude" を含めず、`^## ` の節名だけで AI 系の有無を判断したこと。**866 行を全部読む前に結論を書いた**（`rules/absolute-rules.md` A-4 網羅性・A-5 未検証を断定しない の両方に違反）。
