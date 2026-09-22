@@ -80,6 +80,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       {
         "matcher": "Bash",
         "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/block-destructive.py", "timeout": 5, "statusMessage": "取り返しのつかない操作でないか確認中" },
           { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" },
           { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" }
         ]
@@ -162,15 +163,22 @@ for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh check_approval.py c
 done
 
 # Codex用 AGENTS.md（INDEX.md参照をプロジェクト相対パスに変換）
+# 配布先の実体パスへ書き換える。キット内の呼び名のまま配ると、配布先でエージェントが
+# 存在しないパスを探す（2026-09-22、ctxlint が stale-file-ref として検出）。
+# 対象は両テンプレートに実在する参照だけ（`grep -ohE` で抽出した 6 種）。
+rewrite_paths() {
+  sed -e 's#<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md#.claude/INDEX.md#g' \
+      -e 's#`02_共通/ひな形/#`.claude/templates/#g' \
+      -e 's#`rules/#`.claude/rules/#g' \
+      -e 's#`agents/#`.claude/agents/#g'
+}
 backup_if_exists "$TARGET/AGENTS.md"
-sed 's#<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md#.claude/INDEX.md#' \
-  "$KIT_DIR/04_Codex/AGENTS.md.template" > "$TARGET/AGENTS.md"
+rewrite_paths < "$KIT_DIR/04_Codex/AGENTS.md.template" > "$TARGET/AGENTS.md"
 
-# Claude Code用 CLAUDE.md（プロジェクトスコープ。同じくINDEX.md参照を変換）
+# Claude Code用 CLAUDE.md（プロジェクトスコープ。同じく参照を配布先の実体へ変換）
 backup_if_exists "$TARGET/CLAUDE.md"
-sed 's#<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md#.claude/INDEX.md#' \
-  "$KIT_DIR/03_ClaudeCode/CLAUDE.md.template" > "$TARGET/CLAUDE.md"
-echo "✅ AGENTS.md（共通規約の本体）/ CLAUDE.md（@AGENTS.md + Claude Code 固有）生成済み（INDEX 参照は .claude/INDEX.md に調整済み）"
+rewrite_paths < "$KIT_DIR/03_ClaudeCode/CLAUDE.md.template" > "$TARGET/CLAUDE.md"
+echo "✅ AGENTS.md（共通規約の本体）/ CLAUDE.md（@AGENTS.md + Claude Code 固有）生成済み（INDEX・rules・templates・agents の参照を .claude/ 配下へ調整済み）"
 
 echo ""
 echo "=== 完了 ==="

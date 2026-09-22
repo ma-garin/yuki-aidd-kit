@@ -77,6 +77,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 ~/.claude/hooks/block-destructive.py",
+            "timeout": 5,
+            "statusMessage": "取り返しのつかない操作でないか確認中"
+          },
+          {
+            "type": "command",
             "command": "python3 ~/.claude/hooks/block-gates.py",
             "timeout": 10,
             "statusMessage": "ゲート実行の要否を確認中"
