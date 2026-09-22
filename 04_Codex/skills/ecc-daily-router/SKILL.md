@@ -55,3 +55,6 @@ NEXT
 - UI/E2E/ブラウザ実行は必要性を説明してから
 - セキュリティ・秘密情報・localStorage・外部URL取得が絡む時は `security-review` を DAILY に昇格する
 
+## 適用範囲と引き継ぎ
+
+**次に渡す先**: 選んだ ECC 資産で作業した後は、キット側の `done-gate` で完了判定する。

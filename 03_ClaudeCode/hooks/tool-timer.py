@@ -13,6 +13,8 @@
   python3 .claude/hooks/tool-timer.py report          # `実測: N分` の1行（報告に貼る）
   python3 .claude/hooks/tool-timer.py report --full   # ツール実行時間・回数・通算も出す
   python3 .claude/hooks/tool-timer.py elapsed # このターンの経過分（見積との突合用。数値のみ）
+  python3 .claude/hooks/tool-timer.py record <見積分> <実測分>   # 予実を履歴に積む（Stop フックが呼ぶ）
+  python3 .claude/hooks/tool-timer.py factor  # 校正係数（実測/見積 の中央値）と件数。3 件未満は空
   python3 .claude/hooks/tool-timer.py reset          # ターンの計測を 0 に戻す（UserPromptSubmit に配線済み）
   python3 .claude/hooks/tool-timer.py reset-session  # 通算も 0 に戻す（新しい作業を始めるとき）
 
@@ -31,7 +33,8 @@ _FILE = pathlib.Path(os.environ.get("AIDD_TOOL_TIME")
 # total_* はターン単位（UserPromptSubmit の reset で 0 に戻る）。session_* は通算で、
 # reset では消えない（複数ターンにまたがる作業の実測を出すため。2026-09-22 の残課題）
 _EMPTY = {"total_sec": 0.0, "count": 0, "inflight": {}, "since": None, "window_start": None,
-          "session_sec": 0.0, "session_count": 0}
+          "session_sec": 0.0, "session_count": 0, "history": []}
+HISTORY_MAX = 20   # 直近 20 ターン分の予実。これより古いものは捨てる（傾向が変わるため）
 
 
 def load() -> dict:
@@ -137,16 +140,39 @@ def main() -> int:
         save(data)
     elif cmd == "report":
         print(fmt(load(), full="--full" in sys.argv))
+    elif cmd == "record":
+        # 予実の組を履歴に積む（reply-language が Stop で 1 ターン 1 回呼ぶ）
+        try:
+            est, act = float(sys.argv[2]), float(sys.argv[3])
+        except (IndexError, ValueError):
+            return 0
+        if est <= 0:
+            return 0
+        data = load()
+        h = [x for x in data.get("history", []) if isinstance(x, list) and len(x) == 2]
+        h.append([est, act])
+        data["history"] = h[-HISTORY_MAX:]
+        save(data)
+    elif cmd == "factor":
+        # 見積の校正係数＝実測 / 見積 の中央値。3 件未満は出さない（当てにならない）
+        h = [x for x in load().get("history", []) if isinstance(x, list) and len(x) == 2 and x[0] > 0]
+        if len(h) < 3:
+            print("")
+            return 0
+        rs = sorted(a / e for e, a in h)
+        mid = rs[len(rs) // 2] if len(rs) % 2 else (rs[len(rs) // 2 - 1] + rs[len(rs) // 2]) / 2
+        print(f"{mid:.2f} {len(h)}")
     elif cmd == "elapsed":
         m = elapsed_min(load())
         print("" if m is None else f"{m:.2f}")
     elif cmd == "reset":
-        # ターンの計測だけ 0 に戻す。通算（session_*）は引き継ぐ
+        # ターンの計測だけ 0 に戻す。通算（session_*）と予実の履歴は引き継ぐ
         old = load()
-        save(dict(_EMPTY, inflight={}, since=time.time(),
+        save(dict(_EMPTY, inflight={}, since=time.time(), history=old.get("history", []),
                   session_sec=float(old["session_sec"]), session_count=int(old["session_count"])))
     elif cmd == "reset-session":
-        save(dict(_EMPTY, inflight={}, since=time.time()))
+        # 通算も 0 に。**履歴は消さない**（見積の腕前はセッションを跨いで学ぶもの）
+        save(dict(_EMPTY, inflight={}, since=time.time(), history=load().get("history", [])))
     else:
         return 1
     return 0

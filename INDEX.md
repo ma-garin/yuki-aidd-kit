@@ -80,31 +80,31 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `dev-lifecycle` | RFD→要件定義→基本/詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用。工程ゲートとトレーサビリティ | #lifecycle #process | 114行 |
-| `context-compression` | 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存 | #token #process | 59行 |
-| `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 57行 |
-| `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 55行 |
-| `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only。references/personas.md に検証ペルソナ 16 体（作った本人に検証させない・順次）と準拠の主張範囲 | #qa #review | 54行 |
-| `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 71行 |
-| `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 55行 |
-| `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 111行 |
-| `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 95行 |
-| `phase-approval` | 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る | #lifecycle #qa #process | 93行 |
-| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 60行 |
-| `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 199行 |
-| `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 40行 |
+| `dev-lifecycle` | RFD→要件定義→基本/詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用。工程ゲートとトレーサビリティ | #lifecycle #process | 119行 |
+| `context-compression` | 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存 | #token #process | 63行 |
+| `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 60行 |
+| `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 59行 |
+| `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only。references/personas.md に検証ペルソナ 16 体（作った本人に検証させない・順次）と準拠の主張範囲 | #qa #review | 58行 |
+| `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 76行 |
+| `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 60行 |
+| `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 115行 |
+| `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 99行 |
+| `phase-approval` | 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る | #lifecycle #qa #process | 98行 |
+| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 65行 |
+| `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 200行 |
+| `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 45行 |
 
 ## LIBRARY スキル（種別・場面で選ぶ）
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/ に tokens.md（値の理由）・components.md（部品の使い分けと落とし穴）・frameworks.md（分担）。実物は templates/tokens.css・templates/ui/ | #ui #design | 117行 |
-| `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値 | #nfr #spec | 89行 |
-| `agent-eval` | LLM/RAG/エージェント出力の品質をデータセット＋スコアラーで回帰評価 | #ai #eval | 67行 |
-| `code-doc-search` | 技術ドキュメント検索のクエリ最適化 | #search #docs | 55行 |
-| `single-html-tool` | 単一HTMLツール（社内配布・PoC）の開発規約 | #html #tool | 36行 |
-| `personal-pwa` | GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約 | #pwa #mobile | 30行 |
-| `streamlit-rag-app` | Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約 | #streamlit #rag | 32行 |
+| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/ に tokens.md（値の理由）・components.md（部品の使い分けと落とし穴）・frameworks.md（分担）。実物は templates/tokens.css・templates/ui/ | #ui #design | 121行 |
+| `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値 | #nfr #spec | 94行 |
+| `agent-eval` | LLM/RAG/エージェント出力の品質をデータセット＋スコアラーで回帰評価 | #ai #eval | 72行 |
+| `code-doc-search` | 技術ドキュメント検索のクエリ最適化 | #search #docs | 59行 |
+| `single-html-tool` | 単一HTMLツール（社内配布・PoC）の開発規約 | #html #tool | 41行 |
+| `personal-pwa` | GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約 | #pwa #mobile | 35行 |
+| `streamlit-rag-app` | Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約 | #streamlit #rag | 37行 |
 
 ## 02_共通/rules/（規律。`paths` 無し＝毎セッション自動読み込み／`paths` 付き＝該当ファイルを触ったときだけ。install で `~/.claude/rules/aidd-kit/`、export で `.claude/rules/` へ。根拠と原文は `06_保守者向け/02_設計判断の根拠/`）
 

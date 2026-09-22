@@ -34,3 +34,8 @@ QA系ツールでは qa-review-standards スキルを併読し、ISO 25010スコ
 1. 既存ファイルの構造（CSS変数・関数名・data schema）を先に把握
 2. localStorageスキーマ変更時はマイグレーション関数を追加
 3. 変更点一覧（機能・UI・schema）を冒頭コメントに追記
+
+## 適用範囲と引き継ぎ
+
+**使わない場面**: オフラインで完結しないもの・サーバ処理が要るものには使わない（`streamlit-rag-app`）。インストール型は `personal-pwa`。
+**次に渡す先**: 見た目は `design-system`、確認は `uiux_review`、完了前に `done-gate`。

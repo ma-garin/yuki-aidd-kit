@@ -109,3 +109,7 @@ description: プロジェクトのテスト活動全体（テストレベル L1�
 | 完了判定チェックリスト | `skills/done-gate` |
 | 実行経路の検証規範 | `rules/functional-integrity.md` |
 | 非機能の基準値 | `skills/nfr-standards` |
+
+## 適用範囲と引き継ぎ
+
+**次に渡す先**: ケースの実装は `test-automation`、E2E の反復は `e2e-cycle`、完了判定は `done-gate`。

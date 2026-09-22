@@ -355,6 +355,29 @@ expect_contains "tool-timer: AIDD_TOOL_TIME の隔離が効いている（本番
 AIDD_TOOL_TIME="$TMP/other.json" python3 "$TT" reset-session
 OUT=$(AIDD_TOOL_TIME="$TMP/other.json" python3 "$TT" report --full)
 expect_contains "tool-timer: 記録先を替えれば別の計測になる" "ツール 0秒 / 0回" "$OUT"
+# 見積の校正: 予実の履歴から係数を出し、reset / reset-session でも消えない。
+# 履歴は消えない設計なので、前段の計測と混ざらないよう専用の記録先で測る
+export AIDD_TOOL_TIME="$TMP/cal.json"
+python3 "$TT" reset-session
+OUT=$(python3 "$TT" factor); RC=$?
+expect_empty "tool-timer: 履歴 3 件未満では係数を出さない" "$OUT" "$RC"
+for pair in "40 6" "15 5" "8 2"; do python3 "$TT" record $pair; done
+expect_contains "tool-timer: 予実から校正係数（実測/見積 の中央値）を出す" "0.25" "$(python3 "$TT" factor)"
+expect_contains "tool-timer: 係数に件数を添える" "3" "$(python3 "$TT" factor)"
+python3 "$TT" reset
+expect_contains "tool-timer: reset で予実の履歴は消えない" "0.25" "$(python3 "$TT" factor)"
+python3 "$TT" reset-session
+expect_contains "tool-timer: reset-session でも履歴は消えない（見積の腕前は跨いで学ぶ）" "0.25" "$(python3 "$TT" factor)"
+python3 "$TT" record 0 5
+expect_contains "tool-timer: 見積 0 は履歴に入れない（ゼロ除算）" "3" "$(python3 "$TT" factor)"
+OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"進めて"}' | python3 "$HOOKS/prompt-priority.py")
+expect_contains "UserPromptSubmit: 過大見積の癖を見積の注入に同梱する" "過大見積の癖" "$(cg_ctx "$OUT")"
+export AIDD_TOOL_TIME="$TMP/cal2.json"
+python3 "$TT" reset-session
+for pair in "10 9" "10 11" "10 10"; do python3 "$TT" record $pair; done
+OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"進めて"}' | python3 "$HOOKS/prompt-priority.py")
+expect_contains "UserPromptSubmit: 一致していれば補正を促さない" "ほぼ一致" "$(cg_ctx "$OUT")"
+export AIDD_TOOL_TIME="$TMP/tool-time.json"   # 以降のテストのために既定へ戻す
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?
