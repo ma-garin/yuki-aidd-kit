@@ -134,6 +134,31 @@ expect_count "CLAUDE.md / AGENTS.md の .claude/ 参照が配布先に実在す�
 expect_count "キット内の呼び名（02_共通/）が配布物に残らない" 0 "$(grep -c '02_共通/' "$P/CLAUDE.md" "$P/AGENTS.md" | awk -F: '{s+=$2} END {print s+0}')"
 expect_grep "既存 scripts/trace-check.sh はスキップ（内容保持）" "# my own trace-check" "$P/scripts/trace-check.sh"
 expect_out  "スキップした旨を表示" "scripts/trace-check.sh は既存のためスキップ" "$OUT"
+
+# ---------------------------------------------------------------- install-git-hooks.sh
+# Codex でも効く唯一の強制層（B-14）。配線されていなければ両方とも効かない
+echo "[install-git-hooks.sh]"
+GH="$TMP/gh"; mkdir -p "$GH"
+(cd "$GH" && git init -q && git config user.email t@e && git config user.name T)
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh" "$GH" >/dev/null 2>&1
+expect_file "export が scripts/pre-commit（秘密情報）を配る" "$GH/scripts/pre-commit"
+OUT=$(bash "$KIT_DIR/00_導入/02_プロジェクト配布/install-git-hooks.sh" "$GH" 2>&1); RC=$?
+expect_exit "install-git-hooks.sh が exit 0" 0 "$RC"
+expect_file "pre-commit が配線される" "$GH/.git/hooks/pre-commit"
+expect_contains "配線に秘密情報スキャンを含む" "scripts/pre-commit" "$(cat "$GH/.git/hooks/pre-commit")"
+expect_contains "配線に UI ゲートを含む" "pre-commit-ui-gate.sh" "$(cat "$GH/.git/hooks/pre-commit")"
+(cd "$GH" && git add -A >/dev/null 2>&1 && git commit -q --no-verify -m init)
+(cd "$GH" && printf 'api_key = "sk-abcdefghijklmnopqrstuvwxyz"\n' > leak.py && git add leak.py)
+OUT=$(cd "$GH" && git commit -m leak 2>&1); RC=$?
+expect_contains "秘密情報のコミットが止まる" "秘密情報" "$OUT"
+(cd "$GH" && git reset -q && rm -f leak.py)
+(cd "$GH" && mkdir -p src && echo '<html><body>x</body></html>' > src/index.html && git add src/index.html)
+OUT=$(cd "$GH" && git commit -m ui 2>&1)
+expect_contains "UI 変更でマーカーが無ければ止まる" "BLOCKED" "$OUT"
+OUT=$(bash "$KIT_DIR/00_導入/02_プロジェクト配布/install-git-hooks.sh" "$GH" --uninstall 2>&1); RC=$?
+expect_exit "--uninstall が exit 0" 0 "$RC"
+OUT=$(cd "$GH" && git commit -m ui 2>&1); RC=$?
+expect_exit "--uninstall 後はゲートが外れる" 0 "$RC"
 expect_grep "AGENTS.md の INDEX 参照が .claude/INDEX.md に相対化" ".claude/INDEX.md" "$P/AGENTS.md"
 expect_grep "配布先の CLAUDE.md も @AGENTS.md 形式" "@AGENTS.md" "$P/CLAUDE.md"
 expect_grep "配布先の rules に paths frontmatter が保たれる" "paths:" "$P/.claude/rules/functional-integrity.md"
