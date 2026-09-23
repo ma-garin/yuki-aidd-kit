@@ -43,7 +43,7 @@ open 01_利用者向け資料/02_操作マニュアル.html                  # H
 # 保守者だけ（06_保守者向け/ は配布しない）
 ./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（193ケース）
 ./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（125ケース）
-./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（57ケース）
+./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（61ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
 ./06_保守者向け/03_回帰テスト/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
@@ -72,8 +72,8 @@ python3 scripts/quality_harness.py            # 機能契約ハーネス（契�
 | `aidd-lead` | 統括。種別判定・進め方の選択・工程の駆動・差し戻しの配分 | 工程 2〜7 が収束し受け入れ材料が揃う | 79行 |
 | `spec-agent` | 工程 2・3（基本設計・詳細設計） | `trace-check.sh` NG=0・TBD 残ゼロ | 49行 |
 | `build-agent` | 工程 4（実装＋デザイン。指示が無くても design-system を適用する） | `check-design.sh` NG=0・実行経路の疎通 | 50行 |
-| `verify-agent` | 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行） | Critical/High 残ゼロ・`test-metrics.sh --gate` exit 0 | 49行 |
-| `gate-agent` | 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す） | 差し戻し 0 件。**承認欄は空のまま人間へ** | 44行 |
+| `verify-agent` | 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行） | Critical/High 残ゼロ・`test-metrics.sh --gate` exit 0 | 53行 |
+| `gate-agent` | 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す） | 差し戻し 0 件。**承認欄は空のまま人間へ** | 45行 |
 
 AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない線）。中間工程は「AI 検証完了・承認待ち」として積み、受け入れ時に人間がまとめて判定する。
 
@@ -89,7 +89,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 76行 |
 | `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 60行 |
 | `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 115行 |
-| `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 99行 |
+| `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 101行 |
 | `phase-approval` | 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る | #lifecycle #qa #process | 98行 |
 | `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 65行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 200行 |

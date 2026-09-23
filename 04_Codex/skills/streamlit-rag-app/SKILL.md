@@ -1,6 +1,6 @@
 ---
 name: streamlit-rag-app
-description: "Streamlit + RAGベースの業務アプリ（業務支援エージェント、VeriRAG連携アプリ、社内ナレッジツール）の開発スキル。business_agent_app、PMO支援、意思決定支援・成果物支援・教育支援機能、マルチテナント対応、エスカレーション判定の実装に関する依頼があった場合は必ずこのスキルを使用すること。Streamlitアプリの新規モジュール追加・改修にも適用する。"
+description: "Streamlit + RAGベースの業務アプリ（業務支援エージェント、VeriRAG連携アプリ、社内ナレッジツール）の開発スキル。business_agent_app、PMO支援、意思決定支援・成果物支援・教育支援機能、マルチテナント対応、「エスカレーション判定」の実装に関する依頼があった場合は必ずこのスキルを使用すること。Streamlitアプリの新規モジュール追加・改修にも適用する。"
 ---
 <!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
 # Streamlit RAGアプリ開発規約（業務支援エージェント系）
