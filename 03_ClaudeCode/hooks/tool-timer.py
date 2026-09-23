@@ -23,8 +23,12 @@
 import json
 import os
 import pathlib
+import select
 import sys
 import time
+
+MACHINE_MARKERS = ("[Subagent hand-back]", "<task-notification>", "<agent-message", "Stop hook feedback:",
+                   "[SYSTEM NOTIFICATION - NOT USER INPUT]", "[instruction-guard]", "[reply-language]")
 
 # 記録先。AIDD_TOOL_TIME で差し替えられる（回帰テストが稼働中セッションの計測を壊さないため。
 # テストは $HOOKS を直接叩くので、既定のままだと reset-session や rm で実データが消える）
@@ -167,6 +171,18 @@ def main() -> int:
         print("" if m is None else f"{m:.2f}")
     elif cmd == "reset":
         # ターンの計測だけ 0 に戻す。通算（session_*）と予実の履歴は引き継ぐ
+        # 機械が書いた発言（サブエージェントの報告・ワークフローの完了通知・hook の差し戻し）ではターンを区切らない。
+        # 区切ると委譲待ちの途中で経過が 0 に戻り、reply-language が見積との乖離を誤判定して偽の予実を履歴に積む
+        # （2026-09-23 に 3 回。instruction-guard.py の MACHINE_MARKERS と同じ印で見分ける）
+        prompt = ""
+        try:
+            # 手で叩いたとき（TTY・閉じない stdin）に入力待ちで固まらないよう、読めるときだけ読む
+            if not sys.stdin.isatty() and select.select([sys.stdin], [], [], 0.5)[0]:
+                prompt = json.load(sys.stdin).get("prompt") or ""
+        except (json.JSONDecodeError, ValueError, AttributeError, OSError):
+            prompt = ""
+        if isinstance(prompt, str) and any(m in prompt for m in MACHINE_MARKERS):
+            return 0
         old = load()
         save(dict(_EMPTY, inflight={}, since=time.time(), history=old.get("history", []),
                   session_sec=float(old["session_sec"]), session_count=int(old["session_count"])))

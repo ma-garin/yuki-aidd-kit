@@ -346,6 +346,18 @@ expect_contains "tool-timer: 3 本目まで回数を数える" "/ 3回" "$OUT"
 expect_contains "tool-timer: ツールが走っていない時間は加算しない" "OK" "$(sec_le "$OUT" 2)"
 OUT=$(printf '{"tool_name":"Bash","tool_use_id":"zz"}' | python3 "$TT" post; python3 "$TT" report --full)
 expect_contains "tool-timer: 対になる pre が無い post で件数が増えない" "/ 3回" "$OUT"
+# 機械が書いた発言（完了通知・サブエージェントの報告）ではターンを区切らない。人の発言では区切る
+python3 "$TT" reset < /dev/null
+printf '{"tool_name":"Bash","tool_use_id":"m1"}' | python3 "$TT" pre; sleep 1
+printf '{"tool_name":"Bash","tool_use_id":"m1"}' | python3 "$TT" post
+printf '{"prompt":"<task-notification>\\n<status>completed</status>"}' | python3 "$TT" reset
+expect_contains "tool-timer: 完了通知では reset しない（委譲待ちの経過を保つ）" "/ 1回" "$(python3 "$TT" report --full)"
+printf '{"prompt":"Another Claude session sent a message:\\n<agent-message from=\\"a\\">"}' | python3 "$TT" reset
+expect_contains "tool-timer: サブエージェントの報告でも reset しない" "/ 1回" "$(python3 "$TT" report --full)"
+printf '{"prompt":"次は S3 を進めて"}' | python3 "$TT" reset
+expect_contains "tool-timer: 人の発言では reset する" "/ 0回" "$(python3 "$TT" report --full)"
+printf '{"tool_name":"Bash","tool_use_id":"m2"}' | python3 "$TT" pre   # 以降の検査のためにツール実行 1 回の状態へ戻す
+printf '{"tool_name":"Bash","tool_use_id":"m2"}' | python3 "$TT" post
 OUT=$(printf 'not json' | python3 "$TT" pre; echo "rc=$?")
 expect_contains "tool-timer: 壊れた入力でも作業を止めない" "rc=0" "$OUT"
 OUT=$(python3 "$TT" report --full)
