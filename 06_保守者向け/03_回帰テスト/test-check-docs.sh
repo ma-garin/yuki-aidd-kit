@@ -16,7 +16,17 @@ expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出�
 expect_noout(){ printf '%s' "$3" | grep -qF -- "$2" && ng "$1" "出力に '$2' が出た" || ok "$1"; }
 
 # テスト実行の代替（各検査の突合に集中するため、実テストの再実行はしない）
-export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=112,test-trace-check.sh=15,test-quality-harness.sh=11,test-install.sh=118,test-agents.sh=57,test-git-gates.sh=27"
+# 値は INDEX.md の記載から取る。ここに直値を書くと、ケースを足すたびにこのファイルだけ取り残されて
+# ケース1 が落ちる（固定値の更新漏れを 3 回直した: d61eebb・eece3a2・ca13ee4）。
+# 記載と実測の一致は check-docs.sh 本体（実テストを走らせる）が見る。
+CHECK_DOCS_TEST_TOTALS=$(python3 - "$KIT_DIR/INDEX.md" <<'PY'
+import re, sys
+s = open(sys.argv[1], encoding="utf-8").read()
+print(",".join(f"{a}={b}" for a, b in re.findall(r"(test-[\w-]+\.sh)\s.*?（(\d+)ケース）", s)))
+PY
+)
+export CHECK_DOCS_TEST_TOTALS
+[ -n "$CHECK_DOCS_TEST_TOTALS" ] || { echo "INDEX.md からケース数を読めない"; exit 1; }
 
 fresh() { # 複製を作り直してパスを返す
   rm -rf "$TMP/copy"; mkdir -p "$TMP/copy"
@@ -121,6 +131,32 @@ expect_exit "絶対パスは WARN なので exit 0" 0 "$RC"
 grep -q "| 絶対パス | 02_共通/ひな形/CURRENT_STATE.md" "$TMP/report.md" && ok "種別「絶対パス」で /Users/ を検出（レポート）" || ng "種別「絶対パス」で検出" "レポートに無い"
 C=$(fresh); OUT=$(run "$C" --skip-tests)
 grep -q "| 絶対パス |" "$TMP/report.md" && ng "元の状態では検出されない" "残っている: $(grep '| 絶対パス |' "$TMP/report.md" | head -2)" || ok "元の状態では検出されない（配布雛形・README・userguide に絶対パスなし）"
+
+echo "[ケース13: --fix（実測で決まる直値の書き換え）]"
+INV="06_保守者向け/01_内部仕様/01_構成品目目録.md"
+C=$(fresh); OUT=$(run "$C" --fix); RC=$?
+expect_exit "壊していない状態で --fix は exit 0" 0 "$RC"
+diff -rq -x check-docs-report.md -x .git "$KIT_DIR" "$C" >/dev/null && ok "壊していない状態では何も書き換えない" || ng "壊していない状態では何も書き換えない" "$(diff -rq -x check-docs-report.md -x .git "$KIT_DIR" "$C" | head -2 | tr '\n' ' ')"
+C=$(fresh)
+sedi 's/^\(| `retro` |.*| \)[0-9]*\(行 |\)$/\11\2/' "$C/INDEX.md"
+sedi 's/\(test-hooks.sh.*（\)[0-9]*\(ケース）\)/\11\2/' "$C/INDEX.md"
+sedi 's/PASS=[0-9]* \/ FAIL=0/PASS=1 \/ FAIL=0/' "$C/01_利用者向け資料/02_操作マニュアル.html"
+sedi 's/^| `verify.sh` | [0-9]* |/| `verify.sh` | 1 |/' "$C/$INV"
+OUT=$(run "$C"); RC=$?
+expect_exit "前提: 参照コスト・ケース数・目録を崩すと exit 1" 1 "$RC"
+OUT=$(run "$C" --fix); RC=$?
+expect_exit "--fix で exit 0 に戻る" 0 "$RC"
+expect_out  "書き換えた件数を出す" "行を実測に更新" "$OUT"
+cmp -s "$KIT_DIR/INDEX.md" "$C/INDEX.md" && ok "INDEX.md が元と一致（参照コスト・ケース数）" || ng "INDEX.md が元と一致" "$(diff "$KIT_DIR/INDEX.md" "$C/INDEX.md" | head -4 | tr '\n' ' ')"
+cmp -s "$KIT_DIR/01_利用者向け資料/02_操作マニュアル.html" "$C/01_利用者向け資料/02_操作マニュアル.html" && ok "操作マニュアルの PASS=N が元と一致" || ng "操作マニュアルの PASS=N が元と一致" "差分あり"
+cmp -s "$KIT_DIR/$INV" "$C/$INV" && ok "構成品目目録が元と一致" || ng "構成品目目録が元と一致" "差分あり"
+C=$(fresh); sedi 's/\(test-hooks.sh.*（\)[0-9]*\(ケース）\)/\11\2/' "$C/INDEX.md"
+OUT=$(CHECK_DOCS_TEST_TOTALS= run "$C" --fix --skip-tests); RC=$?
+grep -q 'test-hooks.sh.*（1ケース）' "$C/INDEX.md" && ok "--skip-tests 併用ではケース数を書き換えない" || ng "--skip-tests 併用ではケース数を書き換えない" "書き換わった"
+expect_out  "--skip-tests 併用時は更新しない旨を出す" "テスト未実行のため更新しない" "$OUT"
+C=$(fresh); sedi 's/^| `verify.sh` | [0-9]* |/| `verify.sh` | 1 |/' "$C/$INV"
+OUT=$(run "$C" --fix-inventory); RC=$?
+expect_exit "旧名 --fix-inventory も使える" 0 "$RC"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
