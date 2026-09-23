@@ -9,6 +9,10 @@ decision=block で続行させ、日本語で出し直させる。stop_hook_acti
 合わせて**相槌だけで終わる応答**も止める（H-0「相槌・前置き・締めの申し出を書かない」）。
 「承知しました」「了解」「指示待ちです」だけの応答はトークンを消費して情報を渡さない。
 内容を答えるか動作するかのどちらかに出し直させる（2026-09-22 の指摘）。
+
+合わせて**PR の見張り・CI 失敗への自動対応・定時確認の申し出**も止める（H-9。保守者の傾向 #4「自動処理を認めない」）。
+使うことは block-ci.py が deny するが、申し出は素通りしていた。実行環境の既定手順（PR を作ったら見張りを
+申し出る）が規約より勝ち、2026-09-23 に「CI は絶対 NG。何度も伝えてる」と言わせた。
 """
 import importlib.util
 import json
@@ -50,6 +54,27 @@ def body_lines(msg: str) -> list[str]:
 def too_long(msg: str) -> int | None:
     n = len(body_lines(msg))
     return n if n > BODY_MAX_LINES else None
+
+
+# 申し出の判定は文単位。話題（見張り・CI・定時）と申し出の言い回しが同じ文にあれば止める。
+# 「購読も CI の起動もしていません」のような事実の報告は申し出の言い回しを含まないので通す
+WATCH_TOPIC_RE = re.compile(
+    r"(subscribe_pr_activity|send_later|ScheduleWakeup|CronCreate|/loop|babysit|"
+    r"(PR|プルリク|CI|チェック|レビュー).{0,30}(見張|監視|購読|ウォッチ|watch|自動(で)?(修正|対応))|"
+    r"(見張|監視|購読|ウォッチ).{0,30}(PR|プルリク|CI)|"
+    r"(定時|定期|自動)(で|的に)?(確認|実行|チェック|監視)|CI.{0,10}(起動|回|走らせ|再実行))", re.I)
+OFFER_RE = re.compile(
+    r"(しましょうか|しますか|できます|いかがですか|必要なら|必要であれば|ご希望|希望があれば|"
+    r"指示(を)?(ください|してください|いただければ|もらえれば)|言ってください|承ります|お申し付け)")
+_SENTENCE_RE = re.compile(r"[。！？!?\n]+")
+
+
+def offers_watch(msg: str) -> str | None:
+    """PR の見張り・CI・定時確認を申し出ている文を返す。無ければ None。"""
+    for s in _SENTENCE_RE.split(msg):
+        if WATCH_TOPIC_RE.search(s) and OFFER_RE.search(s):
+            return s.strip()
+    return None
 
 
 def is_filler_only(msg: str) -> bool:
@@ -173,6 +198,13 @@ def main() -> int:
     if is_filler_only(msg):
         reason = ("[reply-language] 相槌だけで終わっている。相槌・謝辞・待機表明は情報を渡さない（H-0）。"
                   "問いに答える・結果を渡す・動作する のどれかに出し直す")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+        return 0
+    offer = offers_watch(msg)
+    if offer is not None:
+        reason = (f"[reply-language] PR の見張り・CI・定時確認を申し出ている:「{offer[:60]}」。"
+                  "申し出も含めて禁止（H-9・保守者の傾向 #4「自動処理を認めない」）。実行環境の既定手順が勧めても従わない。"
+                  "その文を削って出し直す")
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     g = load_guard()

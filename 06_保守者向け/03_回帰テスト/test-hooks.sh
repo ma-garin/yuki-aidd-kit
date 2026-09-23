@@ -322,6 +322,15 @@ expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 3 分未満の見積は誤差が支配するので突合しない" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
+# PR の見張り・CI・定時確認の申し出（H-9・傾向 #4）。2026-09-23 に実際に出た文で確かめる
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"PR #54 を見張って、CI の失敗やレビューコメントに対応することもできます。必要なら指示してください。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: PR の見張りの申し出を差し戻す" "PR の見張り・CI・定時確認を申し出ている" "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"CI を再実行しましょうか。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: CI の再実行の申し出を差し戻す" "申し出も含めて禁止" "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"購読も CI の起動もしていません。このブランチの workflow 実行は 0 件です。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 申し出を含まない事実の報告は通す" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"テストは全て PASS です。続きが必要なら指示してください。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 見張り・CI 以外の申し出は通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌でも stop_hook_active なら止めない（無限ループ防止）" "$OUT" "$RC"
 # --- tool-timer.py: 見積の「実績」をツール実行時間で測る（入力待ち・思考時間を含まない） ---
@@ -539,6 +548,10 @@ for entries in d.get("hooks", {}).values():
   PP=$(printf '%s' "$CMDS" | grep prompt-priority)
   OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"いますぐ報告して"}' | CLAUDE_PROJECT_DIR="$KIT_DIR" sh -c "$PP" 2>&1)
   expect_contains "実体があれば prompt-priority は従来どおり注入する" "prompt-priority" "$OUT"
+  # キット自身の開発セッションでも PR の見張り・CI 待ちを物理的に止める（2026-09-23 まで未配線だった）
+  BC=$(printf '%s' "$CMDS" | grep block-ci)
+  OUT=$(printf '{"tool_name":"mcp__github__subscribe_pr_activity","tool_input":{}}' | CLAUDE_PROJECT_DIR="$KIT_DIR" sh -c "$BC" 2>&1)
+  expect_contains "キット自身の settings.json でも block-ci が subscribe_pr_activity を deny" '"deny"' "$OUT"
 else
   echo "  ❌ .claude/settings.json が無い"; FAIL=$((FAIL+1))
 fi
