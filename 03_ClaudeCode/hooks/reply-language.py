@@ -67,12 +67,15 @@ OFFER_RE = re.compile(
     r"(しましょうか|しますか|できます|いかがですか|必要なら|必要であれば|ご希望|希望があれば|"
     r"指示(を)?(ください|してください|いただければ|もらえれば)|言ってください|承ります|お申し付け)")
 _SENTENCE_RE = re.compile(r"[。！？!?\n]+")
+# 引用（「」・バッククォート・二重引用符）の中の言い回しは言及であって申し出ではない。
+# 申し出の言い回しは引用の外にあるときだけ数える（2026-09-23: 規約の説明で「できます」を引用して誤検知）
+_QUOTED_RE = re.compile(r"「[^」]*」|`[^`]*`|\"[^\"]*\"")
 
 
 def offers_watch(msg: str) -> str | None:
     """PR の見張り・CI・定時確認を申し出ている文を返す。無ければ None。"""
     for s in _SENTENCE_RE.split(msg):
-        if WATCH_TOPIC_RE.search(s) and OFFER_RE.search(s):
+        if WATCH_TOPIC_RE.search(s) and OFFER_RE.search(_QUOTED_RE.sub("", s)):
             return s.strip()
     return None
 

@@ -331,6 +331,8 @@ OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant
 expect_empty "Stop: 申し出を含まない事実の報告は通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"テストは全て PASS です。続きが必要なら指示してください。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 見張り・CI 以外の申し出は通す" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"reply-language.py が、見張り・CI の話題と「できます」「必要なら」が同じ文にある返答を差し戻す。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 引用した言い回し（言及）は申し出に数えない" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌でも stop_hook_active なら止めない（無限ループ防止）" "$OUT" "$RC"
 # --- tool-timer.py: 見積の「実績」をツール実行時間で測る（入力待ち・思考時間を含まない） ---

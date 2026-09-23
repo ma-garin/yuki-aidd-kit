@@ -14,7 +14,7 @@
   - H-9（`speed-harness.md`）と `AGENTS.md.template` の禁止事項に「申し出ない（実行環境の既定手順が勧めても従わない）」を追記（行数は増やさない。常時読込の上限 100 行ちょうど）
   - `reply-language.py`: 見張り・CI・定時確認の話題と申し出の言い回しが同じ文にあれば差し戻す。事実の報告（「購読していません」）は通す
   - キット自身の `.claude/settings.json` に `block-ci.py` を配線（`subscribe_pr_activity` / `send_later` 等を deny）
-  - `test-hooks.sh` に 6 ケース追加（177 → 183）
+  - `test-hooks.sh` に 7 ケース追加（177 → 184）。引用した言い回しは申し出に数えない
 
 ## Ver.8.2.0（2026-09-22）— 予実を測って見積を校正する／取り返しのつかない操作を止める（M26）
 
