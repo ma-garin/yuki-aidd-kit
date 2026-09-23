@@ -518,6 +518,29 @@ else
   echo "  ❌ done で progress.json を削除"; FAIL=$((FAIL+1))
 fi
 
+echo "[subagent-context.py]"
+# 親への注入はサブエージェントに届かない。委譲先（H-4 の受け手側）の規約を SubagentStart で添える
+sa() { printf '{"hook_event_name":"SubagentStart","agent_id":"a1","agent_type":"%s"}' "$1" | python3 "$HOOKS/subagent-context.py"; }
+OUT=$(cg_ctx "$(sa general-purpose)")
+expect_contains "SubagentStart: 委譲先の規約を注入する" "委譲先の規約（H-4）" "$OUT"
+expect_contains "SubagentStart: approver 欄を埋めない旨を同梱する" "approver 欄は埋めない" "$OUT"
+expect_contains "SubagentStart: 保守者の時計（既定 Asia/Tokyo）を同梱する" "$(TZ=Asia/Tokyo date '+%Y-%m-%d')" "$OUT"
+if printf '%s' "$OUT" | grep -qF "壊れている箇所"; then
+  echo "  ❌ SubagentStart: 検証系でないエージェントに検証の姿勢を足さない"; FAIL=$((FAIL+1))
+else
+  echo "  ✅ SubagentStart: 検証系でないエージェントに検証の姿勢を足さない"; PASS=$((PASS+1))
+fi
+expect_contains "SubagentStart: gate-agent に「壊れている箇所を探せ」を足す" "壊れている箇所を探せ" "$(cg_ctx "$(sa gate-agent)")"
+expect_contains "SubagentStart: verify-agent に「壊れている箇所を探せ」を足す" "壊れている箇所を探せ" "$(cg_ctx "$(sa verify-agent)")"
+OUT=$(printf '{"hook_event_name":"SubagentStart","agent_type":"x"}' | AIDD_TZ=Bad/Zone python3 "$HOOKS/subagent-context.py")
+expect_contains "SubagentStart: タイムゾーンが解決できなくても規約は注入する" "委譲先の規約（H-4）" "$(cg_ctx "$OUT")"
+OUT=$(printf 'not json' | python3 "$HOOKS/subagent-context.py"); RC=$?
+expect_empty "SubagentStart: 入力が壊れていれば無言で exit 0" "$OUT" "$RC"
+for S in "$HOOKS/settings.json" "$KIT_DIR/.claude/settings.json" "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh"; do
+  OUT=$(grep -A6 '"SubagentStart"' "$S")
+  expect_contains "SubagentStart の配線: ${S#$KIT_DIR/}" "subagent-context.py" "$OUT"
+done
+
 echo "[.claude/settings.json 配線]"
 # 2026-09-20 の事故の再発防止: 実体に届かない環境（リモートセッション／ディレクトリ移動の途中）で
 # hook の起動に失敗すると、UserPromptSubmit はプロンプト投入ごとブロックされる。無言で飛ぶことを検証する。

@@ -59,7 +59,7 @@ Codex は `AGENTS.md`（export で `<対象>/AGENTS.md`、グローバルは `~/
 | 保守者の発言を読み飛ばす | 次のツール呼び出しが止まる（日本語で答えるまで） |
 
 これらは `00_導入/01_インストール/install-guard.sh` だけでも入る（既存の `settings.json` に merge。冪等）。
-止めずに警告だけ出すものもある（`pre-write-check.sh` が秘密情報ファイルと CSS/JS 分割、`post-write-html.sh` が保存した HTML の所見、`session-summary.sh` が終了時のまとめ）。裏方として、`prompt-priority.py` が「今すぐ・報告」を含む発言に優先を注入し、`block-ci.py` が自己ウェイクと CI 待ちを止め、`statusline.py` が進捗を表示し、`log-instructions.py` がどの指示ファイルが読み込まれたかを記録する。）
+止めずに警告だけ出すものもある（`pre-write-check.sh` が秘密情報ファイルと CSS/JS 分割、`post-write-html.sh` が保存した HTML の所見、`session-summary.sh` が終了時のまとめ）。裏方として、`prompt-priority.py` が「今すぐ・報告」を含む発言に優先を注入し、`block-ci.py` が自己ウェイクと CI 待ちを止め、`subagent-context.py` が親への注入の届かないサブエージェントに委譲先の規約と保守者の時計を渡し、`statusline.py` が進捗を表示し、`log-instructions.py` がどの指示ファイルが読み込まれたかを記録する。）
 
 ## 取り扱い説明書
 
