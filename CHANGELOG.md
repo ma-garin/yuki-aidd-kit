@@ -3,6 +3,14 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
+## Ver.8.3.0（2026-09-24）— セキュリティ強制層と検証の型（M27）
+
+工程承認ゲートと git hook が別経路で動いていて、Codex など Claude Code の hook 層が効かない環境では承認を無視して commit できた。デザイン検査の NG ルールも少なく、キット文書を丸ごと読まないと目的の節に辿り着けなかった。
+
+- **`check_design.py` にフォーカス・動き・モバイルの検査を追加**: 代替の無い `outline: none`/`0`、`user-scalable=no`／`maximum-scale=1`、`transition: all`、寸法の無い `<img>`、`<div onclick>`/`<span onclick>` を NG に。出荷物 `02_共通/ひな形/ui/` は NG=0 のまま
+- **`02_共通/ツール/md-section.py` を新設**: Markdown 文書を見出し単位で検索・取り出しする道具（`search <語>` で見出しパス・行範囲・推定トークンの表、`get <file>#<見出し>` で節だけを出す）。標準ライブラリのみ、`export-project.sh` の配布対象に追加
+- **`install-git-hooks.sh` に工程承認ゲートを追加**: `.claude/phase-gate` があるプロジェクトでは、pre-commit で staged の `docs/lifecycle/0N-*.md` ごとに `check_approval.py --phase N`／`--gate N` を実行し、前工程ゲート未通過・失効・判定不能を拒否する（`03_ClaudeCode/hooks/block-phase.py` と同じ基準。Codex でも効く経路）。未承認のままの初稿は通す。`.claude/phase-gate` が無ければ何もしない
+
 ## Ver.8.2.0（2026-09-22）— 予実を測って見積を校正する／取り返しのつかない操作を止める（M26）
 
 規約を散文で書いて指摘で直す運用が限界だった。**同じ指摘を二度させない**ために、外れた見積・相槌・破壊操作・実測の書き忘れを機械で捕まえる。合わせて外部の指示ファイル検査器（Ctxlint・Schliff）を一度通し、自作検査では原理的に見えなかった穴を 2 つ塞いだ。

@@ -14,6 +14,12 @@
   4. 外部 CDN    <link>/<script>/@import/url() が http(s):// を読む（閉じたネットワークで欠ける。icons.js 同梱の理由）
   5. alert()     alert( / confirm( / prompt( の直接使用（Feedback.confirm() は対象外）
   6. tokens.css  .html が tokens.css を読み込んでいない（<link> か、<style> 内に --color-primary: の定義）
+  7. フォーカス・モーション・モバイル
+                 outline: none／outline: 0 があるのに同じファイルに :focus-visible の規則が無い（キーボード操作で
+                 フォーカスが消える） ／ <meta name="viewport"> に user-scalable=no か maximum-scale=1（1.0 含む）
+                 （ピンチズーム禁止） ／ transition: all（意図しないプロパティまで巻き込む） ／ <img> に width と
+                 height が無い（属性でも style でも良い。レイアウトシフトの原因） ／ <div>/<span> に onclick
+                 （非対話要素はキーボード操作不可。<button> 等に置き換える）
 
 出力は3層（結論 → 種別ごと → 全件は check-design-report.md）。
 
@@ -46,6 +52,17 @@ VAR_FALLBACK_RE = re.compile(r"var\(\s*--[A-Za-z0-9_-]+\s*,[^()]*(?:\([^()]*\)[^
 CUSTOM_PROP_DECL_RE = re.compile(r"(?<![\w-])--[A-Za-z0-9_-]+\s*:[^;{}]*")   # --x: 値（定義。値の置き場所なので直値検査から外す）
 CDN_RE = re.compile(r"""(?:<link[^>]+href|<script[^>]+src|@import\s+(?:url\()?|url\()\s*=?\s*["']?\s*(https?://[^"'\s)>]+)""", re.I)
 DIALOG_RE = re.compile(r"(?<![\w.$])(?:window\.)?(alert|confirm|prompt)\s*\(")
+OUTLINE_NONE_RE = re.compile(r"outline\s*:\s*(?:none|0(?:px)?)\b", re.I)
+FOCUS_VISIBLE_RE = re.compile(r":focus-visible\b")
+VIEWPORT_META_RE = re.compile(r"""<meta[^>]+name\s*=\s*["']viewport["'][^>]*>""", re.I)
+VIEWPORT_CONTENT_RE = re.compile(r"""content\s*=\s*["']([^"']*)["']""", re.I)
+VIEWPORT_LOCK_RE = re.compile(r"user-scalable\s*=\s*no|maximum-scale\s*=\s*1(?:\.0+)?\b", re.I)
+TRANSITION_ALL_RE = re.compile(r"transition\s*:\s*all\b", re.I)
+IMG_TAG_RE = re.compile(r"<img\b[^>]*>", re.I)
+IMG_WIDTH_RE = re.compile(r"(?<![\w-])width\s*[:=]", re.I)
+IMG_HEIGHT_RE = re.compile(r"(?<![\w-])height\s*[:=]", re.I)
+NONSEMANTIC_ONCLICK_RE = re.compile(r"<(div|span)\b[^>]*\bonclick\s*=", re.I)
+HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 STYLE_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
 SCRIPT_RE = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.S | re.I)
 JS_COMMENT_RE = re.compile(r"/\*.*?\*/|(?<![:\\])//[^\n]*", re.S)
@@ -93,6 +110,11 @@ def blank_comments(text: str, css: bool) -> str:
 def blank_fallbacks(text: str) -> str:
     text = VAR_FALLBACK_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
     return CUSTOM_PROP_DECL_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+
+
+def blank_html_comments(text: str) -> str:
+    """<!-- ... --> を同じ長さの空白に置き換える（行番号を保つ）。コメント内の文字列でルールを誤検知／バイパスしない。"""
+    return HTML_COMMENT_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
 
 
 def css_segments(f: Path, text: str) -> list[tuple[str, int]]:
@@ -179,6 +201,48 @@ def check_tokens_loaded(root: Path, f: Path, text: str, r: Result) -> None:
     r.add(True, "tokens.css未読込", rel(root, f), "tokens.css の <link> も <style> 内のトークン定義も無い")
 
 
+def check_focus_motion_mobile(root: Path, f: Path, text: str, r: Result) -> None:
+    """フォーカス消去・拡大禁止・transition: all・img 寸法欠落・非対話要素の onclick を検査する。
+
+    他の検査（check_cdn / check_dialogs / check_literal_values）と同じく、コメントを空白に置き換えた本文で
+    判定する（行番号は変わらないので line_no には元の text をそのまま渡してよい）。コメント内の文字列で
+    誤検知したり、コメントを書くだけで検出を回避できたりしないようにする。
+    """
+    scan = blank_html_comments(blank_comments(text, css=f.suffix == ".css"))
+
+    if not FOCUS_VISIBLE_RE.search(scan):
+        for m in OUTLINE_NONE_RE.finditer(scan):
+            r.add(True, "フォーカス消去", f"{rel(root, f)}:{line_no(text, m.start())}",
+                  f"`{m.group(0)}` があるのに同じファイルに `:focus-visible` の規則が無い → "
+                  "キーボード操作でフォーカスが見えなくなる")
+
+    for m in TRANSITION_ALL_RE.finditer(scan):
+        r.add(True, "transition:all", f"{rel(root, f)}:{line_no(text, m.start())}",
+              "`transition: all` は意図しないプロパティまで巻き込む → 対象プロパティを明示する")
+
+    if f.suffix != ".html":
+        return
+
+    for vm in VIEWPORT_META_RE.finditer(scan):
+        cm = VIEWPORT_CONTENT_RE.search(vm.group(0))
+        lm = VIEWPORT_LOCK_RE.search(cm.group(1)) if cm else None
+        if lm:
+            r.add(True, "拡大禁止", f"{rel(root, f)}:{line_no(text, vm.start())}",
+                  f"viewport の `{lm.group(0)}` はピンチズームを禁止する → 除去する")
+
+    for m in IMG_TAG_RE.finditer(scan):
+        tag = m.group(0)
+        has_w, has_h = bool(IMG_WIDTH_RE.search(tag)), bool(IMG_HEIGHT_RE.search(tag))
+        if not (has_w and has_h):
+            missing = "／".join(n for n, ok in (("width", has_w), ("height", has_h)) if not ok)
+            r.add(True, "img寸法欠落", f"{rel(root, f)}:{line_no(text, m.start())}",
+                  f"<img> に {missing} が無い（属性でも style でも良い）→ レイアウトシフトの原因になる")
+
+    for m in NONSEMANTIC_ONCLICK_RE.finditer(scan):
+        r.add(True, "非semantic onclick", f"{rel(root, f)}:{line_no(text, m.start())}",
+              f"`<{m.group(1)} onclick=...>` は非対話要素 → <button> 等に置き換える（キーボード操作不可）")
+
+
 def write_report(path: Path, root: Path, files: list[Path], r: Result) -> None:
     lines = ["# デザイン検査レポート", "", f"- 対象: {len(files)} ファイル（`{root}`）", f"- NG: {len(r.ng)} 件 ／ 警告: {len(r.warn)} 件",
              "- 規約: `02_共通/ひな形/design-system.md` 再現チェックリスト ／ `skills/design-system/SKILL.md`「トークン運用の規律」", "", "## NG 一覧", ""]
@@ -217,6 +281,7 @@ def main() -> int:
         check_cdn(root, f, texts[f], r)
         check_dialogs(root, f, texts[f], r)
         check_tokens_loaded(root, f, texts[f], r)
+        check_focus_motion_mobile(root, f, texts[f], r)
     check_tokens(root, files, texts, tokens_file, r)
 
     report = Path(a.report)
