@@ -152,6 +152,32 @@ def gap_note(est: int, elapsed: float) -> str | None:
     return None
 
 
+def record_turn(g, data: dict) -> tuple[int, float] | None:
+    """このターンの予実を履歴に記録し、(見積, 経過) を返す。記録できなければ None。
+
+    差し戻しの有無・stop_hook_active に関わらず毎回呼ぶ（1 ターン 1 件。続きは tool-timer が上書きする）。
+    以前は他の検査が先に差し戻すと記録を飛ばし、5 ターン中 2 件しか残らず、
+    3 件必要な校正係数が一度も注入されなかった（2026-09-23）。
+    """
+    tp = data.get("transcript_path", "")
+    if not tp or not Path(tp).is_file():
+        return None
+    try:
+        est = estimate_min(g, g.tail_lines(Path(tp)))
+    except OSError:
+        return None
+    raw = timer("elapsed")
+    if est is None or not raw:
+        return None
+    try:
+        elapsed = float(raw)
+    except ValueError:
+        return None
+    # 予実を履歴に積む。次の見積の校正に使う（prompt-priority が係数を注入する）
+    timer("record", str(est), f"{elapsed:.2f}")
+    return est, elapsed
+
+
 def load_guard():
     p = Path(__file__).resolve().parent / "instruction-guard.py"
     spec = importlib.util.spec_from_file_location("instruction_guard", p)
@@ -178,6 +204,8 @@ def main() -> int:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
         return 0
+    g = load_guard()
+    pair = record_turn(g, data)   # 差し戻しより先に記録する（記録が欠けると校正が効かない）
     if data.get("stop_hook_active"):
         return 0
     # 最後の assistant エントリはこのフックの後に transcript へ書かれる。transcript で判定すると
@@ -210,30 +238,13 @@ def main() -> int:
                   "その文を削って出し直す")
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
-    g = load_guard()
-    tp0 = data.get("transcript_path", "")
-    if not GAP_RE.search(msg) and tp0 and Path(tp0).is_file():
-        try:
-            est = estimate_min(g, g.tail_lines(Path(tp0)))
-        except OSError:
-            est = None
-        raw = timer("elapsed")
-        if est is not None and raw:
-            try:
-                elapsed = float(raw)
-            except ValueError:
-                elapsed = None
-            note = None
-            if elapsed is not None:
-                # 予実を履歴に積む。次の見積の校正に使う（prompt-priority が係数を注入する）
-                timer("record", str(est), f"{elapsed:.2f}")
-                note = gap_note(est, elapsed)
-            if note:
-                reason = (f"[reply-language] 予実が離れている: {note}。原因を 1 行で書き、"
-                          "`06_保守者向け/02_設計判断の根拠/speed-harness.md` の実測記録に追記してから報告する"
-                          "（H-6。見積の作り方を直さないと次も外す）")
-                print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
-                return 0
+    note = gap_note(*pair) if pair is not None and not GAP_RE.search(msg) else None
+    if note:
+        reason = (f"[reply-language] 予実が離れている: {note}。原因を 1 行で書き、"
+                  "`06_保守者向け/02_設計判断の根拠/speed-harness.md` の実測記録に追記してから報告する"
+                  "（H-6。見積の作り方を直さないと次も外す）")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+        return 0
     if g.has_ja(msg):
         return 0
     tp = data.get("transcript_path", "")
