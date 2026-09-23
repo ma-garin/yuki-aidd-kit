@@ -177,7 +177,9 @@ def main() -> int:
         return 0
     g = load_guard()
     tp0 = data.get("transcript_path", "")
-    if not GAP_RE.search(msg) and tp0 and Path(tp0).is_file():
+    # 委譲待ちの途中報告（「進行中」を含む）は完了報告ではないので、予実を突き合わせず履歴にも積まない。
+    # 突き合わせると経過が見積に届く前に「過大見積」と誤判定し、偽の予実で校正係数を壊す（2026-09-23 に 5 回）
+    if not GAP_RE.search(msg) and "進行中" not in msg and tp0 and Path(tp0).is_file():
         try:
             est = estimate_min(g, g.tail_lines(Path(tp0)))
         except OSError:
