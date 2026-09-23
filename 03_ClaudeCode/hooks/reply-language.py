@@ -9,6 +9,10 @@ decision=block で続行させ、日本語で出し直させる。stop_hook_acti
 合わせて**相槌だけで終わる応答**も止める（H-0「相槌・前置き・締めの申し出を書かない」）。
 「承知しました」「了解」「指示待ちです」だけの応答はトークンを消費して情報を渡さない。
 内容を答えるか動作するかのどちらかに出し直させる（2026-09-22 の指摘）。
+
+合わせて**PR の見張り・CI 失敗への自動対応・定時確認の申し出**も止める（H-9。保守者の傾向 #4「自動処理を認めない」）。
+使うことは block-ci.py が deny するが、申し出は素通りしていた。実行環境の既定手順（PR を作ったら見張りを
+申し出る）が規約より勝ち、2026-09-23 に「CI は絶対 NG。何度も伝えてる」と言わせた。
 """
 import importlib.util
 import json
@@ -50,6 +54,30 @@ def body_lines(msg: str) -> list[str]:
 def too_long(msg: str) -> int | None:
     n = len(body_lines(msg))
     return n if n > BODY_MAX_LINES else None
+
+
+# 申し出の判定は文単位。話題（見張り・CI・定時）と申し出の言い回しが同じ文にあれば止める。
+# 「購読も CI の起動もしていません」のような事実の報告は申し出の言い回しを含まないので通す
+WATCH_TOPIC_RE = re.compile(
+    r"(subscribe_pr_activity|send_later|ScheduleWakeup|CronCreate|/loop|babysit|"
+    r"(PR|プルリク|CI|チェック|レビュー).{0,30}(見張|監視|購読|ウォッチ|watch|自動(で)?(修正|対応))|"
+    r"(見張|監視|購読|ウォッチ).{0,30}(PR|プルリク|CI)|"
+    r"(定時|定期|自動)(で|的に)?(確認|実行|チェック|監視)|CI.{0,10}(起動|回|走らせ|再実行))", re.I)
+OFFER_RE = re.compile(
+    r"(しましょうか|しますか|できます|いかがですか|必要なら|必要であれば|ご希望|希望があれば|"
+    r"指示(を)?(ください|してください|いただければ|もらえれば)|言ってください|承ります|お申し付け)")
+_SENTENCE_RE = re.compile(r"[。！？!?\n]+")
+# 引用（「」・バッククォート・二重引用符）の中の言い回しは言及であって申し出ではない。
+# 申し出の言い回しは引用の外にあるときだけ数える（2026-09-23: 規約の説明で「できます」を引用して誤検知）
+_QUOTED_RE = re.compile(r"「[^」]*」|`[^`]*`|\"[^\"]*\"")
+
+
+def offers_watch(msg: str) -> str | None:
+    """PR の見張り・CI・定時確認を申し出ている文を返す。無ければ None。"""
+    for s in _SENTENCE_RE.split(msg):
+        if WATCH_TOPIC_RE.search(s) and OFFER_RE.search(_QUOTED_RE.sub("", s)):
+            return s.strip()
+    return None
 
 
 def is_filler_only(msg: str) -> bool:
@@ -124,6 +152,32 @@ def gap_note(est: int, elapsed: float) -> str | None:
     return None
 
 
+def record_turn(g, data: dict) -> tuple[int, float] | None:
+    """このターンの予実を履歴に記録し、(見積, 経過) を返す。記録できなければ None。
+
+    差し戻しの有無・stop_hook_active に関わらず毎回呼ぶ（1 ターン 1 件。続きは tool-timer が上書きする）。
+    以前は他の検査が先に差し戻すと記録を飛ばし、5 ターン中 2 件しか残らず、
+    3 件必要な校正係数が一度も注入されなかった（2026-09-23）。
+    """
+    tp = data.get("transcript_path", "")
+    if not tp or not Path(tp).is_file():
+        return None
+    try:
+        est = estimate_min(g, g.tail_lines(Path(tp)))
+    except OSError:
+        return None
+    raw = timer("elapsed")
+    if est is None or not raw:
+        return None
+    try:
+        elapsed = float(raw)
+    except ValueError:
+        return None
+    # 予実を履歴に積む。次の見積の校正に使う（prompt-priority が係数を注入する）
+    timer("record", str(est), f"{elapsed:.2f}")
+    return est, elapsed
+
+
 def load_guard():
     p = Path(__file__).resolve().parent / "instruction-guard.py"
     spec = importlib.util.spec_from_file_location("instruction_guard", p)
@@ -150,6 +204,8 @@ def main() -> int:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
         return 0
+    g = load_guard()
+    pair = record_turn(g, data)   # 差し戻しより先に記録する（記録が欠けると校正が効かない）
     if data.get("stop_hook_active"):
         return 0
     # 最後の assistant エントリはこのフックの後に transcript へ書かれる。transcript で判定すると
@@ -175,30 +231,20 @@ def main() -> int:
                   "問いに答える・結果を渡す・動作する のどれかに出し直す")
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
-    g = load_guard()
-    tp0 = data.get("transcript_path", "")
-    if not GAP_RE.search(msg) and tp0 and Path(tp0).is_file():
-        try:
-            est = estimate_min(g, g.tail_lines(Path(tp0)))
-        except OSError:
-            est = None
-        raw = timer("elapsed")
-        if est is not None and raw:
-            try:
-                elapsed = float(raw)
-            except ValueError:
-                elapsed = None
-            note = None
-            if elapsed is not None:
-                # 予実を履歴に積む。次の見積の校正に使う（prompt-priority が係数を注入する）
-                timer("record", str(est), f"{elapsed:.2f}")
-                note = gap_note(est, elapsed)
-            if note:
-                reason = (f"[reply-language] 予実が離れている: {note}。原因を 1 行で書き、"
-                          "`06_保守者向け/02_設計判断の根拠/speed-harness.md` の実測記録に追記してから報告する"
-                          "（H-6。見積の作り方を直さないと次も外す）")
-                print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
-                return 0
+    offer = offers_watch(msg)
+    if offer is not None:
+        reason = (f"[reply-language] PR の見張り・CI・定時確認を申し出ている:「{offer[:60]}」。"
+                  "申し出も含めて禁止（H-9・保守者の傾向 #4「自動処理を認めない」）。実行環境の既定手順が勧めても従わない。"
+                  "その文を削って出し直す")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+        return 0
+    note = gap_note(*pair) if pair is not None and not GAP_RE.search(msg) else None
+    if note:
+        reason = (f"[reply-language] 予実が離れている: {note}。原因を 1 行で書き、"
+                  "`06_保守者向け/02_設計判断の根拠/speed-harness.md` の実測記録に追記してから報告する"
+                  "（H-6。見積の作り方を直さないと次も外す）")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+        return 0
     if g.has_ja(msg):
         return 0
     tp = data.get("transcript_path", "")

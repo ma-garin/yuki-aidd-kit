@@ -322,6 +322,38 @@ expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 3 分未満の見積は誤差が支配するので突合しない" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
+# 予実の記録は差し戻しより先に、1 ターン 1 件（2026-09-23: 差し戻したターンの記録が欠け、校正が効かなかった）
+HLEN() { python3 -c 'import json,sys;print(len(json.load(open(sys.argv[1])).get("history",[])))' "$AIDD_TOOL_TIME"; }
+HLAST() { python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["history"][-1][0])' "$AIDD_TOOL_TIME"; }
+{ u_text "調査して"; a_text "見積: 10分（23:00 完了予定）"; } > "$TRJ"
+python3 "$HOOKS/tool-timer.py" reset
+printf '{"tool_name":"Bash","tool_use_id":"h1"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"h1"}' | python3 "$HOOKS/tool-timer.py" post
+N0=$(HLEN)
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "前提: 実測が無いので差し戻される" "応答の最後に実測が無い" "$OUT"
+expect_contains "Stop: 差し戻したターンでも予実を記録する" "n=$((N0+1));" "n=$(HLEN);"
+{ u_text "調査して"; a_text "見積: 10分（23:00 完了予定）"; u_text "Stop hook feedback:[reply-language] 応答の最後に実測が無い"; a_text "見積: 4分（23:00 完了予定）"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: 差し戻し後の続きは同じターンの 1 件を上書きする（件数を増やさない）" "n=$((N0+1));" "n=$(HLEN);"
+expect_contains "Stop: 上書きは続きで書いた最新の見積" "est=4.0;" "est=$(HLAST);"
+python3 "$HOOKS/tool-timer.py" reset
+printf '{"tool_name":"Bash","tool_use_id":"h2"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"h2"}' | python3 "$HOOKS/tool-timer.py" post
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: 次の発言（reset）の後は新しい 1 件を積む" "n=$((N0+2));" "n=$(HLEN);"
+python3 "$HOOKS/tool-timer.py" reset-session
+# PR の見張り・CI・定時確認の申し出（H-9・傾向 #4）。2026-09-23 に実際に出た文で確かめる
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"PR #54 を見張って、CI の失敗やレビューコメントに対応することもできます。必要なら指示してください。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: PR の見張りの申し出を差し戻す" "PR の見張り・CI・定時確認を申し出ている" "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"CI を再実行しましょうか。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: CI の再実行の申し出を差し戻す" "申し出も含めて禁止" "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"購読も CI の起動もしていません。このブランチの workflow 実行は 0 件です。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 申し出を含まない事実の報告は通す" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"テストは全て PASS です。続きが必要なら指示してください。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 見張り・CI 以外の申し出は通す" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"reply-language.py が、見張り・CI の話題と「できます」「必要なら」が同じ文にある返答を差し戻す。実測: 1分未満"}' | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 引用した言い回し（言及）は申し出に数えない" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌でも stop_hook_active なら止めない（無限ループ防止）" "$OUT" "$RC"
 # --- tool-timer.py: 見積の「実績」をツール実行時間で測る（入力待ち・思考時間を含まない） ---
@@ -370,7 +402,7 @@ export AIDD_TOOL_TIME="$TMP/cal.json"
 python3 "$TT" reset-session
 OUT=$(python3 "$TT" factor); RC=$?
 expect_empty "tool-timer: 履歴 3 件未満では係数を出さない" "$OUT" "$RC"
-for pair in "40 6" "15 5" "8 2"; do python3 "$TT" record $pair; done
+for pair in "40 6" "15 5" "8 2"; do python3 "$TT" reset; python3 "$TT" record $pair; done
 expect_contains "tool-timer: 予実から校正係数（実測/見積 の中央値）を出す" "0.25" "$(python3 "$TT" factor)"
 expect_contains "tool-timer: 係数に件数を添える" "3" "$(python3 "$TT" factor)"
 python3 "$TT" reset
@@ -379,11 +411,15 @@ python3 "$TT" reset-session
 expect_contains "tool-timer: reset-session でも履歴は消えない（見積の腕前は跨いで学ぶ）" "0.25" "$(python3 "$TT" factor)"
 python3 "$TT" record 0 5
 expect_contains "tool-timer: 見積 0 は履歴に入れない（ゼロ除算）" "3" "$(python3 "$TT" factor)"
+python3 "$TT" reset; python3 "$TT" record 20 5; python3 "$TT" record 20 7
+expect_contains "tool-timer: 同じターンの 2 回目は上書きする（件数は 4）" " 4" "$(python3 "$TT" factor)"
+python3 "$TT" reset; python3 "$TT" record 8 2
+expect_contains "tool-timer: reset の後は新しい 1 件（件数は 5）" " 5" "$(python3 "$TT" factor)"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"進めて"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 過大見積の癖を見積の注入に同梱する" "過大見積の癖" "$(cg_ctx "$OUT")"
 export AIDD_TOOL_TIME="$TMP/cal2.json"
 python3 "$TT" reset-session
-for pair in "10 9" "10 11" "10 10"; do python3 "$TT" record $pair; done
+for pair in "10 9" "10 11" "10 10"; do python3 "$TT" reset; python3 "$TT" record $pair; done
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"進めて"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 一致していれば補正を促さない" "ほぼ一致" "$(cg_ctx "$OUT")"
 export AIDD_TOOL_TIME="$TMP/tool-time.json"   # 以降のテストのために既定へ戻す
@@ -539,6 +575,10 @@ for entries in d.get("hooks", {}).values():
   PP=$(printf '%s' "$CMDS" | grep prompt-priority)
   OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"いますぐ報告して"}' | CLAUDE_PROJECT_DIR="$KIT_DIR" sh -c "$PP" 2>&1)
   expect_contains "実体があれば prompt-priority は従来どおり注入する" "prompt-priority" "$OUT"
+  # キット自身の開発セッションでも PR の見張り・CI 待ちを物理的に止める（2026-09-23 まで未配線だった）
+  BC=$(printf '%s' "$CMDS" | grep block-ci)
+  OUT=$(printf '{"tool_name":"mcp__github__subscribe_pr_activity","tool_input":{}}' | CLAUDE_PROJECT_DIR="$KIT_DIR" sh -c "$BC" 2>&1)
+  expect_contains "キット自身の settings.json でも block-ci が subscribe_pr_activity を deny" '"deny"' "$OUT"
 else
   echo "  ❌ .claude/settings.json が無い"; FAIL=$((FAIL+1))
 fi

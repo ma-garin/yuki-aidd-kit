@@ -141,7 +141,9 @@ def main() -> int:
     elif cmd == "report":
         print(fmt(load(), full="--full" in sys.argv))
     elif cmd == "record":
-        # 予実の組を履歴に積む（reply-language が Stop で 1 ターン 1 回呼ぶ）
+        # 予実の組を履歴に積む（reply-language が Stop のたびに呼ぶ）。1 ターン 1 件:
+        # 同じターンの 2 回目以降（差し戻し後の続き）は最後の 1 件を通算で上書きする。
+        # turn_recorded は reset（UserPromptSubmit）で消える
         try:
             est, act = float(sys.argv[2]), float(sys.argv[3])
         except (IndexError, ValueError):
@@ -150,8 +152,12 @@ def main() -> int:
             return 0
         data = load()
         h = [x for x in data.get("history", []) if isinstance(x, list) and len(x) == 2]
-        h.append([est, act])
+        if data.get("turn_recorded") and h:
+            h[-1] = [est, act]
+        else:
+            h.append([est, act])
         data["history"] = h[-HISTORY_MAX:]
+        data["turn_recorded"] = True
         save(data)
     elif cmd == "factor":
         # 見積の校正係数＝実測 / 見積 の中央値。3 件未満は出さない（当てにならない）

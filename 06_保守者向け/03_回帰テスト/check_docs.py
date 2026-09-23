@@ -21,8 +21,11 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
 
-使い方: python3 06_保守者向け/03_回帰テスト/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix-inventory]
-  --fix-inventory: 06_保守者向け/01_内部仕様/01_構成品目目録.md の行数を実測で書き換えてから検査する（網羅性の不足は手で足す）
+使い方: python3 06_保守者向け/03_回帰テスト/check_docs.py [--root DIR] [-o REPORT] [--strict] [--skip-tests] [--fix]
+  --fix: 実測から機械的に決まる直値（検査1 の参照コスト・検査3 のケース数・検査8 の目録行数）を書き換えてから検査する。
+         掲載漏れ・網羅性の不足など、人が文言を書くものは直さない。--skip-tests 併用時はケース数を直さない。
+         手書きの同期コミットが繰り返されていた（固定ケース数の更新だけで 3 回）ための道具。
+  --fix-inventory: 旧名。--fix と同じ
   環境変数 CHECK_DOCS_TEST_TOTALS="test-hooks.sh=19,test-trace-check.sh=15" でテスト実行を代替できる（回帰テスト用）。
 """
 from __future__ import annotations
@@ -33,7 +36,8 @@ import re
 import subprocess
 import sys
 import unicodedata
-from collections import Counter
+from collections import Counter, defaultdict
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 # ---- しきい値（RULES_STRICT は M16、SIZE_STRICT は M17 で NG に昇格済み） -------------
@@ -107,6 +111,21 @@ def read(p: Path) -> str:
     return p.read_text(encoding="utf-8", errors="replace")
 
 
+def rewrite_lines(p: Path, fn: Callable[[int, str], str]) -> int:
+    """各行（改行を除いた本文と 0 始まりの行番号）を fn で置き換える。改行コードは保つ。書き換えた行数を返す。"""
+    lines = read(p).splitlines(keepends=True)
+    changed = 0
+    for i, line in enumerate(lines):
+        body = line.rstrip("\r\n")
+        new = fn(i, body)
+        if new != body:
+            lines[i] = new + line[len(body):]
+            changed += 1
+    if changed:
+        p.write_bytes("".join(lines).encode("utf-8"))
+    return changed
+
+
 def resolve_cost_name(root: Path, name: str) -> Path | None:
     """INDEX の表・散文に出る名前を実ファイルへ解決する。"""
     cands = []
@@ -144,14 +163,21 @@ def resolve_inventory_name(root: Path, name: str) -> Path | None:
 
 # ---- 各検査 -----------------------------------------------------------------------------
 
+COST_DOCS = ("INDEX.md", "README.md")
+
+
+def cost_matches(line: str) -> list[re.Match[str]]:
+    return list(TABLE_COST_RE.finditer(line)) + list(ID_LINE_RE.finditer(line))
+
+
 def check_costs(root: Path, r: Result) -> None:
-    for rel in ("INDEX.md", "README.md"):
+    for rel in COST_DOCS:
         p = root / rel
         if not p.is_file():
             continue
         for i, line in enumerate(read(p).splitlines(), 1):
-            for name, n in [(m.group(1), int(m.group(2))) for m in TABLE_COST_RE.finditer(line)] + \
-                           [(m.group(1), int(m.group(2))) for m in ID_LINE_RE.finditer(line)]:
+            for m in cost_matches(line):
+                name, n = m.group(1), int(m.group(2))
                 f = resolve_cost_name(root, name)
                 if f is None:
                     r.add(True, "参照コスト", f"{rel}:{i}", f"`{name}` を実ファイルに解決できない")
@@ -159,6 +185,18 @@ def check_costs(root: Path, r: Result) -> None:
                 actual = wc_l(f)
                 if actual != n:
                     r.add(True, "参照コスト", f"{rel}:{i}", f"`{name}` 記載 {n}行 / 実測 {actual}行")
+
+
+def fix_costs(root: Path) -> int:
+    """検査1 の「N行」を実測で書き換える。解決できない名前は残す（NG のまま人が直す）。"""
+    def fn(_: int, line: str) -> str:
+        # 後ろの一致から置き換えると、前の一致の位置がずれない
+        for m in sorted(cost_matches(line), key=lambda m: m.start(2), reverse=True):
+            f = resolve_cost_name(root, m.group(1))
+            if f is not None:
+                line = line[:m.start(2)] + str(wc_l(f)) + line[m.end(2):]
+        return line
+    return sum(rewrite_lines(root / rel, fn) for rel in COST_DOCS if (root / rel).is_file())
 
 
 def check_index_coverage(root: Path, r: Result) -> None:
@@ -204,11 +242,12 @@ def test_totals(root: Path, skip: bool) -> dict[str, int]:
     return totals
 
 
-def check_case_counts(root: Path, r: Result, totals: dict[str, int]) -> None:
-    if not totals:
-        r.add(False, "ケース数", "-", "テスト未実行のため突合をスキップ（--skip-tests）")
-        return
-    for rel in ("README.md", "INDEX.md", "01_利用者向け資料/02_操作マニュアル.html"):
+CASE_DOCS = ("README.md", "INDEX.md", "01_利用者向け資料/02_操作マニュアル.html")
+
+
+def case_count_mismatches(root: Path, totals: dict[str, int]) -> Iterator[tuple[str, int, str, int, int]]:
+    """(文書, 0 始まりの行番号, スクリプト名, 記載, 実測)。スクリプト名の行から 5 行を、そのスクリプトの数値とみなす。"""
+    for rel in CASE_DOCS:
         p = root / rel
         if not p.is_file():
             continue
@@ -225,7 +264,36 @@ def check_case_counts(root: Path, r: Result, totals: dict[str, int]) -> None:
                         break
                     for n in nums:
                         if n != total:
-                            r.add(True, "ケース数", f"{rel}:{i + j + 1}", f"{name} 記載 {n} / 実測 {total}")
+                            yield rel, i + j, name, n, total
+
+
+def check_case_counts(root: Path, r: Result, totals: dict[str, int]) -> None:
+    if not totals:
+        r.add(False, "ケース数", "-", "テスト未実行のため突合をスキップ（--skip-tests）")
+        return
+    for rel, i, name, n, total in case_count_mismatches(root, totals):
+        r.add(True, "ケース数", f"{rel}:{i + 1}", f"{name} 記載 {n} / 実測 {total}")
+
+
+def fix_case_counts(root: Path, totals: dict[str, int]) -> int:
+    """検査3 の「Nケース」「PASS=N」を実測で書き換える。1 行に 2 本分の実測が掛かる行は曖昧なので残す。"""
+    want: dict[tuple[str, int], set[int]] = defaultdict(set)
+    for rel, i, _, _, total in case_count_mismatches(root, totals):
+        want[(rel, i)].add(total)
+    changed = 0
+    for rel in CASE_DOCS:
+        rows = {i: next(iter(t)) for (d, i), t in want.items() if d == rel and len(t) == 1}
+        if not rows:
+            continue
+        def fn(i: int, line: str) -> str:
+            if i not in rows:
+                return line
+            total = str(rows[i])
+            for pat in (CASE_RE, PASS_RE):
+                line = pat.sub(lambda m: m.group(0).replace(m.group(1), total, 1), line)
+            return line
+        changed += rewrite_lines(root / rel, fn)
+    return changed
 
 
 def check_references(root: Path, r: Result) -> None:
@@ -436,17 +504,11 @@ def fix_spec_inventory(root: Path) -> int:
     p = root / "06_保守者向け" / "01_内部仕様" / "01_構成品目目録.md"
     if not p.is_file():
         return 0
-    out, changed = [], 0
-    for line in read(p).splitlines():
+    def fn(_: int, line: str) -> str:
         m = INVENTORY_ROW_RE.match(line)
-        if m:
-            f = resolve_inventory_name(root, m.group(2))
-            if f is not None and wc_l(f) != int(m.group(3)):
-                line = f"{m.group(1)}{wc_l(f)}{m.group(4)}"
-                changed += 1
-        out.append(line)
-    p.write_text("\n".join(out) + "\n", encoding="utf-8")
-    return changed
+        f = resolve_inventory_name(root, m.group(2)) if m else None
+        return f"{m.group(1)}{wc_l(f)}{m.group(4)}" if m and f is not None else line
+    return rewrite_lines(p, fn)
 
 
 def check_spec_inventory(root: Path, r: Result) -> None:
@@ -504,16 +566,23 @@ def main() -> int:
     ap.add_argument("-o", "--report", default="06_保守者向け/04_監査記録/check-docs-report.md")
     ap.add_argument("--strict", action="store_true", help="検査 6・7 を WARN でなく NG にする")
     ap.add_argument("--skip-tests", action="store_true", help="検査 3 のテスト実行を省く")
-    ap.add_argument("--fix-inventory", action="store_true", help="06_保守者向け/01_内部仕様/01_構成品目目録.md の行数を実測で書き換えてから検査する")
+    ap.add_argument("--fix", "--fix-inventory", dest="fix", action="store_true",
+                    help="参照コスト・ケース数・目録の行数を実測で書き換えてから検査する（--fix-inventory は旧名）")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     r = Result()
-    if a.fix_inventory:
+    totals = test_totals(root, a.skip_tests)
+    if a.fix:
+        print(f"参照コスト（{' / '.join(COST_DOCS)}）: {fix_costs(root)} 行を実測に更新")
+        if totals:
+            print(f"ケース数（{' / '.join(CASE_DOCS)}）: {fix_case_counts(root, totals)} 行を実測に更新")
+        else:
+            print("ケース数: テスト未実行のため更新しない（--skip-tests）")
         print(f"06_保守者向け/01_内部仕様/01_構成品目目録.md: {fix_spec_inventory(root)} 行の行数を実測に更新")
 
     check_costs(root, r)
     check_index_coverage(root, r)
-    check_case_counts(root, r, test_totals(root, a.skip_tests))
+    check_case_counts(root, r, totals)
     check_references(root, r)
     check_frontmatter(root, r)
     check_agent_frontmatter(root, r)

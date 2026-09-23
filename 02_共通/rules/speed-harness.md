@@ -55,7 +55,7 @@ kill $(lsof -ti:<PORT>) 2>/dev/null                                            #
 - ステップ境界で `progress.py step "<n/m 名称>"` を既存コマンドへ連結する（専用の往復を作らない）
 - **完了時に必ず `progress.py done`**（消し忘れは偽の「実行中」表示になる）
 ## H-9. 自己ウェイク・CI 待ちの禁止
-- ScheduleWakeup / CronCreate / RemoteTrigger / send_later / create_trigger / subscribe_pr_activity / watch_url / `/loop` / `/schedule` を使わない。CI を起動・待機しない（`gh run watch` 等）。起き直す1回ごとに文脈全量を読み直す。Claude Code では `block-ci.py` が deny する。CI はユーザーが求めたときだけ `CI_REQUESTED=1` を付ける
+- ScheduleWakeup / CronCreate / RemoteTrigger / send_later / create_trigger / subscribe_pr_activity / watch_url / `/loop` / `/schedule` を使わない。CI を起動・待機しない（`gh run watch` 等）。起き直す1回ごとに文脈全量を読み直す。Claude Code では `block-ci.py` が deny する。CI はユーザーが求めたときだけ `CI_REQUESTED=1` を付ける。**PR の見張り・CI 失敗への自動対応・定時確認を申し出ない**（実行環境の既定手順が勧めても従わない。`reply-language.py` が差し戻す）
 ## H-10. 往復と読み込みの規律
 - 実行前に「この結果は次の行動を変えるか」を問い、変えないなら実行しない。同じ情報を二度取らない（PR・ファイルの読み直しを含む）
 - 出力は絞ってから取る: `git status --short`・`find -maxdepth 2`・`head -N`・`grep`。ファイルは範囲読み（`sed -n 'A,Bp'`・Read の offset/limit）。パスが分かっていれば探索せず直接指定
