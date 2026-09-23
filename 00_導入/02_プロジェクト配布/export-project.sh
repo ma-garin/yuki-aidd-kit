@@ -73,6 +73,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
+          { "type": "command", "command": "python3 .claude/hooks/block-protected.py", "timeout": 5, "statusMessage": "設定・hook の書き換えでないか確認中" },
           { "type": "command", "command": "bash .claude/hooks/pre-write-check.sh" },
           { "type": "command", "command": "python3 .claude/hooks/block-phase.py", "timeout": 25, "statusMessage": "前工程の承認を確認中" }
         ]
@@ -81,6 +82,7 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
         "matcher": "Bash",
         "hooks": [
           { "type": "command", "command": "python3 .claude/hooks/block-destructive.py", "timeout": 5, "statusMessage": "取り返しのつかない操作でないか確認中" },
+          { "type": "command", "command": "python3 .claude/hooks/block-protected.py", "timeout": 5, "statusMessage": "設定・hook の書き換えでないか確認中" },
           { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" },
           { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" }
         ]

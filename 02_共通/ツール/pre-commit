@@ -14,7 +14,7 @@ else
   PATTERNS='(api[_-]?key|secret|password|token|AKfycb|sk-[a-zA-Z0-9]{20})'
   if git diff --cached | grep -iE "$PATTERNS" | grep -v "localStorage" | grep -v "//" &>/dev/null; then
     echo "⚠ 秘密情報らしき文字列を検出。確認してください（gitleaks未インストール）。"
-    echo "  問題なければ: git commit --no-verify"
+    echo "  hook が止めた原因（該当行）を直してからコミットし直す。飛ばす必要があるかは保守者が判断する"
     exit 1
   fi
 fi

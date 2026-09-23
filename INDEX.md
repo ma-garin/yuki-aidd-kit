@@ -41,8 +41,8 @@ open 01_利用者向け資料/01_利用ガイド.html                      # ユ
 open 01_利用者向け資料/02_操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（06_保守者向け/ は配布しない）
-./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（193ケース）
-./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（125ケース）
+./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（618ケース）
+./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（136ケース）
 ./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（57ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
 ./06_保守者向け/03_回帰テスト/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
@@ -131,7 +131,9 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `instruction-guard.py` | PreToolUse | 未応答の指示・言語・見積の欠落に加え、**自分が問うた直後の着手**を検出して待たせる（A-13・A-2・A-7） |
 | `reply-language.py` | Stop | 日本語・相槌のみ・実測の無い報告・散文 12 行超・予実の乖離で block（傾向 #32〜36） |
 | `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
-| `block-destructive.py` | PreToolUse(Bash) | 取り返しのつかない操作を deny（reset --hard / clean -fd / stash drop / checkout -- / push --force / add -A / rm -rf）。代替手段を理由に載せる |
+| `block-destructive.py` | PreToolUse(Bash) | 取り返しのつかない操作を deny（reset --hard / clean -fd / stash drop / checkout -- / push --force / add -A / rm -rf）。代替手段を理由に載せる。ラッパー（bash -c・sudo・env・xargs 等）を剥がしてから照合し、秘密ファイルを読むコマンドも deny（B-19） |
+| `block-protected.py` | PreToolUse(Write/Edit/MultiEdit, Bash) | `.claude/settings*.json`・`.claude/hooks/`・`.git/hooks/` 等の書き換えを realpath 解決の上で deny。`AIDD_ALLOW_CONFIG_EDIT=1` で解除。判定不能は deny（B-19） |
+| `secret_patterns.py` | （hook ではなく部品。他の hook から import） | 秘密ファイル名・秘密値の正規表現・コマンドのラッパー剥がしを1か所に持つ共通判定。`--check-consistency`/`--self-test`/`--pre-write` の CLI も持つ（B-19） |
 | `tool-timer.py` | PreToolUse / PostToolUse / UserPromptSubmit | 経過時間を積算する（実測の真実源。`report` が `実測: N分` の1行、`--full` で内訳、`reset-session` で通算も 0 に） |
 | `subagent-context.py` | SubagentStart | サブエージェント起動時に保守者の時計・委譲先の規約（H-4）・approver 欄を埋めない旨を注入。検証系には「壊れている箇所を探せ」を追加 |
 | `context-guard.py` | UserPromptSubmit | 55 分以上空いた再開・4 MB 超の会話で `/clear` `/compact` を促す注入（止めない） |
@@ -191,8 +193,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `01_利用者向け資料/01_利用ガイド.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1310行 |
-| `01_利用者向け資料/02_操作マニュアル.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `01_利用ガイド.html`・事例・V字章へ導線 | 1769行 |
+| `01_利用者向け資料/01_利用ガイド.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1325行 |
+| `01_利用者向け資料/02_操作マニュアル.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `01_利用ガイド.html`・事例・V字章へ導線 | 1785行 |
 | `01_利用者向け資料/03_ClaudeProjects設定手順.md` | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ） | 58行 |
 | `01_利用者向け資料/04_運用モード.md` | 日常の標準作業モード | 106行 |
 | `01_利用者向け資料/05_ECC資産対応表.md` | ECCプロジェクト別対応表（真実源） | 148行 |

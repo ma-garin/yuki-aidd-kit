@@ -859,8 +859,8 @@
             <h3>4. hooksの動作を確認する</h3>
             <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh</code></pre>
             <p>
-              保存時の自動チェック（hooks）が正しく動くかを193ケースでテストします。
-              「PASS=193 / FAIL=0」なら合格です。
+              保存時の自動チェック（hooks）が正しく動くかを618ケースでテストします。
+              「PASS=618 / FAIL=0」なら合格です。
             </p>
           </div>
           <div class="callout warn">
@@ -1597,8 +1597,24 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
                 <td><code>instruction-guard.py</code></td>
                 <td>次のツール実行より先に日本語で答える</td>
               </tr>
+              <tr>
+                <td>書き込む内容に AWS キー・GitHub トークン等の秘密値が含まれる</td>
+                <td><code>pre-write-check.sh</code>（判定は <code>secret_patterns.py</code>）</td>
+                <td>値を消す。テスト用の偽値だと分かっていれば <code>AIDD_SECRET_OK=1</code> で警告に落とせる</td>
+              </tr>
+              <tr>
+                <td><code>.claude/settings.json</code>・<code>.claude/hooks/</code>・<code>.git/hooks/</code> を書き換えようとした</td>
+                <td><code>block-protected.py</code></td>
+                <td>安全装置自体の書き換えです。保守者に依頼するか、意図的なら <code>AIDD_ALLOW_CONFIG_EDIT=1</code> を付けて起動する</td>
+              </tr>
             </tbody>
           </table>
+          <p class="callout warn" style="padding:.75em 1em;border-left:3px solid #c77;">
+            <strong>限界（8.3.0〜）</strong>: これらの hooks は Bash を構文解析しません。<code>python -c "..."</code>・変数への代入・
+            コマンド置換（<code>$(...)</code>）で組み立てたコマンドは検出をすり抜けることがあります。
+            本当に読ませたくないファイルはプロジェクトの <code>settings.sandbox.json</code> の <code>denyRead</code>
+            （ファイルシステムレベルで遮断）も併用してください。
+          </p>
           <h3>見積が自動で校正される</h3>
           <p>
             <code>tool-timer.py</code> が毎ターンの経過時間を測り、見積と実測の組を履歴に残します。
