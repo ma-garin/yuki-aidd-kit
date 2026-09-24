@@ -24,6 +24,11 @@ AIDD では「プロセスが回っているか」を見ても「要求したも
   python3 scripts/check_approval.py --phase 2                     # 第2工程の承認状態だけ
   python3 scripts/check_approval.py --gate 3                      # 「第3工程に着手してよいか」（hook 用）
   python3 scripts/check_approval.py --gate 3 --quiet              # 終了コードのみ
+
+要件の検査（--gate 2 ＝ 基本設計への入口のときだけ）:
+  隣の req-lint.py で docs/lifecycle/01-requirements.md を検査する（EARS 型・曖昧語・数値の無い非機能目標・列挙数・ID の重複）。
+  `.claude/phase-gate` があるプロジェクトでは req-lint の NG が 1 件でもあれば未承認扱い（exit 1）。
+  req-lint.py が隣に無ければ判定不能（exit 2。判定不能を合格に数えない）。phase-gate が無ければ結果を出すだけ（exit は変えない）。
 """
 from __future__ import annotations
 
@@ -324,6 +329,22 @@ def write_report(path: Path, root: Path, states: dict[int, str], r: Result) -> N
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def req_lint(root: Path) -> tuple[int, list[str]] | None:
+    """隣の req-lint.py で要件定義書を検査する。(終了コード, NG の行)。要件定義書が無ければ None。
+    終了コード: 0 = NG なし / 1 = NG あり / 2 = 検査できない（req-lint.py が無い・失敗）。"""
+    req = root / LIFECYCLE_DIR / PHASES[1][1]
+    if not req.is_file():
+        return None
+    script = Path(__file__).with_name("req-lint.py")
+    if not script.is_file():
+        return 2, [f"req-lint.py が {script.parent} に無い（export-project.sh で check_approval.py と一緒に配る）"]
+    p = subprocess.run([sys.executable, str(script), str(req)], cwd=root, capture_output=True, text=True)
+    lines = [l.strip() for l in p.stdout.splitlines() if l.strip().startswith("NG ")]
+    if p.returncode not in (0, 1):
+        return 2, [f"req-lint.py が失敗した（exit {p.returncode}）: {(p.stderr or p.stdout).strip()[:120]}"]
+    return p.returncode, lines
+
+
 def exit_code(r: Result) -> int:
     if r.undecidable:
         return 2
@@ -354,22 +375,42 @@ def main() -> int:
             return 2
         states = {n: judge(root, n, r) for n in range(a.gate)}
         m = prev_started(states, a.gate)
-        if m is None:
+        # 基本設計への入口では要件文も検査する（phase-gate があれば NG で止める。無ければ報告のみ）
+        lint = req_lint(root) if a.gate == 2 else None
+        gated = (root / ".claude" / "phase-gate").exists()
+        lint_rc = lint[0] if lint and gated else 0
+
+        def show_lint() -> None:
+            if a.quiet or not lint or lint[0] == 0:
+                return
+            how = "未承認扱い" if gated else "報告のみ（.claude/phase-gate が無いので止めない）"
+            print(f"  要件の検査（req-lint）: {'判定不能' if lint[0] == 2 else f'NG {len(lint[1])} 件'} — {how}")
+            for line in lint[1][:10]:
+                print(f"    {line}")
+            if lint[0] == 1:
+                print("    次の行動: 要件を EARS 型と数値で書き直す（./scripts/req-lint.py docs/lifecycle/01-requirements.md）")
+
+        if m is None or states[m] in OK_STATES:
+            if lint_rc:
+                if not a.quiet:
+                    what = "req-lint で検査できない（判定不能）" if lint_rc == 2 else "req-lint の NG がある"
+                    print(f"❌ 第{a.gate}工程にはまだ着手できません — 要件定義書に{what}")
+                show_lint()
+                return lint_rc
             if not a.quiet:
-                print(f"✅ 第{a.gate}工程に着手してよい（手前に着手済みの工程がありません）")
+                why = "手前に着手済みの工程がありません" if m is None else f"第{m}工程 {PHASES[m][0]}: {states[m]}"
+                print(f"✅ 第{a.gate}工程に着手してよい（{why}）")
+            show_lint()
             return 0
         st = states[m]
-        if st in OK_STATES:
-            if not a.quiet:
-                print(f"✅ 第{a.gate}工程に着手してよい（第{m}工程 {PHASES[m][0]}: {st}）")
-            return 0
         if not a.quiet:
             print(f"❌ 第{a.gate}工程にはまだ着手できません — 第{m}工程 {PHASES[m][0]}: {st}")
             for k, t, d in r.ng:
                 if t.startswith(f"第{m}工程"):
                     print(f"  - {k}: {d}")
             print(f"  次の行動: /phase-review {m} で指摘を潰し、人間が {APPROVAL_DIR}/phase-{m}.md を承認する")
-        return 2 if st == "判定不能" else 1
+        show_lint()
+        return 2 if st == "判定不能" or lint_rc == 2 else 1
 
     # --phase n: 単一工程
     if a.phase is not None:

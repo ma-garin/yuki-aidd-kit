@@ -134,7 +134,7 @@ echo "[block-phase.py]"
 # 工程承認ゲート。.claude/phase-gate がある時だけ発動し、前工程が未承認なら下流成果物への書き込みを deny する
 PG="$TMP/proj-phase"; mkdir -p "$PG/scripts" "$PG/.claude"
 "$KIT_DIR/00_導入/02_プロジェクト配布/init-lifecycle.sh" "$PG" >/dev/null
-cp "$KIT_DIR/02_共通/ツール/check_approval.py" "$KIT_DIR/02_共通/ツール/phase-hash.py" "$PG/scripts/"
+cp "$KIT_DIR/02_共通/ツール/check_approval.py" "$KIT_DIR/02_共通/ツール/phase-hash.py" "$KIT_DIR/02_共通/ツール/req-lint.py" "$PG/scripts/"
 pj() { printf '{"tool_name":"%s","tool_input":{"file_path":"%s"}}' "${2:-Write}" "$PG/$1"; }
 ph() { CLAUDE_PROJECT_DIR="$PG" python3 "$HOOKS/block-phase.py" 2>&1; }
 reason() { printf '%s' "$1" | python3 -c 'import json,sys;print(json.load(sys.stdin)["hookSpecificOutput"]["permissionDecisionReason"])' 2>/dev/null; }
