@@ -26,15 +26,16 @@
   D17 100vh            100vh 単独（100dvh か min-height との併用を期待）。
   D18 入力欄font-size  input/select/textarea の font-size が 16px 未満（WARN。モバイルの自動拡大を誘発）。
   D19 hover偏重        :hover だけの規則（:focus-visible の対が無い。WARN。誤検知が多いため）。
-  ── HTML の a11y（.html だけ。<script>/<style> の中と HTML コメントは見ない。JS で後から付く属性は見えない
+  ── HTML の a11y（.html だけ。<script>/<style>/<template> の中と HTML コメントは見ない。JS で後から付く属性は見えない
      ので、E2E の axe（skills/e2e-cycle）で補う） ──
-  D20 img alt欠落      <img> に alt 属性が無い（alt="" は装飾画像として許可）。
+  D20 img alt欠落      <img> に alt 属性が無い（alt=""・role="presentation"/"none"・aria-hidden="true" は装飾として許可）。
   D21 入力欄ラベル欠落 <input>/<select>/<textarea>（type=hidden/submit/button/reset は除く）に <label for>・
                       囲む <label>・aria-label・aria-labelledby のどれも無い（placeholder は名前にならない）。
   D22 html lang欠落    <html> に lang が無い／空（lang="ja" を期待）。<!doctype>/<head>/<body> のある文書で <html> が
                       無い場合も NG。どれも無い部分 HTML（テンプレートの断片）は対象外。
-  D23 名前の無いボタン・リンク <button> と href 付きの <a> の中身が空（テキスト・中の <img alt>・aria-label・
-                      aria-labelledby・title のどれも無い）。icons.js のアイコンだけのボタンは aria-label が要る。
+  D23 名前の無いボタン・リンク <button> と href 付きの <a> の中身が空（自身のテキスト・aria-label・aria-labelledby・
+                      title、3 段までの子孫の aria-label・aria-labelledby・<img alt>・<svg><title> のどれも無い）。
+                      icons.js のアイコンだけのボタンは aria-label が要る。
   D24 見出しの飛び      見出しレベルが 2 段以上深くなる（h1→h3）。WARN。
   ── 配色（tokens.css と対の表） ──
   D25 コントラスト不足  対の表（既定は tokens.css の隣の ui/contrast-pairs.md。--pairs で指定）の前景×背景を
@@ -139,6 +140,7 @@ IMG_WIDTH_RE = re.compile(r"(?<![\w-])width\s*[:=]", re.I)
 IMG_HEIGHT_RE = re.compile(r"(?<![\w-])height\s*[:=]", re.I)
 NONSEMANTIC_ONCLICK_RE = re.compile(r"<(div|span)\b[^>]*\bonclick\s*=", re.I)
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+TEMPLATE_RE = re.compile(r"<template\b[^>]*>.*?</template\s*>", re.S | re.I)
 STYLE_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
 SCRIPT_RE = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.S | re.I)
 JS_COMMENT_RE = re.compile(r"/\*.*?\*/|(?<![:\\])//[^\n]*", re.S)
@@ -238,6 +240,11 @@ def blank_reduced_motion(text: str) -> str:
 def blank_html_comments(text: str) -> str:
     """<!-- ... --> を同じ長さの空白に置き換える（行番号を保つ）。コメント内の文字列でルールを誤検知／バイパスしない。"""
     return HTML_COMMENT_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+
+
+def blank_templates(text: str) -> str:
+    """<template>…</template> を同じ長さの空白に置き換える（D20〜D27 の走査対象外。中身は JS が複製して埋める前提）。"""
+    return TEMPLATE_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
 
 
 def css_segments(f: Path, text: str) -> list[tuple[str, int]]:
@@ -438,6 +445,8 @@ def check_focus_motion_mobile(root: Path, f: Path, text: str, r: Result) -> None
     """
     src_lines = text.split("\n")
     scan = blank_reduced_motion(blank_html_comments(blank_comments(text, css=f.suffix == ".css")))
+    if f.suffix == ".html":
+        scan = blank_templates(scan)   # <template> の中は JS が複製して埋める前提なので見ない（D20〜D27 と同じ）
 
     if not FOCUS_VISIBLE_RE.search(scan):
         for m in OUTLINE_NONE_RE.finditer(scan):
@@ -742,13 +751,13 @@ def check_gradients(root: Path, f: Path, text: str, tokens_text: str, r: Result)
     grad_tokens = {k for k, v in CUSTOM_DECL_RE.findall(blank_comments(tokens_text, css=True)) if GRADIENT_RE.search(v)}
     segments = css_segments(f, text)
     if f.suffix == ".html":   # style="" 属性は 1 つずつ別の断片にする（値が属性の外へ伸びない）
-        body = blank_html_comments(text)
+        body = blank_templates(blank_html_comments(text))
         body = SCRIPT_RE.sub(lambda m: body[m.start():m.start(1)] + re.sub(r"[^\n]", " ", m.group(1))
                              + body[m.end(1):m.end()], body)
         segments = segments + [(m.group(2) if m.group(2) is not None else m.group(3), line_no(body, m.start(1)))
                                for m in STYLE_ATTR_RE.finditer(body)]
         # インライン <script> は .js と同じく全文を見る（innerHTML や style 代入で差し込むグラデーション）
-        segments += [(m.group(1), line_no(text, m.start(1))) for m in SCRIPT_RE.finditer(blank_html_comments(text))]
+        segments += [(m.group(1), line_no(text, m.start(1))) for m in SCRIPT_RE.finditer(blank_templates(blank_html_comments(text)))]
     for seg, start in segments:
         scan = blank_comments(seg, css=f.suffix != ".js")
         local = {k for k, v in CUSTOM_DECL_RE.findall(scan) if GRADIENT_RE.search(v)}
@@ -771,6 +780,8 @@ NAMED_CONTROLS = ("input", "select", "textarea")
 UNLABELED_INPUT_TYPES = {"hidden", "submit", "button", "reset"}   # 名前が要らない／value が名前になる
 TEXT_COLLECTORS = {"button", "a", "span", "li"}                     # 中身の文字を集める要素（D23・D27）
 EMOJI_HOSTS = ("span", "button", "li")
+NAME_DEPTH = 3                                                       # 子孫の aria-label 等を名前に数える深さ（D23）
+DECORATIVE_ROLES = {"presentation", "none"}
 LIST_CONTAINERS = {"ul", "ol", "menu"}
 # 絵文字として表示される（Emoji_Presentation）BMP の文字。これ以外の記号（× ‹ ▾ ✓ ★ など）は U+FE0F が付いたときだけ絵文字
 _BMP_EMOJI_PRESENTATION = (
@@ -861,13 +872,15 @@ class _A11yScan(HTMLParser):
             self.doc_markers = True
             self.html_tags.append((line, attrs))
             return
+        # 子孫の名前（aria-label・aria-labelledby・<img alt>）を、NAME_DEPTH 段までの祖先の button/a に渡す（D23）
+        child_name = " ".join(v for v in (attrs.get("aria-label", "").strip(), attrs.get("aria-labelledby", "").strip(),
+                                          attrs.get("alt", "").strip() if tag == "img" else "") if v)
+        if child_name:
+            for i in range(max(0, len(self.stack) - NAME_DEPTH), len(self.stack)):
+                if self.stack[i]["tag"] in TEXT_COLLECTORS:
+                    self.stack[i]["alt"].append(child_name)
         if tag == "img":
             self.imgs.append((line, attrs))
-            alt = attrs.get("alt", "").strip()
-            if alt:
-                for e in self.stack:
-                    if e["tag"] in TEXT_COLLECTORS:
-                        e["alt"].append(alt)
             return
         if tag in NAMED_CONTROLS:
             wrapped = any(e["tag"] == "label" for e in self.stack)
@@ -916,7 +929,7 @@ def check_html_a11y(root: Path, f: Path, text: str, r: Result) -> None:
     src_lines = text.split("\n")
     p = _A11yScan()
     try:
-        p.feed(blank_html_comments(text))
+        p.feed(blank_templates(blank_html_comments(text)))
         p.close()
     except Exception as e:   # 壊れた HTML は判定不能＝不合格（Traceback は出さない）
         r.add(True, "D22", rel(root, f), 1, f"`解析失敗: {type(e).__name__}`", "HTML として読める",
@@ -924,8 +937,10 @@ def check_html_a11y(root: Path, f: Path, text: str, r: Result) -> None:
         return
     rf = rel(root, f)
 
-    for ln, attrs in p.imgs:   # D20
-        if "alt" not in attrs:
+    for ln, attrs in p.imgs:   # D20（alt=""・role=presentation/none・aria-hidden=true は装飾）
+        decorative = (attrs.get("role", "").strip().lower() in DECORATIVE_ROLES
+                      or attrs.get("aria-hidden", "").strip().lower() == "true")
+        if "alt" not in attrs and not decorative:
             r.add(True, "D20", rf, ln, "`alt` 無し", 'alt="説明"（装飾なら alt=""）',
                   "画像の代替テキストが無い（読み上げで内容が伝わらない）", raw_line(src_lines, ln))
 
