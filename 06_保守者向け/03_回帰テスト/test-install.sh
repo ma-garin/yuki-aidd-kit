@@ -425,6 +425,19 @@ done
 OUT=$(cd "$P" && python3 scripts/cite-check.py . 2>&1); RC=$?
 expect_exit "配布先で cite-check.py が隣の section_hash.py で動く（exit 0）" 0 "$RC"
 
+
+echo "[検証: 塊J]"
+JV=$(mktemp -d)
+python3 - "$JV" <<'JVPY'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]); (p / ".claude/rules").mkdir(parents=True); (p / ".github/workflows").mkdir(parents=True)
+(p / ".github/workflows/ci.yml").write_text("on: push\n")
+(p / ".claude/rules/ci.md").write_text('---\npaths:\n  - "./.github/workflows/*.yml"\n---\n# ci\n')
+JVPY
+OUT=$(AIDD_VERIFY_PROJECT="$JV" bash "$KIT_DIR/00_導入/01_インストール/verify.sh" 2>&1)
+if printf '%s' "$OUT" | grep -qF "workflows/*.yml に一致するファイルが 0 件"; then ng "[検証] paths の ./.github/… は一致する（./ を外すとき先頭の . まで削らない）" "0 件一致の WARN が出た"; else ok "[検証] paths の ./.github/… は一致する"; fi
+rm -rf "$JV"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

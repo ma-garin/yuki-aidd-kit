@@ -9,10 +9,12 @@
   5 時間枠・週次枠の使用率と戻る時刻を足す（ctx 38% 5h 72%（14:20） 7d 40%（9/28 09:00））。5h が 80% 以上なら ⚠ を付ける
   （表示だけ。止めない）。ctx は `used_percentage`、無ければ `used_tokens`（または `current_usage` の input＋cache の合計）÷
   `max_tokens`（または `context_window_size`）。版やサブスクによって来ないフィールドは出さない（推測で合成しない）。
+  inf・nan・負値・100 超の使用率も出さない（変換の失敗で Traceback を出さず、従来表示を消さない）。
   時刻は AIDD_TZ（既定 Asia/Tokyo。subagent-context.py と同じ保守者の時計）。
 """
 import datetime
 import json
+import math
 import os
 import pathlib
 import subprocess
@@ -106,35 +108,50 @@ def _token_part(stdin_raw: str) -> str:
 
 
 def _num(v) -> float | None:
-    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+    """有限で 0 以上の数だけを返す（inf・nan・負値・数でないものは None。変換の失敗も None）。"""
+    try:
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
+            return None
+        f = float(v)
+        return f if math.isfinite(f) and f >= 0 else None
+    except (ValueError, OverflowError, TypeError):
+        return None
 
 
-def _ctx_pct(cw) -> int | None:
+def _pct(v) -> float | None:
+    """使用率として表示できる値（0〜100）。100 超・inf・nan・負値は None（何も足さない）。"""
+    f = _num(v)
+    return f if f is not None and f <= 100 else None
+
+
+def _ctx_pct(cw) -> float | None:
     if not isinstance(cw, dict):
         return None
-    pct = _num(cw.get("used_percentage"))
-    if pct is None:
-        used = _num(cw.get("used_tokens"))
-        cu = cw.get("current_usage")
-        if used is None and isinstance(cu, dict):
-            vals = [_num(cu.get(k)) for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")]
-            used = sum(v for v in vals if v is not None) if any(v is not None for v in vals) else None
-        size = _num(cw.get("max_tokens")) or _num(cw.get("context_window_size"))
-        if used is None or not size:
-            return None
-        pct = used * 100 / size
-    return round(pct)
+    if "used_percentage" in cw:
+        return _pct(cw.get("used_percentage"))
+    used = _num(cw.get("used_tokens"))
+    cu = cw.get("current_usage")
+    if used is None and isinstance(cu, dict):
+        vals = [_num(cu.get(k)) for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")]
+        used = sum(v for v in vals if v is not None) if any(v is not None for v in vals) else None
+    size = _num(cw.get("max_tokens")) or _num(cw.get("context_window_size"))
+    if used is None or not size:
+        return None
+    try:
+        return _pct(used * 100 / size)
+    except (ValueError, OverflowError, TypeError, ZeroDivisionError):
+        return None
 
 
 def _reset_at(v) -> datetime.datetime | None:
     try:
         if _num(v) is not None:
-            sec = v / 1000 if v > 1e12 else v      # ミリ秒で来ても秒に直す
+            sec = v / 1000 if v > 1e12 else v      # ミリ秒で来ても秒に直す（inf・nan・負値は _num が落とす）
             return datetime.datetime.fromtimestamp(sec, datetime.timezone.utc)
         if isinstance(v, str) and v.strip():
             d = datetime.datetime.fromisoformat(v.strip().replace("Z", "+00:00"))
             return d if d.tzinfo else d.replace(tzinfo=datetime.timezone.utc)
-    except (ValueError, OverflowError, OSError):
+    except (ValueError, OverflowError, OSError, TypeError):
         pass
     return None
 
@@ -156,11 +173,11 @@ def _limits_part(stdin_raw: str) -> str:
         out = []
         ctx = _ctx_pct(d.get("context_window"))
         if ctx is not None:
-            out.append(f"ctx {ctx}%")
+            out.append(f"ctx {round(ctx)}%")
         rl = d.get("rate_limits")
         for label, keys in _WINDOWS if isinstance(rl, dict) else ():
             w = next((rl[k] for k in keys if isinstance(rl.get(k), dict)), None)
-            pct = _num(w.get("used_percentage")) if w else None
+            pct = _pct(w.get("used_percentage")) if w else None
             if pct is None:
                 continue
             txt = f"{label} {round(pct)}%"
@@ -173,7 +190,7 @@ def _limits_part(stdin_raw: str) -> str:
                 txt = "⚠ " + txt
             out.append(txt)
         return " ".join(out)
-    except (ValueError, TypeError, AttributeError):
+    except (ValueError, OverflowError, TypeError, AttributeError):
         return ""  # 表示の失敗で従来表示を消さない
 
 

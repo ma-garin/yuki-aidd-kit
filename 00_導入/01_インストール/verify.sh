@@ -277,7 +277,8 @@ def glob_rx(g):
 
 
 def matches(glob, paths):
-    g = glob.strip().lstrip("./") if glob.strip().startswith("./") else glob.strip().lstrip("/")
+    g = glob.strip()
+    g = g[2:] if g.startswith("./") else g.lstrip("/")    # ./ だけを落とす（.github/… の先頭の . は残す）
     for alt in expand_braces(g):
         rx = glob_rx(alt)
         if any(rx.fullmatch(p) for p in paths):

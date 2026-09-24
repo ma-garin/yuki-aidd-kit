@@ -12,7 +12,8 @@
     次の一手＝次の一手・次のタスク・次にやるなら）。コメント・空行・雛形の例（`例:`・`○○`・`T-XX`）は数えない。
     1 行は 120 字まで
   - 古さ: 「最終更新」節（または `最終更新: YYYY-MM-DD` の行）の日付、無ければファイルの更新時刻から
-    30 日を超えていたら先頭に「古い（YYYY-MM-DD）」を付ける（古い引継ぎを今の状態と取り違えない）
+    30 日を超えていたら先頭に「古い（YYYY-MM-DD）」を付ける（古い引継ぎを今の状態と取り違えない）。
+    存在しない日付（2026-13-45 等）は古さを判定せず、本文だけを注入する
   - ファイルが無い・3 節とも中身が無い・入力が読めない → 何も出さない（fail-open。常に exit 0）
 
 限界: 要約に何が残ったかは見ない（transcript の要約本文は版によって取れない）。CURRENT_STATE.md の更新は人と
@@ -76,17 +77,26 @@ def body(lines: list[str]) -> list[str]:
     return keep
 
 
-def last_updated(sections: list[tuple[str, list[str]]], text: str, path: Path) -> datetime.date:
+def _date(m: re.Match) -> datetime.date | None:
+    try:
+        return datetime.date(*map(int, m.groups()))
+    except ValueError:      # 2026-13-45 のような存在しない日付。古さは判定しない（本文は注入する）
+        return None
+
+
+def last_updated(sections: list[tuple[str, list[str]]], text: str, path: Path) -> tuple[datetime.date | None, str]:
+    """(日付, 表示用の文字列)。書かれた日付が存在しなければ (None, 書かれたまま)。"""
     for title, lines in sections:
         if "最終更新" in title:
             for line in lines:
                 m = _DATE.search(line)
                 if m:
-                    return datetime.date(*map(int, m.groups()))
+                    return _date(m), m.group(0)
     m = re.search(r"最終更新[^\n\d]{0,6}(\d{4})-(\d{2})-(\d{2})", text)
     if m:
-        return datetime.date(*map(int, m.groups()))
-    return datetime.date.fromtimestamp(path.stat().st_mtime)
+        return _date(m), m.group(0)[-10:]
+    d = datetime.date.fromtimestamp(path.stat().st_mtime)
+    return d, d.isoformat()
 
 
 def build(path: Path, today: datetime.date) -> str:
@@ -100,10 +110,11 @@ def build(path: Path, today: datetime.date) -> str:
             picked.append((label, items))
     if not picked:
         return ""
-    updated = last_updated(sections, text, path)
-    stale = (today - updated).days > STALE_DAYS
-    head = (f"{'古い（' + updated.isoformat() + '）。' if stale else ''}"
-            f"[session-context] 圧縮・再開の後の再注入: {path.name} の要点（最終更新 {updated.isoformat()}。"
+    updated, shown = last_updated(sections, text, path)
+    stale = updated is not None and (today - updated).days > STALE_DAYS
+    note = shown if updated is not None else f"{shown}（日付として読めないので古さは判定しない）"
+    head = (f"{'古い（' + shown + '）。' if stale else ''}"
+            f"[session-context] 圧縮・再開の後の再注入: {path.name} の要点（最終更新 {note}。"
             "全文は必要なときだけ読む）")
     budget = MAX_LINES - 1                     # 見出し 1 行を除いた残り。各節にまず 1 行＋本文を均等に配る
     take = {label: 0 for label, _ in picked}
