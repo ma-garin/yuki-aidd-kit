@@ -170,6 +170,50 @@ P=$(proj); printf 'テストID,ロール,対象機能\nST-201,一般,貸出\n' >
 OUT=$(run "$P" --level ST)
 expect_out  "結果列の無い旧形式 CSV は読まない（07 の 1 件だけ）" "全 1 / 実行 1" "$OUT"
 
+echo "[ケース11: 根拠の版（REQ-F-001@版）が現在の上流と違う PASS は --gate で未検証]"
+P=$(proj); H="$KIT_DIR/02_共通/ツール/section_hash.py"
+head -1 "$KIT_DIR/02_共通/ひな形/test/system_test_cases.csv" | grep -q ',根拠の版' && ok "配布雛形の CSV に「根拠の版」列がある" || ng "配布雛形の CSV に「根拠の版」列" "無い"
+CUR=$(python3 "$H" hash "$P/docs/lifecycle" REQ-F-001)
+printf 'テストID,ロール,対象機能,ツアー観点,テスト目的,前提条件,手順,期待される結果,severity,結果,実施日,実施者,DEF,根拠の版\nST-101,一般,貸出,Money,x,x,x,x,High,pass,2026-09-19,藤曲,,%s\nST-102,一般,返却,Money,x,x,x,x,High,pass,2026-09-19,藤曲,,REQ-F-001@0000000\nST-103,一般,予約,Money,x,x,x,x,Low,pass,2026-09-19,藤曲,,\n' "$CUR" > "$P/docs/system_test_cases.csv"
+OUT=$(run "$P" --level ST)
+expect_out  "status の合格率は従来どおり（07 の 1 件 + CSV 3 件がすべて pass → 100.0%）" "合格率 100.0%" "$OUT"
+expect_out  "status でも未検証を検知して知らせる" "[unverified]" "$OUT"
+OUT=$(run "$P" --level ST --gate); RC=$?
+expect_out  "--gate: 版の違う ST-102 を合格率の分子から外す（3/4 = 75.0%）" "合格率 75.0%" "$OUT"
+expect_out  "--gate: 消化率には数える（100.0%）" "消化率 100.0%" "$OUT"
+expect_out  "--gate: 未検証の件数を出す" "未検証 1 件" "$OUT"
+expect_out  "理由に記録と現在の版を出す" "ST-102（REQ-F-001: 記録 0000000 →" "$OUT"
+expect_out  "--gate: 合格率の基準が ✗ になる" "✗ 2. 合格率" "$OUT"
+expect_exit "--gate: 合格率 < 95 → exit 1（未検証の PASS で通さない）" 1 "$RC"
+sedi 's/| REQ-F-001 |  | Must | RFD-001 |  |/| REQ-F-001 | 貸出を 1 操作で完了する | Must | RFD-001 |  |/' "$P/docs/lifecycle/01-requirements.md"
+OUT=$(run "$P" --level ST --gate)
+expect_out  "上流の要件を書き換えると、記録していた版の PASS も未検証（2/4 = 50.0%）" "合格率 50.0%" "$OUT"
+NEW=$(python3 "$H" hash "$P/docs/lifecycle" REQ-F-001)
+sedi "s/,$CUR\$/,$NEW/; s/,REQ-F-001@0000000\$/,$NEW/" "$P/docs/system_test_cases.csv"
+OUT=$(run "$P" --level ST --gate)
+expect_out  "根拠の版を現在の版に更新すると合格に戻る（100.0%）" "合格率 100.0%" "$OUT"
+expect_noout "未検証の検知が消える" "[unverified]" "$OUT"
+sedi "s/,$NEW\$/,REQ-F-001/" "$P/docs/system_test_cases.csv"
+OUT=$(run "$P" --level ST --gate)
+expect_out  "版の無い・壊れた記録は確かめられないので未検証（判定不能を合格に数えない）" "書式不正「REQ-F-001」" "$OUT"
+
+
+# --- [検証: B-22] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
+echo "[検証: B-22]"
+H="$KIT_DIR/02_共通/ツール/section_hash.py"
+P=$(proj); CUR=$(python3 "$H" hash "$P/docs/lifecycle" REQ-F-001)
+printf 'テストID,ロール,対象機能,結果,実施日,実施者\nST-101,一般,貸出,pass,2026-09-19,藤曲\n' > "$P/docs/system_test_cases.csv"
+OUT=$(run "$P" --level ST --gate); RC=$?
+expect_out  "[検証] 「根拠の版」列の無い旧形式 CSV でも落ちず従来どおり（100.0%）" "合格率 100.0%" "$OUT"
+expect_noout "[検証] 旧形式 CSV では未検証を出さない" "[unverified]" "$OUT"
+printf 'テストID,ロール,対象機能,結果,実施日,実施者,根拠の版\nST-101,一般,貸出,fail,2026-09-19,藤曲,REQ-F-001@0000000\nST-102,一般,返却,pass,2026-09-19,藤曲,%s\n' "$CUR" > "$P/docs/system_test_cases.csv"
+OUT=$(run "$P" --level ST --gate)
+expect_out  "[検証] 版の古い FAIL は分子から引かない（pass 2 / 実行 3 = 66.7%）" "合格率 66.7%" "$OUT"
+printf 'テストID,ロール,対象機能,結果,実施日,実施者,根拠の版\nST-101,一般,貸出,pass,2026-09-19,藤曲,%s\n' "$CUR" > "$P/docs/system_test_cases.csv"
+OUT=$(cd "$P" && python3 scripts/test_metrics.py --today "$TODAY" -o "$TMP/report.md" --level ST --gate 2>&1)
+expect_out  "[検証] init-test-docs.sh で配った scripts/test_metrics.py でも、版が一致する PASS は合格（100.0%）" "合格率 100.0%" "$OUT"
+[ -f "$P/scripts/section_hash.py" ] && ok "[検証] test_metrics.py の隣に section_hash.py が配られる" || ng "[検証] test_metrics.py の隣に section_hash.py が配られる" "init-test-docs.sh が scripts/section_hash.py を置かない"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }
