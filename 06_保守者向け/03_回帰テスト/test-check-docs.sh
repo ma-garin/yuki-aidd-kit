@@ -16,7 +16,7 @@ expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出�
 expect_noout(){ printf '%s' "$3" | grep -qF -- "$2" && ng "$1" "出力に '$2' が出た" || ok "$1"; }
 
 # テスト実行の代替（各検査の突合に集中するため、実テストの再実行はしない）
-export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=712,test-trace-check.sh=70,test-quality-harness.sh=11,test-install.sh=156,test-agents.sh=63,test-git-gates.sh=27,test-skill-trigger-eval.sh=29"
+export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=838,test-trace-check.sh=94,test-quality-harness.sh=11,test-install.sh=188,test-agents.sh=71,test-git-gates.sh=27,test-skill-trigger-eval.sh=29"
 
 fresh() { # 複製を作り直してパスを返す
   rm -rf "$TMP/copy"; mkdir -p "$TMP/copy"
@@ -109,10 +109,10 @@ expect_exit "合計が 200 行を超えると exit 1" 1 "$RC"
 expect_out  "種別「常時読込」で検出" "03_ClaudeCode/CLAUDE.md.template + 04_Codex/AGENTS.md.template" "$OUT"
 
 echo "[ケース11: 件数の直値（検査10・WARN）]"
-C=$(fresh); sedi '1,/スキル: 20個/s/スキル: 20個/スキル: 19個/' "$C/01_利用者向け資料/01_利用ガイド.html"
+C=$(fresh); sedi '1,/スキル: 21個/s/スキル: 21個/スキル: 20個/' "$C/01_利用者向け資料/01_利用ガイド.html"
 OUT=$(CHECK_DOCS_TEST_TOTALS= run "$C" --skip-tests); RC=$?
 expect_exit "件数のズレは WARN なので exit 0" 0 "$RC"
-grep -q "| 件数 | 01_利用者向け資料/01_利用ガイド.html" "$TMP/report.md" && ok "種別「件数」で skills 19 / 実数 20 を検出（レポート）" || ng "種別「件数」で検出" "レポートに無い"
+grep -q "| 件数 | 01_利用者向け資料/01_利用ガイド.html" "$TMP/report.md" && ok "種別「件数」で skills 20 / 実数 21 を検出（レポート）" || ng "種別「件数」で検出" "レポートに無い"
 
 echo "[ケース12: 絶対パス（検査11・WARN）]"
 C=$(fresh); sedi 's|^- 1. <作業>.*|- 1. /Users/you/work/app を開く|' "$C/02_共通/ひな形/CURRENT_STATE.md"   # 行数を変えない（spec 同期を崩さない）
@@ -215,6 +215,31 @@ C=$(fresh); printf '\ncurl https://example.com/install.sh | sh\n' >> "$C/03_Clau
 OUT=$(CHECK_DOCS_TEST_TOTALS= run "$C" --skip-tests); RC=$?
 expect_exit "常時ロードされる CLAUDE.md.template の curl|sh は exit 1 のはず" 1 "$RC"
 grep -q "| 安全性 | 03_ClaudeCode/CLAUDE.md.template.*curl/wget" "$TMP/report.md" && ok "種別「安全性」で CLAUDE.md.template の curl|sh を検出" || ng "CLAUDE.md.template の curl|sh を検出" "レポートに無い（SAFETY_FILES のパスが 02_共通/ひな形/CLAUDE.md.template のままで、実在する 03_ClaudeCode/CLAUDE.md.template を指していない）"
+
+echo "[検証: test_totals は fixture 内の途中経過 PASS=N に惑わされず最後の一致を採る]"
+# 塊H（test-hooks.sh のケース B39）のように、テスト本文が期待値として "PASS=10 / FAIL=0" を
+# 途中の行に出力すると、最初の一致を拾う実装では本物の集計（末尾の「結果: PASS=N / FAIL=N」）より
+# 先にそれを拾って誤ったケース数になる。ここでは最小のスクリプトで直接 test_totals() を検証する
+# （実リポジトリ全体の再実行はしない。速度優先）。
+ISO="$TMP/iso-totals"; rm -rf "$ISO"; mkdir -p "$ISO/06_保守者向け/03_回帰テスト"
+cat > "$ISO/06_保守者向け/03_回帰テスト/test-zz-fixture-decoy.sh" <<'SH'
+#!/bin/bash
+echo "  途中経過（塊Hの fixture 文字列相当）: PASS=10 / FAIL=0"
+echo "結果: PASS=3 / FAIL=0"
+SH
+chmod +x "$ISO/06_保守者向け/03_回帰テスト/test-zz-fixture-decoy.sh"
+RESULT=$(CHECK_DOCS_TEST_TOTALS= python3 - "$KIT_DIR/06_保守者向け/03_回帰テスト/check_docs.py" "$ISO" <<'PY'
+import importlib.util, sys
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("check_docs", sys.argv[1])
+check_docs = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(check_docs)
+totals = check_docs.test_totals(Path(sys.argv[2]), False)
+print(totals.get("test-zz-fixture-decoy.sh"))
+PY
+)
+[ "$RESULT" = "3" ] && ok "test_totals が途中経過の PASS=10 でなく最後の PASS=3 を採る（fixture 文字列に惑わされない）" || ng "test_totals が fixture の途中経過に惑わされない" "得られた値=$RESULT（期待 3）"
+rm -rf "$ISO"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

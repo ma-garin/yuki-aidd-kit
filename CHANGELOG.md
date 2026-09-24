@@ -3,6 +3,25 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
+## Ver.8.5.0（2026-09-24）— セキュリティ運用・完了主張の照合・仕様品質（M29）
+
+外部スキル・MCP・プラグインを導入前に見る仕組みが無く、`verify.sh` は配置の有無しか見ておらず設定の危険な組み合わせ（`bypassPermissions`・`Bash(*)`・秘密値）を見逃していた（B-26）。「完了しました」と言いながら実行結果が伴わない報告や、仕様欠落が原因の失敗をその場の修整で閉じてしまう問題、AI 生成コード特有の欠陥のレビュー観点が無かった（B-27）。テストコードと追跡表が突き合わせられておらず、ADR・rules の引用が古くなっても気づけず、要件文の型も曖昧語もチェックする道具が無かった（B-28）。全件走査の採用テーマから 3 塊を並列実装し統合した。
+
+- **`02_共通/ツール/skill-scan.py` を新設**: `SKILL.md`／`commands/*.md`／hooks の `settings.json`／`.mcp.json`／plugin manifest を静的検査し、`curl|sh`・`rm -rf`・秘密ファイル読み・`bypassPermissions`・不可視/双方向制御文字・base64 で隠した命令・外部 URL への POST・`eval` 等を `DANGEROUS`（exit 1）、ネットワーク・ファイル書き込み・環境変数参照・未知パッケージの `npx -y` を `CAUTION`、読めない・形式不明を `UNKNOWN`（**CAUTION と同じ扱いで警告のみ、止めない**）に判定する。`--json` 対応、標準ライブラリのみ・ネット不使用。`install-guard.sh`／`install.sh` が導入前に流し、DANGEROUS は導入しない（`AIDD_SKILL_SCAN_OK=1` で1回だけ通す。理由文に変数名を明記）
+- **`verify.sh` に設定監査を追加**: `permissions.allow` の `Bash(*)`・`Bash(rm*)`・`Bash(sudo*)`・`Write(*)`／`defaultMode: bypassPermissions`／hooks の command に含まれる `curl|sh`・プロジェクトと `~/.claude` の外のスクリプト／`.mcp.json` の `command` が `npx -y` で `@scope` の無い未知パッケージ／settings 内の秘密値を検査する。**bypassPermissions・`Bash(*)`・`curl|sh`・秘密値は NG（exit 1）、それ以外は WARN**
+- **`02_共通/ツール/baseline.py` を新設**: `check_design.py`・`security-scan.sh --baseline` が共用する基準線の読み書きを1か所に切り出し（`規則ID\t相対パス\t正規化した行` の書式、件数が増える更新は拒否）。`check_design.py` は import するだけで挙動不変。`done-gate/SKILL.md` に「基準線の件数は減る方向だけ、除外には理由と期限（既定90日）、期限切れ・理由なしは NG」を追加
+- **新規 `03_ClaudeCode/skills/security-audit/`**: 走査器の結果（`security-scan.sh`）＋スタック別 references（単一HTML・PWA／Streamlit／Python Web／Node Web、各 OWASP Top10・ASVS の該当項目を「キットの対策」「未対応」で表に）でセキュリティ監査する。手順は範囲決定（quick/diff/full）→走査→未検査の一覧→スタック観点→`security-report.md` へ追記。**明示の依頼だけで使い、`ecc-daily-router` からは自動で振らない**。`nfr-standards` の references に OWASP LLM・Agentic Top10 の点検表（対策・未対応・確認方法）を追加
+- **`03_ClaudeCode/hooks/reply-language.py` が完了主張と実行結果を照合**: 応答に完了の主張（「完了しました」「全て PASS」「exit 0 です」等）があるのに、同じターンのテスト系 Bash 実行が0回、または直近の実行が失敗（`FAIL=`・`exit 1`・`❌`・`Error` を含む）なら block。理由に直近コマンドと根拠を示す。「提案（未実行）」「未検証」と書けば通す。**同一ターンでの block は2回まで**（3回目は additionalContext の警告に降格して通す。無限ループ防止）
+- **仕様欠落起因の失敗は保守者の承認まで完了にしない**: `verify-agent.md` に「原因が仕様欠落なら、修整でなく受入基準の追加案・回帰テスト・不変条件を `traceability.md` の型で出し、承認者（保守者限定）が承認するまで完了にしない」を追加。`traceability.md` に「不変条件」欄と受入基準追加案の書式、`03-detailed-design.md` ひな形に「不変条件」節（空可）を追加
+- **起票前のトリアージと「未確認」の扱い**: `iso29119-incident-report.md` に「トリアージ」節（再現手順の有無・影響範囲・回避策・根拠の種類〈実測／推測〉・重大度の根拠）。`qa-review-standards/SKILL.md` の報告フォーマットに「Critical/High は再現手順と実測の根拠が無ければ『未確認』として起票し重大度を確定しない」。未確認が3件を超えたら `test_metrics.py --gate` の出力に「未確認 N 件」の WARN を1行追加（判定不能を合格の分子に入れない）
+- **`qa-review-standards` の references に `ai-code-review.md`**: AI 生成コード特有の欠陥（もっともらしい未使用コード・存在しないAPI・過剰な try/except・テスト期待値の逆算・コメントと実装の乖離・依存の綴り違い）とテストコードのレビュー観点（アサーションの弱さ・固定値のモック・フレーク要因）。指摘の型は `file:line／観点ID／根拠／直し方`。検証ペルソナ15「テストを疑うQAリード」はこの references を参照する1行に統合（重複を解消）
+- **テストコードと追跡表の突合（trace-check.sh C8/C9）**: テストに `spec: ST-001` または `@spec ST-001`（複数は `,` 区切り、言語横断の正規表現1本）を埋め込む規約。CSV の ST-ID がテストコードに無ければ C8 NG「テストコード未対応」、逆にテストにあって CSV に無い ID は C9 WARN。`e2e-cycle`・`test-automation` の生成手順に「生成するテストの冒頭に `// spec: ST-xxx`」を追加
+- **`02_共通/ツール/cite-check.py` を新設**: ADR・`rules/*.md`・lessons.md 内の引用（`path#見出し`／`path:行`／`path`）を検査し、ファイル無し・見出し無しは NG、`section_hash.py` の節ハッシュが引用時記録（`@版`）と食い違えば WARN（stale）。版の無い引用は書き込まず件数だけを出し、`--record`（保守者のみ）で版を記録する。`--refresh`（保守者のみ）で stale を書き換える。対象は ADR・rules・lessons（**skills は対象外、done-gate にも入れない**）。`skills/retro/SKILL.md` の最後に実行の1行を追加
+- **要件を EARS 型に、`02_共通/ツール/req-lint.py` を新設**: `01-requirements.md` ひな形の要件行を EARS 型（常時／When／While／If／Where）の書式に統一。req-lint は非機能要件の数値欠落・列挙数の不一致・ID 重複を NG、曖昧語（辞書は新規 `sdd-ecc-workflow/references/ambiguous-words.md`）と EARS 非該当行を WARN。`.claude/phase-gate` があるプロジェクトでは `check_approval.py --gate 2`（基本設計の入口）が req-lint の NG を未承認扱いにする
+- **曖昧仕様を4分類**: `iso29119-test-design-spec.md`・`test-strategy/SKILL.md` に「確認待ち／仮置き（根拠付き）／範囲外（合意済み）／未定」の扱いを追加。`system_test_cases.csv` に列「仕様の状態」（空＝確定）を追加し、`test_metrics.py --gate` は「確認待ち」が1件でもあれば NG、「仮置き」は WARN、「未定」はテストケースにしない
+- **回帰テストを拡充**: 新規 `test-skill-scan.sh`（92ケース）・`test-cite-check.sh`（34ケース）・`test-req-lint.sh`（22ケース）を追加。既存の `test-hooks.sh`（818ケース）・`test-install.sh`（181ケース）・`test-agents.sh`（69ケース）・`test-trace-check.sh`（87ケース）・`test-test-metrics.sh`（77ケース）・`test-check-approval.sh`（65ケース）・`test-security-scan.sh`（57ケース）も拡張。回帰テストは17本に（準備ブランチでの1本を含む見込み）
+- **利用者向け資料・目録・INDEX を同期**: 新規スキル1本（skills 20→21）・ツール4本（14→18）・回帰テスト3本の掲載漏れを `check_docs.py` で検出して解消。`build_codex_skills.py` を再生成（`--check` exit 0）。利用ガイド・操作マニュアルに「（8.5.0〜）」の見出しで skill-scan の DANGEROUS 導入停止・verify.sh の設定監査・完了主張の照合・req-lint の phase-gate 連携を追記
+
 ## Ver.8.4.0（2026-09-24）— 利用計測・JIT 注入・走査と基準線（M28）
 
 スキル別の呼び出し回数・コストが見えず、上流の要件が変わってもテストの合格記録が追随しなかった（B-22）。ADR・lessons の決定事項を毎回全文読ませるかまったく読ませないかの両極しか無く、Web 取得や MCP から取り込む内容にプロンプトインジェクションの検知も無かった（B-23）。セキュリティ走査は都度手作業の判断任せで、デザイン検査は基準線が無く、E2E はアクセシビリティを見ていなかった（B-24）。この3件を並列実装し統合した。

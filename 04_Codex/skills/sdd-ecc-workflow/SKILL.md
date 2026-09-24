@@ -12,6 +12,8 @@ description: "仕様駆動開発（SDD: Spec-Driven Development）でプロジ�
 ## 10ステップフロー
 1. spec.md（要求・制約・検証基準）→ 2. plan.md（アーキテクチャ・技術選定）→ 3. tasks.md（依存関係付きタスク分解）→ 4. 実装ループ → 5. 検証 → 6. implement.md（実装記録）→ 7. documentation.md → 8. AGENTS.md/CLAUDE.md更新 → 9. レビュー → 10. 次イテレーション
 
+**要件は EARS 型で書く**（常時／〜のとき／〜の間／〜の場合／〜では。型と例は `02_共通/ひな形/lifecycle/01-requirements.md`）。曖昧語・数値の無い非機能目標・列挙数の食い違いは `scripts/req-lint.py <要件の文書>` で検査する（曖昧語の辞書は `references/ambiguous-words.md`）。
+
 ## ガバナンス選択（プロジェクト開始時に必ず確認）
 | パターン | 適用条件 |
 |---|---|

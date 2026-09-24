@@ -109,6 +109,7 @@ sedi 's/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  |  |  |  |/| UT-00
 OUT=$(run "$P" --gate); RC=$?
 expect_exit "全基準 ✓ → exit 0" 0 "$RC"
 expect_out  "判定候補は「進める」。GO/NO-GO は人" "進める" "$OUT"
+ALLPASS="$TMP/allpass"; cp -r "$P" "$ALLPASS"     # ケース12（仕様の状態）の土台: 全基準 ✓ の状態
 
 echo "[ケース6: 欠陥表が無い → 密度は None（0 ではない）]"
 P=$(proj); python3 - "$P" <<'PY'
@@ -197,6 +198,53 @@ sedi "s/,$NEW\$/,REQ-F-001/" "$P/docs/system_test_cases.csv"
 OUT=$(run "$P" --level ST --gate)
 expect_out  "版の無い・壊れた記録は確かめられないので未検証（判定不能を合格に数えない）" "書式不正「REQ-F-001」" "$OUT"
 
+echo "[ケース12: 未確認の欠陥（B36 起票前トリアージ）は未解決に数え、--gate に1行足る]"
+P=$(proj); fill "$P"
+sedi 's/| DEF-001 | ST-003 | REQ-N-002 | Critical | 360px で横スクロール | e3 | 2026-09-12 | 未対応 |/| DEF-001 | ST-003 | REQ-N-002 | 未確認 | 360px で横スクロール | e3 | 2026-09-12 | 未対応 |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| DEF-002 | ST-003 | REQ-N-002 | Low | 余白が狭い | e3 | 2026-09-18 | 修正済 |/| DEF-002 | ST-003 | REQ-N-002 | 未確認 | 余白が狭い | e3 | 2026-09-18 | 修正済 |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| DEF-003 | UAT-003 | 予約が二重登録 | High | 2026-09-19 | 修正する |/| DEF-003 | UAT-003 | 予約が二重登録 | 未確認 | 2026-09-19 | 修正する |/' "$P/docs/lifecycle/08-acceptance-test.md"
+OUT=$(run "$P" --gate); RC=$?
+# DEF-002 は closed（修正済）なので未解決には数えない。DEF-001・DEF-003 は open で未解決 2 件。未確認は状態に関わらず 3 件
+expect_out  "--gate: 「未解決N件（うち未確認M件）」の1行を出す（closed の未確認は未解決に数えない）" "未解決 2 件（うち未確認 3 件" "$OUT"
+expect_exit "--gate: 未確認の Critical/High が未解決の間は exit 0 にならない（判定不能を合格に数えない）" 1 "$RC"
+
+
+echo "[ケース12: 仕様の状態（確認待ち→進めない・仮置き→WARN・未定・語彙外・列の無い旧 CSV）]"
+# 土台はケース5の全基準 ✓ のプロジェクト。確認待ちの 1 件で消化率の基準が落ちないよう、消化率のしきい値を 50 に下げる
+P12="$TMP/p12"; rm -rf "$P12"; cp -r "$ALLPASS" "$P12"
+sedi 's/| `progress >= 100` |/| `progress >= 50` |/' "$P12/docs/test/TESTING_STRATEGY.md"
+csv12() { # 仕様の状態の値 ×3（ST-301〜303。結果はすべて pass）
+  printf 'テストID,ロール,対象機能,期待される結果,結果,実施日,実施者,仕様の状態\nST-301,一般,貸出,%s,pass,2026-09-19,藤曲,%s\nST-302,一般,返却,b,pass,2026-09-19,藤曲,%s\nST-303,一般,予約,c,pass,2026-09-19,藤曲,%s\n' "$1" "$2" "$3" "$4" > "$P12/docs/system_test_cases.csv"; }
+csv12 a "" "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "（土台）仕様の状態が全部空（確定）なら --gate 0" 0 "$RC"
+csv12 "確認待ち: 延滞料の端数は切り捨てか（PO 宛・9/18）" 確認待ち "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "確認待ちが 1 件でもあれば --gate 1（結果が pass でも進めない）" 1 "$RC"
+expect_out  "進めない理由に確認待ちを出す" "仕様が確認待ち・未定のケース 1 件" "$OUT"
+expect_out  "確認待ちの pass は未実施に数える（ST: 実行 − 1）" "未実施 1" "$OUT"
+expect_out  "検知に質問を出す" "延滞料の端数" "$OUT"
+csv12 "a（仮置き。根拠: 類似機能、期限: 2026-10-01）" 仮置き "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "仮置きは WARN だけ（--gate 0 のまま）" 0 "$RC"
+expect_out  "仮置きを WARN で出す" "仮置き 1 件" "$OUT"
+OUT=$(run "$P12")
+expect_out  "status でも仮置きを検知する" "[spec-provisional]" "$OUT"
+csv12 a 未定 "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "未定の行が CSV にあれば確認待ちと同じく --gate 1（テストケースにしない）" 1 "$RC"
+csv12 a 範囲外 "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "範囲外（合意済み）は --gate を止めない" 0 "$RC"
+csv12 a たぶん "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "「仕様の状態」が語彙外なら --gate 2（判定できない）" 2 "$RC"
+expect_out  "語彙外と出す" "語彙外" "$OUT"
+printf 'テストID,ロール,対象機能,期待される結果,結果,実施日,実施者\nST-301,一般,貸出,確認待ち: x,pass,2026-09-19,藤曲\n' > "$P12/docs/system_test_cases.csv"
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "「仕様の状態」列の無い旧 CSV は従来どおり（全部確定として --gate 0）" 0 "$RC"
+expect_noout "旧 CSV では仕様の状態を検知しない" "[spec-" "$OUT"
+head -1 "$KIT_DIR/02_共通/ひな形/test/system_test_cases.csv" | grep -q ',仕様の状態$' && ok "配布雛形の CSV に「仕様の状態」列がある" || ng "配布雛形の CSV に「仕様の状態」列" "無い"
 
 # --- [検証: B-22] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
 echo "[検証: B-22]"
@@ -214,6 +262,46 @@ OUT=$(cd "$P" && python3 scripts/test_metrics.py --today "$TODAY" -o "$TMP/repor
 expect_out  "[検証] init-test-docs.sh で配った scripts/test_metrics.py でも、版が一致する PASS は合格（100.0%）" "合格率 100.0%" "$OUT"
 [ -f "$P/scripts/section_hash.py" ] && ok "[検証] test_metrics.py の隣に section_hash.py が配られる" || ng "[検証] test_metrics.py の隣に section_hash.py が配られる" "init-test-docs.sh が scripts/section_hash.py を置かない"
 
+echo "[検証: 塊I] 仕様の状態の 4 分類（--gate の有無・表記の揺れ）"
+V="$TMP/vI"; rm -rf "$V"; cp -r "$ALLPASS" "$V"
+sedi 's/| `progress >= 100` |/| `progress >= 50` |/' "$V/docs/test/TESTING_STRATEGY.md"
+vcsv() { printf 'テストID,ロール,対象機能,期待される結果,結果,実施日,実施者,仕様の状態\nST-301,一般,貸出,a,%s,%s,藤曲,%s\nST-302,一般,返却,b,pass,2026-09-19,藤曲,\nST-303,一般,予約,c,pass,2026-09-19,藤曲,\n' "$1" "$2" "$3" > "$V/docs/system_test_cases.csv"; }
+vcsv "" "" "確認待ち"
+OUT=$(run "$V" --gate); RC=$?
+expect_exit "確認待ち 1 件（結果は空）で --gate 1" 1 "$RC"
+OUT=$(run "$V"); RC=$?
+expect_exit "--gate 無しでは確認待ちがあっても exit 0（報告のみ）" 0 "$RC"
+expect_out  "--gate 無しでも確認待ちを検知に出す" "[spec-pending]" "$OUT"
+vcsv pass 2026-09-19 "仮置き（根拠付き）"
+OUT=$(run "$V" --gate); RC=$?
+expect_exit "「仮置き（根拠付き）」の表記でも WARN だけ（--gate 0）" 0 "$RC"
+expect_out  "「仮置き（根拠付き）」を仮置きとして出す" "仮置き 1 件" "$OUT"
+vcsv pass 2026-09-19 "範囲外（合意済み）"
+OUT=$(run "$V" --gate); RC=$?
+expect_exit "「範囲外（合意済み）」の表記でも --gate を止めない" 0 "$RC"
+vcsv pass 2026-09-19 ""
+OUT=$(run "$V" --gate); RC=$?
+expect_exit "空（確定）は従来どおり --gate 0" 0 "$RC"
+expect_noout "空（確定）では仕様の状態を検知しない" "[spec-" "$OUT"
+
 echo ""
+# --- [検証: 塊H] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
+echo "[検証: 塊H]"
+P=$(proj); fill "$P"
+sedi 's/| ST-006 | REQ-N-003 | 信頼性 | 再接続 |  |  | 未実施 |/| ST-006 | REQ-N-003 | 信頼性 | 再接続 |  |  | pass |/; s/| ST-007 | REQ-N-004 | セキュリティ | XSS |  |  | blocked |/| ST-007 | REQ-N-004 | セキュリティ | XSS |  |  | pass |/; s/| ST-008 | REQ-N-004 | セキュリティ | CSRF |  |  |  |/| ST-008 | REQ-N-004 | セキュリティ | CSRF |  |  | pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| UAT-004 | 延滞 | REQ-F-004 |  |  |  |  |/| UAT-004 | 延滞 | REQ-F-004 |  |  |  | 合 |/; s/| UAT-005 | 検索 | REQ-F-005 |  |  |  |  |/| UAT-005 | 検索 | REQ-F-005 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| 2026-09-12 | 未対応 |/| 2026-09-12 | 修正済 |/; ' "$P/docs/lifecycle/07-system-test.md"; sedi 's/| 2026-09-19 | 修正する |/| 2026-09-19 | 修正済 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| たぶんOK |/| pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| ST-003 | REQ-N-002 | デバイス対応 | 360px |  |  | fail |/| ST-003 | REQ-N-002 | デバイス対応 | 360px |  |  | pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| UAT-003 | 予約 | REQ-F-003 |  |  |  | 否 |/| UAT-003 | 予約 | REQ-F-003 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  |  |  |  |/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  | pass |  |  |/; s/| UT-003 | DD-001 | 境界値 | 上限+1 |  |  |  |  |  |  |/| UT-003 | DD-001 | 境界値 | 上限+1 |  |  |  | pass |  |  |/' "$P/docs/lifecycle/05-unit-test.md"
+OUT=$(run "$P" --gate); RC=$?
+expect_exit "[検証] 前提: 全件 pass・Critical 解消なら exit 0" 0 "$RC"
+sedi 's/| DEF-001 | ST-003 | REQ-N-002 | Critical | 360px で横スクロール | e3 | 2026-09-12 | 修正済 |/| DEF-001 | ST-003 | REQ-N-002 | 未確認 | 360px で横スクロール | e3 | 2026-09-12 | 未対応 |/' "$P/docs/lifecycle/07-system-test.md"
+OUT=$(run "$P" --gate); RC=$?
+expect_out  "[検証] 前提: 書き換えた DEF-001 を未確認として数える" "未確認 1 件" "$OUT"
+# 重大度を確定しない＝Critical でないと確定したわけではない。未解決の未確認で Critical/High 未解決 0 の基準を満たさない（判定不能は不合格）
+[ "$RC" -ne 0 ] && ok "[検証] 未解決の Critical を「未確認」と書き換えても --gate は進める（exit 0）にならない" || ng "[検証] 未解決の Critical を「未確認」と書き換えても --gate は進める（exit 0）にならない" "exit=$RC: $(printf '%s' "$OUT" | grep -m1 'Critical')"
+
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

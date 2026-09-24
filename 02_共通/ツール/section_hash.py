@@ -52,6 +52,18 @@ RANK = {"RFD": 0, "REQ-F": 1, "REQ-N": 1, "BD": 2, "DD": 3, "T": 4,
         "UT": 5, "IT": 5, "ST": 5, "UAT": 5, "OPS": 6}
 
 
+# system_test_cases.csv の「仕様の状態」（空＝確定）。test_metrics.py（集計・--gate）と trace-check.sh（C8 の対象外）が共用する
+SPEC_STATES = ("確認待ち", "仮置き", "範囲外", "未定")
+
+
+def spec_state(raw: str) -> str:
+    """「仕様の状態」の値 → 4 分類のどれか・""（確定）・"?"（語彙外）。前方一致（`範囲外（合意済み）`・`仮置き（〜まで）` も可）。"""
+    v = (raw or "").strip()
+    if v in ("", "-", "確定"):
+        return ""
+    return next((w for w in SPEC_STATES if v.startswith(w)), "?")
+
+
 def rank(i: str) -> int | None:
     return RANK.get(i.rsplit("-", 1)[0])
 

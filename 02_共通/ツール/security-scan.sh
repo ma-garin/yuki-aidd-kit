@@ -21,20 +21,45 @@
 # stderr に1行出す（判定不能を合格にしないため。指摘なしと解析失敗は違う）。
 #
 # 使い方: ./02_共通/ツール/security-scan.sh [対象ディレクトリ] [-o レポート出力先]
+#          [--baseline FILE [--baseline-write --reason 理由 [--expires YYYY-MM-DD]]]
+#
+# 基準線（B15。書式・規律は同じ場所の baseline.py。check_design.py と同形）:
+#   --baseline FILE   既知の指摘（重大度が中以上）を `規則ID<TAB>相対パス<TAB>行の指紋<TAB>#n<TAB>理由<TAB>期限` で記録した
+#                     ファイル。載っている指摘は「既知」として数えず、新規だけで exit 1 にする。ただし理由の無い行・
+#                     期限の無い行・期限切れの行は既知に数えない（NG のまま）。3 列目は行の sha256 の先頭 16 桁
+#                     （秘密値を基準線に書かない）。#n は同じ文面の n 番目（同じ文面を足したら新規）。
+#                     UTF-8 として読めない・形式の壊れた基準線は判定不能（exit 2）。
+#   --baseline-write  現在の指摘で FILE を書く。**件数が前回より増える更新は拒否**（exit 1・書かない）。
+#                     新しく載せる指摘には --reason が要る（無ければ exit 2）。期限は --expires、既定は 90 日後。
+#                     判定不能（走査器の解析失敗・対象なし）のときは書かない（exit 2）。
 
 set -u
 DIR="."
 REPORT="./security-report.md"
+BASELINE=""; BASELINE_WRITE=0; BL_REASON=""; BL_EXPIRES=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -o) REPORT="$2"; shift 2 ;;
-    -h|--help) echo "使い方: $0 [対象ディレクトリ] [-o レポート出力先]"; exit 0 ;;
+    --baseline) BASELINE="${2:-}"; shift 2 ;;
+    --baseline-write) BASELINE_WRITE=1; shift ;;
+    --reason) BL_REASON="${2:-}"; shift 2 ;;
+    --expires) BL_EXPIRES="${2:-}"; shift 2 ;;
+    -h|--help) echo "使い方: $0 [対象ディレクトリ] [-o レポート出力先] [--baseline FILE [--baseline-write --reason 理由 [--expires YYYY-MM-DD]]]"; exit 0 ;;
     *) DIR="$1"; shift ;;
   esac
 done
 
 if [ ! -d "$DIR" ]; then
   echo "❌ 対象ディレクトリが無い: $DIR"
+  exit 2
+fi
+BASELINE_PY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/baseline.py"
+if [ "$BASELINE_WRITE" -eq 1 ] && [ -z "$BASELINE" ]; then
+  echo "❌ --baseline-write には --baseline FILE が要る"
+  exit 2
+fi
+if [ -n "$BASELINE" ] && [ ! -f "$BASELINE_PY" ]; then
+  echo "❌ 判定不能: 基準線の部品 baseline.py が無い（security-scan.sh と同じ場所に置く）: $BASELINE_PY"
   exit 2
 fi
 
@@ -259,6 +284,35 @@ else
   mark_not_scanned "gitleaks（未導入）"
 fi
 
+# --- 基準線（--baseline） ---------------------------------------------------
+if [ -n "$BASELINE" ] && [ "$BASELINE_WRITE" -eq 1 ]; then
+  if [ "$PARSE_FAIL_ANY" -eq 1 ] || { [ "$TOOLS_FOUND" -eq 0 ] && [ "$GREP_RAN" -eq 0 ]; }; then
+    echo "❌ 判定不能のため基準線を書かない（走査器の解析失敗、または走査器も対象ファイルも無い）"
+    exit 2
+  fi
+  WOUT=$(python3 "$BASELINE_PY" classify --baseline "$BASELINE" --rows "$ROWS" --root "$DIR" \
+         --write --reason "$BL_REASON" --expires "$BL_EXPIRES" 2>&1); WRC=$?
+  case "$WRC" in
+    0) echo "✅ 基準線を更新: $(printf '%s' "$WOUT" | sed -n 's/.*current=\([0-9]*\).*/\1/p') 件を記録（$BASELINE。$WOUT）" ;;
+    1) echo "❌ 基準線の更新を拒否: 件数が増える方向（$WOUT）。直すか、除外の理由を保守者が判断する" ;;
+    *) case "$WOUT" in
+         *write=noreason*) echo "❌ 基準線を書かない: 新しく載せる指摘には理由が要る（--reason。$WOUT）" ;;
+         *) echo "❌ 判定不能: $(printf '%s' "$WOUT" | sed -n 's/^error=//p' | head -1)（基準線は書き換えない）"; WRC=2 ;;
+       esac ;;
+  esac
+  exit "$WRC"
+fi
+BL_STATUS=""   # 行ごとの区分（new / known / noreason / expired / low）。--baseline のときだけ使う
+BL_SUMMARY=""
+if [ -n "$BASELINE" ]; then
+  BL_STATUS="$TMP/rows_classified.tsv"
+  BL_SUMMARY=$(python3 "$BASELINE_PY" classify --baseline "$BASELINE" --rows "$ROWS" --root "$DIR" --out "$BL_STATUS" 2>/dev/null) || {
+    echo "❌ 判定不能: 基準線を読めない（$BASELINE）"
+    exit 2
+  }
+fi
+bl_get() { printf '%s' "$BL_SUMMARY" | tr ' ' '\n' | sed -n "s/^$1=//p"; }
+
 # --- 集計・レポート出力 ------------------------------------------------------
 N=$(wc -l < "$ROWS" | tr -d ' ')
 sev_rank() {
@@ -267,16 +321,32 @@ sev_rank() {
   esac
 }
 HIGH_OR_ABOVE=0
-while IFS=$'\t' read -r tool rule loc sev summary; do
-  [ -z "$tool" ] && continue
-  [ "$(sev_rank "$sev")" -ge 2 ] && HIGH_OR_ABOVE=$((HIGH_OR_ABOVE+1))
-done < "$ROWS"
+if [ -n "$BASELINE" ]; then
+  # 基準線あり: 新規と、理由なし・期限なし・期限切れの既知だけを数える
+  HIGH_OR_ABOVE=$(( $(bl_get new) + $(bl_get noreason) + $(bl_get expired) ))
+  ROWS_VIEW="$BL_STATUS"
+else
+  while IFS=$'\t' read -r tool rule loc sev summary; do
+    [ -z "$tool" ] && continue
+    [ "$(sev_rank "$sev")" -ge 2 ] && HIGH_OR_ABOVE=$((HIGH_OR_ABOVE+1))
+  done < "$ROWS"
+  ROWS_VIEW="$ROWS"
+fi
+bl_mark() {
+  case "$1" in
+    known) printf '［既知］' ;; noreason) printf '［基準線: 理由なし＝NG］' ;; expired) printf '［基準線: 期限なし・期限切れ＝NG］' ;;
+  esac
+}
 
 {
   echo "# セキュリティ走査レポート"
   echo
   echo "- 対象: \`$DIR\`"
-  echo "- 指摘: $N 件（high/critical/中 以上: $HIGH_OR_ABOVE 件）"
+  if [ -n "$BASELINE" ]; then
+    echo "- 指摘: $N 件（high/critical/中 以上のうち、新規と基準線で認めない既知: $HIGH_OR_ABOVE 件）"
+  else
+    echo "- 指摘: $N 件（high/critical/中 以上: $HIGH_OR_ABOVE 件）"
+  fi
   echo "- 実行した走査器の指摘のみを合格に数える。**未検査は合格に数えない**"
   echo
   echo "## 指摘一覧"
@@ -284,12 +354,19 @@ done < "$ROWS"
   if [ "$N" -gt 0 ]; then
     echo "| ツール | 規則 | file:line | 重大度 | 要旨 |"
     echo "|---|---|---|---|---|"
-    while IFS=$'\t' read -r tool rule loc sev summary; do
+    while IFS=$'\t' read -r tool rule loc sev summary st; do
       [ -z "$tool" ] && continue
-      echo "| $tool | $rule | $loc | $sev | $summary |"
-    done < "$ROWS"
+      echo "| $tool | $rule | $loc | $sev | $(bl_mark "${st:-}")$summary |"
+    done < "$ROWS_VIEW"
   else
     echo "なし。"
+  fi
+  if [ -n "$BASELINE" ]; then
+    echo
+    echo "## 基準線（\`$BASELINE\`。件数は減る方向だけ）"
+    echo
+    echo "- 既知 $(bl_get known) 件 ／ 新規 $(bl_get new) 件 ／ 理由なし $(bl_get noreason) 件 ／ 期限なし・期限切れ $(bl_get expired) 件"
+    echo "- 件数の推移: 基準線 $(bl_get prev) 件 → 今回の該当 $(bl_get current) 件（解消して基準線から外せるもの $(bl_get resolved) 件）"
   fi
   echo
   echo "## 未検査（未導入・対象なし・解析失敗。合格に数えない）"
@@ -310,9 +387,14 @@ fi
 echo "対象: $N 件の指摘 ／ 未検査: $(wc -l < "$NOT_SCANNED" | tr -d ' ') 件"
 if [ "$N" -gt 0 ]; then
   echo "  例（先頭5件）:"
-  head -5 "$ROWS" | while IFS=$'\t' read -r tool rule loc sev summary; do
-    echo "    [$sev] $loc ($tool $rule) $summary"
+  head -5 "$ROWS_VIEW" | while IFS=$'\t' read -r tool rule loc sev summary st; do
+    echo "    [$sev] $loc ($tool $rule) $(bl_mark "${st:-}")$summary"
   done
+fi
+if [ -n "$BASELINE" ]; then
+  echo "既知 $(bl_get known)（前回 $(bl_get prev)）／ 新規 $(bl_get new) ／ 解消 $(bl_get resolved)"
+  NB=$(( $(bl_get noreason) + $(bl_get expired) ))
+  [ "$NB" -gt 0 ] && echo "❌ 基準線の除外に理由なし $(bl_get noreason) 件・期限なし/期限切れ $(bl_get expired) 件（既知に数えない。理由と期限を書き直すか直す）"
 fi
 echo "詳細: $REPORT"
 

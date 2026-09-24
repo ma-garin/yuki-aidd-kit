@@ -19,6 +19,12 @@
 根拠の版: 版は隣の section_hash.py（trace-check.sh の C7 と共用）が docs/lifecycle の ID の定義単位から出す。
   `python3 scripts/section_hash.py hash docs/lifecycle REQ-F-001` の出力をそのまま貼る（手で作らない）。
   版を確かめられない（書式不正・定義が無い・section_hash.py が無い）ものも未検証に数える（判定不能を合格に数えない）。
+仕様の状態: system_test_cases.csv の「仕様の状態」列（空＝確定。列が無い旧 CSV は全行 確定 として従来どおり）。
+  確認待ち … 仕様の確認が返っていない。結果が pass / fail でも未実施に数え、--gate は 1（進めない。判定不能を合格に数えない）
+  未定     … テストケースにしない（設計段階で止める）。CSV にあれば確認待ちと同じ扱い
+  仮置き   … 根拠付きの仮の期待結果で実行した。数えるが WARN（根拠と期限を期待結果の欄に書く）
+  範囲外   … 合意済みで実行しない。件数を info で出す
+  語彙外の値は判定できないので --gate は 2。書き方は iso29119-test-design-spec.md「曖昧な仕様の扱い」
 """
 from __future__ import annotations
 
@@ -77,6 +83,8 @@ class Record:
     group: str
     source: str
     basis: str = ""             # 根拠の版（CSV の「根拠の版」列。例 REQ-F-001@a1b2c3d）
+    spec_state: str = ""        # 仕様の状態（CSV の「仕様の状態」列。空＝確定。語彙外は "?"）
+    expected: str = ""          # 期待される結果（確認待ちの質問・仮置きの根拠を検知に出すため）
 
     @property
     def executed(self) -> bool:
@@ -101,7 +109,9 @@ class Defect:
 
     @property
     def severe(self) -> bool:
-        return self.severity.strip().lower() in SEVERE
+        # B36: 「未確認」は重大度を確定していないだけで、Critical/High でないと確定したわけではない。
+        # 判定不能を合格に数えない原則により、未解決の未確認は severe_open 側に数える（--gate を通さない）
+        return self.severity.strip().lower() in SEVERE or self.severity.strip() == "未確認"
 
 
 @dataclass
@@ -115,6 +125,7 @@ class Metrics:
     not_run: int = 0
     unread: int = 0
     unverified: int = 0         # 根拠の版が現在と違う PASS（--gate のときだけ数える）
+    unconfirmed: int = 0        # severity=未確認 の欠陥（B36: 起票前トリアージで再現・実測の根拠が無かったもの）
     defects_known: bool = False
     defects_total: int = 0
     defects_open: int = 0
@@ -264,9 +275,14 @@ def read_csv(root: Path) -> list[Record]:
                 level = m.group(1) if m else "ST"
                 raw = row.get("結果") or ""
                 grp = next((row.get(g) or "" for g in ("ロール", "対象機能") if row.get(g)), "")
-                out.append(Record(tid, level, normalize_result(raw), raw, parse_date(row.get("実施日") or ""),
+                state = normalize_spec_state(row.get("仕様の状態") or "")
+                result = normalize_result(raw)
+                if state in SPEC_BLOCK and result in (PASS, FAIL):
+                    result = NOT_RUN        # 期待結果が確定していない実行は未実施に数える（判定不能を合格に数えない）
+                out.append(Record(tid, level, result, raw, parse_date(row.get("実施日") or ""),
                                   (row.get("実施者") or "").strip(), grp.strip(), p.name,
-                                  (row.get("根拠の版") or "").strip()))
+                                  (row.get("根拠の版") or "").strip(), state,
+                                  (row.get("期待される結果") or "").strip()))
         break
     return out
 
@@ -279,10 +295,22 @@ def compute(records: list[Record], defects: list[Defect], known: bool, unverifie
         total=len(records), executed=c[PASS] + c[FAIL], passed=c[PASS], failed=c[FAIL],
         blocked=c[BLOCKED], skipped=c[SKIP], not_run=c[NOT_RUN], unread=c[UNREAD],
         unverified=sum(1 for r in records if r.result == PASS and r in unverified),
+        unconfirmed=sum(1 for d in defects if d.severity.strip() == "未確認"),
         defects_known=known, defects_total=len(defects),
         defects_open=sum(1 for d in defects if d.open),
         defects_severe_open=sum(1 for d in defects if d.open and d.severe),
     )
+
+
+SPEC_BLOCK = ("確認待ち", "未定")      # 判定できない期待結果。未実施に数え、--gate では進めない
+
+
+def normalize_spec_state(raw: str) -> str:
+    """「仕様の状態」の分類は section_hash.spec_state（trace-check の C8 と共用）。
+    隣に section_hash.py が無ければ、空・確定以外は分類できないので "?"（--gate は判定できない）。"""
+    if section_hash is not None:
+        return section_hash.spec_state(raw)
+    return "" if (raw or "").strip() in ("", "-", "確定") else "?"
 
 
 BASIS_RE = re.compile(r"^((?:REQ-F|REQ-N|RFD|UAT|OPS|DEF|BD|DD|UT|IT|ST|T)-\d{3})@([0-9a-f]{7})$")
@@ -320,6 +348,30 @@ def find_unverified(stale: list[tuple[Record, str]], gate: bool) -> list[Finding
     how = "合格率の分子から外した" if gate else "--gate では合格率の分子から外す"
     return [Finding("unverified", f"根拠の版が現在の上流と違う PASS {len(stale)} 件＝未検証（{how}。消化率には数える）",
                     ex + "。上流の変更に合わせて再テストし、根拠の版を section_hash.py hash の値に更新する")]
+
+
+def find_spec_states(records: list[Record], gate: bool) -> list[Finding]:
+    """仕様の状態（確認待ち・未定・仮置き・範囲外・語彙外）の検知。"""
+    def ex(rs: list[Record]) -> str:
+        return "、".join(f"{r.id}「{r.expected[:30] or r.spec_state}」" for r in rs[:3]) + ("　ほか" if len(rs) > 3 else "")
+    out = []
+    bad = [r for r in records if r.spec_state == "?"]
+    if bad:
+        out.append(Finding("spec-state", f"「仕様の状態」が語彙外の行 {len(bad)} 件（--gate は判定できない）",
+                           ex(bad) + "。語彙: 空（確定）/ 確認待ち / 仮置き / 範囲外 / 未定"))
+    pend = [r for r in records if r.spec_state in SPEC_BLOCK]
+    if pend:
+        how = "進めない" if gate else "--gate では進めない"
+        out.append(Finding("spec-pending", f"仕様が確認待ち・未定のケース {len(pend)} 件（未実施に数えた。{how}）",
+                           ex(pend) + "。確認が返ったら期待結果を確定し、「仕様の状態」を空にする。未定はテストケースにしない"))
+    prov = [r for r in records if r.spec_state == "仮置き"]
+    if prov:
+        out.append(Finding("spec-provisional", f"仮置きの期待結果で判定したケース {len(prov)} 件（WARN。合格には数える）",
+                           ex(prov) + "。期待結果の欄に根拠と期限があるか確かめ、確定したら「仕様の状態」を空にする"))
+    oos = [r for r in records if r.spec_state == "範囲外"]
+    if oos:
+        out.append(Finding("spec-out-of-scope", f"範囲外（合意済み）のケース {len(oos)} 件", ex(oos), "info"))
+    return out
 
 
 def find_unread(records: list[Record]) -> list[Finding]:
@@ -490,14 +542,17 @@ def criteria_table(evals, manual: list[str], dropped: list[str], crit_present: b
     return lines
 
 
-def verdict_line(code: int, evals, m: Metrics | None = None) -> str:
+def verdict_line(code: int, evals, m: Metrics | None = None, blockers: tuple = (), undecided: tuple = ()) -> str:
+    """blockers = 基準の表の外で「進めない」理由（仕様の確認待ち）、undecided = 同じく「判定できない」理由。"""
     if code == 0:
         return "判定候補: **進める**（機械が読める基準はすべて ✓。手動確認の行と GO/NO-GO は人が判定する）"
     if code == 1:
-        ng = "、".join(f"{c.no}. {c.name}" for c, _, j in evals if j == "✗")
+        ng = "、".join([f"{c.no}. {c.name}" for c, _, j in evals if j == "✗"] + list(blockers))
         return f"判定候補: **進めない**（満たさない基準: {ng}）"
     und = "、".join(f"{c.no}. {c.name}" for c, _, j in evals if j == "判定不能")
-    if m is not None and m.unread > 0:
+    if undecided:
+        why = "、".join(undecided)
+    elif m is not None and m.unread > 0:
         why = f"結果欄が語彙外の行が {m.unread} 件（語彙に直すか 未実施 にする）"
     elif und:
         why = f"実測が出せない基準: {und}"
@@ -508,7 +563,7 @@ def verdict_line(code: int, evals, m: Metrics | None = None) -> str:
     return f"判定候補: **判定できない**（{why}。判定不能を合格に数えない）"
 
 
-def write_report(path: Path, root: Path, by_level, total: Metrics, findings, evals, manual, dropped, crit_present, code) -> None:  # noqa: E501
+def write_report(path: Path, root: Path, by_level, total: Metrics, findings, evals, manual, dropped, crit_present, code, extra=((), ())) -> None:  # noqa: E501
     lines = ["# テストメトリクス レポート", "", f"- 対象: `{root}`", f"- 集計日: {date.today()}",
              "- 真実源: `docs/lifecycle/05〜08` のテスト表・欠陥表、`docs/system_test_cases.csv`。集計値は手書きしない",
              "- 基準: `docs/test/TESTING_STRATEGY.md` §7（出典が空の行は読まない）", "",
@@ -516,18 +571,18 @@ def write_report(path: Path, root: Path, by_level, total: Metrics, findings, eva
     lines += ["", f"欠陥: {'欠陥表なし（密度・未解決は算出できない。05〜08 の欠陥表を埋めると出る）' if not total.defects_known else f'{total.defects_total} 件（未解決 {total.defects_open}、Critical/High 未解決 {total.defects_severe_open}）'}",
               f"欠陥密度（欠陥 ÷ 実行）: {num(total.defect_density)}", "", "## 検知", ""]
     lines += [f"- [{f.kind}] {f.summary} — {f.evidence}" for f in findings] or ["なし。"]
-    lines += ["", "## 完了基準の評価", ""] + criteria_table(evals, manual, dropped, crit_present) + ["", verdict_line(code, evals, total)]
+    lines += ["", "## 完了基準の評価", ""] + criteria_table(evals, manual, dropped, crit_present) + ["", verdict_line(code, evals, total, *extra)]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def replace_block(report: Path, by_level, evals, manual, dropped, crit_present, code, today: date, m: Metrics) -> bool:
+def replace_block(report: Path, by_level, evals, manual, dropped, crit_present, code, today: date, m: Metrics, extra=((), ())) -> bool:
     text = report.read_text(encoding="utf-8")
     b, e = text.find(MARK_BEGIN), text.find(MARK_END)
     if b < 0 or e < 0 or e < b:
         return False
     b_end = text.find("\n", b) + 1
     body = level_table(by_level) + ["", "### 完了基準の評価（`TESTING_STRATEGY.md` §7）", ""] + \
-        criteria_table(evals, manual, dropped, crit_present) + ["", verdict_line(code, evals, m),
+        criteria_table(evals, manual, dropped, crit_present) + ["", verdict_line(code, evals, m, *extra),
                                                                  f"（生成: `./scripts/test-metrics.sh --into` {today}。判定・GO/NO-GO は人が §6 に書く）", ""]
     report.write_text(text[:b_end] + "\n".join(body) + "\n" + text[e:], encoding="utf-8")
     return True
@@ -600,7 +655,7 @@ def main() -> int:
     total = compute(records, defects, known, unv)
     by_level["ALL"] = total
 
-    findings: list[Finding] = find_unread(records) + find_unverified(stale, a.gate) + find_severe(defects) + find_stale(defects, today) + find_bias(records, total) + find_duplicates(records)
+    findings: list[Finding] = find_unread(records) + find_spec_states(records, a.gate) + find_unverified(stale, a.gate) + find_severe(defects) + find_stale(defects, today) + find_bias(records, total) + find_duplicates(records)
     fc = forecast(records, total, today)
     if fc:
         findings.append(fc)
@@ -610,11 +665,22 @@ def main() -> int:
 
     evals = evaluate(crit, total)
     code = gate_code(evals, bool(crit), total)
+    # 仕様の状態: 語彙外は判定できない（2）。確認待ち・未定が 1 件でもあれば進めない（1）。仮置きは WARN（検知だけ）
+    pend = sum(1 for r in records if r.spec_state in SPEC_BLOCK)
+    bad_state = sum(1 for r in records if r.spec_state == "?")
+    prov = sum(1 for r in records if r.spec_state == "仮置き")
+    blockers = (f"仕様が確認待ち・未定のケース {pend} 件",) if pend else ()
+    undecided = (f"「仕様の状態」が語彙外の行が {bad_state} 件（空・確認待ち・仮置き・範囲外・未定 に直す）",) if bad_state else ()
+    if bad_state:
+        code = 2
+    elif pend and code == 0:
+        code = 1
+    extra = (blockers, undecided if code == 2 else ())
 
     report = Path(a.report)
     if not report.is_absolute():
         report = root / report
-    write_report(report, root, by_level, total, findings, evals, manual, dropped, bool(crit), code)
+    write_report(report, root, by_level, total, findings, evals, manual, dropped, bool(crit), code, extra)
 
     print(f"=== テストメトリクス: {root}{'（' + a.level + '）' if a.level else ''} ===")
     for lv, m in by_level.items():
@@ -630,7 +696,7 @@ def main() -> int:
         print(append_history(root / "docs" / "test" / "metrics-history.tsv", by_level, today))
     if a.into:
         target = Path(a.into) if Path(a.into).is_absolute() else root / a.into
-        ok = target.is_file() and replace_block(target, by_level, evals, manual, dropped, bool(crit), code, today, total)
+        ok = target.is_file() and replace_block(target, by_level, evals, manual, dropped, bool(crit), code, today, total, extra)
         print(("✅ 置き換え: " if ok else "❌ metrics:begin/end マーカーが見つからない: ") + str(target))
     if a.gate:
         print("--- 完了基準（" + str(crit_path.relative_to(root) if crit_path.is_relative_to(root) else crit_path) + " §7）---")
@@ -642,7 +708,17 @@ def main() -> int:
             print(f"  読まず {dt}")
         if total.unverified:
             print(f"  未検証 {total.unverified} 件（根拠の版が現在の上流と違う PASS。合格率の分子から外した）")
-        print(verdict_line(code, evals, total))
+        if total.unconfirmed:
+            print(f"  未解決 {total.defects_severe_open} 件（うち未確認 {total.unconfirmed} 件。"
+                  "Critical/High 起票前トリアージで再現・実測の根拠が無く、重大度を確定していないもの。"
+                  "未解決に数える＝判定不能を合格に数えない）")
+        if pend:
+            print(f"  ✗ 仕様の確認待ち・未定 {pend} 件（未実施に数えた。1 件でもあれば進めない）")
+        if prov:
+            print(f"  ⚠ 仮置き {prov} 件（WARN。期待結果の根拠と期限を確かめる）")
+        if bad_state:
+            print(f"  判定不能 「仕様の状態」が語彙外 {bad_state} 件")
+        print(verdict_line(code, evals, total, *extra))
         print(f"詳細: {report}")
         return code
     print(f"詳細: {report}" + ("　／ ゲート判定: --gate" if crit else "　／ 基準表が無い（docs/test/TESTING_STRATEGY.md §7）"))

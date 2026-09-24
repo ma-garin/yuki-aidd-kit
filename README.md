@@ -24,7 +24,7 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 cd <対象プロジェクトのパス> && git add .claude AGENTS.md CLAUDE.md scripts && git commit -m "chore: add AIDD Kit"
 ```
 
-Codex は `AGENTS.md`（export で `<対象>/AGENTS.md`、グローバルは `~/.codex/AGENTS.md`。install 完了時に案内が出る）を直接読みます。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。スキル・コマンドは Codex 用に変換したもの（コマンドは `cmd-<名前>`）38 本を install で `~/.agents/skills/`、export で `<対象>/.agents/skills/` に配り、`$done-gate` `$cmd-trace` のように `$名前` で呼びます（スラッシュメニューにも並ぶ）。claude.ai の Projects で使う場合は `01_利用者向け資料/03_ClaudeProjects設定手順.md` を参照。
+Codex は `AGENTS.md`（export で `<対象>/AGENTS.md`、グローバルは `~/.codex/AGENTS.md`。install 完了時に案内が出る）を直接読みます。`CLAUDE.md` は `@AGENTS.md` を import するので、両者は同じ本体を読みます。スキル・コマンドは Codex 用に変換したもの（コマンドは `cmd-<名前>`）40 本を install で `~/.agents/skills/`、export で `<対象>/.agents/skills/` に配り、`$done-gate` `$cmd-trace` のように `$名前` で呼びます（スラッシュメニューにも並ぶ）。claude.ai の Projects で使う場合は `01_利用者向け資料/03_ClaudeProjects設定手順.md` を参照。
 
 続きの手順（新規プロジェクトの雛形・工程文書・テスト文書・CI サンプルの配置、導入先で動かす道具）は `INDEX.md` のクイックスタートにまとめてあります。
 
@@ -117,7 +117,7 @@ yuki-aidd-kit/
 │   └── hooks/                # hooks + settings.json（statusLine 含む）。見積の実測と校正は `tool-timer.py`、破壊操作の遮断は `block-destructive.py`
 ├── 04_Codex/                  # Codex 用の配布物
 │   ├── AGENTS.md.template     # 共通規約の本体（Codex は直接、Claude Code は CLAUDE.md の @AGENTS.md で読む）
-│   ├── build_codex_skills.py  # skills・commands から Codex 用スキル 38 本を生成
+│   ├── build_codex_skills.py  # skills・commands から Codex 用スキル 40 本を生成
 │   └── skills/                # 生成物（install で ~/.agents/skills/、export で <対象>/.agents/skills/ へ配る）
 ├── 02_共通/rules/              # 規律 4 本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
 ├── 02_共通/ひな形/                # 雛形: design-system / tokens.css / ui / components / lifecycle / test / github（Issue・PR・workflows）ほか
@@ -137,7 +137,7 @@ yuki-aidd-kit/
 │
 │  ── 配布しない ──
 ├── 05_プロジェクト管理/       # キット開発の計画: 要求仕様.md・ロードマップ.md（作業台帳）・構想.md・構成管理/構成管理計画書.md・構成品目一覧.md
-├── 06_保守者向け/             # 保守者専用: 01_内部仕様/（現況仕様）・02_設計判断の根拠/・03_回帰テスト/（回帰テスト 13 本と check-docs。キット自身の CI が呼ぶ）・04_監査記録/・保守者の傾向.md・学んだこと.md
+├── 06_保守者向け/             # 保守者専用: 01_内部仕様/（現況仕様）・02_設計判断の根拠/・03_回帰テスト/（回帰テスト 17 本と check-docs。キット自身の CI が呼ぶ）・04_監査記録/・保守者の傾向.md・学んだこと.md
 └── .github/workflows/        # kit-ci.yml（キット自身の CI。手動起動のみ。GitHub が直下しか読まないためここ）
 ```
 
@@ -148,7 +148,7 @@ yuki-aidd-kit/
 本体を変更したら同じコミットで `06_保守者向け/01_内部仕様/` を更新し、回帰テストと文書整合検査を通す。
 
 ```bash
-for t in ci/test-*.sh; do bash "$t"; done   # 回帰テスト 13 本（hooks / install / agents / trace-check / quality-harness / git-gates / check-approval / test-metrics / token-audit / adr-to-rules / security-scan / check-docs / check-design）
+for t in ci/test-*.sh; do bash "$t"; done   # 回帰テスト 17 本（hooks / install / agents / trace-check / quality-harness / git-gates / check-approval / test-metrics / token-audit / adr-to-rules / security-scan / skill-scan / cite-check / req-lint / check-docs / check-design）
 ./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
 ./00_導入/03_点検/check-design.sh                     # デザイン検査（直値・未定義トークン・外部 CDN・alert()）
 ```

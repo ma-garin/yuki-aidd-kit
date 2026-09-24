@@ -56,6 +56,15 @@ has "verify-agent: 修整の差分を逆適用して赤に戻すことを確認�
 has "verify-agent: 修整は最小差分に限る" "最小差分" "$A/verify-agent.md"
 has "gate-agent: 差し戻し条件に診断の有無がある" "診断" "$A/gate-agent.md"
 
+echo "[塊 H: B35 仕様欠落起因の失敗・B36/B42 qa-review-standards]"
+has "verify-agent: 差し戻す条件に仕様欠落がある" "仕様欠落" "$A/verify-agent.md"
+has "verify-agent: 仕様欠落の差し戻しは保守者が承認するまで完了にしない" "保守者が承認" "$A/verify-agent.md"
+QA="$KIT_DIR/03_ClaudeCode/skills/qa-review-standards"
+has "qa-review-standards: Critical/High は未確認として起票できる（B36 トリアージ）" "として起票し、重大度を確定しない" "$QA/SKILL.md"
+has "qa-review-standards: AI 生成コードのレビュー観点を参照する（B42）" "ai-code-review" "$QA/SKILL.md"
+[ -f "$QA/references/ai-code-review.md" ] && ok "qa-review-standards: references/ai-code-review.md がある" || ng "qa-review-standards: references/ai-code-review.md がある" "無い"
+has "qa-review-standards: ペルソナ15は本文を持たず ai-code-review.md を参照する" "ai-code-review.md" "$QA/references/personas.md"
+
 echo "[委譲]"
 grep -q "^tools:.*Task" "$A/aidd-lead.md" && ok "aidd-lead だけが Task（委譲）を持つ" || ng "aidd-lead だけが Task を持つ" "tools に Task が無い"
 OTHER=$(grep -l "^tools:.*Task" "$A"/*.md | grep -v aidd-lead | wc -l | tr -d " ")
@@ -65,6 +74,13 @@ echo "[A20: E2E に axe のアクセシビリティ検査が組み込まれて�
 E2E="$KIT_DIR/03_ClaudeCode/skills/e2e-cycle/SKILL.md"
 has "e2e-cycle: axe への言及がある" "axe" "$E2E"
 has "e2e-cycle: serious/critical を FAIL にする基準がある" "serious" "$E2E"
+
+# --- [検証: 塊H] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
+echo "[検証: 塊H]"
+QAR="$KIT_DIR/03_ClaudeCode/skills/qa-review-standards/references/ai-code-review.md"
+# ペルソナ 15 の本文（件数だけ数えるテスト・0 件で PASS・非決定的な生成）を ai-code-review.md に寄せた。寄せ先で観点が消えていないか
+has "[検証] ペルソナ15の観点「0 件で PASS」が寄せ先 ai-code-review.md に残る" "0 件" "$QAR"
+has "[検証] ペルソナ15の観点「件数だけ数えるテスト」が寄せ先 ai-code-review.md に残る" "件数" "$QAR"
 
 echo ""
 echo "PASS=$PASS / FAIL=$FAIL"

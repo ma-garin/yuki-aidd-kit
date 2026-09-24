@@ -121,6 +121,28 @@ def assistant_text_of(entry: dict) -> str | None:
     return s or None
 
 
+def tool_uses_of(entry: dict) -> list[tuple[str, str, dict]]:
+    """assistant エントリの tool_use ブロック一覧 (id, name, input) を返す（B39 で reply-language.py が使う）。"""
+    if entry.get("type") != "assistant":
+        return []
+    content = (entry.get("message") or {}).get("content")
+    if not isinstance(content, list):
+        return []
+    return [(b.get("id", ""), b.get("name", ""), b.get("input") or {})
+            for b in content if isinstance(b, dict) and b.get("type") == "tool_use"]
+
+
+def tool_result_of(entry: dict) -> dict[str, tuple[str, bool]]:
+    """user エントリの tool_result ブロック {tool_use_id: (本文, is_error)} を返す（B39 で reply-language.py が使う）。"""
+    if entry.get("type") != "user":
+        return {}
+    content = (entry.get("message") or {}).get("content")
+    if not isinstance(content, list):
+        return {}
+    return {b.get("tool_use_id", ""): (text_of(b.get("content")), bool(b.get("is_error")))
+            for b in content if isinstance(b, dict) and b.get("type") == "tool_result"}
+
+
 def tail_lines(path: Path) -> list[str]:
     size = path.stat().st_size
     with path.open("rb") as f:

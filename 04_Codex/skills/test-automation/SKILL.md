@@ -17,6 +17,8 @@ description: "成果物に対する実際のテストコードを生成・実行
 
 scaffoldは references/ を参照（playwright_smoke.py / pytest_streamlit.py）。
 
+**テスト ID の書き方**: 生成するテストの冒頭（コメント・docstring・テスト名のどこでもよい）に `// spec: ST-xxx`（Python は `# spec: UT-xxx`。複数は `,` 区切り、`@spec ST-xxx` も可）を 1 行書く。追跡表・CSV の ID とコードの突合は `./scripts/trace-check.sh docs/lifecycle --tests tests`（C8・C9）。
+
 ## Playwright（PWA/HTML）の最小スモーク観点
 - ページがエラーなくロードされる（console.errorゼロ）
 - 主要操作（保存・追加・エクスポート）が動く

@@ -52,6 +52,8 @@ severityとpriorityを混同しない。priorityは別軸（ビジネス判断�
 
 ## 報告フォーマット
 指摘1件 = `{id, category(25010), severity(ISTQB), evidence, 再現手順, 改善案}`。Jira CSV / GitHub Issuesへのエクスポートを想定したフラット構造にする。
+Critical/Highは再現手順と実測の根拠が無ければ「未確認」として起票し、重大度を確定しない（`02_共通/ひな形/test/iso29119-incident-report.md` §0 のトリアージに従う）。
+AI生成コード・テストコード特有の欠陥観点と指摘の型（`file:line／観点ID／根拠／直し方`）は `references/ai-code-review.md`。
 
 ## 適用範囲と引き継ぎ
 

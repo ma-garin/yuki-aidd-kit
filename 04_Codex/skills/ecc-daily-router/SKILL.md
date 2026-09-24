@@ -54,6 +54,7 @@ NEXT
 - full install は原則避ける
 - UI/E2E/ブラウザ実行は必要性を説明してから
 - セキュリティ・秘密情報・localStorage・外部URL取得が絡む時は `security-review` を DAILY に昇格する
+- キット側の `security-audit`（走査器＋スタック別の OWASP 観点表で報告書を残す監査）は**ここから自動で振らない**。明示の依頼（/security-audit・「セキュリティ監査」）だけで使う
 
 ## 適用範囲と引き継ぎ
 
