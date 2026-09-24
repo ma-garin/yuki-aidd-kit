@@ -9,7 +9,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
   2. 掲載漏れ     skills / commands / agents / rules / hooks が INDEX.md に載っているか
   3. ケース数     「test-X.sh … Nケース」「PASS=N」 ↔ 実際にテストを実行した PASS+FAIL
   4. 参照切れ     `skills/...` 等のキット内相対パス参照が実在するか（ECC 外部・配布先の生成パスは除外）
-  5. frontmatter  SKILL.md の name ↔ ディレクトリ名／agents/*.md の name ↔ ファイル名・tools/model の有無
+  5. frontmatter  SKILL.md の name ↔ ディレクトリ名・description の長さ（≦1024字）と「」発火語の有無（NG）／発火語の重なり（WARN）／agents/*.md の name ↔ ファイル名・tools/model の有無・「目標」「終了条件」「差し戻」を含む見出しの有無
   6. 常時読込     rules/*.md で paths: frontmatter の無いものの合計行数 ≦ RULES_ALWAYS_MAX
   7. 行数目安     SKILL.md ≦ SKILL_MAX / commands ≦ COMMAND_MAX / agents ≦ AGENT_MAX（05_プロジェクト管理/要求仕様.md 使用性）
   9. 常時読込     03_ClaudeCode/CLAUDE.md.template ＋ 04_Codex/AGENTS.md.template の合計 ≦ CLAUDE_TOTAL_MAX（公式の 200 行目安。@import は展開される）
@@ -17,6 +17,8 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
  12. スキル範囲  skills/*/SKILL.md に「次に渡す先」（NG）と「使わない場面」（WARN）があるか
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
   8. spec 同期    06_保守者向け/01_内部仕様/01_構成品目目録.md の行数 ↔ 実測、実ファイルが目録に載っているか
+ 11. 絶対パス     利用者向け文書・雛形に /Users/ /home/ /root/ が無いか（WARN）
+ 14. 安全性       ゼロ幅・双方向制御文字、curl|sh 系、既知形式の秘密値（NG）／HTML コメント内の命令文（WARN）
 
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
 出力は context-compression の3層（結論 → 種別ごと → 全件は check-docs-report.md）。
@@ -63,7 +65,9 @@ GENERATED_REPORTS = ("check-docs-report.md", "trace-check-report.md", "check-des
                      "check-approval-report.md", "token-audit-report.md", "test-metrics-report.md")
 # git 管理外の手元の生成物（.gitignore 対象・ツールの作業ファイル）。目録の網羅性検査に含めない
 LOCAL_JUNK_PREFIXES = (".playwright-mcp/", ".claude/settings.local.json")
-LOCAL_JUNK_PARTS = (".DS_Store", "__pycache__", "tool-time.json", "progress.json")
+# `.git` は git worktree で作業しているときだけ、リポジトリ本体を指すポインタファイル（`gitdir: ...`）として
+# 実体を持つ（通常のチェックアウトではディレクトリで is_file() が False になり、そもそも対象に入らない）
+LOCAL_JUNK_PARTS = (".DS_Store", "__pycache__", "tool-time.json", "progress.json", ".git")
 
 
 def is_local_junk(rel: str) -> bool:
@@ -248,7 +252,12 @@ def check_references(root: Path, r: Result) -> None:
                     r.add(True, "参照切れ", f"{rel}:{i}", f"`{ref}` が存在しない")
 
 
+DESCRIPTION_MAX = 1024   # 検査5: description の長さ上限（字）
+FIRE_WORD_RE = re.compile(r"「([^」]+)」")   # 検査5: description 中の発火語（「」で囲んだ語）
+
+
 def check_frontmatter(root: Path, r: Result) -> None:
+    fire_words: dict[str, list[str]] = {}   # 検査5: 発火語 → 使っているスキル名（スキル間の重なり検出用）
     for d in sorted((root / "03_ClaudeCode/skills").glob("*/")):
         f = d / "SKILL.md"
         if not f.is_file():
@@ -258,27 +267,59 @@ def check_frontmatter(root: Path, r: Result) -> None:
         names = [l.split(":", 1)[1].strip() for l in head if l.startswith("name:")]
         if not names or names[0] != d.name:
             r.add(True, "frontmatter", f"skills/{d.name}/SKILL.md", f"name={names[0] if names else '(なし)'} ≠ ディレクトリ名")
-        if not any(l.startswith("description:") for l in head):
+        desc_lines = [l.split(":", 1)[1].strip() for l in head if l.startswith("description:")]
+        if not desc_lines:
             r.add(True, "frontmatter", f"skills/{d.name}/SKILL.md", "description が無い")
+            continue
+        desc = desc_lines[0]
+        if len(desc) > DESCRIPTION_MAX:
+            r.add(True, "frontmatter", f"skills/{d.name}/SKILL.md", f"description が {len(desc)} 字 > {DESCRIPTION_MAX}")
+        words = FIRE_WORD_RE.findall(desc)
+        if not words:
+            r.add(True, "frontmatter", f"skills/{d.name}/SKILL.md", "description に「」で囲んだ発火語が無い")
+        for w in dict.fromkeys(words):   # 同一スキル内の重複は1回だけ数える（順序は保つ）
+            fire_words.setdefault(w, []).append(d.name)
+    for w, owners in fire_words.items():
+        if len(owners) > 1:
+            r.add(False, "発火語の重なり", f"「{w}」", "スキル間で同じ発火語: " + "、".join(f"skills/{n}" for n in owners))
+
+
+# 検査5b: agents/*.md の見出し。「## 見出し」だけでなく、H1 直下の「**目標**: ...」のような
+# 太字ラベル行（実物の 5 本が全部これで書いている）も見出し扱いにする。各概念は実物の言い回しの
+# ゆれを吸収するため類語を allow する（test-agents.sh の既存 grep パターンと合わせた）。
+AGENT_HEADING_RE = re.compile(r"^(#{1,6}\s|\*\*[^*]{1,24}\*\*[:：]?(\s|$))")
+AGENT_REQUIRED_HEADINGS = (
+    ("目標", re.compile(r"目標")),
+    ("終了条件", re.compile(r"終了条件|判定を返す|出力（")),
+    ("差し戻", re.compile(r"差し戻|エスカレーション|越えない線")),
+)
 
 
 def check_agent_frontmatter(root: Path, r: Result) -> None:
-    """検査5b: agents/*.md の name ↔ ファイル名、description / tools / model の有無。
+    """検査5b: agents/*.md の name ↔ ファイル名、description / tools / model の有無、
+    「目標」「終了条件」「差し戻」を含む見出しの有無。
 
     Claude Code は frontmatter の name で委譲先を解決し、description で自動起動を判定する。
     tools が無いと全ツールを継承するため、「レビュー役は書けない」等の機械的な強制が消える。
+    見出しが無いエージェントは、目標・終了条件・差し戻し先を書かない「1 回実行して返すだけ」の
+    変数に退化しやすい（test-agents.sh の「自走の要件」と同じ懸念）。
     """
     d = root / "03_ClaudeCode/agents"
     if not d.is_dir():
         return
     for f in sorted(d.glob("*.md")):
-        head = read(f).splitlines()[:8]
+        lines = read(f).splitlines()
+        head = lines[:8]
         names = [l.split(":", 1)[1].strip() for l in head if l.startswith("name:")]
         if not names or names[0] != f.stem:
             r.add(True, "frontmatter", f"agents/{f.name}", f"name={names[0] if names else '(なし)'} ≠ ファイル名")
         for key in ("description", "tools", "model"):
             if not any(l.startswith(f"{key}:") for l in head):
                 r.add(True, "frontmatter", f"agents/{f.name}", f"{key} が無い")
+        heading_lines = [l for l in lines if AGENT_HEADING_RE.match(l)]
+        for label, pat in AGENT_REQUIRED_HEADINGS:
+            if not any(pat.search(h) for h in heading_lines):
+                r.add(True, "frontmatter", f"agents/{f.name}", f"「{label}」を含む見出しが無い")
 
 
 def has_paths_frontmatter(p: Path) -> bool:
@@ -481,6 +522,67 @@ def check_spec_inventory(root: Path, r: Result) -> None:
             r.add(True, "spec同期", "06_保守者向け/01_内部仕様/01_構成品目目録.md", f"`{rel}` が目録に無い")
 
 
+ZERO_WIDTH_RE = re.compile(r"[​-‏⁠﻿]")
+BIDI_CTRL_RE = re.compile(r"[‪-‮⁦-⁩]")
+# curl/wget をそのままシェルへ流し込む形。塊 A が作る 02_共通/ツール/secret_patterns.py と
+# 統合する際、ここの正規表現をその共通実装に差し替える前提の最小実装（検査14）
+PIPE_SHELL_RE = re.compile(r"\b(curl|wget)\b[^\n`]*\|\s*(sudo\s+)?(ba)?sh\b")
+# 既知形式の秘密値。同じく統合時に secret_patterns.py へ差し替える前提の最小実装
+SECRET_PATTERNS = (
+    ("AWS アクセスキー", re.compile(r"AKIA[0-9A-Z]{16}")),
+    ("GitHub トークン", re.compile(r"ghp_[A-Za-z0-9]{20,}")),
+    ("Anthropic APIキー", re.compile(r"sk-ant-[A-Za-z0-9\-_]{10,}")),
+    ("秘密鍵", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")),
+)
+CODE_SPAN_RE = re.compile(r"`[^`\n]+`")
+HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+IMPERATIVE_RE = re.compile(r"実行|無視|必ず|ignore|execute", re.IGNORECASE)
+
+SAFETY_FILES = ("03_ClaudeCode/CLAUDE.md.template", "04_Codex/AGENTS.md.template", "03_ClaudeCode/hooks/settings.json")
+SAFETY_GLOBS = ("03_ClaudeCode/skills/**/*.md", "03_ClaudeCode/agents/*.md", "02_共通/rules/*.md")
+
+
+def _safety_files(root: Path, r: Result):
+    # SAFETY_FILES は固定パス（常時ロードされる文書等）なので、無ければ黙ってスキップせず NG にする。
+    # SAFETY_GLOBS は glob なので 0 件でも NG にしない（該当ディレクトリが空でも異常ではない）。
+    for rel in SAFETY_FILES:
+        p = root / rel
+        if p.is_file():
+            yield p
+        else:
+            r.add(True, "安全性", rel, f"検査14の対象が見つからない: {rel}")
+    for pat in SAFETY_GLOBS:
+        yield from sorted(root.glob(pat))
+
+
+def check_safety(root: Path, r: Result) -> None:
+    """検査14: プロンプトインジェクション・秘密値混入の最小安全性検査。
+
+    NG: 不可視文字（ゼロ幅 U+200B〜U+200F, U+2060, U+FEFF）／双方向制御文字（U+202A〜U+202E, U+2066〜U+2069）
+        ／`curl|wget ... | (sudo) (ba)?sh` の形／既知形式の秘密値。
+    WARN: HTML コメント（`<!-- ... -->`）内の命令文（実行・無視・ignore・execute・必ず）。
+    秘密値はコードスパン（`` `...` ``）内でも検出する（隠せない）。curl|sh はコードスパン内を除外する
+    （「`curl | sh` の形は NG」のような文書中の説明用記述を誤検知しないため）。
+    """
+    for f in _safety_files(root, r):
+        rel = f.relative_to(root).as_posix()
+        text = read(f)
+        for i, line in enumerate(text.splitlines(), 1):
+            if ZERO_WIDTH_RE.search(line):
+                r.add(True, "安全性", f"{rel}:{i}", "不可視文字（ゼロ幅）を含む")
+            if BIDI_CTRL_RE.search(line):
+                r.add(True, "安全性", f"{rel}:{i}", "双方向制御文字を含む")
+            if PIPE_SHELL_RE.search(CODE_SPAN_RE.sub("", line)):
+                r.add(True, "安全性", f"{rel}:{i}", "`curl/wget | (sudo) (ba)?sh` の形を含む")
+            for label, pat in SECRET_PATTERNS:
+                if pat.search(line):
+                    r.add(True, "安全性", f"{rel}:{i}", f"既知形式の秘密値（{label}）を含む")
+        for m in HTML_COMMENT_RE.finditer(text):
+            if IMPERATIVE_RE.search(m.group(0)):
+                line_no = text.count("\n", 0, m.start()) + 1
+                r.add(False, "安全性", f"{rel}:{line_no}", "HTML コメント内に命令文を含む")
+
+
 # ---- 出力 ---------------------------------------------------------------------------------
 
 def write_report(path: Path, root: Path, r: Result) -> None:
@@ -525,6 +627,7 @@ def main() -> int:
     check_skill_scope(root, r)
     check_user_docs(root, r)
     check_spec_inventory(root, r)
+    check_safety(root, r)
 
     report = Path(a.report)
     if not report.is_absolute():

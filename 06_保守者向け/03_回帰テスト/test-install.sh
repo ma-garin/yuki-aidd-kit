@@ -17,7 +17,12 @@ expect_nofile(){ [ ! -e "$2" ] && ok "$1" || ng "$1" "在ってはいけない: 
 expect_grep()  { grep -qF -- "$2" "$3" 2>/dev/null && ok "$1" || ng "$1" "'$2' が $3 に無い"; }
 expect_out()   { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出力に '$2' が無い"; }
 expect_count() { [ "$2" -eq "$3" ] && ok "$1" || ng "$1" "期待 $2 / 実際 $3"; }
-expect_contains() { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "含まれない: $(printf '%s' "$3" | head -3 | tr '\n' ' ')"; }
+expect_contains() { expect_out "$@"; }   # [install-git-hooks.sh] の節が使っていたのに未定義だった（B-19 で発覚）
+# block-protected.py が Write 系と Bash の両方に配線されているか（B-19。配線 3 経路で同じ判定）
+wired_protected() { python3 -c 'import json,sys
+d = json.load(open(sys.argv[1]))
+got = {e.get("matcher") for e in d["hooks"]["PreToolUse"] for h in e.get("hooks", []) if "block-protected.py" in h.get("command", "")}
+sys.exit(0 if {"Write|Edit|MultiEdit", "Bash"} <= got else 1)' "$1" 2>/dev/null; }
 
 echo "=== AIDD Kit 入口スクリプト 回帰テスト ==="
 
@@ -62,6 +67,11 @@ expect_file  "統括エージェント aidd-lead が ~/.claude/agents/ にある
 expect_nofile "エージェントは Codex（~/.agents/skills/）へは配らない" "$FAKE_HOME/.agents/skills/aidd-lead"
 HOOK_N=$(ls "$KIT_DIR"/03_ClaudeCode/hooks/*.sh "$KIT_DIR"/03_ClaudeCode/hooks/*.py | wc -l | tr -d " ")
 expect_count "hooks が全部配置される（リポジトリ実体から導出: $HOOK_N 個）" "$HOOK_N" "$(ls "$FAKE_HOME"/.claude/hooks/*.sh "$FAKE_HOME"/.claude/hooks/*.py | wc -l)"
+expect_file "秘密情報の判定部品 secret_patterns.py が ~/.claude/hooks/ に置かれる（block-destructive / pre-read-guard / pre-write-check / block-protected が import する）" "$FAKE_HOME/.claude/hooks/secret_patterns.py"
+wired_protected "$KIT_DIR/03_ClaudeCode/hooks/settings.json" && ok "配線（グローバル導入）: 03_ClaudeCode/hooks/settings.json の Write 系と Bash に block-protected.py" || ng "配線（グローバル導入）: 03_ClaudeCode/hooks/settings.json の Write 系と Bash に block-protected.py" "無い"
+wired_protected "$KIT_DIR/.claude/settings.json" && ok "配線（キット開発）: .claude/settings.json の Write 系と Bash に block-protected.py" || ng "配線（キット開発）: .claude/settings.json の Write 系と Bash に block-protected.py" "無い"
+OUT=$(python3 "$KIT_DIR/03_ClaudeCode/hooks/secret_patterns.py" --check-consistency 2>&1); RC=$?
+expect_exit "secret_patterns.py --check-consistency が exit 0（秘密情報の規則が 4 か所と一致）" 0 "$RC"
 expect_file "工程承認の判定スクリプトが ~/.claude/scripts/ に置かれる（block-phase.py の探索先）" "$FAKE_HOME/.claude/scripts/check_approval.py"
 expect_file "phase-hash.py も同じ場所に置かれる（check_approval.py が隣を参照する）" "$FAKE_HOME/.claude/scripts/phase-hash.py"
 V=$(cat "$FAKE_HOME/.claude/KIT_VERSION" 2>/dev/null)
@@ -166,7 +176,7 @@ expect_file "pre-commit が配線される" "$GH/.git/hooks/pre-commit"
 expect_contains "配線に秘密情報スキャンを含む" "scripts/pre-commit" "$(cat "$GH/.git/hooks/pre-commit")"
 expect_contains "配線に UI ゲートを含む" "pre-commit-ui-gate.sh" "$(cat "$GH/.git/hooks/pre-commit")"
 (cd "$GH" && git add -A >/dev/null 2>&1 && git commit -q --no-verify -m init)
-(cd "$GH" && printf 'api_key = "sk-abcdefghijklmnopqrstuvwxyz"\n' > leak.py && git add leak.py)
+(cd "$GH" && printf 'api_key = "%s"\n' "sk-""abcdefghijklmnopqrstuvwxyz" > leak.py && git add leak.py)   # 偽値は連結で作る（B-19）
 OUT=$(cd "$GH" && git commit -m leak 2>&1); RC=$?
 expect_contains "秘密情報のコミットが止まる" "秘密情報" "$OUT"
 (cd "$GH" && git reset -q && rm -f leak.py)
@@ -280,6 +290,9 @@ if grep -q "<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md" "$P/CLAUDE.md" "$P/AGENTS.m
 expect_grep "hooks の settings.json が相対パス参照" ".claude/hooks/block-gates.py" "$P/.claude/settings.json"
 expect_grep "block-explore.sh が Read|Grep|Glob に配線される（グローバル導入と同じ振る舞い）" ".claude/hooks/block-explore.sh" "$P/.claude/settings.json"
 expect_grep "block-phase.py が Write|Edit|MultiEdit に配線される（.claude/phase-gate が無ければ何もしない）" ".claude/hooks/block-phase.py" "$P/.claude/settings.json"
+expect_grep "block-protected.py が配布先 settings.json に配線される" ".claude/hooks/block-protected.py" "$P/.claude/settings.json"
+wired_protected "$P/.claude/settings.json" && ok "配線（プロジェクト配布）: export した settings.json の Write 系と Bash に block-protected.py" || ng "配線（プロジェクト配布）: export した settings.json の Write 系と Bash に block-protected.py" "無い"
+expect_file "配布先に secret_patterns.py（hooks の判定部品）がある" "$P/.claude/hooks/secret_patterns.py"
 python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$P/.claude/settings.json" 2>/dev/null && ok "生成した settings.json が JSON として妥当" || ng "生成した settings.json が JSON として妥当" "パース失敗"
 SJ=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('effortLevel'), d.get('autoCompactWindow'), d.get('bashOutputMaxChars'))" "$P/.claude/settings.json" 2>/dev/null)
 expect_out "effortLevel=high（xhigh から 1 段下げ。設計判断のときだけ上げる）" "high" "$SJ"

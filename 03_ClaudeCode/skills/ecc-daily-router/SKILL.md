@@ -1,6 +1,6 @@
 ---
 name: ecc-daily-router
-description: 各プロジェクトに対して、ECCのskills/rules/agentsをDAILYとLIBRARYに分類して使うためのルーティングスキル。QA document generator、UX audit tool、React finance PWA、QA portal、QA repository research tool、PWA、Playwright、Python、React、Django、E2E、QAレビュー、ECC活用への言及があればこのスキルを使う。
+description: 各プロジェクトに対して、ECCのskills/rules/agentsをDAILYとLIBRARYに分類して使うためのルーティングスキル。QA document generator、UX audit tool、React finance PWA、QA portal、QA repository research tool、PWA、Playwright、Python、React、Django、E2E、「QAレビュー」「ECC活用」への言及があればこのスキルを使う。
 ---
 
 # ECC Daily Router

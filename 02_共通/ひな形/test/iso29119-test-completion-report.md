@@ -28,7 +28,7 @@
 
 所要時間と証跡（手で書く）: L1/L2 <43s> `docs/quality/evidence/<日付>-l1l2.txt` ／ L3 <193s> `tests/e2e/screenshots/` ／ L4 `uat-XX.png`
 
-失敗の内訳（分類は `iso29119-incident-report.md` と一致させる）: 製品欠陥 <n> / テスト陳腐化 <n> / 環境・データ依存 <n> / flaky <n> / 未判定 <n>
+失敗の内訳（分類は `iso29119-incident-report.md` と一致させる）: 製品欠陥 <n> / テスト陳腐化 <n>（locator 破損／仕様変更） / 環境・データ依存 <n> / flaky <n>（タイミング／順序・共有状態／通信／乱数・時刻） / 未判定 <n>
 
 ## 3. 計画との差異（Deviations from the test plan）
 

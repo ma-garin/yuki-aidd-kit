@@ -389,10 +389,10 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <p class="why">Claude Code は <code>CLAUDE.md</code> を通して、Codex は <code>AGENTS.md</code> を直接読みます。この 1 行で、両方が同じ本体を読むようになります。スキルは <code>$名前</code>（例: <code>$done-gate</code>）で呼び、スラッシュメニューにも並びます。コマンドは <code>$cmd-&lt;名前&gt;</code>（例: <code>$cmd-trace</code>）です。</p>
           </li>
           <li><strong>（任意）壊れていないことを機械で確かめる</strong>
-            <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。88 ケース</span>
-./06_保守者向け/03_回帰テスト/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。102 ケース。本物の ~/.claude には触りません</span></code></pre>
+            <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。620 ケース</span>
+./06_保守者向け/03_回帰テスト/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。155 ケース。本物の ~/.claude には触りません</span></code></pre>
             <p class="expect"></p>
-            <pre><code>結果: PASS=88 / FAIL=0
+            <pre><code>結果: PASS=620 / FAIL=0
 ✅ 全て正常</code></pre>
           </li>
         </ol>
@@ -405,7 +405,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ├── rules/aidd-kit/      ← 規律 4 本
 ├── skills/              ← 手順書 20 本（各フォルダに SKILL.md）
 ├── commands/            ← スラッシュコマンド 18 本
-├── hooks/               ← 見張り役 20 本
+├── hooks/               ← 見張り役 22 本（うち secret_patterns.py は hook でなく共通部品）
 └── settings.json        ← hooks を Claude Code に登録する設定</code></pre>
         </div>
         <div class="card">
@@ -421,6 +421,21 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <li>時刻は日本時間に固定されています（リモート環境は既定が UTC のため）</li>
           </ul>
           <p>詳しい一覧は操作マニュアルの「止められたとき」章にあります。</p>
+        </div>
+        <div class="card">
+          <h3>セキュリティ強制層（8.3.0〜）</h3>
+          <p>
+            秘密ファイル名・秘密値の判定は <code>secret_patterns.py</code>（hook ではなく共通部品）に1か所へまとめました。
+            書き込む本文に AWS キーや GitHub トークンなど既知形式の値があれば <code>pre-write-check.sh</code> が止めます。
+            設定・hook 自体の書き換え（<code>.claude/settings.json</code>・<code>.claude/hooks/</code>・<code>.git/hooks/</code>）は
+            <code>block-protected.py</code> が新たに止めます。
+          </p>
+          <p>
+            <strong>限界</strong>: hooks は Bash を構文解析しません。<code>python -c "..."</code> や変数代入・コマンド置換
+            （<code>$(...)</code>）で組み立てた秘密の読み出しは検出できないことがあります。
+            プロジェクトの <code>settings.sandbox.json</code> の <code>denyRead</code>（ファイルシステムレベルの遮断）と
+            併用してください。
+          </p>
         </div>
       </section>
 
