@@ -6,6 +6,25 @@ CLAUDE_DIR="$HOME/.claude"
 KIT_VERSION="$(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown) $(git -C "$KIT_DIR" rev-parse --short HEAD 2>/dev/null || echo -) $(date -I)"
 
 echo "=== AIDD Kit インストール（版: ${KIT_VERSION}）==="
+
+# 導入前の静的検査（B-24 B03。02_共通/ツール/skill-scan.py。実行せずに読むだけ）。スキル・コマンド・エージェント・
+# Codex 用スキル・hook の配線（settings.json）を走査し、DANGEROUS なら何も導入しない（AIDD_SKILL_SCAN_OK=1 の実行だけ
+# 1 回通す）。CAUTION・UNKNOWN は一覧を出して続ける。hook の本体（.py/.sh）は走査しない（検出規則の自己テスト用の
+# 文字列を含むため。中身は 06_保守者向け/03_回帰テスト/test-hooks.sh で確かめる。指示優先の hook は install_guard.py が走査する）
+SCAN_RC=0
+SCAN_OUT=$(python3 "$KIT_DIR/02_共通/ツール/skill-scan.py" --brief "$KIT_DIR/03_ClaudeCode/skills" "$KIT_DIR/03_ClaudeCode/commands" \
+  "$KIT_DIR/03_ClaudeCode/agents" "$KIT_DIR/04_Codex/skills" "$KIT_DIR/03_ClaudeCode/hooks/settings.json" 2>&1) || SCAN_RC=$?
+printf '%s\n' "$SCAN_OUT" | grep -E '^  (DANGEROUS|UNKNOWN|CAUTION) |^判定:' | sed "s#$KIT_DIR/##; s#^#skill-scan: #"
+if [ "$SCAN_RC" -eq 1 ]; then
+  if [ "${AIDD_SKILL_SCAN_OK:-}" = "1" ]; then
+    echo "⚠ AIDD_SKILL_SCAN_OK=1: skill-scan の DANGEROUS を承知で導入する（この 1 回だけ。次回は変数を外す）"
+  else
+    echo "❌ 導入しない: skill-scan が DANGEROUS と判定した（上の file:line）。中身を確かめて入れると決めたなら AIDD_SKILL_SCAN_OK=1 を付けて 1 回だけ再実行する"
+    exit 1
+  fi
+elif [ "$SCAN_RC" -ne 0 ]; then
+  echo "⚠ skill-scan が判定不能（exit $SCAN_RC）。UNKNOWN として導入を続ける（SAFE に数えない）"
+fi
 mkdir -p "$CLAUDE_DIR/skills" "$CLAUDE_DIR/commands" "$CLAUDE_DIR/agents" "$CLAUDE_DIR/hooks" "$CLAUDE_DIR/rules/aidd-kit" "$HOME/.agents/skills"
 
 # グローバルCLAUDE.md（既存があればバックアップ）

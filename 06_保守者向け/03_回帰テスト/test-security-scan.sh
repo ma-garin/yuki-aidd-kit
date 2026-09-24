@@ -134,6 +134,63 @@ expect_rgrep "期待: 解析失敗をpip-auditについて明示" "pip-audit"
 expect_rgrep "期待: 解析失敗をgitleaksについて明示" "gitleaks"
 [ "$RC" -eq 2 ] && ok "期待: 壊れたJSONは判定不能(exit2)として扱う" || ng "期待: 壊れたJSONは判定不能(exit2)として扱う" "実際 exit=$RC（指摘0のexit0で通ってしまう＝黙って見逃す）"
 
+echo "[基準線（--baseline。B15）: 既知は exit 0・新規は exit 1・増える更新は拒否・理由と期限]"
+D="$TMP/proj9"; mkdir -p "$D"
+printf '%s\n' 'def run(cmd):' '    eval(cmd)' > "$D/app.py"
+BL="$TMP/baseline.tsv"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" --baseline-write 2>&1); RC=$?
+expect_exit "理由（--reason）なしで新しい指摘を基準線に載せようとすると exit 2" 2 "$RC"
+[ ! -e "$BL" ] && ok "理由なしのときは基準線を書かない" || ng "理由なしのときは基準線を書かない" "書かれた"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" --baseline-write --reason "移行中の旧コード。B-99 で置き換える" 2>&1); RC=$?
+expect_exit "理由付きの初回の --baseline-write は exit 0" 0 "$RC"
+[ "$(wc -l < "$BL" | tr -d ' ')" -eq 1 ] && ok "基準線に 1 件を記録" || ng "基準線に 1 件を記録" "$(wc -l < "$BL") 行"
+[ "$(awk -F'\t' '{print NF}' "$BL")" -eq 5 ] && ok "書式は 規則ID/相対パス/指紋/理由/期限 の 5 列（check_design と同じ先頭 3 列）" || ng "書式が 5 列" "$(cat "$BL")"
+grep -q "sha256:" "$BL" && ! grep -q "eval(cmd)" "$BL" && ok "3 列目は行そのものでなく指紋（sha256）" || ng "3 列目は指紋" "$(cat "$BL")"
+awk -F'\t' '{print $5}' "$BL" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' && ok "期限（既定 90 日後）を書く" || ng "期限を書く" "$(cat "$BL")"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" 2>&1); RC=$?
+expect_exit "基準線に載った既知の指摘だけなら exit 0" 0 "$RC"
+expect_out  "既知の件数と前回を表示（件数の推移）" "既知 1（前回 1）" "$OUT"
+expect_rgrep "レポートの行に［既知］の印" "［既知］"
+expect_rgrep "レポートに基準線の節（件数の推移）" "件数の推移"
+printf '%s\n' '    os.system(cmd)' >> "$D/app.py"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" 2>&1); RC=$?
+expect_exit "基準線に無い新規の指摘は exit 1" 1 "$RC"
+expect_out  "新規の件数を表示" "新規 1" "$OUT"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" --baseline-write --reason "増やす" 2>&1); RC=$?
+expect_exit "件数が増える --baseline-write は拒否（exit 1）" 1 "$RC"
+[ "$(wc -l < "$BL" | tr -d ' ')" -eq 1 ] && ok "拒否したときは基準線を書き換えない" || ng "拒否したときは基準線を書き換えない" "$(wc -l < "$BL") 行"
+printf '%s\n' 'def run(cmd):' '    eval(cmd)' > "$D/app.py"
+OUT=$(AIDD_TODAY=2099-01-01 PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" 2>&1); RC=$?
+expect_exit "期限切れの除外は既知に数えない（exit 1）" 1 "$RC"
+expect_out  "期限切れを表示" "期限なし/期限切れ 1" "$OUT"
+cut -f1-3 "$BL" > "$TMP/bl-noreason.tsv"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$TMP/bl-noreason.tsv" 2>&1); RC=$?
+expect_exit "理由の無い除外は既知に数えない（exit 1）" 1 "$RC"
+expect_out  "理由なしを表示" "理由なし 1" "$OUT"
+printf '%s\n' 'def run(cmd):' '    return cmd' > "$D/app.py"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" 2>&1); RC=$?
+expect_out  "直した指摘は「解消」として数える" "解消 1" "$OUT"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" --baseline-write 2>&1); RC=$?
+expect_exit "件数が減る更新は理由なしでも許可（exit 0）" 0 "$RC"
+[ ! -s "$BL" ] && ok "解消した指摘は基準線から外れる（0 件）" || ng "解消した指摘は基準線から外れる" "$(wc -l < "$BL") 行"
+# 秘密の指摘でも基準線に値を残さない（gitleaks のスタブ。値は AWS 公式の偽キー）
+D="$TMP/proj10"; mkdir -p "$D"; printf '%s\n' 'AWS_KEY = "AKIAIOSFODNN7EXAMPLE"' > "$D/config.py"
+GLS="$TMP/glstub"; mkdir -p "$GLS"
+cat > "$GLS/gitleaks" <<'SH'
+#!/bin/bash
+OUT=""; SRC=""; for ((i=1;i<=$#;i++)); do [ "${!i}" = "--report-path" ] && { j=$((i+1)); OUT="${!j}"; }; [ "${!i}" = "--source" ] && { j=$((i+1)); SRC="${!j}"; }; done
+echo "[{\"RuleID\":\"aws-access-token\",\"File\":\"$SRC/config.py\",\"StartLine\":1}]" > "$OUT"
+SH
+chmod +x "$GLS/gitleaks"
+BL3="$TMP/baseline-secret.tsv"
+OUT=$(PATH="$GLS:/usr/bin:/bin" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL3" --baseline-write --reason "偽キーの検出確認" 2>&1); RC=$?
+expect_exit "秘密の指摘も基準線に記録できる" 0 "$RC"
+grep -q "AKIAIOSFODNN7EXAMPLE" "$BL3" && ng "基準線に秘密値を書かない" "値が書かれた" || ok "基準線に秘密値を書かない（指紋だけ）"
+# 判定不能（走査器の解析失敗）のときは基準線を書かない
+OUT=$(PATH="$BROKEN:/usr/bin:/bin" bash "$SCAN" "$TMP/proj8" -o "$TMP/report.md" --baseline "$TMP/bl-broken.tsv" --baseline-write --reason x 2>&1); RC=$?
+expect_exit "解析失敗があるときの --baseline-write は exit 2" 2 "$RC"
+[ ! -e "$TMP/bl-broken.tsv" ] && ok "判定不能のときは基準線を書かない" || ng "判定不能のときは基準線を書かない" "書かれた"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

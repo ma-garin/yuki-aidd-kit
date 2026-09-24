@@ -37,6 +37,7 @@
   --baseline FILE  既知の NG を `規則ID\\t相対パス\\t正規化した行` で記録したファイル。指定すると、そこに載っている
                    NG は「既知」として数え、新しい NG だけを exit 1 にする（未指定時は全 NG が対象＝従来どおり）。
   --baseline-write 現在の NG 一覧で --baseline のファイルを書く。**件数が前回より増える更新は拒否**（exit 1・書かない）。
+  基準線の書式と規律は 02_共通/ツール/baseline.py（security-scan.sh と共用）。
 """
 from __future__ import annotations
 
@@ -45,6 +46,13 @@ import json
 import re
 import sys
 from pathlib import Path
+
+# 基準線の読み書きは security-scan と共用の部品（02_共通/ツール/baseline.py。B15）。キット内と、隣に置いた場合の両方で探す
+for _d in (Path(__file__).resolve().parent, Path(__file__).resolve().parents[2] / "02_共通" / "ツール"):
+    if (_d / "baseline.py").is_file() and str(_d) not in sys.path:
+        sys.path.insert(0, str(_d))
+import baseline  # noqa: E402
+from baseline import normalize_line  # noqa: E402,F401  （Result が使う。従来どおりこのモジュールからも参照できる）
 
 DEFAULT_TARGETS = ("02_共通/ひな形/ui", "02_共通/ひな形/components")
 TOKENS_CANDIDATES = ("02_共通/ひな形/tokens.css", ".claude/templates/tokens.css")
@@ -135,10 +143,6 @@ class Finding:
         return {"id": self.rule, "kind": self.kind, "file": self.file, "line": self.line,
                 "actual": self.actual, "expected": self.expected, "reason": self.reason,
                 "severity": "NG" if is_ng else "WARN"}
-
-
-def normalize_line(text: str) -> str:
-    return re.sub(r"\s+", " ", text.strip())
 
 
 class Result:
@@ -458,21 +462,11 @@ def write_report(path: Path, root: Path, files: list[Path], r: Result, new_ng: l
 
 
 def load_baseline(path: Path) -> set[tuple[str, str, str]]:
-    if not path.is_file():
-        return set()
-    out: set[tuple[str, str, str]] = set()
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        parts = line.split("\t")
-        if len(parts) >= 3:
-            out.add((parts[0], parts[1], parts[2]))
-    return out
+    return baseline.load_keys(path)
 
 
 def save_baseline(path: Path, entries: set[tuple[str, str, str]]) -> None:
-    body = "\n".join("\t".join(e) for e in sorted(entries))
-    path.write_text(body + ("\n" if body else ""), encoding="utf-8")
+    baseline.save(path, entries, baseline.load(path))   # 既存行に理由・期限の列があれば引き継ぐ
 
 
 def main() -> int:
@@ -532,7 +526,7 @@ def main() -> int:
 
     if a.baseline and a.baseline_write:
         current_total = len(r.ng)
-        if baseline_path.is_file() and current_total > prev_total:
+        if not baseline.update_allowed(baseline_path.is_file(), prev_total, current_total):
             out(f"❌ 基準線の更新を拒否: 現在の NG={current_total} 件 > 前回={prev_total} 件（増える方向）")
             return 1
         save_baseline(baseline_path, {r.baseline_key(x) for x in r.ng})
