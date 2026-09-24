@@ -389,10 +389,10 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <p class="why">Claude Code は <code>CLAUDE.md</code> を通して、Codex は <code>AGENTS.md</code> を直接読みます。この 1 行で、両方が同じ本体を読むようになります。スキルは <code>$名前</code>（例: <code>$done-gate</code>）で呼び、スラッシュメニューにも並びます。コマンドは <code>$cmd-&lt;名前&gt;</code>（例: <code>$cmd-trace</code>）です。</p>
           </li>
           <li><strong>（任意）壊れていないことを機械で確かめる</strong>
-            <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。618 ケース</span>
-./06_保守者向け/03_回帰テスト/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。136 ケース。本物の ~/.claude には触りません</span></code></pre>
+            <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。620 ケース</span>
+./06_保守者向け/03_回帰テスト/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。155 ケース。本物の ~/.claude には触りません</span></code></pre>
             <p class="expect"></p>
-            <pre><code>結果: PASS=618 / FAIL=0
+            <pre><code>結果: PASS=620 / FAIL=0
 ✅ 全て正常</code></pre>
           </li>
         </ol>
@@ -793,7 +793,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
             <tr><td>UI 検証マーカー</td><td>画面テスト（E2E）をしていない、または合格後に画面を変えた状態でコミットする</td><td><code>scripts/pre-commit-ui-gate.sh</code>。E2E 合格時に <code>.ui-verified</code> を作り、それと画面ファイルの指紋を照合</td></tr>
             <tr><td>機能契約ハーネス</td><td>画面だけあって裏の処理が無い「見せかけの機能」、失敗時のテストが無い機能</td><td><code>python3 scripts/quality_harness.py</code></td></tr>
             <tr><td>追跡表の検査</td><td>要件が設計・実装・テストのどこにも落ちていない</td><td><code>./scripts/trace-check.sh docs/lifecycle</code>（工程文書を使う案件のみ）</td></tr>
-            <tr><td>工程の承認ゲート</td><td>前の工程が未承認・失効のまま次の工程へ進む／承認後に成果物が差し替わる</td><td><code>./scripts/check-approval.sh</code>（詳しくは<a href="#approval">工程の承認ゲート</a>）</td></tr>
+            <tr><td>工程の承認ゲート</td><td>前の工程が未承認・失効のまま次の工程へ進む／承認後に成果物が差し替わる</td><td><code>./scripts/check-approval.sh</code>（詳しくは<a href="#approval">工程の承認ゲート</a>）。<code>install-git-hooks.sh</code>（8.3.0〜）を導入していれば、<code>.claude/phase-gate</code> があるプロジェクトで commit 時にも同じ基準で自動チェックされます（未承認の初稿は通し、前工程未通過・失効・判定不能だけ拒否）</td></tr>
             <tr><td>デザインの直値検査</td><td>CSS に <code>#1976D2</code> や <code>16px</code> をベタ書き、外部サイトからフォントやアイコンを読む、<code>alert()</code> を使う</td><td><code>./00_導入/03_点検/check-design.sh static src</code>（見たいフォルダを並べる）</td></tr>
           </tbody>
         </table>

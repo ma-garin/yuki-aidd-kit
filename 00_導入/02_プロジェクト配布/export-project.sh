@@ -164,7 +164,7 @@ fi
 # テスト活動のゲートスクリプト（機能契約ハーネス・UI 検証マーカー。文書雛形は init-test-docs.sh で配置）
 # pre-commit（秘密情報スキャン）が抜けていた（2026-09-23。B-14 の検証で発覚）。
 # git hook 層は Codex でも効く唯一の強制層なので、配り漏れは致命的
-for s in pre-commit quality_harness.py ui-hash.py pre-commit-ui-gate.sh check_approval.py check-approval.sh phase-hash.py test_metrics.py test-metrics.sh; do
+for s in pre-commit quality_harness.py ui-hash.py pre-commit-ui-gate.sh check_approval.py check-approval.sh phase-hash.py test_metrics.py test-metrics.sh md-section.py; do
   if [ -e "$TARGET/scripts/$s" ]; then echo "↷ scripts/$s は既存のためスキップ"
   else cp "$KIT_DIR/02_共通/ツール/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"; echo "✅ scripts/$s 同梱"; fi
 done

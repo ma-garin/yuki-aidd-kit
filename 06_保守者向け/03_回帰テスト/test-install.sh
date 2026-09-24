@@ -130,9 +130,10 @@ expect_count "agents $AGENT_N 個（リポジトリ実体と同数）" "$AGENT_N
 expect_nofile "export でもエージェントは .agents/skills/ へ配らない" "$P/.agents/skills/aidd-lead"
 expect_count "hooks $HOOK_N 個（リポジトリ実体と同数）" "$HOOK_N" "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
 expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
-for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py scripts/test_metrics.py scripts/test-metrics.sh; do
+for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py scripts/test_metrics.py scripts/test-metrics.sh scripts/md-section.py; do
   expect_file "生成物: $f" "$P/$f"
 done
+[ -x "$P/scripts/md-section.py" ] && ok "md-section.py が実行権限付きで配布される" || ng "md-section.py が実行権限付きで配布される" "chmod +x されていない"
 # CLAUDE.md / AGENTS.md のバッククォート参照が配布先に実在すること。
 # キット内の呼び名のまま配ると、配布先のエージェントが存在しないパスを探す
 # （2026-09-22、ctxlint が stale-file-ref として検出。.claude/mode は実行時マーカーなので除外）
@@ -145,6 +146,22 @@ expect_count "CLAUDE.md / AGENTS.md の .claude/ 参照が配布先に実在す�
 expect_count "キット内の呼び名（02_共通/）が配布物に残らない" 0 "$(grep -c '02_共通/' "$P/CLAUDE.md" "$P/AGENTS.md" | awk -F: '{s+=$2} END {print s+0}')"
 expect_grep "既存 scripts/trace-check.sh はスキップ（内容保持）" "# my own trace-check" "$P/scripts/trace-check.sh"
 expect_out  "スキップした旨を表示" "scripts/trace-check.sh は既存のためスキップ" "$OUT"
+
+# ---------------------------------------------------------------- md-section.py
+echo "[md-section.py]"
+MS_OUT=$(python3 "$KIT_DIR/02_共通/ツール/md-section.py" search 見積 --root "$KIT_DIR" 2>&1); MS_RC=$?
+expect_exit "search がキット文書に対して exit 0" 0 "$MS_RC"
+MS_N=$(printf '%s\n' "$MS_OUT" | grep -oE '^[0-9]+ 件$' | grep -oE '^[0-9]+')
+[ -n "$MS_N" ] && [ "$MS_N" -ge 1 ] && ok "search がキット文書で少なくとも1件出す（$MS_N 件）" || ng "search がキット文書で少なくとも1件出す" "0件または集計行が無い"
+MS_OUT=$(python3 "$KIT_DIR/02_共通/ツール/md-section.py" get "$KIT_DIR/02_共通/rules/speed-harness.md#H-4" 2>&1); MS_RC=$?
+expect_exit "get が節を取り出す（exit 0）" 0 "$MS_RC"
+expect_out  "get の出力が対象の見出しで始まる" "## H-4" "$MS_OUT"
+expect_out  "get の出力に節の本文を含む" "委譲" "$MS_OUT"
+MS_OUT=$(python3 "$KIT_DIR/02_共通/ツール/md-section.py" get "$KIT_DIR/02_共通/rules/speed-harness.md#存在しない見出しXYZ" 2>&1); MS_RC=$?
+expect_exit "存在しない見出しは exit 1" 1 "$MS_RC"
+expect_contains "見つからない旨を表示" "見出しが見つかりません" "$MS_OUT"
+MS_OUT=$(python3 "$KIT_DIR/02_共通/ツール/md-section.py" get "$KIT_DIR/02_共通/rules/speed-harness.md#H" 2>&1); MS_RC=$?
+expect_exit "見出しの複数一致も exit 1（曖昧指定を通さない）" 1 "$MS_RC"
 
 # ---------------------------------------------------------------- install-git-hooks.sh
 # Codex でも効く唯一の強制層（B-14）。配線されていなければ両方とも効かない
@@ -170,6 +187,102 @@ OUT=$(bash "$KIT_DIR/00_導入/02_プロジェクト配布/install-git-hooks.sh"
 expect_exit "--uninstall が exit 0" 0 "$RC"
 OUT=$(cd "$GH" && git commit -m ui 2>&1); RC=$?
 expect_exit "--uninstall 後はゲートが外れる" 0 "$RC"
+
+# ---------------------------------------------------------------- install-git-hooks.sh: 工程承認ゲート（B-21）
+# 未承認・判定不能のまま docs/lifecycle/0N-*.md をコミットさせない。判定不能を合格に数えない。
+echo "[install-git-hooks.sh: 工程承認ゲート]"
+PG="$TMP/pg"; mkdir -p "$PG"
+(cd "$PG" && git init -q && git config user.email t@e && git config user.name T)
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh" "$PG" >/dev/null 2>&1
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/install-git-hooks.sh" "$PG" >/dev/null 2>&1
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/init-lifecycle.sh" "$PG" >/dev/null 2>&1
+(cd "$PG" && git add -A >/dev/null 2>&1 && git commit -q --no-verify -m init)
+
+cat > "$TMP/pg-fill.py" <<'PY'
+import re, subprocess, sys
+from pathlib import Path
+proj, phase, verdict = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+mode = sys.argv[4] if len(sys.argv) > 4 else "full"
+p = proj / "docs/lifecycle/approvals" / f"phase-{phase}.md"
+s = p.read_text(encoding="utf-8")
+if "判定: 未記入" in s:
+    s = s.replace("判定: 未記入", f"判定: {verdict}", 1)
+if mode == "full":
+    for key, val in (("approver", "藤曲 雄基"), ("approved_at", "2026-09-19T10:00:00+09:00"), ("git_head", "0123456789abcdef")):
+        s = re.sub(rf"^\| {key} \| .*? \|$", f"| {key} | {val} |", s, count=1, flags=re.M)
+    if "出口基準を満たす" not in s:
+        s = s.replace("| 出口基準 | 確認方法・確認した対象 | 結果 |\n|---|---|---|",
+                      "| 出口基準 | 確認方法・確認した対象 | 結果 |\n|---|---|---|\n"
+                      "| 出口基準を満たす | 成果物を目視 | 充足 |", 1)
+    covers = re.search(r"^\| covers \| (.*?) \|$", s, re.M).group(1)
+    args = [c.strip() for c in covers.split(",") if c.strip()]
+    h = subprocess.run([sys.executable, str(proj / "scripts" / "phase-hash.py"), *args],
+                        cwd=proj, capture_output=True, text=True).stdout.strip() or "error"
+    s = re.sub(r"^\| reviewed_hash \| .*? \|$", f"| reviewed_hash | {h} |", s, count=1, flags=re.M)
+p.write_text(s, encoding="utf-8")
+PY
+
+touch "$PG/.claude/phase-gate"
+# 前工程（第0工程 RFD）も着手済み・未承認のままにしておく（--gate 1 が拒否するのはここ）
+python3 -c "import pathlib,sys; p=pathlib.Path(sys.argv[1]); p.write_text(p.read_text().replace('YYYY-MM-DD','2026-09-19',1))" "$PG/docs/lifecycle/00-rfd.md"
+python3 -c "import pathlib,sys; p=pathlib.Path(sys.argv[1]); p.write_text(p.read_text().replace('YYYY-MM-DD','2026-09-19',1))" "$PG/docs/lifecycle/01-requirements.md"
+(cd "$PG" && git add docs/lifecycle/01-requirements.md)
+OUT=$(cd "$PG" && git commit -m "start req" 2>&1); RC=$?
+expect_exit "phase-gate あり＋前工程（第0工程）が未承認なら第1工程の初稿も exit 1" 1 "$RC"
+expect_contains "前工程未承認である旨を表示" "承認ゲート未通過" "$OUT"
+
+# 前工程（第0工程）を承認済みにする（以降 --gate 1 は常に通る）。ここまでの staged 内容も確定させる
+python3 "$TMP/pg-fill.py" "$PG" 0 承認 full
+(cd "$PG" && git add -A >/dev/null 2>&1 && git commit -q --no-verify -m "phase0 approved")
+
+printf '\n<!-- v2 -->\n' >> "$PG/docs/lifecycle/01-requirements.md"
+(cd "$PG" && git add docs/lifecycle/01-requirements.md)
+python3 "$TMP/pg-fill.py" "$PG" 1 承認 bare
+OUT=$(cd "$PG" && git commit -m "still bad" 2>&1); RC=$?
+expect_exit "前工程は承認済みでも、当該工程の承認記録が判定不能なら exit 1" 1 "$RC"
+
+python3 "$TMP/pg-fill.py" "$PG" 1 承認 full
+OUT=$(cd "$PG" && git commit -m "approved" 2>&1); RC=$?
+expect_exit "承認済み（必須欄・reviewed_hash 一致）なら通る" 0 "$RC"
+
+# 承認後に成果物だけを変更（reviewed_hash は更新しない）→ 失効
+printf '\n<!-- extra -->\n' >> "$PG/docs/lifecycle/01-requirements.md"
+(cd "$PG" && git add docs/lifecycle/01-requirements.md)
+OUT=$(cd "$PG" && git commit -m "stale edit" 2>&1); RC=$?
+expect_exit "承認後に成果物が変わり失効したら exit 1" 1 "$RC"
+expect_contains "失効した旨を表示" "失効" "$OUT"
+
+rm -f "$PG/.claude/phase-gate"
+OUT=$(cd "$PG" && git commit -m "after removal" 2>&1); RC=$?
+expect_exit "phase-gate 削除後は工程承認ゲートを素通りする（承認が失効していても）" 0 "$RC"
+
+# ---------------------------------------------------------------- [検証] install-git-hooks.sh: 工程承認ゲート
+# block-phase.py の2段判定（03_ClaudeCode/hooks/block-phase.py:95,105）は
+#   1) 当該工程が「既に承認済み」の書き換え → deny（黙って承認を失効させない）
+#   2) 前工程が承認済みなら、当該工程の「未承認の初稿」は許可する
+# という基準（dev-lifecycle/SKILL.md の手順3=成果物作成は手順5=承認より前）。
+# だが実装した pre-commit は --phase N（当該工程「自身」の承認状態）が exit 0 であることを
+# staged commit の必須条件にしており、前工程が承認済みでも「当該工程の初稿」を常に拒否する。
+echo "[検証: install-git-hooks.sh 工程承認ゲートが block-phase.py と逆の基準になっている]"
+VG="$TMP/vg"; mkdir -p "$VG"
+(cd "$VG" && git init -q && git config user.email t@e && git config user.name T)
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh" "$VG" >/dev/null 2>&1
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/install-git-hooks.sh" "$VG" >/dev/null 2>&1
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/init-lifecycle.sh" "$VG" >/dev/null 2>&1
+(cd "$VG" && git add -A >/dev/null 2>&1 && git commit -q --no-verify -m init)
+touch "$VG/.claude/phase-gate"
+(cd "$VG" && git add .claude/phase-gate && git commit -q --no-verify -m gate)
+python3 -c "import pathlib,sys; p=pathlib.Path(sys.argv[1]); p.write_text(p.read_text().replace('YYYY-MM-DD','2026-09-19',1))" "$VG/docs/lifecycle/00-rfd.md"
+python3 "$TMP/pg-fill.py" "$VG" 0 承認 full
+(cd "$VG" && git add docs/lifecycle/00-rfd.md docs/lifecycle/approvals/phase-0.md && git commit -q --no-verify -m "phase0 approved")
+# 前工程（第0工程 RFD）は承認済み。--gate 1 は通るはず（block-phase.py の第2段はここを見る）
+python3 "$VG/scripts/check_approval.py" --root "$VG" --gate 1 --quiet; GATE_RC=$?
+expect_exit "[検証] 前提: --gate 1（前工程の承認状態）は通る" 0 "$GATE_RC"
+python3 -c "import pathlib,sys; p=pathlib.Path(sys.argv[1]); p.write_text(p.read_text().replace('YYYY-MM-DD','2026-09-19',1))" "$VG/docs/lifecycle/01-requirements.md"
+(cd "$VG" && git add docs/lifecycle/01-requirements.md)
+OUT=$(cd "$VG" && git commit -m "req draft v1" 2>&1); RC=$?
+expect_exit "[検証] 前工程が承認済みなら当該工程の未承認の初稿は commit できるはず（block-phase.py と同じ基準）" 0 "$RC"
+
 expect_grep "AGENTS.md の INDEX 参照が .claude/INDEX.md に相対化" ".claude/INDEX.md" "$P/AGENTS.md"
 expect_grep "配布先の CLAUDE.md も @AGENTS.md 形式" "@AGENTS.md" "$P/CLAUDE.md"
 expect_grep "配布先の rules に paths frontmatter が保たれる" "paths:" "$P/.claude/rules/functional-integrity.md"

@@ -140,6 +140,115 @@ expect_exit "定義行以外の直値（margin: 24px）は引き続き検出" 1 
 expect_nrgrep "自ファイルの --local-gap: 12px 定義は直値にしない" '`12px`'
 expect_rgrep  "margin: 24px は検出" '`24px`'
 
+echo "[ケース11: フォーカス消去・拡大禁止・transition:all・img寸法欠落・非semantic onclick]"
+reset; cat > "$P/02_共通/ひな形/ui/focus.css" <<'CSS'
+.a { outline: none; }
+.b { outline: 0; transition: all .2s ease; }
+CSS
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "outline: none/0（:focus-visible 無し）で exit 1" 1 "$RC"
+expect_rgrep "outline: none を検出" '`outline: none`'
+expect_rgrep "outline: 0 を検出" '`outline: 0`'
+expect_rgrep "transition: all を検出" "transition: all"
+expect_out  "種別 フォーカス消去" "フォーカス消去" "$OUT"
+expect_out  "種別 transition:all" "transition:all" "$OUT"
+
+reset; cat > "$P/02_共通/ひな形/ui/zoom.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "viewport の user-scalable=no で exit 1" 1 "$RC"
+expect_rgrep "user-scalable=no を検出" "user-scalable=no"
+
+reset; cat > "$P/02_共通/ひな形/ui/zoom2.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0">
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "viewport の maximum-scale=1.0 で exit 1" 1 "$RC"
+expect_rgrep "maximum-scale=1.0 を検出" "maximum-scale=1.0"
+
+reset; cat > "$P/02_共通/ひな形/ui/img.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<img src="a.png" alt="">
+<img src="b.png" alt="" width="40">
+<div onclick="go()">押す</div>
+<span onclick="go()">押す</span>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "img の width/height 欠落と div/span onclick で exit 1" 1 "$RC"
+expect_rgrep "width/height 両方無しを検出" "width／height"
+expect_rgrep "height だけ無しを検出" "img.html:3"
+expect_rgrep "<div onclick> を検出" "<div onclick"
+expect_rgrep "<span onclick> を検出" "<span onclick"
+expect_out  "種別 img寸法欠落" "img寸法欠落" "$OUT"
+expect_out  "種別 非semantic onclick" "非semantic onclick" "$OUT"
+
+echo "[ケース12: ケース11の正当な例は NG にならない（誤検知しない）]"
+reset; cat > "$P/02_共通/ひな形/ui/ok.css" <<'CSS'
+.a:focus-visible { outline: 2px solid var(--color-primary); }
+.b { outline: none; }
+.c { transition: color .2s ease, background-color .2s ease; }
+CSS
+cat > "$P/02_共通/ひな形/ui/ok.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<img src="a.png" alt="" width="40" height="40">
+<img src="b.png" alt="" style="width:40px;height:40px">
+<button type="button" onclick="go()">押す</button>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "outline: none だが同ファイルに :focus-visible あり／width+height 揃った img／button の onclick は NG にならない" 0 "$RC"
+expect_nrgrep "outline: none は :focus-visible があれば検出しない" "フォーカス消去"
+expect_nrgrep "transition: color, background-color は transition: all にしない" "transition:all"
+expect_nrgrep "viewport に拡大禁止指定が無ければ検出しない" "拡大禁止"
+expect_nrgrep "width/height が揃った img は検出しない" "img寸法欠落"
+expect_nrgrep "<button onclick> は非対話要素にしない" "非semantic onclick"
+
+echo "[検証: check_focus_motion_mobile はコメントを読み飛ばさない（他の検査は blank_comments 済みテキストで判定するのに、この検査だけ生テキストを見ている）]"
+reset; cat > "$P/02_共通/ひな形/ui/comment-fp.css" <<'CSS'
+/* 過去の指定メモ: transition: all は使わない方針（削除済み）。 */
+.a { color: var(--color-primary); }
+CSS
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "[検証] コメント内だけの transition: all は NG にならないはず" 0 "$RC"
+expect_nrgrep "[検証] コメント内の transition: all を種別 transition:all に数えない" "transition:all"
+
+reset; cat > "$P/02_共通/ひな形/ui/comment-bypass.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<!-- :focus-visible 対応はデザイン未定のためコメントで保留中 -->
+<button style="outline: none;">送信</button>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "[検証] コメント中の \":focus-visible\" という文字列だけでは本物のフォーカス消去を見逃さない" 1 "$RC"
+expect_rgrep "[検証] outline: none をフォーカス消去として検出する" "フォーカス消去"
+
+reset; cat > "$P/02_共通/ひな形/ui/comment-viewport.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"> -->
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "HTML コメント内の viewport（user-scalable=no）は無視する" 0 "$RC"
+expect_nrgrep "コメントアウトされた viewport を拡大禁止として検出しない" "拡大禁止"
+
+reset; cat > "$P/02_共通/ひな形/ui/comment-img.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<!-- <img src="a.png" alt=""> -->
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "HTML コメント内の img（width/height 無し）は無視する" 0 "$RC"
+expect_nrgrep "コメントアウトされた img を img寸法欠落として検出しない" "img寸法欠落"
+
+reset; cat > "$P/02_共通/ひな形/ui/comment-onclick.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<!-- <div onclick="go()">押す</div> -->
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "HTML コメント内の <div onclick> は無視する" 0 "$RC"
+expect_nrgrep "コメントアウトされた <div onclick> を非semantic onclick として検出しない" "非semantic onclick"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

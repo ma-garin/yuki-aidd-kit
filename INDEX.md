@@ -42,7 +42,7 @@ open 01_利用者向け資料/02_操作マニュアル.html                  # H
 
 # 保守者だけ（06_保守者向け/ は配布しない）
 ./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（620ケース）
-./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（136ケース）
+./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（155ケース）
 ./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（61ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
 ./06_保守者向け/03_回帰テスト/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
@@ -59,6 +59,7 @@ open 01_利用者向け資料/02_操作マニュアル.html                  # H
 ./scripts/check-approval.sh                   # 工程承認の機械検査（記録の有無・版の一致=失効・工程順序。0=合格 1=未承認 2=判定不能）
 ./scripts/test-metrics.sh [--gate]            # テスト工程の消化率・合格率・欠陥密度・滞留・完了予測を表から集計（--gate は §7 の基準で 0/1/2）
 python3 scripts/quality_harness.py            # 機能契約ハーネス（契約に沿って実装・テストが揃っているか。NG>0 で exit 1）
+python3 scripts/md-section.py search <語>     # Markdown 文書を見出し単位で検索（見出しパス・行範囲・推定トークン）。get <file>#<見出し> で節だけ取り出す
 ```
 
 ## エージェント（自走する実行主体。install で `~/.claude/agents/`、export で `.claude/agents/` へ）
