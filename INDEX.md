@@ -41,7 +41,7 @@ open 01_利用者向け資料/01_利用ガイド.html                      # ユ
 open 01_利用者向け資料/02_操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（06_保守者向け/ は配布しない）
-./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（177ケース）
+./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（195ケース）
 ./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（125ケース）
 ./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（57ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（15ケース）
@@ -133,6 +133,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
 | `block-destructive.py` | PreToolUse(Bash) | 取り返しのつかない操作を deny（reset --hard / clean -fd / stash drop / checkout -- / push --force / add -A / rm -rf）。代替手段を理由に載せる |
 | `tool-timer.py` | PreToolUse / PostToolUse / UserPromptSubmit | 経過時間を積算する（実測の真実源。`report` が `実測: N分` の1行、`--full` で内訳、`reset-session` で通算も 0 に） |
+| `subagent-context.py` | SubagentStart | サブエージェント起動時に保守者の時計・委譲先の規約（H-4）・approver 欄を埋めない旨を注入。検証系には「壊れている箇所を探せ」を追加 |
 | `context-guard.py` | UserPromptSubmit | 55 分以上空いた再開・4 MB 超の会話で `/clear` `/compact` を促す注入（止めない） |
 | `pre-compact.py` | PreCompact | 圧縮時に「残す／捨てる」を注入 |
 | `log-instructions.py` | InstructionsLoaded | 指示ファイルの読み込みを `.claude/instructions-loaded.log` に記録（実測用。Claude には返さない） |

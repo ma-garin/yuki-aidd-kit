@@ -318,7 +318,22 @@ OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant
 expect_contains "Stop: 見積が経過の 3 倍超なら過大見積として差し戻す" "過大見積" "$OUT"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満。差異は読む対象が 5 ファイルに収束したため","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"精読を待っています。実測: 1分未満（進行中）","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 委譲待ちの途中報告（進行中）は予実を突き合わせない" "$OUT" "$RC"
+# 完了報告を通したらターンの計測を区切る（上の「差異を説明」の報告で reset 済み → 経過は空）。
+# 委譲先の報告で続く次の応答が、保守者の発言からの累計経過と比較されないため（2026-09-24 01:35 に偽の予実 4 件）
+OUT=$(python3 "$HOOKS/tool-timer.py" elapsed)
+expect_empty "Stop: 完了報告（実測あり）を通したらターンの計測を区切る" "$OUT" 0
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"精読を待っています。実測: 1分未満（進行中）","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+printf '{"tool_name":"Bash","tool_use_id":"g2"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"g2"}' | python3 "$HOOKS/tool-timer.py" post
+# 前の完了報告（実測あり）より前の見積は使い切り。次の応答はそれと比較しない（見積 40 分 vs 経過数秒でも通す）
+{ u_text "調査して"; a_text "見積: 40分（23:00 完了予定）"; a_text "完了しました。見積: 40分 / 実測: 30分"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"委譲先の報告を受けて次を起動しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 前の完了報告より前の見積は拾わない（委譲先の報告で続く応答）" "$OUT" "$RC"
 { u_text "調査して"; a_text "見積: 1分（23:00 完了予定）"; } > "$TRJ"
+printf '{"tool_name":"Bash","tool_use_id":"g3"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"g3"}' | python3 "$HOOKS/tool-timer.py" post
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 3 分未満の見積は誤差が支配するので突合しない" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
@@ -346,6 +361,18 @@ expect_contains "tool-timer: 3 本目まで回数を数える" "/ 3回" "$OUT"
 expect_contains "tool-timer: ツールが走っていない時間は加算しない" "OK" "$(sec_le "$OUT" 2)"
 OUT=$(printf '{"tool_name":"Bash","tool_use_id":"zz"}' | python3 "$TT" post; python3 "$TT" report --full)
 expect_contains "tool-timer: 対になる pre が無い post で件数が増えない" "/ 3回" "$OUT"
+# 機械が書いた発言（完了通知・サブエージェントの報告）ではターンを区切らない。人の発言では区切る
+python3 "$TT" reset < /dev/null
+printf '{"tool_name":"Bash","tool_use_id":"m1"}' | python3 "$TT" pre; sleep 1
+printf '{"tool_name":"Bash","tool_use_id":"m1"}' | python3 "$TT" post
+printf '{"prompt":"<task-notification>\\n<status>completed</status>"}' | python3 "$TT" reset
+expect_contains "tool-timer: 完了通知では reset しない（委譲待ちの経過を保つ）" "/ 1回" "$(python3 "$TT" report --full)"
+printf '{"prompt":"Another Claude session sent a message:\\n<agent-message from=\\"a\\">"}' | python3 "$TT" reset
+expect_contains "tool-timer: サブエージェントの報告でも reset しない" "/ 1回" "$(python3 "$TT" report --full)"
+printf '{"prompt":"次は S3 を進めて"}' | python3 "$TT" reset
+expect_contains "tool-timer: 人の発言では reset する" "/ 0回" "$(python3 "$TT" report --full)"
+printf '{"tool_name":"Bash","tool_use_id":"m2"}' | python3 "$TT" pre   # 以降の検査のためにツール実行 1 回の状態へ戻す
+printf '{"tool_name":"Bash","tool_use_id":"m2"}' | python3 "$TT" post
 OUT=$(printf 'not json' | python3 "$TT" pre; echo "rc=$?")
 expect_contains "tool-timer: 壊れた入力でも作業を止めない" "rc=0" "$OUT"
 OUT=$(python3 "$TT" report --full)
@@ -517,6 +544,29 @@ if [ ! -e "$TMP/proj-prog/.claude/progress.json" ]; then
 else
   echo "  ❌ done で progress.json を削除"; FAIL=$((FAIL+1))
 fi
+
+echo "[subagent-context.py]"
+# 親への注入はサブエージェントに届かない。委譲先（H-4 の受け手側）の規約を SubagentStart で添える
+sa() { printf '{"hook_event_name":"SubagentStart","agent_id":"a1","agent_type":"%s"}' "$1" | python3 "$HOOKS/subagent-context.py"; }
+OUT=$(cg_ctx "$(sa general-purpose)")
+expect_contains "SubagentStart: 委譲先の規約を注入する" "委譲先の規約（H-4）" "$OUT"
+expect_contains "SubagentStart: approver 欄を埋めない旨を同梱する" "approver 欄は埋めない" "$OUT"
+expect_contains "SubagentStart: 保守者の時計（既定 Asia/Tokyo）を同梱する" "$(TZ=Asia/Tokyo date '+%Y-%m-%d')" "$OUT"
+if printf '%s' "$OUT" | grep -qF "壊れている箇所"; then
+  echo "  ❌ SubagentStart: 検証系でないエージェントに検証の姿勢を足さない"; FAIL=$((FAIL+1))
+else
+  echo "  ✅ SubagentStart: 検証系でないエージェントに検証の姿勢を足さない"; PASS=$((PASS+1))
+fi
+expect_contains "SubagentStart: gate-agent に「壊れている箇所を探せ」を足す" "壊れている箇所を探せ" "$(cg_ctx "$(sa gate-agent)")"
+expect_contains "SubagentStart: verify-agent に「壊れている箇所を探せ」を足す" "壊れている箇所を探せ" "$(cg_ctx "$(sa verify-agent)")"
+OUT=$(printf '{"hook_event_name":"SubagentStart","agent_type":"x"}' | AIDD_TZ=Bad/Zone python3 "$HOOKS/subagent-context.py")
+expect_contains "SubagentStart: タイムゾーンが解決できなくても規約は注入する" "委譲先の規約（H-4）" "$(cg_ctx "$OUT")"
+OUT=$(printf 'not json' | python3 "$HOOKS/subagent-context.py"); RC=$?
+expect_empty "SubagentStart: 入力が壊れていれば無言で exit 0" "$OUT" "$RC"
+for S in "$HOOKS/settings.json" "$KIT_DIR/.claude/settings.json" "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh"; do
+  OUT=$(grep -A6 '"SubagentStart"' "$S")
+  expect_contains "SubagentStart の配線: ${S#$KIT_DIR/}" "subagent-context.py" "$OUT"
+done
 
 echo "[.claude/settings.json 配線]"
 # 2026-09-20 の事故の再発防止: 実体に届かない環境（リモートセッション／ディレクトリ移動の途中）で

@@ -104,6 +104,10 @@ def estimate_min(g, lines: list[str]) -> int | None:
             continue
         a = g.assistant_text_of(e)
         if a:
+            # 実測を書いた応答は完了報告。それより前の見積は使い切っているので拾わない
+            # （委譲先の報告で続く応答が、前の報告の見積と比較されて偽の乖離になる。2026-09-24 01:35）
+            if ACTUAL_RE.search(a):
+                return None
             m = EST_RE.search(a)
             if m:
                 return int(m.group(1))
@@ -177,7 +181,9 @@ def main() -> int:
         return 0
     g = load_guard()
     tp0 = data.get("transcript_path", "")
-    if not GAP_RE.search(msg) and tp0 and Path(tp0).is_file():
+    # 委譲待ちの途中報告（「進行中」を含む）は完了報告ではないので、予実を突き合わせず履歴にも積まない。
+    # 突き合わせると経過が見積に届く前に「過大見積」と誤判定し、偽の予実で校正係数を壊す（2026-09-23 に 5 回）
+    if not GAP_RE.search(msg) and "進行中" not in msg and tp0 and Path(tp0).is_file():
         try:
             est = estimate_min(g, g.tail_lines(Path(tp0)))
         except OSError:
@@ -199,6 +205,10 @@ def main() -> int:
                           "（H-6。見積の作り方を直さないと次も外す）")
                 print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
                 return 0
+    # 完了報告（実測あり・進行中でない）を通した時点でターンの計測を区切る。区切らないと、委譲先の報告で
+    # 続く次の応答が保守者の発言からの累計経過と比較され、偽の乖離と偽の予実が積まれる（2026-09-24 01:35 に 4 件）
+    if ACTUAL_RE.search(msg) and "進行中" not in msg:
+        timer("reset")
     if g.has_ja(msg):
         return 0
     tp = data.get("transcript_path", "")

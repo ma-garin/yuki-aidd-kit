@@ -91,6 +91,9 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/prompt-priority.py", "timeout": 5 },
                   { "type": "command", "command": "python3 .claude/hooks/context-guard.py", "timeout": 5 } ] }
     ],
+    "SubagentStart": [
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/subagent-context.py", "timeout": 5 } ] }
+    ],
     "PreCompact": [
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/pre-compact.py", "timeout": 5 } ] }
     ],
