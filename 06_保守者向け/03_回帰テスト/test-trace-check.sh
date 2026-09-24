@@ -312,6 +312,45 @@ expect_out "使い方を出す" "使い方:" "$(cat "$TMP/w5.out")"
 wait5 bash "$CHECK" "$Y" --impact -o; RC=$?
 expect_exit "--impact の値がオプション（-o）→ exit 2" 2 "$RC"
 
+echo "[ケース11: --tests（テストコードと CSV のテスト ID の突合。C8 NG・C9 WARN）]"
+T11="$TMP/t11"; mkdir -p "$T11/docs" "$T11/e2e/sub" "$T11/tests" "$T11/e2e/node_modules/x"; cp -r "$TMP/good/docs/lifecycle" "$T11/docs/"
+printf 'テストID,ロール,対象機能,期待される結果,結果,仕様の状態\nST-101,一般,貸出,a,,\nST-102,一般,返却,b,,\nST-103,一般,予約,c,,\nST-104,一般,延滞,d,,範囲外\n' > "$T11/docs/system_test_cases.csv"
+printf "import { test } from '@playwright/test';\n// spec: ST-101\ntest('ST-101 貸出', async () => {});\n" > "$T11/e2e/lend.spec.ts"
+printf "/** @spec ST-102, ST-103 */\ntest('返却と予約', async () => {});\n" > "$T11/e2e/sub/return.test.ts"
+printf '// spec: ST-103\n' > "$T11/e2e/node_modules/x/dep.spec.ts"
+printf 'def test_lend():\n    """spec: UT-001"""\n' > "$T11/e2e/test_unit.py"
+OUT=$(bash "$CHECK" "$T11/docs/lifecycle" --tests "$T11/e2e" -o "$T11/r.md" 2>&1); RC=$?
+expect_exit "全 ID がコードにある（// spec: と @spec の複数 ID）→ exit 0" 0 "$RC"
+expect_report_lacks "範囲外の行（ST-104）は C8 にしない" "| C8 テストコード未対応 | ST-104 |" "$T11/r.md"
+expect_report_lacks "工程文書で定義済みの ID（UT-001）は C9 にしない" "| C9 CSV に無い ID | UT-001 |" "$T11/r.md"
+expect_report_has "突合の件数をレポートに出す" "spec の ID 4 件" "$T11/r.md"
+printf "/** @spec ST-102 */\ntest('返却', async () => {});\n" > "$T11/e2e/sub/return.test.ts"
+OUT=$(bash "$CHECK" "$T11/docs/lifecycle" --tests "$T11/e2e" -o "$T11/r.md" 2>&1); RC=$?
+expect_exit "CSV の ID（ST-103）がコードに無い → C8 NG で exit 1" 1 "$RC"
+expect_report_has "C8 に ST-103 を出す（node_modules の中の spec: ST-103 は数えない）" "| C8 テストコード未対応 | ST-103 |" "$T11/r.md"
+printf "/** @spec ST-102,ST-103 */\n// spec: ST-999\n" > "$T11/e2e/sub/return.test.ts"
+OUT=$(bash "$CHECK" "$T11/docs/lifecycle" --tests "$T11/e2e" -o "$T11/r.md" 2>&1); RC=$?
+expect_exit "コードの ID（ST-999）が CSV に無いだけなら WARN（exit 0）" 0 "$RC"
+expect_report_has "C9 に ST-999 を出す" "| C9 CSV に無い ID | ST-999 |" "$T11/r.md"
+printf 'ST-101 と ST-102 と ST-103（spec: の無い ID は拾わない）\n' > "$T11/tests/test_other.py"
+printf "test('ST-101', () => {})\n" > "$T11/e2e/lend.spec.ts"
+OUT=$(bash "$CHECK" "$T11/docs/lifecycle" --tests "$T11/e2e" -o "$T11/r.md" 2>&1); RC=$?
+expect_exit "題名に ID があっても spec: / @spec が無ければ未対応（C8）" 1 "$RC"
+expect_report_has "C8 に ST-101" "| C8 テストコード未対応 | ST-101 |" "$T11/r.md"
+OUT=$(bash "$CHECK" "$T11/docs/lifecycle" -o "$T11/r.md" 2>&1); RC=$?
+expect_exit "--tests が無ければ従来どおり（C8・C9 をしない）" 0 "$RC"
+expect_report_lacks "--tests 無しでは C8 を出さない" "C8" "$T11/r.md"
+OUT=$(bash "$CHECK" "$T11/docs/lifecycle" --tests "$T11/nope" -o "$T11/r.md" 2>&1); RC=$?
+expect_exit "テストのディレクトリが無い → 判定不能で NG" 1 "$RC"
+OUT=$(bash "$CHECK" "$T11/docs/lifecycle" --tests "$T11/e2e" --csv "$T11/none.csv" -o "$T11/r.md" 2>&1); RC=$?
+expect_exit "CSV が無い → 判定不能で NG（合格に数えない）" 1 "$RC"
+expect_report_has "判定不能と出す" "判定不能（テストケースの CSV が無い" "$T11/r.md"
+T12="$TMP/t12"; mkdir -p "$T12/docs" "$T12/e2e"; cp "$T11/docs/system_test_cases.csv" "$T12/docs/"
+printf '// spec: ST-101, ST-102, ST-103\n' > "$T12/e2e/all.spec.ts"
+OUT=$(bash "$CHECK" "$T12/docs/lifecycle" --tests "$T12/e2e" -o "$T12/r.md" 2>&1); RC=$?
+expect_exit "工程文書が無くても --tests なら突合する（CSV は docs/ から探す）→ exit 0" 0 "$RC"
+expect_report_has "工程文書なしでも突合の件数を出す" "突合対象 3 件" "$T12/r.md"
+
 # --- [検証: B-22] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
 echo "[検証: B-22]"
 # 時間切れ付きで実行する（macOS に timeout が無いため bash で待つ）。戻り値 124 = 時間切れ

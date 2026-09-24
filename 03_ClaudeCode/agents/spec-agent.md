@@ -40,6 +40,7 @@ model: sonnet
 ## 差し戻す条件（自分で直さない）
 
 - 要件が矛盾している／観測可能な受入基準が無い
+- 要件が EARS 型で書かれていない・曖昧語がある（`./scripts/req-lint.py docs/lifecycle/01-requirements.md` の NG・WARN）。要件は EARS 型で書く（型は `02_共通/ひな形/lifecycle/01-requirements.md`）。設計側で解釈して埋めない
 - 上流に無いものを設計に足さないと成立しない（スコープ膨張）
 
 このときは書きかけを残し、`aidd-lead` へ「要件 REQ-xxx の解釈確定が必要」と返す。

@@ -47,11 +47,11 @@ echo "✅ Hooks: $(ls "$KIT_DIR/03_ClaudeCode/hooks/"*.sh "$KIT_DIR/03_ClaudeCod
 # 指示優先の 3 hook は既存 settings.json にも merge する（A-13。手動マージ待ちにしない）
 python3 "$KIT_DIR/00_導入/01_インストール/install_guard.py" --home "$HOME" --hooks-dir "$KIT_DIR/03_ClaudeCode/hooks" | grep -E "配線|変更なし" || true
 
-# 判定スクリプト（block-phase.py が ~/.claude/scripts/ から探す。phase-hash.py は同じ場所に必要）
+# 判定スクリプト（block-phase.py が ~/.claude/scripts/ から探す。phase-hash.py と req-lint.py は同じ場所に必要）
 mkdir -p "$CLAUDE_DIR/scripts"
-cp "$KIT_DIR/02_共通/ツール/check_approval.py" "$KIT_DIR/02_共通/ツール/phase-hash.py" "$CLAUDE_DIR/scripts/"
+cp "$KIT_DIR/02_共通/ツール/check_approval.py" "$KIT_DIR/02_共通/ツール/phase-hash.py" "$KIT_DIR/02_共通/ツール/req-lint.py" "$CLAUDE_DIR/scripts/"
 chmod +x "$CLAUDE_DIR/scripts/"*.py
-echo "✅ Scripts: check_approval.py / phase-hash.py（工程承認ゲートの判定。.claude/phase-gate があるプロジェクトでのみ発動）"
+echo "✅ Scripts: check_approval.py / phase-hash.py / req-lint.py（工程承認ゲートの判定。.claude/phase-gate があるプロジェクトでのみ発動）"
 
 # Rules（常時読み込み。~/.claude/rules 配下の別ディレクトリに同名があれば重複を避けてスキップ）
 RULES_OK=0

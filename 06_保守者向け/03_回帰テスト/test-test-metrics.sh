@@ -109,6 +109,7 @@ sedi 's/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  |  |  |  |/| UT-00
 OUT=$(run "$P" --gate); RC=$?
 expect_exit "全基準 ✓ → exit 0" 0 "$RC"
 expect_out  "判定候補は「進める」。GO/NO-GO は人" "進める" "$OUT"
+ALLPASS="$TMP/allpass"; cp -r "$P" "$ALLPASS"     # ケース12（仕様の状態）の土台: 全基準 ✓ の状態
 
 echo "[ケース6: 欠陥表が無い → 密度は None（0 ではない）]"
 P=$(proj); python3 - "$P" <<'PY'
@@ -222,6 +223,43 @@ OUT=$(run "$P" --gate); RC2=$?
 expect_out  "--gate: 未確認が 3 件を超えたら WARN 記号を出す（止めない）" "⚠ 未確認 4 件" "$OUT"
 expect_exit "--gate: WARN 記号が付いても exit code は変えない（止めない）" "$RC1" "$RC2"
 
+
+echo "[ケース12: 仕様の状態（確認待ち→進めない・仮置き→WARN・未定・語彙外・列の無い旧 CSV）]"
+# 土台はケース5の全基準 ✓ のプロジェクト。確認待ちの 1 件で消化率の基準が落ちないよう、消化率のしきい値を 50 に下げる
+P12="$TMP/p12"; rm -rf "$P12"; cp -r "$ALLPASS" "$P12"
+sedi 's/| `progress >= 100` |/| `progress >= 50` |/' "$P12/docs/test/TESTING_STRATEGY.md"
+csv12() { # 仕様の状態の値 ×3（ST-301〜303。結果はすべて pass）
+  printf 'テストID,ロール,対象機能,期待される結果,結果,実施日,実施者,仕様の状態\nST-301,一般,貸出,%s,pass,2026-09-19,藤曲,%s\nST-302,一般,返却,b,pass,2026-09-19,藤曲,%s\nST-303,一般,予約,c,pass,2026-09-19,藤曲,%s\n' "$1" "$2" "$3" "$4" > "$P12/docs/system_test_cases.csv"; }
+csv12 a "" "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "（土台）仕様の状態が全部空（確定）なら --gate 0" 0 "$RC"
+csv12 "確認待ち: 延滞料の端数は切り捨てか（PO 宛・9/18）" 確認待ち "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "確認待ちが 1 件でもあれば --gate 1（結果が pass でも進めない）" 1 "$RC"
+expect_out  "進めない理由に確認待ちを出す" "仕様が確認待ち・未定のケース 1 件" "$OUT"
+expect_out  "確認待ちの pass は未実施に数える（ST: 実行 − 1）" "未実施 1" "$OUT"
+expect_out  "検知に質問を出す" "延滞料の端数" "$OUT"
+csv12 "a（仮置き。根拠: 類似機能、期限: 2026-10-01）" 仮置き "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "仮置きは WARN だけ（--gate 0 のまま）" 0 "$RC"
+expect_out  "仮置きを WARN で出す" "仮置き 1 件" "$OUT"
+OUT=$(run "$P12")
+expect_out  "status でも仮置きを検知する" "[spec-provisional]" "$OUT"
+csv12 a 未定 "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "未定の行が CSV にあれば確認待ちと同じく --gate 1（テストケースにしない）" 1 "$RC"
+csv12 a 範囲外 "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "範囲外（合意済み）は --gate を止めない" 0 "$RC"
+csv12 a たぶん "" ""
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "「仕様の状態」が語彙外なら --gate 2（判定できない）" 2 "$RC"
+expect_out  "語彙外と出す" "語彙外" "$OUT"
+printf 'テストID,ロール,対象機能,期待される結果,結果,実施日,実施者\nST-301,一般,貸出,確認待ち: x,pass,2026-09-19,藤曲\n' > "$P12/docs/system_test_cases.csv"
+OUT=$(run "$P12" --gate); RC=$?
+expect_exit "「仕様の状態」列の無い旧 CSV は従来どおり（全部確定として --gate 0）" 0 "$RC"
+expect_noout "旧 CSV では仕様の状態を検知しない" "[spec-" "$OUT"
+head -1 "$KIT_DIR/02_共通/ひな形/test/system_test_cases.csv" | grep -q ',仕様の状態$' && ok "配布雛形の CSV に「仕様の状態」列がある" || ng "配布雛形の CSV に「仕様の状態」列" "無い"
 
 # --- [検証: B-22] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
 echo "[検証: B-22]"

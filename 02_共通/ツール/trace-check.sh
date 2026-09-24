@@ -10,10 +10,22 @@
 #   ./scripts/trace-check.sh [対象ディレクトリ] --impact <ID>    ID を上流に持つ下流を連鎖で一覧（変更前に見る）
 #   ./scripts/trace-check.sh [対象ディレクトリ] --refresh <ID>   追跡表の ID の記録を現在の版に書き換える
 #                                                               （保守者の再確認の記録。AI は打たない＝AI は承認しない）
+#   ./scripts/trace-check.sh [対象ディレクトリ] --tests <テストのディレクトリ> [--csv <system_test_cases.csv>]
+#                                                               テストコードと CSV のテスト ID を突き合わせる（C8・C9）
 #
 # 版つきリンク（C7）: 追跡表のセルに `REQ-F-001@a1b2c3d`（@ 以降は任意）と書くと、確認時点の上流の版を記録したことになる。
 #   版は隣の section_hash.py が出す（ID の定義単位の正規化後 sha256 先頭 7 桁。単位の規約は section_hash.py）。
 #   現在の版と食い違うリンクは suspect として NG。@ の無いリンクは従来どおり（C7 の対象外）。
+#
+# テストコードとの突合（C8・C9。--tests のときだけ）:
+#   テストファイル（*.spec.ts / *.test.ts / *.test.js / *_test.py / test_*.py / *.spec.py）のどこか（コメント・docstring・
+#   テスト名）に `spec: ST-001` か `@spec ST-001`（複数は `,` 区切り）を書く。コメント記法に依らず 1 本の正規表現で拾う:
+#     (?:spec:|@spec)\s*([A-Z]{2,}-\d{3,}(?:\s*,\s*[A-Z]{2,}-\d{3,})*)
+#   C8 NG  : CSV（既定は 対象ディレクトリの親の system_test_cases.csv ＝ docs/system_test_cases.csv）の「テストID」が
+#            テストコードに 1 つも無い（テストコード未対応）。「仕様の状態」が 範囲外・未定 の行は対象外。
+#   C9 WARN: テストコードの ID が CSV にも工程文書の定義にも無い。
+#   CSV・テストのディレクトリ・python3 が無ければ C8 は判定不能として NG（判定不能を合格に数えない）。
+#   --tests のときは工程文書が無くても C8・C9 だけを行う（e2e-cycle だけで回すプロジェクト向け）。
 #
 # 出力は context-compression の3層要約に従う。
 # 会話・CI ログには「結論と根拠」だけを出し、全件は詳細レポートへ書き出す。
@@ -21,19 +33,24 @@
 
 DIR="docs/lifecycle"
 REPORT="./trace-check-report.md"
-MODE=""; MODE_ID=""
+MODE=""; MODE_ID=""; TESTS=""; CSV=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SECTION_HASH="$SCRIPT_DIR/section_hash.py"
 
-usage() { echo "使い方: $0 [対象ディレクトリ] [-o 詳細レポート出力先] | [対象ディレクトリ] --impact <ID> | [対象ディレクトリ] --refresh <ID>"; }
+usage() { echo "使い方: $0 [対象ディレクトリ] [-o 詳細レポート出力先] [--tests <テストのディレクトリ> [--csv <CSV>]] | [対象ディレクトリ] --impact <ID> | [対象ディレクトリ] --refresh <ID>"; }
 while [ $# -gt 0 ]; do
   case "$1" in
-    -o|--impact|--refresh)
+    -o|--impact|--refresh|--tests|--csv)
       # 値が無い・空・次のオプションなら止める（shift 2 の失敗で同じ引数を回り続けないため）
       if [ $# -lt 2 ] || [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
         echo "❌ $1 には値を渡す"; usage; exit 2
       fi
-      if [ "$1" = "-o" ]; then REPORT="$2"; else MODE="${1#--}"; MODE_ID="$2"; fi
+      case "$1" in
+        -o) REPORT="$2" ;;
+        --tests) TESTS="$2" ;;
+        --csv) CSV="$2" ;;
+        *) MODE="${1#--}"; MODE_ID="$2" ;;
+      esac
       shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) DIR="$1"; shift ;;
@@ -50,18 +67,21 @@ if [ -n "$MODE" ]; then
   exec python3 "$SECTION_HASH" "$MODE" "$DIR" "$MODE_ID"
 fi
 
-if [ ! -d "$DIR" ]; then
+if [ ! -d "$DIR" ] && [ -z "$TESTS" ]; then
   echo "ℹ 対象ディレクトリが存在しないためスキップ: $DIR"
   echo "  （工程文書を作る場合: ./00_導入/02_プロジェクト配布/init-lifecycle.sh <対象プロジェクトのパス>）"
   exit 0
 fi
 
 # 走査対象。自身のレポートは除外する（レポート内の ID を定義と誤検出しないため）
-FILES=$(find "$DIR" -maxdepth 1 -name '*.md' ! -name '*trace-check-report*' | sort)
-if [ -z "$FILES" ]; then
+FILES=""
+[ -d "$DIR" ] && FILES=$(find "$DIR" -maxdepth 1 -name '*.md' ! -name '*trace-check-report*' | sort)
+if [ -z "$FILES" ] && [ -z "$TESTS" ]; then
   echo "ℹ 対象ディレクトリに工程文書(.md)がないためスキップ: $DIR"
   exit 0
 fi
+NFILES=0
+[ -n "$FILES" ] && NFILES=$(printf '%s\n' $FILES | wc -l | tr -d ' ')
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -69,7 +89,14 @@ trap 'rm -rf "$TMP"' EXIT
 ID_RE='^(REQ-F|REQ-N|RFD|UAT|OPS|DEF|BD|DD|UT|IT|ST|T)-[0-9][0-9][0-9]$'
 export TMP
 
-MATRIX=$(printf '%s\n' $FILES | grep -i 'traceability' | head -1)
+MATRIX=""
+[ -n "$FILES" ] && MATRIX=$(printf '%s\n' $FILES | grep -i 'traceability' | head -1)
+touch "$TMP/defs.tsv" "$TMP/refs.tsv"
+: > "$TMP/ng.tsv"     # 種別 \t 対象 \t 内容
+: > "$TMP/warn.tsv"
+: > "$TMP/info.txt"
+
+if [ -n "$FILES" ]; then   # 工程文書がある場合の C1〜C7 ここから
 
 # --- 定義と参照の抽出 -------------------------------------------------------
 # 定義位置: ①見出し行の先頭トークン ②表の第1セル
@@ -100,7 +127,6 @@ awk -v idre="$ID_RE" -v matrix="$MATRIX" '
       if (toks[i] ~ idre) print toks[i] "\t" FILENAME > (ENVIRON["TMP"] "/refs.tsv")
   }
 ' $FILES
-touch "$TMP/defs.tsv" "$TMP/refs.tsv"
 
 # --- 所有ファイルの解決 -----------------------------------------------------
 owner_pattern() {
@@ -120,9 +146,6 @@ owner_pattern() {
 }
 
 # --- 検査 -------------------------------------------------------------------
-: > "$TMP/ng.tsv"     # 種別 \t 対象 \t 内容
-: > "$TMP/warn.tsv"
-
 # C1: 重複定義（異なるファイルで同一 ID が定義位置に現れる）
 sort -u "$TMP/defs.tsv" | cut -f1 | sort | uniq -d | while read -r id; do
   [ -z "$id" ] && continue
@@ -224,6 +247,71 @@ if [ -n "$MATRIX" ]; then
 else
   printf '追跡表なし\t-\t%s\n' "*traceability*.md が $DIR に無い。要件とテストの突合ができない" >> "$TMP/warn.tsv"
 fi
+fi   # 工程文書がある場合の C1〜C7 ここまで
+
+# C8/C9: テストコードと CSV のテスト ID の突合（--tests のときだけ）
+if [ -n "$TESTS" ]; then
+  if [ -z "$CSV" ]; then
+    for c in "$(dirname "$DIR")/system_test_cases.csv" "$DIR/system_test_cases.csv" "docs/system_test_cases.csv" "system_test_cases.csv"; do
+      if [ -f "$c" ]; then CSV="$c"; break; fi
+    done
+  fi
+  if ! command -v python3 >/dev/null 2>&1; then
+    printf 'C8 テストコード未対応\t%s\t%s\n' "$TESTS" "判定不能（python3 が無い）。判定不能は合格に数えない" >> "$TMP/ng.tsv"
+  elif [ ! -d "$TESTS" ]; then
+    printf 'C8 テストコード未対応\t%s\t%s\n' "$TESTS" "判定不能（テストのディレクトリが無い）。判定不能は合格に数えない" >> "$TMP/ng.tsv"
+  elif [ -z "$CSV" ] || [ ! -f "$CSV" ]; then
+    printf 'C8 テストコード未対応\t%s\t%s\n' "${CSV:-system_test_cases.csv}" "判定不能（テストケースの CSV が無い。--csv で渡す）。判定不能は合格に数えない" >> "$TMP/ng.tsv"
+  elif ! python3 - "$TESTS" "$CSV" "$TMP/defs.tsv" > "$TMP/c8.tsv" 2> "$TMP/c8.err" <<'PY'
+import csv, os, re, sys
+tests, csv_path, defs_path = sys.argv[1:4]
+SUFFIXES = (".spec.ts", ".test.ts", ".test.js", "_test.py", ".spec.py")
+SPEC_RE = re.compile(r"(?:spec:|@spec)\s*([A-Z]{2,}-\d{3,}(?:\s*,\s*[A-Z]{2,}-\d{3,})*)")
+ID_RE = re.compile(r"^[A-Z]{2,}-\d{3,}$")
+SKIP = {"node_modules", ".git", ".venv", "venv", "__pycache__", "dist", "build"}
+NO_CODE = ("範囲外", "未定")          # 仕様の状態がこれらの行はテストコードを求めない（C9 の既知 ID には数える）
+code, nfiles = {}, 0
+for dp, dns, fns in os.walk(tests):
+    dns[:] = sorted(d for d in dns if d not in SKIP)
+    for fn in sorted(fns):
+        if not (fn.endswith(SUFFIXES) or (fn.startswith("test_") and fn.endswith(".py"))):
+            continue
+        nfiles += 1
+        p = os.path.join(dp, fn)
+        with open(p, encoding="utf-8", errors="replace") as fh:
+            for n, line in enumerate(fh, 1):
+                for m in SPEC_RE.finditer(line):
+                    for i in re.split(r"\s*,\s*", m.group(1)):
+                        code.setdefault(i, f"{p}:{n}")
+rows = {}                                  # テストID → CSV の行番号（対象外の行は負）
+with open(csv_path, encoding="utf-8-sig", newline="") as fh:
+    reader = csv.DictReader(fh)
+    if not reader.fieldnames or "テストID" not in reader.fieldnames:
+        print(f"NG\tC8 テストコード未対応\t{csv_path}\t判定不能（CSV に「テストID」列が無い）。判定不能は合格に数えない")
+        sys.exit(0)
+    for k, row in enumerate(reader, start=2):
+        tid = (row.get("テストID") or "").strip()
+        if ID_RE.match(tid):
+            rows.setdefault(tid, -k if (row.get("仕様の状態") or "").strip() in NO_CODE else k)
+with open(defs_path, encoding="utf-8") as fh:
+    defs = {l.split("\t", 1)[0] for l in fh if l.strip()}
+for tid, k in rows.items():
+    if k > 0 and tid not in code:
+        print(f"NG\tC8 テストコード未対応\t{tid}\t{csv_path}:{k} にあるが、テストコード（{tests}）に spec: {tid} が無い")
+for tid, where in sorted(code.items()):
+    if tid not in rows and tid not in defs:
+        print(f"WARN\tC9 CSV に無い ID\t{tid}\t{where} の spec: {tid} が {csv_path} にも工程文書の定義にも無い")
+print(f"INFO\tテストコード: `{tests}`（{nfiles} ファイル・spec の ID {len(code)} 件）／ CSV: `{csv_path}`（突合対象 {sum(1 for k in rows.values() if k > 0)} 件）")
+PY
+  then
+    printf 'C8 テストコード未対応\t%s\t%s\n' "$TESTS" "判定不能（突合に失敗: $(head -1 "$TMP/c8.err")）。判定不能は合格に数えない" >> "$TMP/ng.tsv"
+  else
+    awk -F'\t' -v OFS='\t' -v ng="$TMP/ng.tsv" -v wn="$TMP/warn.tsv" -v inf="$TMP/info.txt" '
+      $1 == "NG"   { print $2, $3, $4 >> ng }
+      $1 == "WARN" { print $2, $3, $4 >> wn }
+      $1 == "INFO" { print $2 >> inf }' "$TMP/c8.tsv"
+  fi
+fi
 
 sort -u "$TMP/ng.tsv" -o "$TMP/ng.tsv"
 sort -u "$TMP/warn.tsv" -o "$TMP/warn.tsv"
@@ -235,9 +323,10 @@ DEFS=$(cut -f1 "$TMP/defs.tsv" | sort -u | wc -l | tr -d ' ')
 {
   echo "# トレーサビリティ検査レポート"
   echo ""
-  echo "- 対象: \`$DIR\`（$(printf '%s\n' $FILES | wc -l | tr -d ' ') ファイル）"
+  echo "- 対象: \`$DIR\`（$NFILES ファイル）"
   echo "- 定義済み ID: $DEFS 件 ／ NG: $NG 件 ／ 警告: $WARN 件"
   echo "- 規約: \`skills/dev-lifecycle/references/traceability.md\`"
+  [ -s "$TMP/info.txt" ] && sed 's/^/- /' "$TMP/info.txt"
   echo ""
   echo "## NG 一覧"
   echo ""

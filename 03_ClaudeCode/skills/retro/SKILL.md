@@ -39,6 +39,7 @@ lessons.mdのProblem/Tryが溜まったら、以下に反映する:
 ## 出力
 レトロ実行時は、Keep/Problem/Try を整理し、lessons.mdへの追記内容と、キットへの反映候補（あれば）を提示する。
 最後に `python3 scripts/adr-to-rules.py <ADR のディレクトリ> <lessons.md> --out .claude/rules` を実行し、採用済み ADR と適用パスのある lessons の要旨を paths 付き rules（`decisions-*.md`）に書き出す（撤回した決定の出力は消える）。
+続けて `python3 scripts/cite-check.py .` を流し、ADR・rules・lessons の引用先が消えたもの（NG）・変わったもの（stale）の主張を読み直す。直したら保守者が `--refresh` で版を記録し直す（AI は打たない）。
 
 ## 適用範囲と引き継ぎ
 
