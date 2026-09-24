@@ -225,6 +225,35 @@ expect_exit "--uninstall が exit 0" 0 "$RC"
 OUT=$(cd "$GH" && git commit -m ui 2>&1); RC=$?
 expect_exit "--uninstall 後はゲートが外れる" 0 "$RC"
 
+# ---------------------------------------------------------------- install-git-hooks.sh: テストの弱体化（B38）
+# assert を消したテストのコミットを止める。テストファイルが staged のときだけ流し、scripts/pre-commit と二重に流さない
+echo "[install-git-hooks.sh: テストの弱体化]"
+WG="$TMP/wg"; mkdir -p "$WG"
+(cd "$WG" && git init -q && git config user.email t@e && git config user.name T)
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh" "$WG" >/dev/null 2>&1
+for f in scripts/test-weaken-check.py scripts/pw-spec-lint.py scripts/e2e_history.py; do
+  expect_file "export-project.sh: $f" "$WG/$f"
+done
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/install-git-hooks.sh" "$WG" >/dev/null 2>&1
+expect_contains "配線に test-weaken-check.py --staged を含む" 'scripts/test-weaken-check.py" --staged || exit 1' "$(cat "$WG/.git/hooks/pre-commit")"
+mkdir -p "$WG/e2e"
+printf "test('cart', async ({ page }) => {\n  await page.goto('/cart');\n  expect(total).toBe(1200);\n});\n" > "$WG/e2e/cart.spec.ts"
+(cd "$WG" && git add -A >/dev/null 2>&1 && git commit -q --no-verify -m init)
+printf "test('cart', async ({ page }) => {\n  await page.goto('/cart');\n});\n" > "$WG/e2e/cart.spec.ts"
+(cd "$WG" && git add e2e/cart.spec.ts)
+OUT=$(cd "$WG" && git commit -m weaken 2>&1); RC=$?
+expect_exit "assert を消したテストのコミットが止まる（exit 1）" 1 "$RC"
+expect_contains "止めた理由（アサーションの削除）を出す" "アサーションの削除" "$OUT"
+printf "test('cart', async ({ page }) => {\n  await page.goto('/cart');\n  // weaken-ok: 合計の表示は仕様変更 REQ-F-012 で廃止した\n});\n" > "$WG/e2e/cart.spec.ts"
+(cd "$WG" && git add e2e/cart.spec.ts)
+OUT=$(cd "$WG" && git commit -q -m "weaken with reason" 2>&1); RC=$?
+expect_exit "weaken-ok: <理由> を書けばコミットできる" 0 "$RC"
+expect_count "検査は 1 回だけ流れる（scripts/pre-commit と二重にならない）" 1 "$(printf '%s\n' "$OUT" | grep -c 'test-weaken-check')"
+echo "readme" > "$WG/README.md"; (cd "$WG" && git add README.md)
+OUT=$(cd "$WG" && git commit -m docs 2>&1); RC=$?
+expect_exit "テストファイルが staged に無いコミットは検査しない（exit 0）" 0 "$RC"
+expect_noout "テストファイルが無ければ検査の出力も出ない" "test-weaken-check" "$OUT"
+
 # ---------------------------------------------------------------- install-git-hooks.sh: 工程承認ゲート（B-21）
 # 未承認・判定不能のまま docs/lifecycle/0N-*.md をコミットさせない。判定不能を合格に数えない。
 echo "[install-git-hooks.sh: 工程承認ゲート]"

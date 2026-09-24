@@ -75,6 +75,21 @@ E2E="$KIT_DIR/03_ClaudeCode/skills/e2e-cycle/SKILL.md"
 has "e2e-cycle: axe への言及がある" "axe" "$E2E"
 has "e2e-cycle: serious/critical を FAIL にする基準がある" "serious" "$E2E"
 
+echo "[塊 L: B27 履歴・B29 生成テストの静的検査・B38 弱体化の検知がスキルに配線されている]"
+TA="$KIT_DIR/03_ClaudeCode/skills/test-automation/SKILL.md"
+DG="$KIT_DIR/03_ClaudeCode/skills/done-gate/SKILL.md"
+has "e2e-cycle: 生成の直後に pw-spec-lint.py を流す（B29）" "scripts/pw-spec-lint.py e2e" "$E2E"
+has "e2e-cycle: NG=0 にしてから実行へ進む（B29）" "NG=0 にしてからステップ3" "$E2E"
+has "e2e-cycle: 結果を e2e_history.py add で履歴に追記する（B27）" "scripts/e2e_history.py add" "$E2E"
+has "e2e-cycle: 履歴 3 回未満は判定不能で合格に数えない（B27）" "判定不能" "$E2E"
+has "e2e-cycle: flaky 率 30% 以上は failure-rules.md の反復に回す（B27）" "flaky 率 30% 以上" "$E2E"
+has "test-automation: pw-spec-lint.py を NG=0 にする（B29）" "scripts/pw-spec-lint.py" "$TA"
+has "done-gate: test-weaken-check.py --base <分岐点> が NG=0（B38）" "test-weaken-check.py --base" "$DG"
+has "done-gate: 正当な変更は weaken-ok: <理由>（B38）" "weaken-ok" "$DG"
+for t in pw-spec-lint.py e2e_history.py test-weaken-check.py; do
+  [ -x "$KIT_DIR/02_共通/ツール/$t" ] && ok "02_共通/ツール/$t が実行権限付きである" || ng "02_共通/ツール/$t が実行権限付きである" "無いか chmod +x されていない"
+done
+
 # --- [検証: 塊H] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
 echo "[検証: 塊H]"
 QAR="$KIT_DIR/03_ClaudeCode/skills/qa-review-standards/references/ai-code-review.md"

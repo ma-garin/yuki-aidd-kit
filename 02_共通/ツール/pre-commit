@@ -1,5 +1,5 @@
 #!/bin/bash
-# pre-commit — コミット前にローカルで秘密情報をスキャン
+# pre-commit — コミット前にローカルで秘密情報をスキャンし、テストの弱体化（scripts/test-weaken-check.py があれば）を止める
 # 配置: <project>/.git/hooks/pre-commit （chmod +x 必須）
 # gitleaksが入っていれば実行、なければ簡易パターンチェックにフォールバック
 
@@ -16,6 +16,20 @@ else
     echo "⚠ 秘密情報らしき文字列を検出。確認してください（gitleaks未インストール）。"
     echo "  hook が止めた原因（該当行）を直してからコミットし直す。飛ばす必要があるかは保守者が判断する"
     exit 1
+  fi
+fi
+
+# テストの弱体化（B38）: テストファイル・テスト設定が staged にあるときだけ scripts/test-weaken-check.py --staged を流す
+# （assert の削除・書き換え、skip/only の追加、retries の増加。正当な変更は近くに weaken-ok: <理由> を書く）。
+# install-git-hooks.sh が生成した hook は自分で流すので AIDD_WEAKEN_IN_HOOK=1 を渡してくる。そのときは重ねない。
+if [ -z "${AIDD_WEAKEN_IN_HOOK:-}" ]; then
+  ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+  WEAKEN="$ROOT/scripts/test-weaken-check.py"
+  if [ -f "$WEAKEN" ] && git diff --cached --name-only 2>/dev/null | grep -qE '(^|/)([^/]+\.(spec|test)\.[^/]+|[^/]+_test\.py|test_[^/]*\.py|(playwright|jest|vitest)\.config\.[^/]+|pytest\.ini|pyproject\.toml|setup\.cfg|tox\.ini|conftest\.py)$'; then
+    if ! python3 "$WEAKEN" --staged; then
+      echo "❌ テストの弱体化を検出。コミットを中止しました（正当な変更なら近くに weaken-ok: <理由> を書く）"
+      exit 1
+    fi
   fi
 fi
 exit 0

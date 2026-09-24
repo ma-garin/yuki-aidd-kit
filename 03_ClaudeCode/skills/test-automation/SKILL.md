@@ -58,6 +58,7 @@ pytest tests/test_smoke.py            # Playwright（要 playwright install）
 ## 注意
 - テストは実装と独立に書く（Verifier原則）。実装に合わせてテストを緩めない
 - flaky test（待ち時間依存）はexpect/wait_forで明示的に待つ。time.sleep禁止
+- Playwright のテストを生成・修整したら `python3 scripts/pw-spec-lint.py tests` を NG=0 にする（固定待ち・`.only`・理由の無い skip・旧 API。locator は getByRole → getByLabel → getByText → getByTestId → CSS の順。`skills/e2e-cycle/references/failure-rules.md`）
 
 ## 適用範囲と引き継ぎ
 
