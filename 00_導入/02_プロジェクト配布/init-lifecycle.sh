@@ -103,6 +103,10 @@ if [ "$WITH_GITHUB" -eq 1 ]; then
   dest="$TARGET/scripts/trace-check.sh"
   if [ -e "$dest" ]; then echo "  ↷ スキップ（既存）: scripts/trace-check.sh"
   else cp "$KIT_DIR/02_共通/ツール/trace-check.sh" "$dest"; chmod +x "$dest"; echo "  ✅ scripts/trace-check.sh（CI から実行するため同梱）"; fi
+  # 版つきリンク（C7 suspect・--impact・--refresh）の版の計算。trace-check.sh が隣を参照する
+  dest="$TARGET/scripts/section_hash.py"
+  if [ -e "$dest" ]; then echo "  ↷ スキップ（既存）: scripts/section_hash.py"
+  else cp "$KIT_DIR/02_共通/ツール/section_hash.py" "$dest"; chmod +x "$dest"; echo "  ✅ scripts/section_hash.py（trace-check.sh の C7 が使う）"; fi
 fi
 
 echo ""

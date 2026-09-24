@@ -115,5 +115,5 @@ description: RFD から保守運用までの開発工程（V字モデル）を A
 
 ## 適用範囲と引き継ぎ
 
-**使わない場面**: 個人 PWA・単一 HTML・PoC には使わない（重い。`sdd-ecc-workflow` の spec/plan/tasks で足りる）。
+**使わない場面**: 個人 PWA・単一 HTML・PoC には使わない（重い。`sdd-ecc-workflow` の spec/plan/tasks で足りる）。suspect（C7）の解除に `trace-check.sh --refresh` を使わない（AI は `--refresh` を打たない。解除は保守者の再確認＝AI は承認しない）。
 **次に渡す先**: 工程の出口は `phase-approval`、テストは `test-strategy` / `test-automation`、追跡は `scripts/trace-check.sh`。
