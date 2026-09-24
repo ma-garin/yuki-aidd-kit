@@ -110,7 +110,7 @@ GATE
   # assert の削除・書き換え、skip/only の追加、retries の増加を NG にする。正当な変更は近くに weaken-ok: <理由>。
   # 配線後に scripts/test-weaken-check.py が消えていたら、判定不能として止める（合格に数えない）。
   [ "$HAS_WEAKEN" = true ] && cat <<'WEAKEN'
-STAGED_TESTS=$(git diff --cached --name-only 2>/dev/null | grep -E '(^|/)([^/]+\.(spec|test)\.[^/]+|[^/]+_test\.py|test_[^/]*\.py|(playwright|jest|vitest)\.config\.[^/]+|pytest\.ini|pyproject\.toml|setup\.cfg|tox\.ini|conftest\.py)$' || true)
+STAGED_TESTS=$(git diff --cached --name-only 2>/dev/null | grep -E '(^|/)([^/]+\.(spec|test)\.[^/]+|[^/]+_test\.py|test_[^/]*\.py|(playwright|jest|vitest)\.config\.[^/]+|pytest\.ini|pyproject\.toml|setup\.cfg|tox\.ini|conftest\.py)$|(^|/)__tests__/|(^|/)tests/.*\.py$' || true)
 if [ -n "$STAGED_TESTS" ]; then
   if [ ! -f "$ROOT/scripts/test-weaken-check.py" ]; then
     echo "❌ テストファイルが staged ですが scripts/test-weaken-check.py がありません（判定不能を合格に数えない）"

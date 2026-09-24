@@ -38,7 +38,7 @@ test.describe('ログイン', () => {
     // page.waitForTimeout(1000) や test.only( はコメントの中なら数えない
     const note = 'page.waitForTimeout(5) は文字列の中なら数えない';
   });
-  // 決済の検証環境が 2026-10 まで止まっているため
+  // 理由: 決済の検証環境が 2026-10 まで止まっているため
   test.fixme('決済できる', async ({ page }) => {
     await page.goto('/pay');
   });
@@ -136,14 +136,19 @@ S="$TMP/skip"; mkdir -p "$S"
 cat > "$S/a.spec.ts" <<'EOF'
 // spec: ST-010
 test('a', async () => {
-  test.skip(); // 外部 API の契約が未確定のため
+  // reason: 外部 API の契約が未確定のため
+  test.skip();
+  test.skip(); // 同じ行のコメントは理由に数えない（直前の行の reason: だけ）
 });
 /*
  * await page.waitForTimeout(1000) ── ブロックコメントの中は数えない
  */
 EOF
-OUT=$(lint "$S"); RC=$?
-expect_exit "同じ行の理由コメント付き skip・ブロックコメントの中の固定待ちは exit 0" 0 "$RC"
+J=$(lint "$S" --json); RC=$?
+expect_exit "同じ行のコメントだけの skip は NG（exit 1）" 1 "$RC"
+[ "$(count "$J" ng skip-no-reason 4)" -eq 0 ] && ok "直前の行の // reason: 付きの skip は通る" || ng "直前の行の reason: 付き skip" "4 行目が NG"
+[ "$(count "$J" ng skip-no-reason 5)" -eq 1 ] && ok "同じ行のコメントは理由に数えない" || ng "同じ行のコメント" "5 行目が NG でない"
+[ "$(count "$J" ng fixed-wait 8)" -eq 0 ] && ok "ブロックコメントの中の固定待ちは数えない" || ng "ブロックコメント" "8 行目が NG"
 
 echo "[入力の誤り]"
 OUT=$(lint "$TMP/nothing"); RC=$?
@@ -154,6 +159,61 @@ expect_exit "テストファイルが 0 本なら exit 2（判定不能）" 2 "$
 expect_out  "0 本は判定不能と出す" "判定不能" "$OUT"
 OUT=$(lint "$B/e2e/cart.spec.ts"); RC=$?
 expect_exit "ファイル 1 本を渡しても検査する（exit 1）" 1 "$RC"
+
+echo "[差し戻し: 複数行の skip・理由コメントの書式・正規表現リテラル]"
+M="$TMP/multi"; mkdir -p "$M"
+cat > "$M/m.spec.ts" <<'EOF'
+// spec: ST-020
+test('m', async ({ page, browserName }) => {
+  test.fixme(
+    browserName === 'firefox',
+    'Firefox はダウンロードの確認画面が出るため',
+  );
+  test.skip(
+    browserName === 'webkit',
+  );
+  // skip: 印刷は次版で実装する
+  test.skip('印刷できる', async () => {});
+  // TODO あとで直す
+  test.skip('並べ替えできる', async () => {});
+  const half = total / 2; await page.waitForTimeout(100);
+  await expect(page).toHaveURL(/\/cart\?id=\d+/);
+});
+EOF
+J=$(lint "$M" --json); RC=$?
+expect_exit "理由の無い skip と固定待ちが残れば exit 1" 1 "$RC"
+[ "$(count "$J" ng skip-no-reason 3)" -eq 0 ] && ok "prettier で複数行に分かれた条件付き fixme（理由あり）は通る" || ng "複数行の条件付き fixme" "3 行目が NG"
+[ "$(count "$J" ng skip-no-reason 7)" -eq 1 ] && ok "複数行でも理由の文字列が無い条件付き skip は NG" || ng "理由の無い複数行 skip" "7 行目が NG でない"
+[ "$(count "$J" ng skip-no-reason 11)" -eq 0 ] && ok "直前の行の // skip: <理由> は理由に数える" || ng "// skip: の理由" "11 行目が NG"
+[ "$(count "$J" ng skip-no-reason 13)" -eq 1 ] && ok "reason:・理由:・skip: で始まらないコメント（TODO）は理由に数えない" || ng "TODO コメント" "13 行目が NG でない"
+[ "$(count "$J" ng fixed-wait 14)" -eq 1 ] && ok "割り算の / を正規表現と取り違えず、後ろの waitForTimeout を拾う" || ng "割り算の /" "14 行目が NG でない"
+[ "$(count "$J" ng fixed-wait 15)" -eq 0 ] && [ "$(count "$J" warn css-xpath-nth 15)" -eq 0 ] && ok "正規表現リテラルの中身は照合しない" || ng "正規表現リテラル" "15 行目で検出"
+
+echo ""
+echo "[検証: 塊L]"
+VP="$TMP/vl"
+pcase() {   # 名前 期待exit 本文
+  rm -rf "$VP"; mkdir -p "$VP"
+  printf '%s\n' "// spec: AB-001" "import { test, expect } from '@playwright/test';" "" "$3" > "$VP/v.spec.ts"
+  OUT=$(python3 "$TOOL" "$VP" 2>&1); RC=$?
+  expect_exit "$1" "$2" "$RC"
+}
+# 正当（通る）
+pcase "page.locator('[data-testid=x]') は NG にしない" 0 "await page.locator('[data-testid=x]').click();"
+pcase "getByRole の name に正規表現 /保存/ は NG にしない" 0 "await page.getByRole('button', { name: /保存/ }).click();"
+pcase "コメント内の waitForTimeout は NG にしない" 0 "// page.waitForTimeout(1000) は使わない"
+pcase "条件付き skip（理由あり・1 行）は通る" 0 "test.skip(browserName === 'webkit', 'webkit 未対応');"
+pcase "条件付き skip（理由あり・prettier の複数行）は通る" 0 "test.skip(
+  browserName === 'webkit',
+  'webkit 未対応',
+);"
+# バイパス（止まるべき）
+pcase "直前の行の spec: コメントを skip の理由に数えない（NG）" 1 "// spec: AB-002
+test.skip('a', async () => {});"
+pcase "直前の eslint-disable コメントを skip の理由に数えない（NG）" 1 "// eslint-disable-next-line
+test.skip('a', async () => {});"
+pcase "正規表現リテラル中の // の後ろの waitForTimeout を拾う（NG）" 1 "await expect(page).toHaveURL(/https?:\/\//); await page.waitForTimeout(1000);"
+pcase "正規表現リテラル中の ' の後ろの waitForTimeout を拾う（NG）" 1 "await page.getByText(/don't/).click(); await page.waitForTimeout(500);"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

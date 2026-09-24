@@ -13,16 +13,20 @@ assert を消す・skip を足す・retries を増やす・期待値を toBeTrut
   [--json] [--root <リポジトリ>]
 終了コード: 0 = NG なし ／ 1 = NG あり ／ 2 = 判定不能（git リポジトリでない・rev が無い。合格に数えない）
 
-対象ファイル（パスの末尾）: *.spec.* ・*.test.* ・*_test.py ・test_*.py（テストファイル）。retries の増加だけは設定ファイル
+対象ファイル: *.spec.* ・*.test.* ・*_test.py ・test_*.py ・__tests__/ 配下の js/ts/py ・tests/ 配下の .py（テストファイル）。retries の増加だけは設定ファイル
   playwright.config.* ・jest.config.* ・vitest.config.* ・pytest.ini ・pyproject.toml ・setup.cfg ・tox.ini ・conftest.py も見る。
 NG:
   アサーションの削除・書き換え  削除された行に expect( ・assert（文・assertEqual 等・assert.xxx(）・.toBe/.toEqual 等（.toXxx(）・
                                 .should( がある。同じファイルの差分に同じ行（空白を無視）が足されていれば移動とみなして数えない。
   弱いアサーションへの置換      上の削除と同じ塊（hunk）で toBeTruthy()・toBeFalsy()・toBeDefined()・not.toBeNull()・
                                 not.toBeUndefined()（Python は assert True・assert … is not None）が足された。
-  skip・only の追加             足された行に .skip( ・.only( ・.fixme( ・xit( ・xdescribe( ・xtest( ・@pytest.mark.skip / skipif ・
+  skip・only の追加             足された行に .skip( ・.only( ・xit( ・xdescribe( ・xtest( ・@pytest.mark.skip / skipif ・
                                 pytest.skip( ・@unittest.skip がある（同じ行の削除があれば移動とみなす）。
   retries の増加                ファイルごとに、足された行の retries / reruns の最大値が、消えた行の最大値（無ければ 0）より大きい。
+  複数行のアサーション           expect(r).toMatchObject({ 〜 }) のように開き括弧から閉じ括弧までが複数行のアサーションは、
+                                その内側の行（期待値の項目）の削除・書き換えも NG（元のファイルで括弧の対応を見る）。
+  アサーションを無効化する文     足された行に if (false) ・if (0) ・return; ・return 単独 ・test.fail( ・test.fixme( ・
+                                @pytest.mark.xfail ・pytest.xfail( ・expect.soft( がある（行単位。関数の範囲は解析しない）。
   テストファイルの削除             テストファイルそのものを消した（1 件にまとめて出す）。
 許可: NG の位置（新しいファイルの行番号。削除はその直後の行）から ±3 行に、この差分で足された行の `weaken-ok: <理由>` がある。
   テストファイルの削除は、差分のどのファイルでもよいので `weaken-ok: <ファイル名> <理由>` を足した行があれば許可する。
@@ -37,14 +41,19 @@ import subprocess
 import sys
 from pathlib import Path
 
-TEST_FILE_RE = re.compile(r"(?:^|/)(?:[^/]+\.(?:spec|test)\.[^/]+|[^/]+_test\.py|test_[^/]*\.py)$")
+TEST_FILE_RE = re.compile(r"(?:^|/)(?:[^/]+\.(?:spec|test)\.[^/]+|[^/]+_test\.py|test_[^/]*\.py)$"
+                          r"|(?:^|/)__tests__/(?:.+/)?[^/]+\.(?:[cm]?[jt]sx?|py)$|(?:^|/)tests/(?:.+/)?[^/]+\.py$")
 CONFIG_FILE_RE = re.compile(r"(?:^|/)(?:(?:playwright|jest|vitest)\.config\.[^/]+|pytest\.ini|pyproject\.toml|setup\.cfg|tox\.ini|conftest\.py)$")
 ASSERT_RE = re.compile(
     r"\bexpect\s*\(|^\s*assert\b|\bassert[A-Z]\w*\s*\(|\bassert\.\w+\s*\(|\bself\.assert\w*\s*\(|\.should\s*\("
     r"|\.to(?:Be|Equal|StrictEqual|Have|Contain|Match|Throw|Pass|Satisfy)\w*\s*\(")
 WEAK_RE = re.compile(r"\.(?:toBeTruthy|toBeFalsy|toBeDefined)\s*\(\s*\)|\.not\.(?:toBeNull|toBeUndefined)\s*\(\s*\)"
                      r"|^\s*assert\s+True\b|^\s*assert\s+.+\bis\s+not\s+None\s*(?:#.*)?$")
-SKIP_RE = re.compile(r"\.(?:skip|only|fixme)\s*\(|\b(?:xit|xdescribe|xtest)\s*\(|@pytest\.mark\.skip|\bpytest\.skip\s*\(|@unittest\.skip")
+SKIP_RE = re.compile(r"\.(?:skip|only)\s*\(|\b(?:xit|xdescribe|xtest)\s*\(|@pytest\.mark\.skip|\bpytest\.skip\s*\(|@unittest\.skip")
+# アサーションを実行させなくする文（行単位で見る。関数の範囲は解析しない）
+DISABLE_RE = re.compile(r"\bif\s*\(\s*(?:false|0)\s*\)|^\s*if\s+(?:False|0)\s*:|^\s*return\s*;?\s*$"
+                        r"|\btest\.(?:fail|fixme)\s*\(|@pytest\.mark\.xfail|\bpytest\.xfail\s*\(|\bexpect\.soft\s*\(")
+STR_RE = re.compile(r"'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"|`(?:\\.|[^`\\])*`")
 # 設定の書き方だけを拾う（テスト名の「retries 3 times」は拾わない）: retries: 2 ・retries = 2 ・--retries=2 ・reruns=3 ・--reruns 3
 RETRY_RE = re.compile(r"(?:\bretries\s*[:=]|--retries[= ]|\breruns\s*[:=]|--reruns[= ])\s*(?P<expr>[^,;}\n]*)")
 OK_RE = re.compile(r"weaken-ok\s*[:：]\s*(?P<r>.*)")
@@ -85,14 +94,15 @@ def unquote(p: str) -> str:
 
 
 def parse_diff(text: str) -> list[dict]:
-    """unified diff をファイルごとに分ける。各行は (種別 '+'/'-'/' ', 新しい行番号の位置, 本文, hunk 番号)。"""
+    """unified diff をファイルごとに分ける。各行は (種別 '+'/'-'/' ', 新しい行番号の位置, 本文, hunk 番号)。
+    old_nos は同じ並びで元のファイルの行番号（追加行は 0）。"""
     files: list[dict] = []
     cur = None
-    new_no = 0
+    new_no = old_no = 0
     hunk = -1
     for raw in text.splitlines():
         if raw.startswith("diff --git "):
-            cur = {"path": None, "old": None, "deleted": False, "lines": []}
+            cur = {"path": None, "old": None, "deleted": False, "lines": [], "old_nos": []}
             files.append(cur)
             continue
         if cur is None:
@@ -108,25 +118,50 @@ def parse_diff(text: str) -> list[dict]:
             continue
         m = HUNK_RE.match(raw)
         if m:
-            new_no = int(m.group(2))
+            old_no, new_no = int(m.group(1)), int(m.group(2))
             hunk += 1
             cur["lines"].append(("@", new_no, "", hunk))
+            cur["old_nos"].append(0)
             continue
         if not raw or raw[0] not in "+- ":
             continue
         kind, body = raw[0], raw[1:]
+        cur["old_nos"].append(0 if kind == "+" else old_no)
         if kind == "+":
             cur["lines"].append(("+", new_no, body, hunk))
             new_no += 1
         elif kind == "-":
             cur["lines"].append(("-", new_no, body, hunk))
+            old_no += 1
         else:
             cur["lines"].append((" ", new_no, body, hunk))
             new_no += 1
+            old_no += 1
     for f in files:
         if f["path"] is None:
             f["path"] = f["old"]
     return [f for f in files if f["path"]]
+
+
+def depth_of(code: str) -> int:
+    code = STR_RE.sub("", code)
+    return sum(code.count(c) for c in "([{") - sum(code.count(c) for c in ")]}")
+
+
+def assert_inner_lines(old: dict[int, str]) -> set[int]:
+    """複数行のアサーション（expect(r).toMatchObject({ 〜 }) など）の 2 行目以降の行番号。
+    開き括弧から対応する閉じ括弧までを 1 つのアサーションとして扱う。"""
+    inner: set[int] = set()
+    for no in sorted(old):
+        code = strip_comment(old[no])
+        if not ASSERT_RE.search(code):
+            continue
+        depth, k = depth_of(code), no
+        while depth > 0 and (k + 1) in old and k - no < 200:
+            k += 1
+            inner.add(k)
+            depth += depth_of(strip_comment(old[k]))
+    return inner
 
 
 def retry_max(lines: list[str]) -> int:
@@ -160,7 +195,7 @@ def findings_split(findings: list[dict], oks: list[tuple[int, str]], path: str,
     return ng, allowed
 
 
-def check_file(f: dict, extra_oks: list[str]) -> tuple[list[dict], list[dict]]:
+def check_file(f: dict, extra_oks: list[str], old_text: str | None = None) -> tuple[list[dict], list[dict]]:
     path = f["path"]
     is_test = bool(TEST_FILE_RE.search(path))
     findings: list[dict] = []
@@ -178,17 +213,34 @@ def check_file(f: dict, extra_oks: list[str]) -> tuple[list[dict], list[dict]]:
         findings.append({"kind": f"テストファイルの削除（アサーション {n} 件）", "file": path, "line": 0, "text": ""})
         return findings_split(findings, [], path, extra_oks)
     if is_test:
+        # 元のファイル（無ければ差分の文脈行と削除行）から、複数行のアサーションの内側の行を求める
+        if old_text is not None:
+            old = {i + 1: t for i, t in enumerate(old_text.splitlines())}
+        else:
+            old = {o: b for (k, _n, b, _h), o in zip(f["lines"], f["old_nos"]) if k in "- " and o}
+        inner = assert_inner_lines(old)
         weak_hunks = {h for _no, b, h in added if WEAK_RE.search(strip_comment(b))}
-        for no, body, h in removed:
-            code = strip_comment(body)
-            if not code.strip() or not ASSERT_RE.search(code) or norm(body) in added_norm:
+        for (k, no, body, h), o in zip(f["lines"], f["old_nos"]):
+            if k != "-":
                 continue
-            kind = "弱いアサーションへの置換" if (h in weak_hunks and not WEAK_RE.search(code)) else "アサーションの削除・書き換え"
+            code = strip_comment(body)
+            if not code.strip() or norm(body) in added_norm:
+                continue
+            if ASSERT_RE.search(code):
+                kind = "弱いアサーションへの置換" if (h in weak_hunks and not WEAK_RE.search(code)) else "アサーションの削除・書き換え"
+            elif o in inner:
+                kind = "アサーションの弱体化（複数行の期待値の削除・書き換え）"
+            else:
+                continue
             add(kind, no, body)
         for no, body, _h in added:
             code = strip_comment(body)
-            if SKIP_RE.search(code) and norm(body) not in removed_norm:
+            if norm(body) in removed_norm:
+                continue
+            if SKIP_RE.search(code):
                 add("skip・only の追加", no, body)
+            if DISABLE_RE.search(code):
+                add("アサーションを無効化する文の追加", no, body)
     if is_test or CONFIG_FILE_RE.search(path):
         r_added = [b for _no, b, _h in added if RETRY_RE.search(strip_comment(b))]
         if r_added:
@@ -225,6 +277,7 @@ def main() -> int:
     if a.staged:
         mode = "staged"
         diff_args.append("--cached")
+        old_rev = "HEAD" if git(root, "rev-parse", "--verify", "-q", "HEAD").returncode == 0 else None
     else:
         rev = a.base or "HEAD"
         if a.base:
@@ -236,6 +289,7 @@ def main() -> int:
             return fail("HEAD が無い（コミットが 1 つも無い。--staged を使う）")
         mode = f"--base {a.base}（分岐点 {rev[:12]}）" if a.base else "HEAD から作業ツリー"
         diff_args.append(rev)
+        old_rev = rev
     d = git(root, *diff_args)
     if d.returncode != 0:
         return fail(f"git diff が失敗した（{d.stderr.strip()[:120]}）")
@@ -249,7 +303,11 @@ def main() -> int:
         if not (TEST_FILE_RE.search(f["path"]) or CONFIG_FILE_RE.search(f["path"])):
             continue
         nfiles += 1
-        n, ok = check_file(f, extra_oks)
+        old_text = None
+        if old_rev and f["old"] and TEST_FILE_RE.search(f["path"]):
+            shown = git(root, "show", f"{old_rev}:{f['old']}")
+            old_text = shown.stdout if shown.returncode == 0 else None
+        n, ok = check_file(f, extra_oks, old_text)
         ng += n
         allowed += ok
     if a.json:

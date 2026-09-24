@@ -220,6 +220,139 @@ OUT=$(python3 "$TOOL" --root "$TMP/notgit" --staged 2>&1); RC=$?
 expect_exit "git リポジトリでなければ判定不能（exit 2）" 2 "$RC"
 expect_out  "判定不能を合格に数えない旨を出す" "合格に数えない" "$OUT"
 
+echo "[差し戻し: 複数行のアサーション・無効化する文・テストファイルの判定]"
+mfresh() {   # 複数行の toMatchObject を持つ基準
+  fresh
+  printf '%s\n' "test('obj', async () => {" "  const r = load();" "  expect(r).toMatchObject({" "    x: 1," "    y: 2," "  });" "  done();" "});" > "$R/e2e/obj.spec.ts"
+  g add -A && g commit -qm obj
+}
+mfresh
+subst "$R/e2e/obj.spec.ts" "    y: 2," "    y: 3,"
+g add -A
+OUT=$(chk --staged); RC=$?
+expect_exit "複数行の期待値の書き換え（y: 2 → 3）は exit 1" 1 "$RC"
+expect_out  "複数行のアサーションの内側として出す" "複数行の期待値" "$OUT"
+mfresh
+subst "$R/e2e/obj.spec.ts" "  done();" "  done(); // 後片付け"
+subst "$R/e2e/obj.spec.ts" "  const r = load();" "  const r = load('v2');"
+g add -A
+OUT=$(chk --staged); RC=$?
+expect_exit "複数行のアサーションの外の行の書き換えは exit 0" 0 "$RC"
+mfresh
+subst "$R/e2e/obj.spec.ts" "    y: 2,
+" "    // weaken-ok: y は仕様変更 REQ-F-020 で返さなくなった
+"
+g add -A
+OUT=$(chk --staged); RC=$?
+expect_exit "複数行の期待値の削除も weaken-ok: <理由> で許可（exit 0）" 0 "$RC"
+fresh
+subst "$R/e2e/cart.spec.ts" "  expect(total).toBe(1200);" "  if (flag) {
+    expect(total).toBe(1200);
+  }"
+g add -A
+OUT=$(chk --staged); RC=$?
+expect_exit "条件の if (flag) で包むのは無効化の語に当たらない（exit 0）" 0 "$RC"
+fresh
+subst "$R/e2e/cart.spec.ts" "  expect(total).toBe(1200);" "  expect.soft(total).toBe(1200);"
+g add -A
+OUT=$(chk --staged); RC=$?
+expect_exit "expect.soft( への置換は exit 1" 1 "$RC"
+expect_out  "無効化する文の追加として出す" "アサーションを無効化する文の追加" "$OUT"
+fresh
+subst "$R/tests/test_price.py" "    assert price(100) == 110" "    pytest.xfail('later')
+    assert price(100) == 110"
+g add -A
+OUT=$(chk --staged); RC=$?
+expect_exit "pytest.xfail( の追加は exit 1" 1 "$RC"
+fresh
+printf 'def check(x):\n    assert x > 0\n' > "$R/tests/helpers.py"
+g add -A && g commit -qm helpers
+printf 'def check(x):\n    return x\n' > "$R/tests/helpers.py"
+g add -A
+OUT=$(chk --staged); RC=$?
+expect_exit "tests/ 配下の .py（test_ で始まらない）も対象（exit 1）" 1 "$RC"
+fresh
+printf 'def f():\n    return 1\n\n\ndef g():\n    return\n' > "$R/src/app.py"
+g add -A
+OUT=$(chk --staged); RC=$?
+expect_exit "テスト以外のファイルの return 単独は対象外（exit 0）" 0 "$RC"
+
+echo ""
+echo "[検証: 塊L]"
+# 1 件ずつ一時リポジトリで: 基準をコミット → 書き換えて stage → --staged の exit を見る
+VL="$TMP/vl"
+vcase() {   # 名前 期待exit ファイル 旧 新
+  rm -rf "$VL"; mkdir -p "$VL/$(dirname "$3")"; git -C "$VL" init -q
+  printf '%s\n' "$4" > "$VL/$3"; git -C "$VL" add -A; git -C "$VL" commit -qm base
+  printf '%s\n' "$5" > "$VL/$3"; git -C "$VL" add -A
+  OUT=$(python3 "$TOOL" --root "$VL" --staged 2>&1); RC=$?
+  expect_exit "$1" "$2" "$RC"
+}
+VB='test("a", async () => {
+  const a = 1;
+  expect(a).toBe(1);
+  expect(a).toBe(2);
+  const b = 2;
+});'
+# 正当（通る）
+vcase "移動: 同じ assert を別の行へ（通る）" 0 e2e/a.spec.ts "$VB" 'test("a", async () => {
+  expect(a).toBe(2);
+  const a = 1;
+  expect(a).toBe(1);
+  const b = 2;
+});'
+# バイパス（止まるべき）
+vcase "if (false) { を別の行に足して assert を包む（NG）" 1 e2e/a.spec.ts "$VB" 'test("a", async () => {
+  const a = 1;
+  if (false) {
+    expect(a).toBe(1);
+    expect(a).toBe(2);
+  }
+  const b = 2;
+});'
+vcase "assert の前に return; を足す（NG）" 1 e2e/a.spec.ts "$VB" 'test("a", async () => {
+  const a = 1;
+  return;
+  expect(a).toBe(1);
+  expect(a).toBe(2);
+  const b = 2;
+});'
+vcase "test.fail() を足す（失敗を期待に反転。NG）" 1 e2e/a.spec.ts "$VB" 'test("a", async () => {
+  test.fail();
+  const a = 1;
+  expect(a).toBe(1);
+  expect(a).toBe(2);
+  const b = 2;
+});'
+vcase "@pytest.mark.xfail を足す（NG）" 1 tests/test_a.py 'def test_a():
+    assert f() == 1' '@pytest.mark.xfail
+def test_a():
+    assert f() == 1'
+vcase "複数行の期待値から項目を消す（toMatchObject の y: 2。NG）" 1 e2e/a.spec.ts 'test("a", () => {
+  expect(r).toMatchObject({
+    x: 1,
+    y: 2,
+  });
+});' 'test("a", () => {
+  expect(r).toMatchObject({
+    x: 1,
+  });
+});'
+vcase "同じ assert 2 行を 1 行に減らす（件数を見ない。NG）" 1 e2e/a.spec.ts 'test("a", () => {
+  expect(ok()).toBe(true);
+  go();
+  expect(ok()).toBe(true);
+});' 'test("a", () => {
+  go();
+  expect(ok()).toBe(true);
+});'
+vcase "__tests__/ 配下（Jest の既定）の assert 削除（NG）" 1 __tests__/cart.js 'test("a", () => { expect(1).toBe(1); });' 'test("a", () => {});'
+# rename は git mv で作る（上の vcase は同名のため、ここで別名にする）
+rm -rf "$VL"; mkdir -p "$VL/e2e"; git -C "$VL" init -q; printf '%s\n' "$VB" > "$VL/e2e/a.spec.ts"; git -C "$VL" add -A; git -C "$VL" commit -qm base
+git -C "$VL" mv e2e/a.spec.ts e2e/b.spec.ts
+OUT=$(python3 "$TOOL" --root "$VL" --staged 2>&1); RC=$?
+expect_exit "git mv で別名にしただけは通る（--staged）" 0 "$RC"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }
