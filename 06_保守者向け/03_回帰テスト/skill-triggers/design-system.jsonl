@@ -1,0 +1,6 @@
+{"utterance": "この画面のトースト通知と空状態のデザインどうするか決めたい", "expect": "design-system", "note": "description の「トースト」「空状態」「デザインどうする」"}
+{"utterance": "デザイントークンを使って新しいコンポーネントを実装して", "expect": "design-system", "note": "description の「デザイントークン」「コンポーネントを実装する」"}
+{"utterance": "ReactでこのUIを作る時の色とレイアウトはどう当てるべき?", "expect": "design-system", "note": "description の「色は」「レイアウトは」「React …でどう当てるか」"}
+{"utterance": "社内配布用のQAレビューツールを単一HTMLで作って", "expect": "single-html-tool", "note": "単一HTMLの作成は single-html-tool"}
+{"utterance": "家計簿PWAをGitHub Pagesにデプロイしたい", "expect": "personal-pwa", "note": "PWAのデプロイは personal-pwa"}
+{"utterance": "今日は何曜日ですか", "expect": "none", "note": "事実確認のみ"}

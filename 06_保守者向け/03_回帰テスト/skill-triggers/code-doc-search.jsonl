@@ -1,0 +1,6 @@
+{"utterance": "Playwrightの最新バージョンの変更点を調べてほしい", "expect": "code-doc-search", "note": "description の「最新バージョンの変更点」"}
+{"utterance": "StreamlitのAPIリファレンスでsession_stateの使い方を探して", "expect": "code-doc-search", "note": "description の「〜のAPIリファレンス」「使い方を探して」"}
+{"utterance": "Claude Codeのhooksの仕様を確認したいので調べて", "expect": "code-doc-search", "note": "description の「Claude Code の仕様を確認したい」"}
+{"utterance": "cc-sddの/kiroコマンドを使って新規プロジェクトを仕様駆動で立ち上げたい", "expect": "sdd-ecc-workflow", "note": "cc-sdd の利用そのものは sdd-ecc-workflow"}
+{"utterance": "business_agent_appに新しいモジュールを追加実装して", "expect": "streamlit-rag-app", "note": "実装作業は streamlit-rag-app"}
+{"utterance": "ありがとうございます、助かりました", "expect": "none", "note": "お礼のみ"}

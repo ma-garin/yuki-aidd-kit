@@ -1,0 +1,6 @@
+{"utterance": "このプロジェクトのテスト戦略とテストレベルL1〜L4を設計してほしい", "expect": "test-strategy", "note": "description の「テスト戦略」「テストレベル」"}
+{"utterance": "pre-commitで何を止めるか、品質ゲートの基準を決めたい", "expect": "test-strategy", "note": "description の「pre-commit で何を止めるか」「品質ゲート」"}
+{"utterance": "テストが陳腐化してないか、29119準拠でインシデントレポートの形式を決めて", "expect": "test-strategy", "note": "description の「テストが陳腐化した」「29119」「インシデントレポート」"}
+{"utterance": "システムテストを設計から実行まで段階停止で回してほしい", "expect": "e2e-cycle", "note": "E2Eの回し方そのものは e2e-cycle"}
+{"utterance": "スモークテストコードをPlaywrightで書いて", "expect": "test-automation", "note": "テストコードの記述は test-automation"}
+{"utterance": "ありがとうございます、助かりました", "expect": "none", "note": "お礼のみ"}

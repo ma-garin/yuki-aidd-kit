@@ -1,0 +1,6 @@
+{"utterance": "社内共有用デモを単一HTMLファイルで作ってほしい", "expect": "single-html-tool", "note": "description の「単一HTML」「社内共有用デモ」"}
+{"utterance": "QA Lensみたいなブラウザで開くだけのツールを作りたい", "expect": "single-html-tool", "note": "description の「QA Lens」「ブラウザで開くだけ」"}
+{"utterance": "業務支援エージェントのデモをHTML1ファイルで作って", "expect": "single-html-tool", "note": "description の「業務支援エージェントのデモ」"}
+{"utterance": "家計簿PWAをGitHub Pagesにデプロイしたい", "expect": "personal-pwa", "note": "PWAのデプロイは personal-pwa"}
+{"utterance": "このツールの色とレイアウトのデザインどうする?", "expect": "design-system", "note": "デザイン方針の決定は design-system"}
+{"utterance": "コミットメッセージを英語にして", "expect": "none", "note": "単純な文言変更"}

@@ -1,0 +1,6 @@
+{"utterance": "このプロジェクト、要件定義から基本設計・詳細設計まで工程を分けて進めたい", "expect": "dev-lifecycle", "note": "description の「要件定義」「基本設計」「詳細設計」「工程」"}
+{"utterance": "システムテストと受け入れテストのトレーサビリティを確保したい", "expect": "dev-lifecycle", "note": "description の「システムテスト」「受け入れテスト」「トレーサビリティ」"}
+{"utterance": "V字モデルでテスト仕様書を作ってほしい", "expect": "dev-lifecycle", "note": "description の「V字」「テスト仕様書」"}
+{"utterance": "個人PoCなのでspec.mdとplan.mdとtasks.mdだけで軽く進めたい", "expect": "sdd-ecc-workflow", "note": "軽量SDDは sdd-ecc-workflow"}
+{"utterance": "基本設計工程の承認ゲートを回してほしい", "expect": "phase-approval", "note": "承認ゲートは phase-approval"}
+{"utterance": "変数のスペルミスを直して", "expect": "none", "note": "単純な誤字修正"}

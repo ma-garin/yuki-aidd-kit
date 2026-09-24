@@ -1,0 +1,6 @@
+{"utterance": "spec.mdの非機能要件、パフォーマンスとアクセシビリティ対応をどう書けばいい?", "expect": "nfr-standards", "note": "description の「非機能要件は」「パフォーマンスは」「アクセシビリティ対応」"}
+{"utterance": "このアプリオフラインで使えるようにする要件を決めたい", "expect": "nfr-standards", "note": "description の「オフラインで使えるか」"}
+{"utterance": "スマホ対応の非機能要件を定義してほしい", "expect": "nfr-standards", "note": "description の「スマホ対応」"}
+{"utterance": "家計簿PWAをlocalStorageで永続化するように作って", "expect": "personal-pwa", "note": "実装そのものは personal-pwa"}
+{"utterance": "このアイコンと色のデザイントークンを当てて", "expect": "design-system", "note": "デザイントークンの適用は design-system"}
+{"utterance": "今何時ですか", "expect": "none", "note": "事実確認のみ"}
