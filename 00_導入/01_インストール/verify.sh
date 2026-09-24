@@ -187,6 +187,10 @@ for p, mcp_only in targets:
         print(f"OK\t{label}: 問題なし")
 PY
 )
+AUDIT_RC=$?
+if [ "$AUDIT_RC" -ne 0 ]; then
+  echo "  ❌ 設定の監査を実行できない（python3 が exit $AUDIT_RC。判定不能は不合格）"; NG=$((NG+1)); AUDIT_NG=$((AUDIT_NG+1))
+fi
 while IFS=$'\t' read -r kind msg; do
   case "$kind" in
     NG)   echo "  ❌ $msg"; NG=$((NG+1)); AUDIT_NG=$((AUDIT_NG+1)) ;;
