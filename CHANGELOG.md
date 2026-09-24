@@ -19,6 +19,10 @@ hook の deny・警告が誤検知かどうかを測る手段が無く、圧縮�
 - **回帰テストを拡充**: 新規 `test-e2e-history.sh`（37ケース）・`test-pw-spec-lint.sh`（56ケース）・`test-weaken-check.sh`（59ケース）を追加。既存の `test-hooks.sh`（838→918ケース）・`test-install.sh`（188→210ケース）・`test-agents.sh`（71→83ケース）・`test-check-design.sh`（120→214ケース）も拡張。回帰テストは20本に
 - **利用者向け資料・目録・INDEX を同期**: 新規 hook 1本（hooks 24→25）・ツール3本（18→21）・回帰テスト3本（17→20）・ひな形1本の掲載漏れを `check_docs.py` で検出して解消。`build_codex_skills.py` を再生成（`--check` exit 0）。利用ガイド・操作マニュアルに「（8.6.0〜）」の見出しで hook の deny 記録・圧縮再開の再注入・check_design の a11y と意匠 WARN・e2e_history/pw-spec-lint/test-weaken-check を追記
 
+### 補遺（同日）
+
+- **D25 保留7対をライトで4.5:1以上に**: `tokens.css` の `--color-primary`（`#1976D2`→`#176DC2`）・`--color-critical`（`#D32F2F`→`#CD2B2B`）・`--color-high`（`#F57C00`→`#AD5800`）・`--color-low`（`#388E3C`→`#317C34`）・`--color-info`（`#0288D1`→`#0272B0`）を色相・彩度は変えず明度だけ下げ、リンク・New/Critical/High/Low/Info バッジ・KPI改善の7対をライト4.5:1以上（ダークは元から4.5:1以上）に。`contrast-pairs.md` の「扱い」列から `保留` を削除し検査対象へ。`feedback.js`・`library-loan.html`（`build.py` 再生成）のフォールバック値も同期
+
 ## Ver.8.5.0（2026-09-24）— セキュリティ運用・完了主張の照合・仕様品質（M29）
 
 外部スキル・MCP・プラグインを導入前に見る仕組みが無く、`verify.sh` は配置の有無しか見ておらず設定の危険な組み合わせ（`bypassPermissions`・`Bash(*)`・秘密値）を見逃していた（B-26）。「完了しました」と言いながら実行結果が伴わない報告や、仕様欠落が原因の失敗をその場の修整で閉じてしまう問題、AI 生成コード特有の欠陥のレビュー観点が無かった（B-27）。テストコードと追跡表が突き合わせられておらず、ADR・rules の引用が古くなっても気づけず、要件文の型も曖昧語もチェックする道具が無かった（B-28）。全件走査の採用テーマから 3 塊を並列実装し統合した。

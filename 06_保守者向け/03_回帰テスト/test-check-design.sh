@@ -489,17 +489,17 @@ cat > "$P/02_共通/ひな形/ui/contrast-pairs.md" <<'MD'
 | 前景 | 背景 | 種別 | 扱い | 用途 |
 |---|---|---|---|---|
 | `--color-text` | `--color-bg` | 本文 | | 本文 |
-| `--color-high` | `--color-high-bg` | 本文 | | High バッジ |
-| `--color-primary` | `--color-bg` | UI 部品 | | フォーカスリング |
-| `--color-primary` | `--color-bg` | 本文 | | 背景に直接置くリンク |
-| `--color-info` | `--color-info-bg` | 本文 | 保留 | Info バッジ |
+| `--color-medium` | `--color-medium-bg` | 本文 | | Medium バッジの地色（文字色未適用。意図的に未対応） |
+| `--color-primary` | `--color-border-strong` | UI 部品 | | 種別によるしきい値差の確認用 |
+| `--color-primary` | `--color-border-strong` | 本文 | | 種別によるしきい値差の確認用 |
+| `--color-medium` | `--color-medium-bg` | 本文 | 保留 | 保留（扱い）の確認用 |
 | `--color-nope` | `--color-bg` | 本文 | | 打ち間違い |
 MD
 OUT=$(run 02_共通/ひな形/ui); RC=$?
 expect_exit "4.5 未満の対・未定義トークンで exit 1" 1 "$RC"
 expect_rgrep "tokens.css の隣の ui/contrast-pairs.md を既定で読む" "## コントラスト対照表（D25）"
-expect_rgrep "High バッジ（ライト）を NG で検出" "| D25 | コントラスト不足 | 02_共通/ひな形/ui/contrast-pairs.md:4 | \`--color-high × --color-high-bg\`（ライト）"
-expect_nrgrep "High バッジのダーク（届いている）は NG にしない" "\`--color-high × --color-high-bg\`（ダーク）"
+expect_rgrep "Medium の地色（ライト）を NG で検出" "| D25 | コントラスト不足 | 02_共通/ひな形/ui/contrast-pairs.md:4 | \`--color-medium × --color-medium-bg\`（ライト）"
+expect_nrgrep "Medium の地色のダーク（届いている）は NG にしない" "\`--color-medium × --color-medium-bg\`（ダーク）"
 expect_nrgrep "本文 15:1 の対は NG にしない" "contrast-pairs.md:3 |"
 expect_nrgrep "同じ色でも UI 部品（3:1）なら NG にしない" "contrast-pairs.md:5 |"
 expect_rgrep "同じ色で本文（4.5:1）なら NG" "contrast-pairs.md:6 |"
@@ -596,7 +596,7 @@ reset; cat > "$P/02_共通/ひな形/ui/bl.html" <<'HTML'
 <h1>a</h1><h3>b</h3>
 HTML
 cp "$KIT_DIR/02_共通/ひな形/ui/contrast-pairs.md" "$P/02_共通/ひな形/ui/contrast-pairs.md"
-printf '| 前景 | 背景 | 種別 |\n|---|---|---|\n| `--color-high` | `--color-high-bg` | 本文 |\n' > "$P/02_共通/ひな形/ui/contrast-pairs.md"
+printf '| 前景 | 背景 | 種別 |\n|---|---|---|\n| `--color-medium` | `--color-medium-bg` | 本文 |\n' > "$P/02_共通/ひな形/ui/contrast-pairs.md"
 BLK="$TMP/baseline-k.tsv"; rm -f "$BLK"
 run --baseline "$BLK" --baseline-write 02_共通/ひな形/ui >/dev/null 2>&1
 grep -q "^D20	" "$BLK" && grep -q "^D25	" "$BLK" && ok "D20・D25 の NG を基準線に書く" || ng "D20・D25 の NG を基準線に書く" "$(cut -f1 "$BLK" 2>/dev/null | tr '\n' ' ')"
@@ -612,7 +612,7 @@ import json,sys
 d = json.load(sys.stdin)
 assert any(e['id'] == 'D20' for e in d['ng']) and any(e['id'] == 'D25' for e in d['ng']), d['ng']
 assert any(e['id'] == 'D24' and e['severity'] == 'WARN' for e in d['warn'])
-assert d['contrast'] and d['contrast'][0]['fg'] == '--color-high' and d['contrast'][0]['verdict'] == 'NG'
+assert d['contrast'] and d['contrast'][0]['fg'] == '--color-medium' and d['contrast'][0]['verdict'] == 'NG'
 " && ok "--json に D20/D25 の NG・D24 の WARN・対照表（contrast）が入る" || ng "--json に D20/D25 の NG・D24 の WARN・対照表が入る" "内容不足"
 
 echo "[ケースK11: 出荷物の対の表を実際に読み、ライトとダークの両方を計算している]"

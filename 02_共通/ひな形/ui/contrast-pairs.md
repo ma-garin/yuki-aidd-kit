@@ -25,14 +25,10 @@
 | `--color-medium-text` | `--color-medium-bg` | 本文 | | Medium バッジ |
 | `--color-tooltip-text` | `--color-tooltip-bg` | 本文 | | 情報ツールチップ |
 | `--color-primary` | `--color-bg` | UI 部品 | | フォーカスリング（`:focus-visible` の outline） |
-| `--color-primary` | `--color-bg` | 本文 | 保留 | ページ背景に直接置くリンク |
-| `--color-primary` | `--color-primary-light` | 本文 | 保留 | New バッジ |
-| `--color-critical` | `--color-critical-bg` | 本文 | 保留 | Critical バッジ・コールアウト |
-| `--color-high` | `--color-high-bg` | 本文 | 保留 | High バッジ |
-| `--color-low` | `--color-low-bg` | 本文 | 保留 | Low バッジ |
-| `--color-info` | `--color-info-bg` | 本文 | 保留 | Info バッジ |
-| `--color-low` | `--color-surface` | 本文 | 保留 | KPI の改善（`.kpi-delta.up`） |
-
-## 保留の行について
-
-`保留` の 7 行は、ライトの配色で 4.5:1 に届かないことが D25 の導入時に分かった対（ダークは届いている）。色相を変えると severity の見分けが崩れるため、直し方は保守者が決める。選択肢は `--color-medium-text` と同じく**バッジの文字だけ濃い色のトークン**（例 `--color-high-text`）を足すか、状態色の明度を下げるか。決めたら `tokens.css` と `components.css` を直し、この表の `保留` を消して D25 を NG=0 で通す。
+| `--color-primary` | `--color-bg` | 本文 | | ページ背景に直接置くリンク |
+| `--color-primary` | `--color-primary-light` | 本文 | | New バッジ |
+| `--color-critical` | `--color-critical-bg` | 本文 | | Critical バッジ・コールアウト |
+| `--color-high` | `--color-high-bg` | 本文 | | High バッジ |
+| `--color-low` | `--color-low-bg` | 本文 | | Low バッジ |
+| `--color-info` | `--color-info-bg` | 本文 | | Info バッジ |
+| `--color-low` | `--color-surface` | 本文 | | KPI の改善（`.kpi-delta.up`） |
