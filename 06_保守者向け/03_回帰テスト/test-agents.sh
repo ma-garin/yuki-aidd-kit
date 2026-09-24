@@ -50,6 +50,12 @@ has "aidd-lead: 人間を待つのは要件定義と受け入れの2点" "受け
 grep -q "実装コードを読まない" "$A/spec-agent.md" && ok "spec-agent: 実装コードを読まない" || ng "spec-agent: 実装コードを読まない" "無い"
 grep -q "緩めない\|緩める" "$A/verify-agent.md" && ok "verify-agent: アサーションを緩めない" || ng "verify-agent: アサーションを緩めない" "無い"
 
+echo "[診断・修整の規律（B1: verify-agent のループ4・gate-agent の差し戻し条件）]"
+has "verify-agent: 修整前に診断（odc_analysis.md）を書く" "診断" "$A/verify-agent.md"
+has "verify-agent: 修整の差分を逆適用して赤に戻すことを確認する" "逆適用" "$A/verify-agent.md"
+has "verify-agent: 修整は最小差分に限る" "最小差分" "$A/verify-agent.md"
+has "gate-agent: 差し戻し条件に診断の有無がある" "診断" "$A/gate-agent.md"
+
 echo "[委譲]"
 grep -q "^tools:.*Task" "$A/aidd-lead.md" && ok "aidd-lead だけが Task（委譲）を持つ" || ng "aidd-lead だけが Task を持つ" "tools に Task が無い"
 OTHER=$(grep -l "^tools:.*Task" "$A"/*.md | grep -v aidd-lead | wc -l | tr -d " ")
