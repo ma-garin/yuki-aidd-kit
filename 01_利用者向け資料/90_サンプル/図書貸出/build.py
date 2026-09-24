@@ -5,7 +5,7 @@ tokens.css / ui/components.css / ui/layout.css / components/icons.js / feedback.
 """
 import sys, pathlib
 HERE = pathlib.Path(__file__).resolve().parent
-KIT = HERE.parents[1]; S = HERE; OUT = HERE / 'library-loan.html'
+KIT = HERE.parents[2]; S = HERE; OUT = HERE / 'library-loan.html'
 rd = lambda p: pathlib.Path(p).read_text(encoding='utf-8')
 tokens = rd(KIT/'02_共通/ひな形/tokens.css'); comps = rd(KIT/'02_共通/ひな形/ui/components.css'); layout = rd(KIT/'02_共通/ひな形/ui/layout.css')
 icons = rd(KIT/'02_共通/ひな形/components/icons.js'); feedback = rd(KIT/'02_共通/ひな形/components/feedback.js'); app_css = rd(S/'app.css'); app_js = rd(S/'app.js')
