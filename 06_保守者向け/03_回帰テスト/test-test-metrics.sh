@@ -197,6 +197,31 @@ sedi "s/,$NEW\$/,REQ-F-001/" "$P/docs/system_test_cases.csv"
 OUT=$(run "$P" --level ST --gate)
 expect_out  "版の無い・壊れた記録は確かめられないので未検証（判定不能を合格に数えない）" "書式不正「REQ-F-001」" "$OUT"
 
+echo "[ケース12: 未確認の欠陥（B36 起票前トリアージ）は --gate に1行足る]"
+P=$(proj); fill "$P"
+sedi 's/| DEF-001 | ST-003 | REQ-N-002 | Critical | 360px で横スクロール | e3 | 2026-09-12 | 未対応 |/| DEF-001 | ST-003 | REQ-N-002 | 未確認 | 360px で横スクロール | e3 | 2026-09-12 | 未対応 |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| DEF-002 | ST-003 | REQ-N-002 | Low | 余白が狭い | e3 | 2026-09-18 | 修正済 |/| DEF-002 | ST-003 | REQ-N-002 | 未確認 | 余白が狭い | e3 | 2026-09-18 | 修正済 |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| DEF-003 | UAT-003 | 予約が二重登録 | High | 2026-09-19 | 修正する |/| DEF-003 | UAT-003 | 予約が二重登録 | 未確認 | 2026-09-19 | 修正する |/' "$P/docs/lifecycle/08-acceptance-test.md"
+OUT=$(run "$P" --gate); RC1=$?
+expect_out  "--gate: 未確認 3 件を1行で出す" "未確認 3 件" "$OUT"
+expect_noout "--gate: 3 件ちょうどは WARN 記号を出さない" "⚠ 未確認" "$OUT"
+python3 - "$P/docs/lifecycle/07-system-test.md" <<'PY'
+import sys
+from pathlib import Path
+f = Path(sys.argv[1])
+s = f.read_text()
+s = s.replace(
+    "| DEF-002 | ST-003 | REQ-N-002 | 未確認 | 余白が狭い | e3 | 2026-09-18 | 修正済 |",
+    "| DEF-002 | ST-003 | REQ-N-002 | 未確認 | 余白が狭い | e3 | 2026-09-18 | 修正済 |\n"
+    "| DEF-004 | ST-003 | REQ-N-002 | 未確認 | 追加検証中 | e3 | 2026-09-18 | 未対応 |",
+    1,
+)
+f.write_text(s)
+PY
+OUT=$(run "$P" --gate); RC2=$?
+expect_out  "--gate: 未確認が 3 件を超えたら WARN 記号を出す（止めない）" "⚠ 未確認 4 件" "$OUT"
+expect_exit "--gate: WARN 記号が付いても exit code は変えない（止めない）" "$RC1" "$RC2"
+
 
 # --- [検証: B-22] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
 echo "[検証: B-22]"

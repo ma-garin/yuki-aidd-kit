@@ -61,6 +61,90 @@ _TIMER = Path(__file__).resolve().parent / "tool-timer.py"
 ACTUAL_RE = re.compile(r"実測[:：]")
 
 
+# B39: 完了の主張は、同じターン（直近の人の発言以降）に実行したテストの結果と照合する。
+# 「完了しました」「全て PASS」等の主張だけで実行していない／FAIL のままなのを機械で止める（2026-09 指摘）。
+CLAIM_RE = re.compile(r"(完了しました|実装しました|修正しました|直しました|全て\s*PASS|全緑|テストは通|exit\s*0\s*です)")
+NOT_EXECUTED_RE = re.compile(r"(未実行|未検証)")
+TEST_CMD_RE = re.compile(
+    r"(test-.*\.sh|pytest|npm\s+test|npx\s+(playwright|vitest|jest)|"
+    r"check_docs|check_design|python3\s+-m\s+unittest)"
+)
+FAIL_EQ_RE = re.compile(r"FAIL=(\d+)")
+FAIL_LITERAL_RE = re.compile(r"exit 1|❌|Error")
+CLAIM_MARKER = "[reply-language] 完了主張の照合"
+MAX_CLAIM_BLOCKS = 2  # 3 回目は additionalContext の警告にして通す（無限ループ防止）
+
+
+def test_failed(result: str) -> bool:
+    m = FAIL_EQ_RE.search(result)
+    if m and int(m.group(1)) >= 1:
+        return True
+    return bool(FAIL_LITERAL_RE.search(result))
+
+
+def last_instruction_index(g, lines: list[str]) -> int | None:
+    for i in range(len(lines) - 1, -1, -1):
+        try:
+            e = json.loads(lines[i])
+        except ValueError:
+            continue
+        if isinstance(e, dict) and not e.get("isSidechain") and g.instruction_of(e) is not None:
+            return i
+    return None
+
+
+def test_runs_since(g, lines: list[str], start: int) -> list[tuple[str, str]]:
+    """start 行目以降の、テスト系 Bash 実行 (command, tool_result本文) の一覧。"""
+    pending: dict[str, str] = {}
+    runs: list[tuple[str, str]] = []
+    for line in lines[start:]:
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(e, dict):
+            continue
+        for tid, name, inp in g.tool_uses_of(e):
+            if name != "Bash":
+                continue
+            cmd = str((inp or {}).get("command", ""))
+            if TEST_CMD_RE.search(cmd):
+                pending[tid] = cmd
+        for tid, content in g.tool_result_of(e).items():
+            if tid in pending:
+                runs.append((pending[tid], content))
+    return runs
+
+
+def claim_block_count(lines: list[str], start: int) -> int:
+    """同じターンで、この照合による差し戻しが transcript に何回残っているか（無限ループ防止用）。"""
+    return sum(1 for l in lines[start:] if CLAIM_MARKER in l)
+
+
+def check_claim(g, tp0: str) -> tuple[str, int, list[str]] | None:
+    """完了の主張の根拠が無ければ (問題の説明, 直近の人の発言の行番号, transcript の行) を返す。
+    transcript が無い・人の発言が見つからない（判定できない）場合は None（fail-open）。
+    """
+    if not tp0 or not Path(tp0).is_file():
+        return None
+    try:
+        lines = g.tail_lines(Path(tp0))
+    except OSError:
+        return None
+    idx = last_instruction_index(g, lines)
+    if idx is None:
+        return None
+    runs = test_runs_since(g, lines, idx)
+    if not runs:
+        return ("同じターンでテスト系の実行が 0 回", idx, lines)
+    cmd, result = runs[-1]
+    if test_failed(result):
+        short_cmd = " ".join(cmd.split())[:40]
+        short_result = " ".join(result.split())[:60]
+        return (f"直近の `{short_cmd}` の結果が失敗（{short_result}）", idx, lines)
+    return None
+
+
 def missing_actual(msg: str) -> str | None:
     """このターンでツールを使ったのに実測行が無ければ、貼るべき実測の1行を返す。
 
@@ -181,6 +265,19 @@ def main() -> int:
         return 0
     g = load_guard()
     tp0 = data.get("transcript_path", "")
+    if CLAIM_RE.search(msg) and not NOT_EXECUTED_RE.search(msg):
+        found = check_claim(g, tp0)
+        if found is not None:
+            problem, idx, lines = found
+            if claim_block_count(lines, idx) >= MAX_CLAIM_BLOCKS:
+                ctx = f"{CLAIM_MARKER}: {problem}（{MAX_CLAIM_BLOCKS} 回を超えたので通知に留める。無限ループ防止）"
+                print(json.dumps({"hookSpecificOutput": {
+                    "hookEventName": "Stop", "additionalContext": ctx}}, ensure_ascii=False))
+                return 0
+            reason = (f"{CLAIM_MARKER}: {problem}。"
+                      "実行してから主張するか、『提案（未実行）』と書き直す")
+            print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+            return 0
     # 委譲待ちの途中報告（「進行中」を含む）は完了報告ではないので、予実を突き合わせず履歴にも積まない。
     # 突き合わせると経過が見積に届く前に「過大見積」と誤判定し、偽の予実で校正係数を壊す（2026-09-23 に 5 回）
     if not GAP_RE.search(msg) and "進行中" not in msg and tp0 and Path(tp0).is_file():
