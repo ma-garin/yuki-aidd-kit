@@ -65,7 +65,9 @@ GENERATED_REPORTS = ("check-docs-report.md", "trace-check-report.md", "check-des
                      "check-approval-report.md", "token-audit-report.md", "test-metrics-report.md")
 # git 管理外の手元の生成物（.gitignore 対象・ツールの作業ファイル）。目録の網羅性検査に含めない
 LOCAL_JUNK_PREFIXES = (".playwright-mcp/", ".claude/settings.local.json")
-LOCAL_JUNK_PARTS = (".DS_Store", "__pycache__", "tool-time.json", "progress.json")
+# `.git` は git worktree で作業しているときだけ、リポジトリ本体を指すポインタファイル（`gitdir: ...`）として
+# 実体を持つ（通常のチェックアウトではディレクトリで is_file() が False になり、そもそも対象に入らない）
+LOCAL_JUNK_PARTS = (".DS_Store", "__pycache__", "tool-time.json", "progress.json", ".git")
 
 
 def is_local_junk(rel: str) -> bool:

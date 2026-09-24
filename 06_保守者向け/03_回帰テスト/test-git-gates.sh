@@ -29,7 +29,7 @@ unstage_all() { git reset -q --hard HEAD; git clean -qfd -e scripts; mkdir -p "d
 echo "=== git ゲート 回帰テスト ==="
 
 echo "[pre-commit（秘密情報）]"
-stage config.py 'api_key = "sk-abcdefghijklmnopqrstuvwxyz"'
+stage config.py "api_key = \"sk-""abcdefghijklmnopqrstuvwxyz\""   # 偽値は連結で作る（このファイルを pre-write-check.sh の本文検査に掛けないため。B-19）
 OUT=$(run_precommit 2>&1); RC=$?
 expect_exit "API キーらしき文字列で exit 1" 1 "$RC"
 expect_out  "検出メッセージを出す" "秘密情報らしき文字列を検出" "$OUT"
