@@ -1,0 +1,36 @@
+#!/bin/bash
+# claude stub（テスト専用）: 引数の発話に埋め込まれた MARK_* に応じて固定の stream-json を出す。
+# 実 claude は呼ばない。SKILL_TRIGGER_CALLED_LOG が設定されていれば呼び出しを記録する（--dry-run が呼ばないことの確認用）。
+UTT=""
+while [ $# -gt 0 ]; do
+  if [ "$1" = "-p" ]; then UTT="$2"; shift; fi
+  shift
+done
+[ -n "$SKILL_TRIGGER_CALLED_LOG" ] && echo "$UTT" >> "$SKILL_TRIGGER_CALLED_LOG"
+
+FIX="${SKILL_TRIGGER_FIXTURES:?SKILL_TRIGGER_FIXTURES が未設定}"
+MARK=$(printf '%s' "$UTT" | grep -oE 'MARK_[A-Z0-9_]+' | head -n1)
+
+case "$MARK" in
+  MARK_TIMEOUT) sleep 5; exit 0 ;;
+  MARK_CRASH) exit 1 ;;
+  MARK_BADUTF8) printf '{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "\xff\xfe-bad"}}]}}\n'; exit 0 ;;  # 検証: B-25 — 非UTF-8のstdout
+  MARK_TRUNCATED) printf '{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Ski'; exit 0 ;;  # 検証: B-25 — 途中で切れたJSON（改行なしで終わる）
+  "") echo '{"type": "result"}'; exit 0 ;;   # マーカー無し＝発火なし相当（tool_use が無い）
+  *)
+    KEY="${MARK#MARK_}"
+    LINE=$(python3 -c "
+import json,sys
+key=sys.argv[1]
+for l in open(sys.argv[2], encoding='utf-8'):
+    l=l.strip()
+    if not l: continue
+    d=json.loads(l)
+    if d['marker']==key:
+        print(d['line']); break
+" "$KEY" "$FIX")
+    if [ -z "$LINE" ]; then echo '{"type": "result"}'; exit 0; fi
+    echo "$LINE"
+    exit 0
+    ;;
+esac

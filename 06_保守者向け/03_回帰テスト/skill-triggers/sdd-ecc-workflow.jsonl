@@ -1,0 +1,6 @@
+{"utterance": "新規プロジェクトを仕様から作りたいので、spec.md/plan.md/tasks.mdを用意して", "expect": "sdd-ecc-workflow", "note": "description の「仕様から作りたい」「spec.md/plan.md/tasks.mdの作成」"}
+{"utterance": "cc-sddの/kiroコマンドでCoordinator/Implementor/Verifierに役割分離したい", "expect": "sdd-ecc-workflow", "note": "description の「cc-sdd」「Coordinator/Implementor/Verifierの役割分離」"}
+{"utterance": "SDDで仕様駆動に、要件定義からタスク分解して実装ループを回したい", "expect": "sdd-ecc-workflow", "note": "description の「要件定義から」「タスク分解して」＋SDD/仕様駆動を明示（検証B-25で dev-lifecycle と紛らわしいと指摘され修正）"}
+{"utterance": "他社に納品するので工程を分けて要件定義から進めたい", "expect": "dev-lifecycle", "note": "納品・引き継ぎは dev-lifecycle"}
+{"utterance": "このプロジェクトのECC資産をDAILYとLIBRARYに振り分けて", "expect": "ecc-daily-router", "note": "資産の振り分けは ecc-daily-router"}
+{"utterance": "今何時ですか", "expect": "none", "note": "事実確認のみ"}

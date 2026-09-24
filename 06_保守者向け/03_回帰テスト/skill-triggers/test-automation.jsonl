@@ -1,0 +1,6 @@
+{"utterance": "このPWAのスモークテストをPlaywrightで書いてほしい", "expect": "test-automation", "note": "description の「スモークテスト」「Playwright」"}
+{"utterance": "pytestで回帰テストを書いて、動作確認をCI判定に置き換えたい", "expect": "test-automation", "note": "description の「pytest」「回帰テスト」「動作確認」"}
+{"utterance": "E2Eテストコードを書いて", "expect": "test-automation", "note": "description の「E2E」「テストを書いて」"}
+{"utterance": "段階停止でE2Eサイクルを回したい、テスト設計からPlaywrightスクリプト生成、修整まで", "expect": "e2e-cycle", "note": "段階停止のワークフローは e2e-cycle（検証B-25で test-automation と紛らわしいと指摘され修正）"}
+{"utterance": "この機能、これで完了と判定していい?", "expect": "done-gate", "note": "完了判定は done-gate"}
+{"utterance": "変数名をキャメルケースにリネームして", "expect": "none", "note": "単純なリファクタ依頼"}
