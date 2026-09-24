@@ -56,6 +56,17 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "WebFetch|WebSearch|mcp__.*|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/injection-guard.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "timeout": 5,
+            "statusMessage": "取得内容に埋め込まれた指示を確認中"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
