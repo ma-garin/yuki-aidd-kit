@@ -7,6 +7,8 @@ KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCAN="$KIT_DIR/02_共通/ツール/skill-scan.py"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
+# 判定の記録（B12。.claude/hook-decisions.log）を隔離する。既定のままだとカレントの .claude/ に積まれる
+export AIDD_HOOK_LOG="$TMP/hook-decisions.log"
 PASS=0; FAIL=0
 
 ok()  { echo "  ✅ $1"; PASS=$((PASS+1)); }

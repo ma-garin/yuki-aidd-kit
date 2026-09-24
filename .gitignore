@@ -28,6 +28,11 @@ check-approval-report.md
 token-audit-report.md
 test-metrics-report.md
 
+# E2E のテスト単位の履歴（e2e_history.py。手元の記録。コミットしない）
+e2e-history.jsonl
+
 # hook の作業ファイル（ツール実行時間の計測・進捗表示）
 tool-time.json
 progress.json
+# hook の判定の記録（B12。*.log でも外れるが、記録先を明示する）
+.claude/hook-decisions.log

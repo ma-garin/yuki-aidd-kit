@@ -10,6 +10,7 @@
 #   ./00_導入/02_プロジェクト配布/install-git-hooks.sh <対象> --uninstall   # 退避した元の hook へ戻す
 #
 # 前提: 対象に scripts/pre-commit（秘密情報）と scripts/pre-commit-ui-gate.sh（UI）が置かれていること。
+#   scripts/test-weaken-check.py（テストの弱体化。B38）があれば、テストファイルが staged のときだけ流す節も配線する。
 #   `export-project.sh` が両方を配る。片方しか無い場合は在るものだけ配線する。
 # 既存の .git/hooks/pre-commit は .bak に退避してから上書きする（冪等。二重配線しない）。
 set -uo pipefail
@@ -35,9 +36,10 @@ if [ "$MODE" = "--uninstall" ]; then
 fi
 
 mkdir -p "$GITDIR/hooks"
-HAS_SECRET=false; HAS_UI=false
+HAS_SECRET=false; HAS_UI=false; HAS_WEAKEN=false
 [ -f "$TARGET/scripts/pre-commit" ] && HAS_SECRET=true
 [ -f "$TARGET/scripts/pre-commit-ui-gate.sh" ] && HAS_UI=true
+[ -f "$TARGET/scripts/test-weaken-check.py" ] && HAS_WEAKEN=true
 if [ "$HAS_SECRET" = false ] && [ "$HAS_UI" = false ]; then
   echo "❌ $TARGET/scripts/ にゲートスクリプトがありません。先に export-project.sh を実行してください"
   exit 1
@@ -55,6 +57,8 @@ fi
   echo '# Claude Code でも Codex でも効く唯一の強制層（11_目標運用モデル.md D-4）'
   echo 'set -uo pipefail'
   echo 'ROOT="$(git rev-parse --show-toplevel)"'
+  # テストの弱体化は下の節でこの hook が流す。scripts/pre-commit 側で重ねて流さないよう印を渡す
+  [ "$HAS_WEAKEN" = true ] && echo 'export AIDD_WEAKEN_IN_HOOK=1'
   [ "$HAS_SECRET" = true ] && echo 'bash "$ROOT/scripts/pre-commit" || exit 1'
   [ "$HAS_UI" = true ]     && echo 'bash "$ROOT/scripts/pre-commit-ui-gate.sh" || exit 1'
   # 工程承認ゲート（B-21）: .claude/phase-gate が無いプロジェクトでは何もしない（常に配線してよい）。
@@ -102,6 +106,20 @@ if [ -f "$ROOT/.claude/phase-gate" ]; then
   fi
 fi
 GATE
+  # テストの弱体化（B38）: テストファイル・テスト設定（playwright.config.* など）が staged にあるときだけ流す。
+  # assert の削除・書き換え、skip/only の追加、retries の増加を NG にする。正当な変更は近くに weaken-ok: <理由>。
+  # 配線後に scripts/test-weaken-check.py が消えていたら、判定不能として止める（合格に数えない）。
+  [ "$HAS_WEAKEN" = true ] && cat <<'WEAKEN'
+STAGED_TESTS=$(git diff --cached --name-only 2>/dev/null | grep -E '(^|/)([^/]+\.(spec|test)\.[^/]+|[^/]+_test\.py|test_[^/]*\.py|(playwright|jest|vitest)\.config\.[^/]+|pytest\.ini|pyproject\.toml|setup\.cfg|tox\.ini|conftest\.py)$|(^|/)__tests__/|(^|/)tests/.*\.py$' || true)
+if [ -n "$STAGED_TESTS" ]; then
+  if [ ! -f "$ROOT/scripts/test-weaken-check.py" ]; then
+    echo "❌ テストファイルが staged ですが scripts/test-weaken-check.py がありません（判定不能を合格に数えない）"
+    echo "   ./00_導入/02_プロジェクト配布/export-project.sh . を再実行してください"
+    exit 1
+  fi
+  python3 "$ROOT/scripts/test-weaken-check.py" --staged || exit 1
+fi
+WEAKEN
   echo 'exit 0'
 } > "$HOOK"
 chmod +x "$HOOK"
@@ -110,6 +128,7 @@ echo "✅ $HOOK に配線しました"
 [ "$HAS_SECRET" = true ] && echo "   - scripts/pre-commit（秘密情報スキャン。gitleaks があれば使う）"
 [ "$HAS_UI" = true ]     && echo "   - scripts/pre-commit-ui-gate.sh（UI 変更に .ui-verified を要求）"
 echo "   - 工程承認ゲート（.claude/phase-gate があるときだけ有効。scripts/check_approval.py --phase/--gate）"
+[ "$HAS_WEAKEN" = true ] && echo "   - テストの弱体化（テストファイルが staged のときだけ。scripts/test-weaken-check.py --staged）"
 echo ""
 echo "確認: $TARGET で秘密情報を含むファイルを stage して git commit すると止まります。"
 echo "解除: ./00_導入/02_プロジェクト配布/install-git-hooks.sh $TARGET --uninstall"

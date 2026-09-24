@@ -39,6 +39,8 @@
 扱い（呼び出し側。install.sh・install_guard.py）: DANGEROUS は導入しない（環境変数 AIDD_SKILL_SCAN_OK=1 で 1 回だけ通す）。
   UNKNOWN は CAUTION と同じ扱い（一覧を出して導入を続ける。SAFE には数えない）。
 終了コード: 0 = DANGEROUS なし（CAUTION・UNKNOWN は警告だけ）、1 = DANGEROUS あり、2 = 使い方の誤り。
+判定は `.claude/hook-decisions.log` に 1 行記録する（B12。DANGEROUS は deny、AIDD_SKILL_SCAN_OK=1 のときは override、
+  CAUTION・UNKNOWN は warn、SAFE は記録しない。secret_patterns.log_decision。書けなくても結果は変えない）。
 出力には該当行の中身を出さない（秘密値・不可視文字を画面に流さない）。file:line・規則・要旨だけ。
 
 使い方: python3 02_共通/ツール/skill-scan.py [--json] [--brief] PATH [PATH ...]
@@ -487,6 +489,20 @@ def collect(arg: str) -> list[FileResult]:
     return out
 
 
+def log_verdict(verdict: str, results: list[FileResult], paths: list[str]) -> None:
+    """DANGEROUS（AIDD_SKILL_SCAN_OK=1 なら override）・UNKNOWN・CAUTION を .claude/hook-decisions.log に 1 行記録する（B12）。
+    secret_patterns.log_decision を使う（秘密値は伏字。書けなくても走査の結果は変えない）。部品が無ければ記録しない。"""
+    if verdict == "SAFE" or _SP is None or not hasattr(_SP, "log_decision"):
+        return
+    rules = ",".join(dict.fromkeys(f.rule for r in results for f in r.findings if f.level == verdict))
+    if verdict == "DANGEROUS":
+        ok = os.environ.get("AIDD_SKILL_SCAN_OK") == "1"
+        _SP.log_decision("skill-scan", "override" if ok else "deny", f"DANGEROUS {rules}", "skill-scan",
+                         " ".join(paths), env="AIDD_SKILL_SCAN_OK" if ok else None)
+    else:
+        _SP.log_decision("skill-scan", "warn", f"{verdict} {rules}", "skill-scan", " ".join(paths))
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="スキル・MCP・プラグインの導入前の静的検査（実行しない・ネット不使用）")
     ap.add_argument("paths", nargs="+", help="走査するファイルまたはディレクトリ")
@@ -501,6 +517,7 @@ def main(argv: list[str] | None = None) -> int:
         counts[r.verdict] += 1
     verdict = max((r.verdict for r in results), key=RANK.__getitem__, default="UNKNOWN")
     rc = 1 if verdict == "DANGEROUS" else 0
+    log_verdict(verdict, results, a.paths)
     if a.json:
         print(json.dumps({"verdict": verdict, "exit": rc, "counts": counts,
                           "files": [{"path": r.path, "verdict": r.verdict,

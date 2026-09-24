@@ -859,8 +859,8 @@
             <h3>4. hooksの動作を確認する</h3>
             <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh</code></pre>
             <p>
-              保存時の自動チェック（hooks）が正しく動くかを838ケースでテストします。
-              「PASS=838 / FAIL=0」なら合格です。
+              保存時の自動チェック（hooks）が正しく動くかを918ケースでテストします。
+              「PASS=918 / FAIL=0」なら合格です。
             </p>
           </div>
           <div class="callout warn">
@@ -1646,6 +1646,13 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
             <li><code>verify.sh</code> は配置の有無だけでなく、設定そのもの（<code>bypassPermissions</code>・全許可の <code>Bash(*)</code>・<code>curl|sh</code>・秘密値）も監査します</li>
             <li>「完了しました」の報告と直近のテスト実行結果が食い違うと <code>reply-language.py</code> が差し戻します（同じやり取りで2回まで）</li>
             <li><code>.claude/phase-gate</code> があるプロジェクトでは、<code>req-lint.py</code>（要件定義書の検査）の指摘が残っていると基本設計の入口で止まります</li>
+          </ul>
+          <h3>記録・再注入・デザイン検査・テストの検出力（8.6.0〜）</h3>
+          <ul>
+            <li>hooks が deny・警告するたびに <code>.claude/hook-decisions.log</code>（JSONL。秘密値は伏字）へ記録します。<code>token_report.py --hooks</code> で hook 別の deny/warn 件数と、環境変数（<code>AIDD_*_OK</code> 等）で解除した回数を集計できます（誤検知率の目安）</li>
+            <li>圧縮・再開の直後（<code>compact</code>・<code>resume</code>。<code>startup</code> は対象外）は、新しい見張り役 <code>hooks/session-context.py</code> が <code>CURRENT_STATE.md</code>（無ければ <code>.claude/CURRENT_STATE.md</code>）の「現在の作業」「制約」「次の一手」を最大12行だけ自動で再注入します。最終更新から30日を超えていたら「古い（日付）」と表示されます</li>
+            <li><code>check_design.py</code> に a11y 検査（D20〜D25: <code>alt</code> 抜け・ラベル無し入力・<code>lang</code> 抜け・空ボタン・見出し飛び・コントラスト比不足）と、AI 既定意匠への警告（D26 装飾グラデーション・D27 絵文字アイコン）を追加しました</li>
+            <li><code>e2e_history.py</code> が E2E をテスト単位で履歴管理し合格率・flaky 率を出します（履歴3回未満は判定不能）。生成した Playwright テストは <code>pw-spec-lint.py</code> が固定待ち・壊れやすいセレクタ・弱いアサーションを検査し、<code>test-weaken-check.py</code> が assert 削除や skip 追加などの「テストの弱体化」をコミット前に検知します</li>
           </ul>
           <h3>見積が自動で校正される</h3>
           <p>

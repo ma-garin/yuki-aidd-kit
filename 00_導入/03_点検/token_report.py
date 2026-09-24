@@ -33,6 +33,11 @@ token_audit.py が「仕組みが配線されているか」を見るのに対�
   このとき一覧に無い名前（/clear などの組み込みコマンド・(不明)）は区分 command として skill の後に出し、
   「呼ばれすぎ」は一覧にあるスキルだけを対象にする。
 hook での常時記録や外部（Langfuse 等）への送出はしない。事後に transcript を読むだけ。
+
+--hooks [LOG]（B12）: hook の判定の記録 `.claude/hook-decisions.log`（JSONL。secret_patterns.log_decision が書く）を集計し、
+  hook 別の deny・block・warn の回数、解除（AIDD_ALLOW_*・AIDD_*_OK）で通した回数（override。誤検知の目安）、
+  上位 3 件の理由の表を出す。LOG を省くと `$CLAUDE_PROJECT_DIR/.claude/`・カレントの `.claude/`・`~/.claude/` の順に探す。
+  壊れた行は数えずに件数だけ出す。このときは transcript を読まない。
 """
 from __future__ import annotations
 
@@ -254,6 +259,60 @@ def skill_usage(skills_dir: Path, per_session: list[tuple[Path, Counter]], over:
                       f"- 1 セッションで {over} 回を超えて呼ばれたスキル: " + (", ".join(heavy) or "なし")])
 
 
+HOOK_LOG = "hook-decisions.log"
+DECISION_COLS = ("deny", "block", "warn", "override")
+
+
+def default_hook_log() -> Path:
+    import os
+    for base in (os.environ.get("CLAUDE_PROJECT_DIR"), str(Path.cwd())):
+        if base and (Path(base) / ".claude" / HOOK_LOG).is_file():
+            return Path(base) / ".claude" / HOOK_LOG
+    return Path.home() / ".claude" / HOOK_LOG
+
+
+def hook_report(path: Path) -> str:
+    counts: dict[str, Counter] = {}
+    reasons: dict[str, Counter] = {}
+    envs: dict[str, Counter] = {}
+    broken = 0
+    first = last = ""
+    with path.open(encoding="utf-8", errors="replace") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                r = json.loads(line)
+            except ValueError:
+                broken += 1
+                continue
+            if not isinstance(r, dict) or not isinstance(r.get("hook"), str):
+                broken += 1
+                continue
+            hook, dec = r["hook"], str(r.get("decision", ""))
+            counts.setdefault(hook, Counter())[dec] += 1
+            reasons.setdefault(hook, Counter())[str(r.get("reason", ""))] += 1
+            if dec == "override" and r.get("env"):
+                envs.setdefault(hook, Counter())[str(r["env"])] += 1
+            t = str(r.get("time", ""))
+            first = min(first, t) if first else t
+            last = max(last, t)
+    out = [f"## hook の判定（{path}）", ""]
+    if not counts:
+        out.append("記録なし" + (f"（読めない行 {broken} 件）" if broken else ""))
+        return "\n".join(out)
+    out += [f"期間: {first} 〜 {last}" + (f"（読めない行 {broken} 件は数えない）" if broken else ""), "",
+            "| hook | deny | block | warn | 解除で通過 | 上位の理由 |", "|---|---:|---:|---:|---:|---|"]
+    for hook in sorted(counts, key=lambda h: (-sum(counts[h].values()), h)):
+        c = counts[hook]
+        top = "／".join(f"{k}（{n}）" for k, n in reasons.get(hook, Counter()).most_common(3)).replace("|", "\\|")
+        ov = str(c["override"]) + (f"（{','.join(envs[hook])}）" if hook in envs else "")
+        out.append(f"| {hook} | {c['deny']} | {c['block']} | {c['warn']} | {ov} | {top or '-'} |")
+    out += ["", "解除で通過 = AIDD_ALLOW_*・AIDD_*_OK で止めずに通した回数（止める判定だった操作）。"
+            "deny＋block に比べて多い hook は誤検知を疑う"]
+    return "\n".join(out)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("jsonl", nargs="*", type=Path)
@@ -261,7 +320,16 @@ def main() -> int:
     ap.add_argument("--by", default="", help="skill,agent,mcp,tool のうち出す区分（カンマ区切り）")
     ap.add_argument("--skills-dir", type=Path, help="一度も呼ばれない・呼ばれすぎのスキルを出す（<名前>/SKILL.md の並ぶ場所）")
     ap.add_argument("--over", type=int, default=10, help="1 セッションでこの回数を超えたら呼ばれすぎ（既定 10）")
+    ap.add_argument("--hooks", nargs="?", const="", default=None, metavar="LOG",
+                    help="hook の判定の記録（.claude/hook-decisions.log）を hook 別に集計する（B12）")
     args = ap.parse_args()
+    if args.hooks is not None:
+        log = Path(args.hooks) if args.hooks else default_hook_log()
+        if not log.is_file():
+            print(f"hook の判定の記録が無い: {log}（hook が 1 度も止めていないか、記録先が違う）", file=sys.stderr)
+            return 1
+        print(hook_report(log))
+        return 0
     cats = [c.strip() for c in args.by.split(",") if c.strip()]
     bad = [c for c in cats if c not in CATS]
     if bad:

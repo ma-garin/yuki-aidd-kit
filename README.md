@@ -137,7 +137,7 @@ yuki-aidd-kit/
 │
 │  ── 配布しない ──
 ├── 05_プロジェクト管理/       # キット開発の計画: 要求仕様.md・ロードマップ.md（作業台帳）・構想.md・構成管理/構成管理計画書.md・構成品目一覧.md
-├── 06_保守者向け/             # 保守者専用: 01_内部仕様/（現況仕様）・02_設計判断の根拠/・03_回帰テスト/（回帰テスト 17 本と check-docs。キット自身の CI が呼ぶ）・04_監査記録/・保守者の傾向.md・学んだこと.md
+├── 06_保守者向け/             # 保守者専用: 01_内部仕様/（現況仕様）・02_設計判断の根拠/・03_回帰テスト/（回帰テスト 20 本と check-docs。キット自身の CI が呼ぶ）・04_監査記録/・保守者の傾向.md・学んだこと.md
 └── .github/workflows/        # kit-ci.yml（キット自身の CI。手動起動のみ。GitHub が直下しか読まないためここ）
 ```
 
@@ -148,7 +148,7 @@ yuki-aidd-kit/
 本体を変更したら同じコミットで `06_保守者向け/01_内部仕様/` を更新し、回帰テストと文書整合検査を通す。
 
 ```bash
-for t in ci/test-*.sh; do bash "$t"; done   # 回帰テスト 17 本（hooks / install / agents / trace-check / quality-harness / git-gates / check-approval / test-metrics / token-audit / adr-to-rules / security-scan / skill-scan / cite-check / req-lint / check-docs / check-design）
+for t in ci/test-*.sh; do bash "$t"; done   # 回帰テスト 20 本（hooks / install / agents / trace-check / quality-harness / git-gates / check-approval / test-metrics / token-audit / adr-to-rules / security-scan / skill-scan / cite-check / req-lint / e2e-history / pw-spec-lint / weaken-check / check-docs / check-design）
 ./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
 ./00_導入/03_点検/check-design.sh                     # デザイン検査（直値・未定義トークン・外部 CDN・alert()）
 ```

@@ -21,6 +21,15 @@ pre-commit・文書）に散って食い違っていた。判定はここだけ�
         python3 secret_patterns.py --check-consistency [キットのルート]   他 4 か所との一致（exit 0/1）
         python3 secret_patterns.py --self-test                             自分の例を通す（exit 0/1）
         python3 secret_patterns.py --pre-write                             pre-write-check.sh から呼ぶ（stdin に hook の JSON）
+        python3 secret_patterns.py --log-decision HOOK DECISION 理由 [ツール] [要約]   sh の hook から (e) を呼ぶ（常に exit 0）
+  (e) mask_secrets(text) / log_decision(hook, decision, reason, tool, summary, cwd=None, env=None)
+        hook の deny・block・warn・override（AIDD_ALLOW_*・AIDD_*_OK で通した）を `.claude/hook-decisions.log` に
+        JSONL で 1 行追記する（B12。時刻・hook・decision・理由 40 字・ツール・コマンドやパスの要約 60 字・解除に使った変数）。
+        置き場は injection-guard.log とそろえる（`$CLAUDE_PROJECT_DIR/.claude/`、無ければ呼び出し側の cwd・
+        カレントの `.claude/`、どれも無ければ `~/.claude/`）。環境変数 AIDD_HOOK_LOG でファイルを直に指定できる（テスト用）。
+        秘密値は伏字にしてから 1 行にまとめて切り詰める（(b) の値パターンに当たる部分・秘密鍵は BEGIN〜END を丸ごと
+        （END が無ければ BEGIN 以降を全部）・`password=…` 形の値・base64 らしき 40 字以上の連なりを `***`）。
+        書けなくても例外を出さない（記録のために止めない。deny の動作は変えない）。集計は `token_report.py --hooks`
       一致検査は片方向（4 か所に書かれた名前 ⊂ (a)）。pre-write-check.sh に独自の拡張子一覧が残っていれば
       `=~ \.(env|pem|…)$` の形だけを読む（別の書き方にすると検査から漏れる）
 
@@ -194,6 +203,78 @@ def find_secret_values(text: str) -> list[tuple[str, int]]:
 def describe_hits(hits: list[tuple[str, int]], where: str = "") -> str:
     """理由文用。値は出さず、型の名前・型の接頭辞の伏字・行番号だけを書く。"""
     return "、".join(f"{name}（{_MASK.get(name, '****')}）{where}{no} 行目" for name, no in hits)
+
+
+# ---------------------------------------------------------------- (e) hook の判定の記録（B12）
+# 値パターンに当たった所から、続く英数字・記号（JWT の残り・鍵の続き）までを伏字にする
+_MASK_RX = tuple(re.compile(rf"(?:{rx.pattern})[A-Za-z0-9_\-.+/=]*") for _n, _kw, _m, rx in SECRET_VALUE_PATTERNS)
+# 既知形式でない値も、名前が秘密らしい代入（password=…・API_KEY: …・Bearer …）は値を伏せる（安全側）
+_MASK_KV = re.compile(r"(?i)\b([A-Za-z0-9_.-]*(?:passw(?:or)?d|secret|token|api[_-]?key|credential)[A-Za-z0-9_.-]*"
+                      r"[\"']?\s*[=:]\s*)(\"[^\"]*\"|'[^']*'|[^\s;&|]+)")
+_MASK_BEARER = re.compile(r"(?i)\b(bearer\s+)[A-Za-z0-9_\-.+/=]+")
+# 秘密鍵は BEGIN から END まで（複数行・エスケープの \\n も）を丸ごと。END が無ければ BEGIN 以降を全部
+_MASK_KEY_BLOCK = re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY[A-Z ]*-----.*?(?:-----END [A-Z0-9 ]*PRIVATE KEY[A-Z ]*-----|\Z)",
+                             re.S)
+# base64 らしき 40 字以上の連なり（大文字・小文字・数字が混ざるもの。git の SHA やふつうのパスは当てない）
+_MASK_B64 = re.compile(r"(?<![A-Za-z0-9+/])(?=[A-Za-z0-9+/]*[A-Z])(?=[A-Za-z0-9+/]*[a-z])(?=[A-Za-z0-9+/]*[0-9])"
+                       r"[A-Za-z0-9+/]{40,}={0,2}")
+LOG_NAME = "hook-decisions.log"
+DECISIONS = ("deny", "block", "warn", "override")
+
+
+def mask_secrets(text: str) -> str:
+    """秘密値らしい部分を *** にする。プレースホルダの行も伏せる（記録は安全側に倒す）。"""
+    if not isinstance(text, str):
+        return ""
+    text = _MASK_KEY_BLOCK.sub("***", text)
+    for rx in _MASK_RX:
+        text = rx.sub("***", text)
+    text = _MASK_KV.sub(lambda m: m.group(1) + "***", text)
+    text = _MASK_BEARER.sub(lambda m: m.group(1) + "***", text)
+    return _MASK_B64.sub("***", text)
+
+
+def _short(text: str, n: int) -> str:
+    t = " ".join(mask_secrets(text if isinstance(text, str) else str(text or "")).split())
+    return t if len(t) <= n else t[:n - 1] + "…"
+
+
+def decision_log_path(cwd: str | None = None) -> Path:
+    explicit = os.environ.get("AIDD_HOOK_LOG")
+    if explicit:
+        return Path(explicit)
+    for base in (os.environ.get("CLAUDE_PROJECT_DIR"), cwd, os.getcwd()):
+        if base and (Path(base) / ".claude").is_dir():
+            return Path(base) / ".claude" / LOG_NAME
+    return Path.home() / ".claude" / LOG_NAME
+
+
+def log_decision(hook: str, decision: str, reason: str, tool: str = "", summary: str = "",
+                 cwd: str | None = None, env: str | None = None) -> None:
+    """hook の判定を 1 行追記する。秘密値は伏字。失敗しても何もしない（呼び出し側の判定を変えない）。"""
+    try:
+        import time
+        rec = {"time": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "hook": str(hook), "decision": str(decision),
+               "reason": _short(reason, 40), "tool": _short(tool, 20), "summary": _short(summary, 60)}
+        if env:
+            rec["env"] = str(env)
+        path = decision_log_path(cwd)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    except Exception:    # 記録は付け足し。書けない・壊れた入力でも hook を止めない
+        pass
+
+
+def input_summary(tool_input) -> str:
+    """ツール入力から要約の元（コマンド・パス・パターン）を取る。"""
+    if not isinstance(tool_input, dict):
+        return ""
+    for k in ("command", "file_path", "notebook_path", "pattern", "path", "url", "query"):
+        v = tool_input.get(k)
+        if isinstance(v, str) and v:
+            return v
+    return ""
 
 
 # ---------------------------------------------------------------- (c) コマンドの分解
@@ -571,8 +652,11 @@ def pre_write(stdin_text: str) -> int:
         if not isinstance(ti, dict):
             raise ValueError("tool_input がオブジェクトでない")
     except ValueError:
+        log_decision("pre-write-check", "deny", "hook の入力が読めない（fail-closed）")
         return 3     # 入力が読めない（pre-write-check.sh が deny にする。2 は python3 がファイルを開けないときの値）
     fp = ti.get("file_path") or ti.get("notebook_path") or ""
+    tool = data.get("tool_name") if isinstance(data.get("tool_name"), str) else ""
+    cwd = data.get("cwd") if isinstance(data.get("cwd"), str) else None
     found = []
     for where, text in _write_texts(ti):
         hits = find_secret_values(text)
@@ -588,10 +672,13 @@ def pre_write(stdin_text: str) -> int:
             print(json.dumps({"hookSpecificOutput": {
                 "hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": reason,
             }}, ensure_ascii=False))
+            log_decision("pre-write-check", "deny", f"本文に秘密値: {what}", tool, fp, cwd)
             return 0
         lines.append(f"⚠ 秘密情報らしき値を書き込む（AIDD_SECRET_OK=1 のため通す）: {what}")
+        log_decision("pre-write-check", "override", f"本文に秘密値: {what}", tool, fp, cwd, env="AIDD_SECRET_OK")
     if fp and is_secret_path(fp, data.get("cwd")):
         lines.append(f"⚠ 秘密情報ファイルへの書き込み: {fp}")
+        log_decision("pre-write-check", "warn", "秘密情報ファイルへの書き込み", tool, fp, cwd)
     if lines:
         print("\n".join(lines))
     return 0
@@ -729,6 +816,18 @@ def self_test() -> list[str]:
             bad.append(f"find_secret_values が {name} を 2 行目に見つけない（{hits}）")
         if val in describe_hits(hits):
             bad.append(f"describe_hits が {name} の値を出している")
+        if val in mask_secrets(f"curl -H 'X: {val}' https://a.test") or val[4:] in mask_secrets(f"k={val}"):
+            bad.append(f"mask_secrets が {name} の値を伏せていない")
+    key = "-----BEGIN RSA " + "PRIVATE KEY-----"
+    for raw, want in (("DB_PASSWORD=hunter2 ./run", "DB_PASSWORD=*** ./run"),
+                      (f"printf '{key}\nMIIEowIBAAKCzz\n-----END RSA " + "PRIVATE KEY-----' > k", "printf '***' > k"),
+                      (f"cat <<E\n{key}\nMIIEowIBAAKCzz\nrest", "cat <<E\n***"),
+                      ("x " + "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVowMTIzNDU2Nzg5YWJj" + " y", "x *** y"),
+                      ("git show 3f2a9c0e1b7d4a6f8e2c5b9d0a1f3e7c6b4d2a8e", "git show 3f2a9c0e1b7d4a6f8e2c5b9d0a1f3e7c6b4d2a8e"),
+                      ("curl -H 'Authorization: Bearer abc.def' x", "curl -H 'Authorization: Bearer ***' x"),
+                      ("git status && ls -la", "git status && ls -la")):
+        if mask_secrets(raw) != want:
+            bad.append(f"mask_secrets({raw!r}) = {mask_secrets(raw)!r}（期待 {want!r}）")
     for text in ("API_KEY=your-key-here", "AKfycb で始まる ID", "ghp_ で始まるトークン", "task-abcdefghijklmnopqrstuvwxyz",
                  "SLACK_BOT_TOKEN=xoxb-your-token-here", "OPENAI_API_KEY=sk-" + "x" * 30,
                  "# example: AKIA" + "IOSFODNN7EXAMPLE"):
@@ -800,7 +899,11 @@ def main(argv: list[str]) -> int:
                 "hookEventName": "PreToolUse", "permissionDecision": "deny",
                 "permissionDecisionReason": f"[pre-write-check] hook 内部エラー: {type(e).__name__}（判定不能なので止めた）",
             }}, ensure_ascii=False))
+            log_decision("pre-write-check", "deny", f"hook 内部エラー: {type(e).__name__}")
             return 0
+    if len(argv) >= 5 and argv[1] == "--log-decision":
+        log_decision(argv[2], argv[3], argv[4], *(argv[5:7]))
+        return 0
     print(__doc__)
     return 2
 

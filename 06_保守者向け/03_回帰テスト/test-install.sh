@@ -7,6 +7,8 @@
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
+# install.sh が呼ぶ skill-scan の判定の記録（B12）を隔離する。既定のままだとカレントの .claude/ に積まれる
+export AIDD_HOOK_LOG="$TMP/hook-decisions.log"
 PASS=0; FAIL=0
 
 ok() { echo "  ✅ $1"; PASS=$((PASS+1)); }
@@ -127,6 +129,33 @@ OUT=$(vrun); RC=$?
 expect_exit "判定不能: JSON として読めない設定は NG（exit 1）" 1 "$RC"
 rm -f "$VP/.claude/settings.local.json"
 
+# ---------------------------------------------------------------- verify.sh の導入先の文脈ファイル（B64）
+# rules の paths が 1 件も当たらない → WARN（exit 0 のまま）／ CLAUDE.md・AGENTS.md の参照切れ → NG（exit 1）
+echo "[verify.sh: 導入先の文脈ファイル（B64）]"
+mkdir -p "$VP/.claude/rules" "$VP/src/api"; : > "$VP/src/api/a.ts"
+printf '%s\n' '# P' '@AGENTS.md と `src/api/a.ts:3` を読む。成果物は `docs/out/`、状態は `.claude/mode`' '```' '`in/fence.md` はフェンスの中' '```' > "$VP/CLAUDE.md"
+printf '%s\n' '# A' '参照 `src/api/a.ts`・URL `https://example.com/a.md`・記入例 `<dir>/x.md`・glob `src/**/*.md`' > "$VP/AGENTS.md"
+printf '%s\n' '---' 'paths:' '  - "src/**/*.{ts,tsx}"' '---' '# r' > "$VP/.claude/rules/api.md"
+OUT=$(vrun); RC=$?
+expect_exit "正常: 参照先が在り paths も当たれば exit 0" 0 "$RC"
+expect_noout "正常: 文脈ファイルで警告を出さない（ディレクトリ・状態ファイル・URL・記入例・glob・フェンスは見ない）" "⚠" "$OUT"
+expect_out  "正常: 参照切れなしと出す" "CLAUDE.md: 参照切れなし" "$OUT"
+printf '%s\n' '---' 'paths: ["srv/**/*.py", "src/api/*.ts"]' '---' > "$VP/.claude/rules/typo.md"
+OUT=$(vrun); RC=$?
+expect_exit "WARN paths の 0 件一致は exit 0 のまま" 0 "$RC"
+expect_out  "WARN ファイル名と当たらない glob を出す" ".claude/rules/typo.md: paths の srv/**/*.py に一致するファイルが 0 件" "$OUT"
+expect_noout "WARN 当たる glob は出さない" "paths の src/api/*.ts" "$OUT"
+rm -f "$VP/.claude/rules/typo.md"
+printf '%s\n' '詳細は `docs/guide.md` と @./notes/plan.md' >> "$VP/CLAUDE.md"
+printf '%s\n' '@docs/missing-import.md' >> "$VP/AGENTS.md"
+OUT=$(vrun); RC=$?
+expect_exit "NG 参照切れは exit 1" 1 "$RC"
+expect_out  "NG コードスパンのパスの参照切れを行番号つきで出す" 'CLAUDE.md:6: `path` の参照先 docs/guide.md が無い' "$OUT"
+expect_out  "NG @import の参照切れ（./ 始まり）" "CLAUDE.md:6: @import の参照先 ./notes/plan.md が無い" "$OUT"
+expect_out  "NG AGENTS.md の @import の参照切れ" "AGENTS.md:3: @import の参照先 docs/missing-import.md が無い" "$OUT"
+expect_out  "NG 結果行に文脈ファイルの NG 数" "文脈ファイル 3" "$OUT"
+rm -rf "$VP/CLAUDE.md" "$VP/AGENTS.md" "$VP/.claude/rules" "$VP/src"
+
 # ---------------------------------------------------------------- install-guard.sh（指示優先 3 hook の最小導入・merge・冪等）
 echo "[install-guard.sh]"
 GH="$TMP/guard-home"; mkdir -p "$GH/.claude"
@@ -224,6 +253,35 @@ OUT=$(bash "$KIT_DIR/00_導入/02_プロジェクト配布/install-git-hooks.sh"
 expect_exit "--uninstall が exit 0" 0 "$RC"
 OUT=$(cd "$GH" && git commit -m ui 2>&1); RC=$?
 expect_exit "--uninstall 後はゲートが外れる" 0 "$RC"
+
+# ---------------------------------------------------------------- install-git-hooks.sh: テストの弱体化（B38）
+# assert を消したテストのコミットを止める。テストファイルが staged のときだけ流し、scripts/pre-commit と二重に流さない
+echo "[install-git-hooks.sh: テストの弱体化]"
+WG="$TMP/wg"; mkdir -p "$WG"
+(cd "$WG" && git init -q && git config user.email t@e && git config user.name T)
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh" "$WG" >/dev/null 2>&1
+for f in scripts/test-weaken-check.py scripts/pw-spec-lint.py scripts/e2e_history.py; do
+  expect_file "export-project.sh: $f" "$WG/$f"
+done
+bash "$KIT_DIR/00_導入/02_プロジェクト配布/install-git-hooks.sh" "$WG" >/dev/null 2>&1
+expect_contains "配線に test-weaken-check.py --staged を含む" 'scripts/test-weaken-check.py" --staged || exit 1' "$(cat "$WG/.git/hooks/pre-commit")"
+mkdir -p "$WG/e2e"
+printf "test('cart', async ({ page }) => {\n  await page.goto('/cart');\n  expect(total).toBe(1200);\n});\n" > "$WG/e2e/cart.spec.ts"
+(cd "$WG" && git add -A >/dev/null 2>&1 && git commit -q --no-verify -m init)
+printf "test('cart', async ({ page }) => {\n  await page.goto('/cart');\n});\n" > "$WG/e2e/cart.spec.ts"
+(cd "$WG" && git add e2e/cart.spec.ts)
+OUT=$(cd "$WG" && git commit -m weaken 2>&1); RC=$?
+expect_exit "assert を消したテストのコミットが止まる（exit 1）" 1 "$RC"
+expect_contains "止めた理由（アサーションの削除）を出す" "アサーションの削除" "$OUT"
+printf "test('cart', async ({ page }) => {\n  await page.goto('/cart');\n  // weaken-ok: 合計の表示は仕様変更 REQ-F-012 で廃止した\n});\n" > "$WG/e2e/cart.spec.ts"
+(cd "$WG" && git add e2e/cart.spec.ts)
+OUT=$(cd "$WG" && git commit -q -m "weaken with reason" 2>&1); RC=$?
+expect_exit "weaken-ok: <理由> を書けばコミットできる" 0 "$RC"
+expect_count "検査は 1 回だけ流れる（scripts/pre-commit と二重にならない）" 1 "$(printf '%s\n' "$OUT" | grep -c 'test-weaken-check')"
+echo "readme" > "$WG/README.md"; (cd "$WG" && git add README.md)
+OUT=$(cd "$WG" && git commit -m docs 2>&1); RC=$?
+expect_exit "テストファイルが staged に無いコミットは検査しない（exit 0）" 0 "$RC"
+expect_noout "テストファイルが無ければ検査の出力も出ない" "test-weaken-check" "$OUT"
 
 # ---------------------------------------------------------------- install-git-hooks.sh: 工程承認ゲート（B-21）
 # 未承認・判定不能のまま docs/lifecycle/0N-*.md をコミットさせない。判定不能を合格に数えない。
@@ -395,6 +453,19 @@ for f in scripts/req-lint.py scripts/cite-check.py scripts/section_hash.py .clau
 done
 OUT=$(cd "$P" && python3 scripts/cite-check.py . 2>&1); RC=$?
 expect_exit "配布先で cite-check.py が隣の section_hash.py で動く（exit 0）" 0 "$RC"
+
+
+echo "[検証: 塊J]"
+JV=$(mktemp -d)
+python3 - "$JV" <<'JVPY'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1]); (p / ".claude/rules").mkdir(parents=True); (p / ".github/workflows").mkdir(parents=True)
+(p / ".github/workflows/ci.yml").write_text("on: push\n")
+(p / ".claude/rules/ci.md").write_text('---\npaths:\n  - "./.github/workflows/*.yml"\n---\n# ci\n')
+JVPY
+OUT=$(AIDD_VERIFY_PROJECT="$JV" bash "$KIT_DIR/00_導入/01_インストール/verify.sh" 2>&1)
+if printf '%s' "$OUT" | grep -qF "workflows/*.yml に一致するファイルが 0 件"; then ng "[検証] paths の ./.github/… は一致する（./ を外すとき先頭の . まで削らない）" "0 件一致の WARN が出た"; else ok "[検証] paths の ./.github/… は一致する"; fi
+rm -rf "$JV"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

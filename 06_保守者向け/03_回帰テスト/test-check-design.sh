@@ -400,6 +400,264 @@ echo "[検証: B-24-4 赤: 方針「出荷物とサンプルはNG=0。基準線�
 OUT=$(python3 "$KIT_DIR/00_導入/03_点検/check_design.py" --root "$KIT_DIR" -o "$TMP/report.md" 01_利用者向け資料/90_サンプル/図書貸出 2>&1); RC=$?
 expect_exit "サンプルは基準線なしでもNG=0であるべき（指揮官方針）" 0 "$RC"
 
+# --- 塊 K: B49 HTML の a11y（D20〜D24）・B50 コントラスト（D25）・B51 AI 既定意匠（D26・D27） ---
+echo "[ケースK1: D20 img の alt 欠落（alt=\"\" は装飾として許可）]"
+reset; cat > "$P/02_共通/ひな形/ui/alt.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<img src="a.png" width="40" height="40">
+<img src="deco.png" alt="" width="40" height="40">
+<img src="logo.png" alt="社内図書館" width="40" height="40">
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "alt の無い img で exit 1" 1 "$RC"
+expect_rgrep "alt 無しを D20 で検出" "| D20 | img alt欠落 | 02_共通/ひな形/ui/alt.html:2 |"
+expect_nrgrep "alt=\"\"（装飾）は D20 にしない" "alt.html:3 |"
+expect_nrgrep "alt に説明がある img は D20 にしない" "alt.html:4 |"
+
+echo "[ケースK2: D21 入力欄のラベル欠落]"
+reset; cat > "$P/02_共通/ひな形/ui/label.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<input id="q" placeholder="書名で検索">
+<select id="s"><option>a</option></select>
+<textarea id="t"></textarea>
+<label for="ok1">名前</label><input id="ok1">
+<label>メール <input type="email"></label>
+<input aria-label="検索">
+<span id="lb">期限</span><input type="date" aria-labelledby="lb">
+<input type="hidden" name="csrf"><input type="submit" value="送信"><input type="button" value="戻る">
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "ラベルの無い input/select/textarea で exit 1" 1 "$RC"
+expect_rgrep "placeholder だけの input を D21 で検出" "| D21 | 入力欄ラベル欠落 | 02_共通/ひな形/ui/label.html:2 |"
+expect_rgrep "ラベルの無い select を検出" "label.html:3 |"
+expect_rgrep "ラベルの無い textarea を検出" "label.html:4 |"
+for n in 5 6 7 8 9; do expect_nrgrep "正当なラベル付け（label for・囲む label・aria-label・aria-labelledby・hidden/submit/button）は D21 にしない（$n 行目）" "label.html:$n |"; done
+
+echo "[ケースK3: D22 html の lang 欠落]"
+reset; printf '<!doctype html>\n<html>\n<head><link rel="stylesheet" href="../tokens.css"></head>\n<body></body>\n</html>\n' > "$P/02_共通/ひな形/ui/nolang.html"
+printf '<!doctype html>\n<head><link rel="stylesheet" href="../tokens.css"></head>\n' > "$P/02_共通/ひな形/ui/nohtml.html"
+printf '<!doctype html>\n<html lang="ja">\n<head><link rel="stylesheet" href="../tokens.css"></head>\n</html>\n' > "$P/02_共通/ひな形/ui/lang.html"
+printf '<link rel="stylesheet" href="../tokens.css">\n<div class="card">断片</div>\n' > "$P/02_共通/ひな形/ui/fragment.html"
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "lang の無い html で exit 1" 1 "$RC"
+expect_rgrep "<html> の lang 無しを D22 で検出" "| D22 | html lang欠落 | 02_共通/ひな形/ui/nolang.html:2 |"
+expect_rgrep "doctype があって <html> が無い文書も D22" "| D22 | html lang欠落 | 02_共通/ひな形/ui/nohtml.html:1 |"
+expect_nrgrep "lang=\"ja\" は D22 にしない" "| 02_共通/ひな形/ui/lang.html:"
+expect_nrgrep "<html> も doctype も無い断片は D22 の対象外" "fragment.html"
+
+echo "[ケースK4: D23 名前の無いボタン・リンク]"
+reset; cat > "$P/02_共通/ひな形/ui/name.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<button type="button"></button>
+<button type="button"><span data-icon="close" data-icon-size="16"></span></button>
+<a href="#top"></a>
+<button type="button" aria-label="閉じる"><span data-icon="close" data-icon-size="16"></span></button>
+<button type="button"><span data-icon="save" data-icon-size="16"></span>保存する</button>
+<a href="/"><img src="logo.png" alt="ホーム" width="40" height="40"></a>
+<a name="anchor"></a>
+<a href="#x" aria-labelledby="t1"><span data-icon="info"></span></a>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "名前の無いボタン・リンクで exit 1" 1 "$RC"
+expect_rgrep "空の button を D23 で検出" "| D23 | 名前の無いボタン・リンク | 02_共通/ひな形/ui/name.html:2 |"
+expect_rgrep "アイコンだけの button（aria-label 無し）を検出" "name.html:3 |"
+expect_rgrep "中身の無い <a href> を検出" "name.html:4 |"
+for n in 5 6 7 8 9; do expect_nrgrep "名前のあるボタン・リンク（aria-label・テキスト・img alt・href 無し a・aria-labelledby）は D23 にしない（$n 行目）" "name.html:$n |"; done
+
+echo "[ケースK5: D24 見出しの飛びは WARN]"
+reset; cat > "$P/02_共通/ひな形/ui/heading.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<h1>一覧</h1>
+<h3>飛んだ見出し</h3>
+<h2>節</h2>
+<h3>小節</h3>
+<h2>次の節</h2>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "見出しの飛びだけなら exit 0（WARN）" 0 "$RC"
+expect_rgrep "h1→h3 を D24 の警告に記録" "| D24 | 見出しの飛び | 02_共通/ひな形/ui/heading.html:3 |"
+expect_nrgrep "h2→h3（1 段ずつ）と h3→h2（浅くなる）は D24 にしない" "heading.html:5 |"
+expect_nrgrep "浅くなる見出しは D24 にしない" "heading.html:6 |"
+expect_out "警告の件数を種別ごとに出す" "見出しの飛び 1" "$OUT"
+
+echo "[ケースK6: D25 コントラスト（対の表 × 実物の tokens.css）]"
+reset; printf '.a { color: var(--color-text); }\n' > "$P/02_共通/ひな形/ui/c.css"
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "対の表が無いだけなら exit 0（WARN）" 0 "$RC"
+expect_rgrep "対の表が無いことを D25 の警告に出す" "対の表が無い"
+cat > "$P/02_共通/ひな形/ui/contrast-pairs.md" <<'MD'
+| 前景 | 背景 | 種別 | 扱い | 用途 |
+|---|---|---|---|---|
+| `--color-text` | `--color-bg` | 本文 | | 本文 |
+| `--color-high` | `--color-high-bg` | 本文 | | High バッジ |
+| `--color-primary` | `--color-bg` | UI 部品 | | フォーカスリング |
+| `--color-primary` | `--color-bg` | 本文 | | 背景に直接置くリンク |
+| `--color-info` | `--color-info-bg` | 本文 | 保留 | Info バッジ |
+| `--color-nope` | `--color-bg` | 本文 | | 打ち間違い |
+MD
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "4.5 未満の対・未定義トークンで exit 1" 1 "$RC"
+expect_rgrep "tokens.css の隣の ui/contrast-pairs.md を既定で読む" "## コントラスト対照表（D25）"
+expect_rgrep "High バッジ（ライト）を NG で検出" "| D25 | コントラスト不足 | 02_共通/ひな形/ui/contrast-pairs.md:4 | \`--color-high × --color-high-bg\`（ライト）"
+expect_nrgrep "High バッジのダーク（届いている）は NG にしない" "\`--color-high × --color-high-bg\`（ダーク）"
+expect_nrgrep "本文 15:1 の対は NG にしない" "contrast-pairs.md:3 |"
+expect_nrgrep "同じ色でも UI 部品（3:1）なら NG にしない" "contrast-pairs.md:5 |"
+expect_rgrep "同じ色で本文（4.5:1）なら NG" "contrast-pairs.md:6 |"
+expect_rgrep "未定義トークンは判定不能として NG" "判定不能: \`--color-nope\` が定義されていない"
+expect_rgrep "扱い=保留 は警告にとどめる" "扱い=保留"
+grep -F "contrast-pairs.md:7" "$TMP/report.md" | grep -q "^| D25" && [ "$(sed -n '/## NG 一覧/,/## 警告/p' "$TMP/report.md" | grep -c 'contrast-pairs.md:7')" -eq 0 ] \
+  && ok "保留の行は NG 一覧に出ない" || ng "保留の行は NG 一覧に出ない" "NG 一覧に出た／警告に無い"
+rm -f "$P/02_共通/ひな形/ui/contrast-pairs.md"
+
+echo "[ケースK7: D25 ダーク・半透明・hsl・対象外の色（専用の tokens）]"
+T2="$TMP/tok2.css"; cat > "$T2" <<'CSS'
+:root { --fg: #767676; --bg: #FFFFFF; --veil: rgba(0,0,0,.5); --fg-w: #FFFFFF; --veil3: rgba(0,0,0,.1); --h-fg: hsl(0, 0%, 46%); --ok-fg: oklch(40% .1 250); --color-bg: #222222; --color-surface: #333333; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --fg: #555555; --bg: #222222; } }
+:root[data-theme="dark"] { --fg: #555555; --bg: #222222; }
+CSS
+cat > "$TMP/pairs2.md" <<'MD'
+| 前景 | 背景 | 種別 |
+|---|---|---|
+| `--fg` | `--bg` | 本文 |
+| `--fg` | `--veil` | 本文 |
+| `--fg-w` | `--veil3` | 本文 |
+| `--h-fg` | `--bg` | 本文 |
+| `--ok-fg` | `--bg` | 本文 |
+MD
+reset; printf '.a { color: var(--fg); background: var(--bg); }\n' > "$P/02_共通/ひな形/ui/c.css"
+OUT=$(run --tokens "$T2" --pairs "$TMP/pairs2.md" 02_共通/ひな形/ui); RC=$?
+expect_exit "ダークだけ届かない対で exit 1" 1 "$RC"
+expect_nrgrep "#767676 × 白（4.54:1）はライトで NG にしない" "\`--fg × --bg\`（ライト）"
+expect_rgrep "ダーク（data-theme と prefers-color-scheme が同じ値）を 1 つにまとめて NG" "\`--fg × --bg\`（ダーク）"
+expect_rgrep "半透明の背景は下地に重ねて計算する（黒 50% の上の灰色は NG）" "\`--fg × --veil\`（ライト）"
+expect_nrgrep "半透明の背景の下地は --color-bg / --color-surface（白いキャンバスではない。暗い下地の上の白文字は NG にしない）" "\`--fg-w × --veil3\`"
+expect_nrgrep "hsl() を計算できる（白に対して 4.5 以上）" "\`--h-fg × --bg\`（ライト）"
+expect_rgrep "oklch() は計算対象外として警告" "計算対象外"
+OUT=$(run --tokens "$T2" --pairs "$TMP/no-such-pairs.md" 02_共通/ひな形/ui); RC=$?
+expect_exit "--pairs に指定したファイルが無いと判定不能（exit 1）" 1 "$RC"
+
+echo "[ケースK8: D26 装飾グラデーション（WARN）]"
+reset; cat > "$P/02_共通/ひな形/ui/grad.css" <<'CSS'
+.hero { background: linear-gradient(135deg, var(--color-primary), var(--color-surface)); }
+.card { background-image: radial-gradient(circle, var(--color-primary-light), var(--color-surface)); }
+.x { --slop-bg: conic-gradient(var(--color-primary), var(--color-surface)); }
+.y { background: var(--slop-bg); }
+.fade { mask-image: linear-gradient(var(--color-text), transparent); -webkit-mask-image: linear-gradient(var(--color-text), transparent); }
+.frame { border-image: linear-gradient(var(--color-primary), var(--color-surface)) 1; }
+/* background: linear-gradient(red, blue) はコメント */
+.plain { background: var(--color-surface); }
+CSS
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "グラデーションだけなら exit 0（WARN）" 0 "$RC"
+expect_rgrep "background の linear-gradient を D26 で警告" "| D26 | 装飾グラデーション | 02_共通/ひな形/ui/grad.css:1 |"
+expect_rgrep "background-image の radial-gradient を警告" "grad.css:2 |"
+expect_rgrep "グラデーションのトークン経由（var(--slop-bg)）も警告" "grad.css:4 |"
+expect_nrgrep "mask-image のグラデーションは D26 にしない" "grad.css:5 |"
+expect_nrgrep "border-image のグラデーションは D26 にしない" "grad.css:6 |"
+expect_nrgrep "コメントの中のグラデーションは D26 にしない" "grad.css:7 |"
+cat > "$P/02_共通/ひな形/ui/grad.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<div class="hero" style="background: linear-gradient(var(--color-primary), var(--color-surface))">見出し</div>
+<!-- <div style="background: linear-gradient(var(--color-primary), var(--color-surface))"></div> -->
+<script>card.innerHTML = '<div style="background: linear-gradient(var(--color-primary), var(--color-surface))"></div>';</script>
+<script>/* background: linear-gradient(a, b) は使わない */ const note = 'グラデーションは使わない';</script>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_rgrep "HTML の style 属性のグラデーションも警告" "| D26 | 装飾グラデーション | 02_共通/ひな形/ui/grad.html:2 |"
+expect_nrgrep "HTML コメントの中は D26 にしない" "grad.html:3 |"
+expect_rgrep "インライン <script> で差し込むグラデーションも .js と同じく警告" "grad.html:4 |"
+[ "$(grep -c 'grad.html:4 |' "$TMP/report.md")" -eq 1 ] && ok "script 内の style 属性を 2 回数えない" || ng "script 内の style 属性を 2 回数えない" "$(grep -c 'grad.html:4 |' "$TMP/report.md") 件"
+expect_nrgrep "<script> のコメント・グラデーションを含まない文字列は D26 にしない" "grad.html:5 |"
+
+echo "[ケースK9: D27 絵文字アイコン（WARN）]"
+reset; cat > "$P/02_共通/ひな形/ui/emoji.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<button type="button">🔍</button>
+<span>⚙️</span>
+<ul><li>🏠</li></ul>
+<button type="button"><span>✅</span></button>
+<p>貸出が完了しました🎉</p>
+<span>保存しました 🎉</span>
+<button type="button" aria-label="閉じる">×</button>
+<span>‹</span><span>✓</span>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "絵文字アイコンだけなら exit 0（WARN）" 0 "$RC"
+expect_rgrep "button の中身が絵文字だけを D27 で警告" "| D27 | 絵文字アイコン | 02_共通/ひな形/ui/emoji.html:2 |"
+expect_rgrep "異体字セレクタ付き（⚙️）を警告" "emoji.html:3 |"
+expect_rgrep "li の中身が絵文字だけを警告" "emoji.html:4 |"
+[ "$(grep -c 'emoji.html:5 |' "$TMP/report.md")" -eq 1 ] && ok "入れ子（button>span）は内側の 1 件だけ" || ng "入れ子（button>span）は内側の 1 件だけ" "$(grep -c 'emoji.html:5 |' "$TMP/report.md") 件"
+for n in 6 7 8 9; do expect_nrgrep "文中の絵文字・記号（× ‹ ✓）は D27 にしない（$n 行目）" "emoji.html:$n |"; done
+
+echo "[ケースK10: 新規則の NG は基準線に乗り、WARN は乗らない]"
+reset; cat > "$P/02_共通/ひな形/ui/bl.html" <<'HTML'
+<link rel="stylesheet" href="../tokens.css">
+<img src="a.png" width="40" height="40">
+<h1>a</h1><h3>b</h3>
+HTML
+cp "$KIT_DIR/02_共通/ひな形/ui/contrast-pairs.md" "$P/02_共通/ひな形/ui/contrast-pairs.md"
+printf '| 前景 | 背景 | 種別 |\n|---|---|---|\n| `--color-high` | `--color-high-bg` | 本文 |\n' > "$P/02_共通/ひな形/ui/contrast-pairs.md"
+BLK="$TMP/baseline-k.tsv"; rm -f "$BLK"
+run --baseline "$BLK" --baseline-write 02_共通/ひな形/ui >/dev/null 2>&1
+grep -q "^D20	" "$BLK" && grep -q "^D25	" "$BLK" && ok "D20・D25 の NG を基準線に書く" || ng "D20・D25 の NG を基準線に書く" "$(cut -f1 "$BLK" 2>/dev/null | tr '\n' ' ')"
+grep -q "^D24	" "$BLK" && ng "WARN（D24）は基準線に書かない" "書かれた" || ok "WARN（D24）は基準線に書かない"
+OUT=$(run --baseline "$BLK" 02_共通/ひな形/ui); RC=$?
+expect_exit "基準線に載った D20・D25 は既知として exit 0" 0 "$RC"
+printf '<input id="late" placeholder="x">\n' >> "$P/02_共通/ひな形/ui/bl.html"
+OUT=$(run --baseline "$BLK" 02_共通/ひな形/ui); RC=$?
+expect_exit "基準線に無い新しい D21 は exit 1" 1 "$RC"
+JOUT=$(run --json 02_共通/ひな形/ui)
+echo "$JOUT" | python3 -c "
+import json,sys
+d = json.load(sys.stdin)
+assert any(e['id'] == 'D20' for e in d['ng']) and any(e['id'] == 'D25' for e in d['ng']), d['ng']
+assert any(e['id'] == 'D24' and e['severity'] == 'WARN' for e in d['warn'])
+assert d['contrast'] and d['contrast'][0]['fg'] == '--color-high' and d['contrast'][0]['verdict'] == 'NG'
+" && ok "--json に D20/D25 の NG・D24 の WARN・対照表（contrast）が入る" || ng "--json に D20/D25 の NG・D24 の WARN・対照表が入る" "内容不足"
+
+echo "[ケースK11: 出荷物の対の表を実際に読み、ライトとダークの両方を計算している]"
+OUT=$(python3 "$KIT_DIR/00_導入/03_点検/check_design.py" --root "$KIT_DIR" -o "$TMP/report.md" 2>&1); RC=$?
+expect_exit "出荷物（対の表つき）は NG=0" 0 "$RC"
+expect_rgrep "対照表に本文 × ページ背景（ライト）が OK で載る" "| \`--color-text\` | \`--color-bg\` | 本文 | ライト |"
+expect_rgrep "対照表にダークの行がある" "| \`--color-text\` | \`--color-bg\` | 本文 | ダーク |"
+expect_nrgrep "出荷物の対の表は読めている（対の表が無い警告を出さない）" "対の表が無い"
+N=$(grep -c '^| `--' "$TMP/report.md")
+[ "$N" -ge 12 ] && ok "対照表に 6 対以上 × 2 テーマ（$N 行）" || ng "対照表に 6 対以上 × 2 テーマ" "$N 行"
+
+echo "[ケースK12: 差し戻し — 装飾 img・子孫の名前・<template> の除外]"
+reset; cat > "$P/02_共通/ひな形/ui/k12.html" <<'HTML'
+<!doctype html><html lang="ja"><head><link rel="stylesheet" href="../tokens.css"></head><body>
+<img src="a.png" role="none" width="40" height="40">
+<img src="b.png" aria-hidden="false" width="40" height="40">
+<button type="button"><span><span aria-label="検索"></span></span></button>
+<a href="/"><span><svg><title>ホーム</title></svg></span></a>
+<button type="button"><span aria-labelledby="lb1"></span></button>
+<template><button type="button"></button><img src="c.png"><input id="tpl"></template>
+<button type="button"></button>
+</body></html>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "template の外の空 button で exit 1" 1 "$RC"
+expect_nrgrep "role=none の img は D20 にしない" "| D20 | img alt欠落 | 02_共通/ひな形/ui/k12.html:2 |"
+expect_rgrep "aria-hidden=false の img（alt 無し）は D20 のまま" "| D20 | img alt欠落 | 02_共通/ひな形/ui/k12.html:3 |"
+for n in 4 5 6; do expect_nrgrep "子孫の aria-label・<svg><title>・aria-labelledby で名前がある button/a は D23 にしない（$n 行目）" "k12.html:$n |"; done
+expect_nrgrep "<template> の中（空 button・alt 無し img・ラベル無し input）は走査しない" "k12.html:7 |"
+expect_rgrep "<template> の後ろの空 button は行番号どおり D23" "| D23 | 名前の無いボタン・リンク | 02_共通/ひな形/ui/k12.html:8 |"
+
+echo "[検証: 塊K]"
+# 実装担当とは別担当による確認。D20/D23 の判定に見つかった誤検知を赤のまま残す（実装担当が直す）。
+reset; cat > "$P/02_共通/ひな形/ui/verify-fp.html" <<'HTML'
+<!doctype html><html lang="ja"><head><title>t</title></head><body>
+<img src="a.png" role="presentation">
+<img src="b.png" aria-hidden="true">
+<button type="button"><svg aria-label="閉じる"></svg></button>
+</body></html>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_nrgrep "role=presentation の img（alt 無し）を D20 で誤検知しない" "| D20 | img alt欠落 | 02_共通/ひな形/ui/verify-fp.html:2 |"
+expect_nrgrep "aria-hidden=true の img（alt 無し）を D20 で誤検知しない" "| D20 | img alt欠落 | 02_共通/ひな形/ui/verify-fp.html:3 |"
+expect_nrgrep "中の <svg aria-label> だけを持つ button を D23 で誤検知しない" "verify-fp.html:4 |"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

@@ -26,14 +26,39 @@
   D17 100vh            100vh 単独（100dvh か min-height との併用を期待）。
   D18 入力欄font-size  input/select/textarea の font-size が 16px 未満（WARN。モバイルの自動拡大を誘発）。
   D19 hover偏重        :hover だけの規則（:focus-visible の対が無い。WARN。誤検知が多いため）。
+  ── HTML の a11y（.html だけ。<script>/<style>/<template> の中と HTML コメントは見ない。JS で後から付く属性は見えない
+     ので、E2E の axe（skills/e2e-cycle）で補う） ──
+  D20 img alt欠落      <img> に alt 属性が無い（alt=""・role="presentation"/"none"・aria-hidden="true" は装飾として許可）。
+  D21 入力欄ラベル欠落 <input>/<select>/<textarea>（type=hidden/submit/button/reset は除く）に <label for>・
+                      囲む <label>・aria-label・aria-labelledby のどれも無い（placeholder は名前にならない）。
+  D22 html lang欠落    <html> に lang が無い／空（lang="ja" を期待）。<!doctype>/<head>/<body> のある文書で <html> が
+                      無い場合も NG。どれも無い部分 HTML（テンプレートの断片）は対象外。
+  D23 名前の無いボタン・リンク <button> と href 付きの <a> の中身が空（自身のテキスト・aria-label・aria-labelledby・
+                      title、3 段までの子孫の aria-label・aria-labelledby・<img alt>・<svg><title> のどれも無い）。
+                      icons.js のアイコンだけのボタンは aria-label が要る。
+  D24 見出しの飛び      見出しレベルが 2 段以上深くなる（h1→h3）。WARN。
+  ── 配色（tokens.css と対の表） ──
+  D25 コントラスト不足  対の表（既定は tokens.css の隣の ui/contrast-pairs.md。--pairs で指定）の前景×背景を
+                      tokens.css のライトとダーク（[data-theme=dark] と prefers-color-scheme: dark の再定義）で
+                      解決し、WCAG 2.x の比が 本文 4.5:1・大きい文字/UI 部品 3:1 を下回ると NG。hex・rgb()・hsl()
+                      に対応し、半透明の背景は --color-bg と --color-surface の上に重ねて悪い方で判定する。
+                      oklch()/lab()/color-mix() 等は計算の対象外（WARN「計算対象外」）。表に書いたトークンが
+                      tokens.css に無ければ判定不能として NG。表の「扱い」が「保留」の対と、表が無い場合は WARN。
+  ── AI 既定意匠（いずれも WARN） ──
+  D26 装飾グラデーション background/background-image の linear/radial/conic-gradient（トークン経由も。.html は
+                      <style>・style 属性・インライン <script>）。mask・border-image は対象外。
+  D27 絵文字アイコン    <span>/<button>/<li> の中身が絵文字 1〜2 個だけ。文中の絵文字は対象外。× ‹ ▾ ✓ のような
+                      記号（異体字セレクタ U+FE0F の付かない文字表示の記号）は絵文字に数えない。
+  WARN（D03・D18・D19・D24・D26・D27 と D25 の保留／計算対象外）は --baseline の対象外（件数だけ表示）。
 
 出力は3層（結論 → 種別ごと → 全件は check-design-report.md）。--json で同じ内容を JSON で標準出力に出す。
 
 使い方: python3 00_導入/03_点検/check_design.py [--root DIR] [--tokens FILE] [-o REPORT]
-         [--baseline FILE [--baseline-write]] [--json] [PATH ...]
+         [--pairs FILE] [--baseline FILE [--baseline-write]] [--json] [PATH ...]
   PATH 省略時は 02_共通/ひな形/ui templates/components。ディレクトリは .css / .html / .js を再帰的に集める
   （.claude/ .git/ node_modules/ は除外。配布先で `.` を渡してもキットの雛形を検査対象にしない）。
   --tokens 省略時は 02_共通/ひな形/tokens.css → .claude/templates/tokens.css の順に探す（キット本体と配布先の両方で動く）。
+  --pairs 省略時は tokens.css の隣の ui/contrast-pairs.md → contrast-pairs.md の順に探す（D25）。
   --baseline FILE  既知の NG を `規則ID\\t相対パス\\t正規化した行\\t#n` で記録したファイル。指定すると、そこに載っている
                    NG は「既知」として数え、新しい NG だけを exit 1 にする（未指定時は全 NG が対象＝従来どおり）。
   --baseline-write 現在の NG 一覧で --baseline のファイルを書く。**件数が前回より増える更新は拒否**（exit 1・書かない）。
@@ -43,9 +68,12 @@
 from __future__ import annotations
 
 import argparse
+import colorsys
 import json
+import math
 import re
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 
 # 基準線の読み書きは security-scan と共用の部品（02_共通/ツール/baseline.py。B15）。キット内と、隣に置いた場合の両方で探す
@@ -73,6 +101,8 @@ RULES: dict[str, str] = {
     "D10": "img寸法欠落", "D11": "非semantic onclick", "D12": "色名", "D13": "色関数直値",
     "D14": "box-shadow直値", "D15": "z-index直値", "D16": "時間直値", "D17": "100vh",
     "D18": "入力欄font-size", "D19": "hover偏重",
+    "D20": "img alt欠落", "D21": "入力欄ラベル欠落", "D22": "html lang欠落", "D23": "名前の無いボタン・リンク",
+    "D24": "見出しの飛び", "D25": "コントラスト不足", "D26": "装飾グラデーション", "D27": "絵文字アイコン",
 }
 
 COLOR_RE = re.compile(r"#[0-9A-Fa-f]{3,8}\b|\b(?:rgba?|hsla?)\(")
@@ -110,6 +140,7 @@ IMG_WIDTH_RE = re.compile(r"(?<![\w-])width\s*[:=]", re.I)
 IMG_HEIGHT_RE = re.compile(r"(?<![\w-])height\s*[:=]", re.I)
 NONSEMANTIC_ONCLICK_RE = re.compile(r"<(div|span)\b[^>]*\bonclick\s*=", re.I)
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+TEMPLATE_RE = re.compile(r"<template\b[^>]*>.*?</template\s*>", re.S | re.I)
 STYLE_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
 SCRIPT_RE = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.S | re.I)
 JS_COMMENT_RE = re.compile(r"/\*.*?\*/|(?<![:\\])//[^\n]*", re.S)
@@ -151,6 +182,7 @@ class Result:
         self.ng: list[Finding] = []
         self.warn: list[Finding] = []
         self._raw: dict[int, str] = {}   # id(finding) -> 正規化した行（baseline 用）
+        self.contrast: list[dict] = []   # D25 の対照表（レポートと --json に出す）
 
     def add(self, is_ng: bool, rule: str, file: str, line: int, actual: str, expected: str,
             reason: str, raw: str) -> None:
@@ -208,6 +240,11 @@ def blank_reduced_motion(text: str) -> str:
 def blank_html_comments(text: str) -> str:
     """<!-- ... --> を同じ長さの空白に置き換える（行番号を保つ）。コメント内の文字列でルールを誤検知／バイパスしない。"""
     return HTML_COMMENT_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+
+
+def blank_templates(text: str) -> str:
+    """<template>…</template> を同じ長さの空白に置き換える（D20〜D27 の走査対象外。中身は JS が複製して埋める前提）。"""
+    return TEMPLATE_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
 
 
 def css_segments(f: Path, text: str) -> list[tuple[str, int]]:
@@ -408,6 +445,8 @@ def check_focus_motion_mobile(root: Path, f: Path, text: str, r: Result) -> None
     """
     src_lines = text.split("\n")
     scan = blank_reduced_motion(blank_html_comments(blank_comments(text, css=f.suffix == ".css")))
+    if f.suffix == ".html":
+        scan = blank_templates(scan)   # <template> の中は JS が複製して埋める前提なので見ない（D20〜D27 と同じ）
 
     if not FOCUS_VISIBLE_RE.search(scan):
         for m in OUTLINE_NONE_RE.finditer(scan):
@@ -446,6 +485,513 @@ def check_focus_motion_mobile(root: Path, f: Path, text: str, r: Result) -> None
               "非対話要素のonclick（キーボード操作不可）", raw_line(src_lines, ln))
 
 
+# ── B50: トークン対のコントラスト比（D25） ─────────────────────────────────────────────
+PAIRS_CANDIDATES = ("ui/contrast-pairs.md", "contrast-pairs.md")   # tokens.css からの相対
+MIN_RATIO_TEXT, MIN_RATIO_LARGE = 4.5, 3.0
+CUSTOM_DECL_RE = re.compile(r"(--[A-Za-z0-9_-]+)\s*:\s*([^;{}]+)")
+DARK_MEDIA_RE = re.compile(r"prefers-color-scheme\s*:\s*dark", re.I)
+_CANVAS = {"light": (1.0, 1.0, 1.0, 1.0), "dark": (0.0, 0.0, 0.0, 1.0)}
+_KEYWORD_COLORS = {"transparent": (0.0, 0.0, 0.0, 0.0), "white": (1.0, 1.0, 1.0, 1.0), "black": (0.0, 0.0, 0.0, 1.0)}
+
+
+class ColorError(Exception):
+    """色を計算できない。undefined=True は対の表のトークンが tokens.css に無い（判定不能＝NG）。"""
+
+    def __init__(self, msg: str, undefined: bool = False) -> None:
+        super().__init__(msg)
+        self.undefined = undefined
+
+
+def css_blocks(css: str) -> list[tuple[tuple[str, ...], str, str]]:
+    """葉の規則ブロックを (囲む @media 等の前置き, セレクタ, 本文) で返す（コメントは呼び出し側で消す）。"""
+    out, stack, last = [], [], 0
+    for m in re.finditer(r"[{}]", css):
+        if m.group() == "{":
+            stack.append((css[last:m.start()].strip(), m.end()))
+        elif stack:
+            prelude, start = stack.pop()
+            body = css[start:m.start()]
+            if "{" not in body:
+                out.append((tuple(p for p, _ in stack), prelude, body))
+        last = m.end()
+    return out
+
+
+def theme_defs(css: str) -> list[tuple[str, str, dict[str, str]]]:
+    """tokens.css からテーマごとの変数表を作る: [(表示名, light|dark, {--x: 値})]。ダークはライトに上書きした結果。"""
+    light: dict[str, str] = {}
+    dark_attr: dict[str, str] = {}
+    dark_media: dict[str, str] = {}
+    for enclosing, selector, body in css_blocks(css):
+        decls = {k: v.strip() for k, v in CUSTOM_DECL_RE.findall(body)}
+        if not decls:
+            continue
+        sel = re.sub(r"\s+", "", selector.lower())
+        sel_pos = re.sub(r":not\([^)]*\)", "", sel)   # :not([data-theme="light"]) の中の語で判定しない
+        is_root = ":root" in sel or re.search(r"(?<![\w-])html\b", sel) is not None or sel.startswith("[data-theme")
+        if any(DARK_MEDIA_RE.search(e) for e in enclosing):
+            if is_root:
+                dark_media.update(decls)
+        elif enclosing:
+            continue   # print 等の別メディアは見ない
+        elif "data-theme" in sel_pos and "dark" in sel_pos:
+            dark_attr.update(decls)
+        elif is_root and "dark" not in sel_pos:
+            light.update(decls)
+    themes = [("ライト", "light", light)]
+    variants = [(n, {**light, **d}) for n, d in (("ダーク（data-theme）", dark_attr),
+                                                   ("ダーク（prefers-color-scheme）", dark_media)) if d]
+    if len(variants) == 2 and variants[0][1] == variants[1][1]:
+        variants = [("ダーク", variants[0][1])]
+    elif len(variants) == 1:
+        variants = [("ダーク", variants[0][1])]
+    return themes + [(n, "dark", d) for n, d in variants]
+
+
+def _num(tok: str, scale: float) -> float:
+    tok = tok.strip().lower()
+    if tok == "none":
+        return 0.0
+    if tok.endswith("%"):
+        return float(tok[:-1]) / 100 * scale
+    return float(tok)
+
+
+def _hue(tok: str) -> float:
+    tok = tok.strip().lower()
+    for unit, mul in (("deg", 1.0), ("grad", 0.9), ("rad", 180 / math.pi), ("turn", 360.0)):
+        if tok.endswith(unit):
+            return float(tok[:-len(unit)]) * mul
+    return float(tok)
+
+
+def parse_color(value: str, defs: dict[str, str], depth: int = 0) -> tuple[float, float, float, float]:
+    """色の値を (r, g, b, a)（0〜1）にする。var() は同じテーマの表で解決する。対応外は ColorError。"""
+    v = re.sub(r"\s*!important\s*$", "", value.strip(), flags=re.I)
+    if depth > 16:
+        raise ColorError("var() の参照が深すぎる（循環）")
+    m = re.fullmatch(r"var\(\s*(--[A-Za-z0-9_-]+)\s*(?:,\s*(.+))?\)", v, re.S)
+    if m:
+        if m.group(1) in defs:
+            return parse_color(defs[m.group(1)], defs, depth + 1)
+        if m.group(2):
+            return parse_color(m.group(2), defs, depth + 1)
+        raise ColorError(f"`{m.group(1)}` が定義されていない", undefined=True)
+    m = re.fullmatch(r"#([0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})", v)
+    if m:
+        h = m.group(1)
+        if len(h) in (3, 4):
+            h = "".join(c * 2 for c in h)
+        vals = [int(h[i:i + 2], 16) / 255 for i in range(0, len(h), 2)]
+        return (vals[0], vals[1], vals[2], vals[3] if len(vals) == 4 else 1.0)
+    m = re.fullmatch(r"(rgba?|hsla?)\(\s*([^()]*)\)", v, re.I)
+    if m:
+        parts = [p for p in re.split(r"[\s,/]+", m.group(2).strip()) if p]
+        try:
+            if len(parts) not in (3, 4):
+                raise ValueError
+            alpha = min(max(_num(parts[3], 1.0), 0.0), 1.0) if len(parts) == 4 else 1.0
+            if m.group(1).lower().startswith("rgb"):
+                r_, g_, b_ = (min(max(_num(p, 255.0), 0.0), 255.0) / 255 for p in parts[:3])
+            else:
+                hh = (_hue(parts[0]) % 360) / 360
+                s_ = min(max(_num(parts[1], 1.0) if parts[1].endswith("%") else float(parts[1]) / 100, 0.0), 1.0)
+                l_ = min(max(_num(parts[2], 1.0) if parts[2].endswith("%") else float(parts[2]) / 100, 0.0), 1.0)
+                r_, g_, b_ = colorsys.hls_to_rgb(hh, l_, s_)
+        except ValueError:
+            raise ColorError(f"`{v}` を読めない") from None
+        return (r_, g_, b_, alpha)
+    if v.lower() in _KEYWORD_COLORS:
+        return _KEYWORD_COLORS[v.lower()]
+    raise ColorError(f"`{v}` は計算の対象外（hex・rgb()・hsl() だけ。oklch()/lab()/color-mix() 等は対象外）")
+
+
+def _over(top: tuple, under: tuple) -> tuple[float, float, float, float]:
+    a = top[3]
+    return (top[0] * a + under[0] * (1 - a), top[1] * a + under[1] * (1 - a), top[2] * a + under[2] * (1 - a), 1.0)
+
+
+def _luminance(c: tuple) -> float:
+    def ch(x: float) -> float:
+        return x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4
+    return 0.2126 * ch(c[0]) + 0.7152 * ch(c[1]) + 0.0722 * ch(c[2])
+
+
+def contrast_ratio(fg: tuple, bg: tuple) -> float:
+    la, lb = _luminance(fg), _luminance(bg)
+    return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+
+def pair_ratio(fg_tok: str, bg_tok: str, defs: dict[str, str], mode: str) -> float:
+    """前景×背景の比。背景が半透明なら --color-bg と --color-surface の上に重ねた悪い方、前景の半透明は背景に重ねる。"""
+    fg = parse_color(f"var({fg_tok})", defs)
+    bg = parse_color(f"var({bg_tok})", defs)
+    canvas = _CANVAS[mode]
+    bases = [canvas]
+    if bg[3] < 1:
+        bases = []
+        for base_tok in ("--color-bg", "--color-surface"):
+            if base_tok in defs:
+                try:
+                    bases.append(_over(parse_color(f"var({base_tok})", defs), canvas))
+                except ColorError:
+                    pass
+        bases = bases or [canvas]
+    worst = None
+    for base in bases:
+        solid_bg = _over(bg, base)
+        ratio = contrast_ratio(_over(fg, solid_bg), solid_bg)
+        worst = ratio if worst is None else min(worst, ratio)
+    return worst
+
+
+def read_pairs(path: Path) -> list[dict]:
+    """対の表（Markdown の表。見出し行に「前景」「背景」を含む）を読む。種別: 本文=4.5 / 大きい文字・UI=3 / 数値。"""
+    rows: list[dict] = []
+    cols: dict[str, int] | None = None
+    for ln, line in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+        s = line.strip()
+        if not s.startswith("|"):
+            cols = None
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if cols is None:
+            if any("前景" in c for c in cells) and any("背景" in c for c in cells):
+                cols = {}
+                for i, c in enumerate(cells):
+                    for key in ("前景", "背景", "種別", "扱い", "用途"):
+                        if key in c and key not in cols:
+                            cols[key] = i
+            continue
+        if re.fullmatch(r"[\s|:-]*", s):
+            continue
+        get = lambda k: cells[cols[k]] if k in cols and cols[k] < len(cells) else ""   # noqa: E731
+        fg = re.search(r"--[A-Za-z0-9_-]+", get("前景"))
+        bg = re.search(r"--[A-Za-z0-9_-]+", get("背景"))
+        if not (fg and bg):
+            continue
+        kind = get("種別")
+        num = re.search(r"\d+(?:\.\d+)?", kind)
+        if "本文" in kind:
+            minimum = MIN_RATIO_TEXT
+        elif "大きい文字" in kind or "UI" in kind.upper():
+            minimum = MIN_RATIO_LARGE
+        elif num:
+            minimum = float(num.group(0))
+        else:
+            minimum = MIN_RATIO_TEXT   # 種別が読めなければ厳しい側（本文）で判定する
+        rows.append({"line": ln, "raw": line, "fg": fg.group(0), "bg": bg.group(0), "kind": kind or "本文",
+                     "min": minimum, "hold": "保留" in get("扱い"), "use": get("用途")})
+    return rows
+
+
+def find_pairs_file(tokens_file: Path, explicit: Path | None) -> Path | None:
+    if explicit is not None:
+        return explicit if explicit.is_file() else None
+    return next((tokens_file.parent / c for c in PAIRS_CANDIDATES if (tokens_file.parent / c).is_file()), None)
+
+
+def check_contrast(root: Path, tokens_file: Path, pairs_file: Path | None, explicit: bool, r: Result) -> None:
+    """B50: 対の表の前景×背景を tokens.css のライト／ダークで計算する（D25）。"""
+    if not tokens_file.is_file():
+        return
+    if pairs_file is None and explicit:   # --pairs で指定したのに無い＝判定不能（不合格）
+        r.add(True, "D25", rel(root, tokens_file), 1, "`--pairs` のファイル無し", "指定した対の表",
+              "判定不能: 指定した対の表が無い", "指定した対の表が無い")
+        return
+    if pairs_file is None:
+        r.add(False, "D25", rel(root, tokens_file), 1, "`contrast-pairs.md` 無し",
+              "tokens.css の隣の ui/contrast-pairs.md（--pairs で指定可）",
+              "対の表が無い（前景×背景のコントラスト比を検査できない）", "対の表が無い")
+        return
+    rows = read_pairs(pairs_file)
+    pf = rel(root, pairs_file)
+    if not rows:
+        r.add(False, "D25", pf, 1, "`対 0 件`", "見出しに「前景」「背景」のある表", "対の表に対が無い", "対の表に対が無い")
+        return
+    themes = theme_defs(blank_comments(tokens_file.read_text(encoding="utf-8"), css=True))
+    for row in rows:
+        for label, mode, defs in themes:
+            key = f"{row['raw']} [{label}]"
+            entry = {"fg": row["fg"], "bg": row["bg"], "kind": row["kind"], "theme": label, "min": row["min"],
+                     "ratio": None, "verdict": "OK", "hold": row["hold"], "line": row["line"]}
+            try:
+                ratio = pair_ratio(row["fg"], row["bg"], defs, mode)
+            except ColorError as e:
+                entry["verdict"] = "判定不能" if e.undefined else "計算対象外"
+                r.contrast.append(entry)
+                if e.undefined:
+                    r.add(True, "D25", pf, row["line"], f"`{row['fg']} × {row['bg']}`（{label}）", "tokens.css に定義",
+                          f"判定不能: {e}", key)
+                else:
+                    r.add(False, "D25", pf, row["line"], f"`{row['fg']} × {row['bg']}`（{label}）", "hex・rgb()・hsl()",
+                          f"計算対象外: {e}", key)
+                continue
+            entry["ratio"] = math.floor(ratio * 100) / 100   # 表示は切り捨て（4.499 を 4.50 と見せない）
+            if ratio < row["min"]:
+                entry["verdict"] = "保留" if row["hold"] else "NG"
+                r.add(not row["hold"], "D25", pf, row["line"],
+                      f"`{row['fg']} × {row['bg']}`（{label}）= {entry['ratio']:.2f}:1",
+                      f"{row['min']:g}:1 以上（{row['kind'] or '本文'}）",
+                      "コントラスト不足（WCAG 2.x 1.4.3/1.4.11）" + ("。扱い=保留（保守者の判断待ち）" if row["hold"] else ""),
+                      key)
+            r.contrast.append(entry)
+
+
+# ── B51: AI 既定意匠（D26 装飾グラデーション。D27 は _A11yScan） ─────────────────────────────
+GRADIENT_RE = re.compile(r"\b(?:repeating-)?(?:linear|radial|conic)-gradient\(", re.I)
+BACKGROUND_DECL_RE = re.compile(r"(?<![\w-])(background(?:-image)?)\s*:\s*([^;{}]+)", re.I)
+STYLE_ATTR_RE = re.compile(r"""(?<![\w-])style\s*=\s*("([^"]*)"|'([^']*)')""", re.I)
+
+
+def check_gradients(root: Path, f: Path, text: str, tokens_text: str, r: Result) -> None:
+    """background / background-image のグラデーション（直書きも var() 経由も）を WARN にする。mask・border-image は見ない。
+    .html は <style> に加えて style="" 属性とインライン <script> も見る（HTML コメントの中は見ない）。"""
+    src_lines = text.split("\n")
+    grad_tokens = {k for k, v in CUSTOM_DECL_RE.findall(blank_comments(tokens_text, css=True)) if GRADIENT_RE.search(v)}
+    segments = css_segments(f, text)
+    if f.suffix == ".html":   # style="" 属性は 1 つずつ別の断片にする（値が属性の外へ伸びない）
+        body = blank_templates(blank_html_comments(text))
+        body = SCRIPT_RE.sub(lambda m: body[m.start():m.start(1)] + re.sub(r"[^\n]", " ", m.group(1))
+                             + body[m.end(1):m.end()], body)
+        segments = segments + [(m.group(2) if m.group(2) is not None else m.group(3), line_no(body, m.start(1)))
+                               for m in STYLE_ATTR_RE.finditer(body)]
+        # インライン <script> は .js と同じく全文を見る（innerHTML や style 代入で差し込むグラデーション）
+        segments += [(m.group(1), line_no(text, m.start(1))) for m in SCRIPT_RE.finditer(blank_templates(blank_html_comments(text)))]
+    for seg, start in segments:
+        scan = blank_comments(seg, css=f.suffix != ".js")
+        local = {k for k, v in CUSTOM_DECL_RE.findall(scan) if GRADIENT_RE.search(v)}
+        for m in BACKGROUND_DECL_RE.finditer(scan):
+            value = m.group(2)
+            gm = GRADIENT_RE.search(value)
+            via = next((t for t in VAR_REF_RE.findall(value) if t in grad_tokens | local), None)
+            if not (gm or via):
+                continue
+            ln = start + line_no(scan, m.start()) - 1
+            if TOKEN_EXEMPT_RE.search(raw_line(src_lines, ln)):
+                continue
+            actual = f"`{gm.group(0)}`" if gm else f"`var({via})`（グラデーションのトークン）"
+            r.add(False, "D26", rel(root, f), ln, actual, "var(--color-surface) 等の単色",
+                  "装飾目的のグラデーション（design-system「色の禁欲」）", raw_line(src_lines, ln))
+
+
+# ── B49: HTML の a11y（D20〜D24）と B51 の絵文字アイコン（D27） ─────────────────────────────
+NAMED_CONTROLS = ("input", "select", "textarea")
+UNLABELED_INPUT_TYPES = {"hidden", "submit", "button", "reset"}   # 名前が要らない／value が名前になる
+TEXT_COLLECTORS = {"button", "a", "span", "li"}                     # 中身の文字を集める要素（D23・D27）
+EMOJI_HOSTS = ("span", "button", "li")
+NAME_DEPTH = 3                                                       # 子孫の aria-label 等を名前に数える深さ（D23）
+DECORATIVE_ROLES = {"presentation", "none"}
+LIST_CONTAINERS = {"ul", "ol", "menu"}
+# 絵文字として表示される（Emoji_Presentation）BMP の文字。これ以外の記号（× ‹ ▾ ✓ ★ など）は U+FE0F が付いたときだけ絵文字
+_BMP_EMOJI_PRESENTATION = (
+    (0x231A, 0x231B), (0x23E9, 0x23EC), (0x23F0, 0x23F0), (0x23F3, 0x23F3), (0x25FD, 0x25FE),
+    (0x2614, 0x2615), (0x2648, 0x2653), (0x267F, 0x267F), (0x2693, 0x2693), (0x26A1, 0x26A1),
+    (0x26AA, 0x26AB), (0x26BD, 0x26BE), (0x26C4, 0x26C5), (0x26CE, 0x26CE), (0x26D4, 0x26D4),
+    (0x26EA, 0x26EA), (0x26F2, 0x26F3), (0x26F5, 0x26F5), (0x26FA, 0x26FA), (0x26FD, 0x26FD),
+    (0x2705, 0x2705), (0x270A, 0x270B), (0x2728, 0x2728), (0x274C, 0x274C), (0x274E, 0x274E),
+    (0x2753, 0x2755), (0x2757, 0x2757), (0x2795, 0x2797), (0x27B0, 0x27B0), (0x27BF, 0x27BF),
+    (0x2B1B, 0x2B1C), (0x2B50, 0x2B50), (0x2B55, 0x2B55),
+)
+_SMP_EMOJI = ((0x1F004, 0x1F004), (0x1F0CF, 0x1F0CF), (0x1F170, 0x1F251), (0x1F300, 0x1F64F),
+              (0x1F680, 0x1F6FF), (0x1F7E0, 0x1F7FF), (0x1F900, 0x1FAFF))
+_EMOJI_MODIFIERS = {0xFE0E, 0xFE0F, 0x20E3}
+
+
+def _in_ranges(cp: int, ranges: tuple) -> bool:
+    return any(a <= cp <= b for a, b in ranges)
+
+
+def emoji_only_count(text: str) -> int:
+    """空白を除いた中身が絵文字だけなら、その個数（ZWJ 連結・国旗・肌色・キーキャップは 1 個）を返す。
+    絵文字以外の文字が 1 つでもあれば 0（文中の絵文字は D27 の対象外）。"""
+    s = re.sub(r"\s+", "", text)
+    n, i, joined, regional = 0, 0, False, 0
+    while i < len(s):
+        cp = ord(s[i])
+        nxt = s[i + 1] if i + 1 < len(s) else ""
+        if cp in _EMOJI_MODIFIERS or 0x1F3FB <= cp <= 0x1F3FF or 0xE0020 <= cp <= 0xE007F:
+            i += 1
+            continue
+        if cp == 0x200D:   # ZWJ: 次の絵文字は前と 1 個にまとまる
+            joined = True
+            i += 1
+            continue
+        if 0x1F1E6 <= cp <= 0x1F1FF:   # 国旗は地域指示子 2 文字で 1 個
+            regional += 1
+            if regional % 2 == 1 and not joined:
+                n += 1
+        elif (_in_ranges(cp, _SMP_EMOJI) or _in_ranges(cp, _BMP_EMOJI_PRESENTATION)
+              or nxt in ("️", "⃣")):
+            if not joined:
+                n += 1
+        else:
+            return 0
+        joined = False
+        i += 1
+    return n
+
+
+class _A11yScan(HTMLParser):
+    """HTML を 1 回走査して、D20〜D24・D27 の判定に要る事実を集める（<script>/<style> の中は CDATA として読まない）。"""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.doc_markers = False                      # <!doctype>/<head>/<body> がある＝完全な文書
+        self.html_tags: list[tuple[int, dict]] = []
+        self.imgs: list[tuple[int, dict]] = []
+        self.controls: list[tuple[int, str, dict, bool]] = []   # (行, 要素名, 属性, <label> に囲まれている)
+        self.label_for: set[str] = set()
+        self.headings: list[tuple[int, int, str]] = []            # (行, レベル, 要素名)
+        self.stack: list[dict] = []
+        self.closed: list[dict] = []
+
+    def handle_decl(self, decl: str) -> None:
+        if decl.lower().startswith("doctype"):
+            self.doc_markers = True
+
+    def _pop_to(self, idx: int) -> None:
+        while len(self.stack) > idx:
+            e = self.stack.pop()
+            if e["tag"] not in TEXT_COLLECTORS:
+                continue
+            # D27: 入れ子（<button><span>🔍</span></button>）は内側の 1 件だけにする
+            if not e["emoji_seen"] and e["tag"] in EMOJI_HOSTS and 1 <= emoji_only_count("".join(e["text"])) <= 2:
+                e["emoji_flag"] = e["emoji_seen"] = True
+            if e["emoji_seen"]:
+                for anc in self.stack:
+                    anc["emoji_seen"] = True
+            self.closed.append(e)
+
+    def handle_starttag(self, tag: str, attrs_list: list) -> None:
+        attrs = {k.lower(): (v if v is not None else "") for k, v in attrs_list}
+        line = self.getpos()[0]
+        if tag in ("head", "body"):
+            self.doc_markers = True
+        if tag == "html":
+            self.doc_markers = True
+            self.html_tags.append((line, attrs))
+            return
+        # 子孫の名前（aria-label・aria-labelledby・<img alt>）を、NAME_DEPTH 段までの祖先の button/a に渡す（D23）
+        child_name = " ".join(v for v in (attrs.get("aria-label", "").strip(), attrs.get("aria-labelledby", "").strip(),
+                                          attrs.get("alt", "").strip() if tag == "img" else "") if v)
+        if child_name:
+            for i in range(max(0, len(self.stack) - NAME_DEPTH), len(self.stack)):
+                if self.stack[i]["tag"] in TEXT_COLLECTORS:
+                    self.stack[i]["alt"].append(child_name)
+        if tag == "img":
+            self.imgs.append((line, attrs))
+            return
+        if tag in NAMED_CONTROLS:
+            wrapped = any(e["tag"] == "label" for e in self.stack)
+            self.controls.append((line, tag, attrs, wrapped))
+        if tag == "label" and attrs.get("for", "").strip():
+            self.label_for.add(attrs["for"].strip())
+        if re.fullmatch(r"h[1-6]", tag):
+            self.headings.append((line, int(tag[1]), tag))
+        if tag in ("area", "base", "br", "col", "embed", "hr", "input", "link", "meta", "source", "track", "wbr"):
+            return
+        if tag == "li":   # </li> の省略: 同じリストの中で開いている li を閉じる
+            for idx in range(len(self.stack) - 1, -1, -1):
+                t = self.stack[idx]["tag"]
+                if t in LIST_CONTAINERS:
+                    break
+                if t == "li":
+                    self._pop_to(idx)
+                    break
+        self.stack.append({"tag": tag, "line": line, "attrs": attrs, "text": [], "alt": [], "emoji_seen": False,
+                           "emoji_flag": False})
+
+    def handle_endtag(self, tag: str) -> None:
+        for idx in range(len(self.stack) - 1, -1, -1):
+            if self.stack[idx]["tag"] == tag:
+                self._pop_to(idx)
+                return
+
+    def handle_data(self, data: str) -> None:
+        for e in self.stack:
+            if e["tag"] in TEXT_COLLECTORS:
+                e["text"].append(data)
+
+    def close(self) -> None:
+        super().close()
+        self._pop_to(0)
+
+
+def _nonempty_attr(attrs: dict, *names: str) -> bool:
+    return any(attrs.get(n, "").strip() for n in names)
+
+
+def check_html_a11y(root: Path, f: Path, text: str, r: Result) -> None:
+    """B49: HTML の a11y 誤りを静的に判定する（D20〜D23 は NG、D24 は WARN）。B51 の D27（WARN）も同じ走査で見る。"""
+    if f.suffix != ".html":
+        return
+    src_lines = text.split("\n")
+    p = _A11yScan()
+    try:
+        p.feed(blank_templates(blank_html_comments(text)))
+        p.close()
+    except Exception as e:   # 壊れた HTML は判定不能＝不合格（Traceback は出さない）
+        r.add(True, "D22", rel(root, f), 1, f"`解析失敗: {type(e).__name__}`", "HTML として読める",
+              "判定不能（HTML を解析できず D20〜D24 を判定できない）", "")
+        return
+    rf = rel(root, f)
+
+    for ln, attrs in p.imgs:   # D20（alt=""・role=presentation/none・aria-hidden=true は装飾）
+        decorative = (attrs.get("role", "").strip().lower() in DECORATIVE_ROLES
+                      or attrs.get("aria-hidden", "").strip().lower() == "true")
+        if "alt" not in attrs and not decorative:
+            r.add(True, "D20", rf, ln, "`alt` 無し", 'alt="説明"（装飾なら alt=""）',
+                  "画像の代替テキストが無い（読み上げで内容が伝わらない）", raw_line(src_lines, ln))
+
+    for ln, tag, attrs, wrapped in p.controls:   # D21
+        typ = attrs.get("type", "").strip().lower()
+        if tag == "input" and typ in UNLABELED_INPUT_TYPES:
+            continue
+        if tag == "input" and typ == "image" and attrs.get("alt", "").strip():
+            continue
+        cid = attrs.get("id", "").strip()
+        if wrapped or (cid and cid in p.label_for) or _nonempty_attr(attrs, "aria-label", "aria-labelledby"):
+            continue
+        what = f"<{tag}{' type=' + typ if typ else ''}>"
+        r.add(True, "D21", rf, ln, f"`{what}` にラベル無し", "<label for> / 囲む <label> / aria-label / aria-labelledby",
+              "入力欄に名前が無い（placeholder は名前にならない）", raw_line(src_lines, ln))
+
+    if p.html_tags:   # D22
+        for ln, attrs in p.html_tags:
+            if not attrs.get("lang", "").strip():
+                r.add(True, "D22", rf, ln, "`<html>` に lang 無し", '<html lang="ja">',
+                      "文書の言語が無い（読み上げの発音・禁則が崩れる。design-system 規則 6）", raw_line(src_lines, ln))
+    elif p.doc_markers:
+        r.add(True, "D22", rf, 1, "`<html>` 要素が無い", '<html lang="ja">',
+              "文書の言語を指定できない（design-system 規則 6）", raw_line(src_lines, 1))
+
+    for e in p.closed:   # D23
+        tag, attrs = e["tag"], e["attrs"]
+        if tag == "a" and "href" not in attrs:
+            continue
+        if tag not in ("a", "button"):
+            continue
+        name = "".join(e["text"]).strip() or "".join(e["alt"]).strip()
+        if name or _nonempty_attr(attrs, "aria-label", "aria-labelledby", "title"):
+            continue
+        r.add(True, "D23", rf, e["line"], f"`<{tag}>` の中身が空", "テキスト / aria-label / 中の <img alt>",
+              "名前の無い操作要素（読み上げで何のボタン・リンクか分からない）", raw_line(src_lines, e["line"]))
+
+    prev = None   # D24（WARN）
+    for ln, level, tag in p.headings:
+        if prev is not None and level > prev[1] + 1:
+            r.add(False, "D24", rf, ln, f"`{prev[2]}→{tag}`", f"h{prev[1] + 1} 以下",
+                  "見出しレベルの飛び（見出しで移動する読み上げ利用者が構造を見失う）", raw_line(src_lines, ln))
+        prev = (ln, level, tag)
+
+    for e in p.closed:   # D27（WARN）
+        if e["emoji_flag"]:
+            content = "".join(e["text"]).strip()
+            r.add(False, "D27", rf, e["line"], f"`<{e['tag']}>{content}`", "icons.js のアイコン（data-icon）＋ aria-label",
+                  "絵文字をアイコンに使っている（環境で絵柄が変わり、読み上げは絵文字の名前を読む）", raw_line(src_lines, e["line"]))
+
+
 def write_report(path: Path, root: Path, files: list[Path], r: Result, new_ng: list[Finding],
                   baseline_used: bool) -> None:
     lines = ["# デザイン検査レポート", "", f"- 対象: {len(files)} ファイル（`{root}`）",
@@ -459,6 +1005,12 @@ def write_report(path: Path, root: Path, files: list[Path], r: Result, new_ng: l
     lines += ["", "## 警告", ""]
     lines += (header + [f"| {x.rule} | {x.kind} | {x.target} | {x.actual} | {x.expected} | {x.reason} |"
                          for x in r.warn]) if r.warn else ["なし。"]
+    if r.contrast:   # D25 の対照表（ライト／ダークの全対。NG 以外も出す）
+        lines += ["", "## コントラスト対照表（D25）", "",
+                  "| 前景 | 背景 | 種別 | テーマ | 比 | 基準 | 判定 |", "|---|---|---|---|---|---|---|"]
+        lines += [f"| `{c['fg']}` | `{c['bg']}` | {c['kind']} | {c['theme']} | "
+                  f"{'—' if c['ratio'] is None else format(c['ratio'], '.2f') + ':1'} | {c['min']:g}:1 | {c['verdict']} |"
+                  for c in r.contrast]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -471,11 +1023,12 @@ def save_baseline(path: Path, entries: set[tuple[str, str, str, str]]) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="デザイン出荷物の直値・トークン・CDN・alert() 検査")
+    ap = argparse.ArgumentParser(description="デザイン出荷物の直値・トークン・CDN・alert()・HTML の a11y・コントラスト・AI 既定意匠の検査")
     ap.add_argument("paths", nargs="*", help="検査対象（ファイルまたはディレクトリ）。省略時は 02_共通/ひな形/ui 02_共通/ひな形/components")
     ap.add_argument("--root", default=".")
     ap.add_argument("--tokens", default=None, help="トークン定義ファイル（root 相対）。省略時は 02_共通/ひな形/tokens.css → .claude/templates/tokens.css")
     ap.add_argument("-o", "--report", default="check-design-report.md")
+    ap.add_argument("--pairs", default=None, help="コントラストの対の表（root 相対）。省略時は tokens.css の隣の ui/contrast-pairs.md → contrast-pairs.md")
     ap.add_argument("--baseline", default=None, help="既知の NG を記録したファイル。指定すると新規 NG だけを exit 1 にする")
     ap.add_argument("--baseline-write", action="store_true", help="現在の NG で --baseline のファイルを書く（件数が増える更新は拒否）")
     ap.add_argument("--json", action="store_true", help="結果を JSON で標準出力に出す（このときは他の文言を出さない）")
@@ -503,6 +1056,7 @@ def main() -> int:
 
     r = Result()
     texts = {f: f.read_text(encoding="utf-8", errors="replace") for f in files}
+    tokens_text = texts.get(tokens_file, "")
     for f in files:
         if f.resolve() == tokens_file.resolve():
             continue
@@ -514,7 +1068,11 @@ def main() -> int:
         check_dialogs(root, f, texts[f], r)
         check_tokens_loaded(root, f, texts[f], r)
         check_focus_motion_mobile(root, f, texts[f], r)
+        check_html_a11y(root, f, texts[f], r)
+        check_gradients(root, f, texts[f], tokens_text, r)
     check_tokens(root, files, texts, tokens_file, r)
+    pairs_arg = (Path(a.pairs) if Path(a.pairs).is_absolute() else root / a.pairs) if a.pairs else None
+    check_contrast(root, tokens_file, find_pairs_file(tokens_file, pairs_arg), pairs_arg is not None, r)
 
     # --baseline: 既知/新規の分類（未指定なら baseline_set は空集合＝全 NG が「新規」＝従来どおり）
     baseline_path = Path(a.baseline) if a.baseline else None
@@ -553,6 +1111,7 @@ def main() -> int:
             "warn": [x.to_dict(False) for x in r.warn],
             "known": known_count,
             "baseline_total": prev_total,
+            "contrast": r.contrast,
         }
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 1 if new_ng else 0
@@ -572,8 +1131,11 @@ def main() -> int:
         print("✅ NG=0")
     if a.baseline:
         print(f"既知 {known_count}（前回 {prev_total}）")
-    if r.warn:
-        print(f"⚠ 警告 {len(r.warn)} 件（未使用トークン等。詳細はレポート）")
+    if r.warn:   # WARN は基準線の対象外。種別ごとの件数だけ出す
+        wk: dict[str, int] = {}
+        for x in r.warn:
+            wk[x.kind] = wk.get(x.kind, 0) + 1
+        print(f"⚠ 警告 {len(r.warn)} 件（" + "・".join(f"{k} {n}" for k, n in wk.items()) + "。詳細はレポート）")
     print(f"詳細: {report}")
     return 1 if new_ng else 0
 

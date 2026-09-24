@@ -37,7 +37,8 @@ glob（`.cl*/settings.json`）の書き先は、展開したら保護パスに�
 入力が JSON として読めない・オブジェクトでない（`[1]`・`null`・空）は deny。`{}`・書き先（file_path / command）が無いものは通す。
 
 解除: キット自身の checkout で設定や hook を意図して保守するときは、保守者が `AIDD_ALLOW_CONFIG_EDIT=1` を付けて
-Claude Code を起動する。キットの `03_ClaudeCode/hooks/` は `.claude/hooks/` ではないので既定でも書ける。
+Claude Code を起動する（解除中も判定だけは行い、止めていたはずの操作を override として記録する）。
+deny と override は `.claude/hook-decisions.log` に 1 行ずつ記録する（B12。`secret_patterns.log_decision`。秘密値は伏字）。キットの `03_ClaudeCode/hooks/` は `.claude/hooks/` ではないので既定でも書ける。
 対象外: `00_導入/02_プロジェクト配布/install-git-hooks.sh`（人が打つ前提。`.git/hooks/` を配線するのはこのスクリプトで、
 中で行う書き込みは hook からは見えない）。
 """
@@ -59,6 +60,15 @@ try:
     from secret_patterns import analyze_command, expand_path
 except ImportError:          # 部品が欠けた導入。判定できないので main で deny する
     analyze_command = None
+try:
+    from secret_patterns import input_summary, log_decision
+except ImportError:          # 記録は付け足し（B12）。部品が無くても deny の動作は変えない
+    def log_decision(*_a, **_k) -> None:
+        return None
+
+    def input_summary(_ti) -> str:
+        return ""
+_CTX: dict = {}              # 記録に使う（ツール名・書き先やコマンドの要約・cwd）
 
 ENV_ALLOW = "AIDD_ALLOW_CONFIG_EDIT"
 _KEYWORDS = (".claude", ".git", "hooks", "settings")
@@ -831,10 +841,15 @@ def bash_hit(cmd: str, cwd: str | None) -> str | None:
 
 
 def deny(reason: str) -> int:
+    if os.environ.get(ENV_ALLOW) == "1":   # 解除中は止めず、止めていたはずの 1 件を override として数える（誤検知の目安）
+        log_decision("block-protected", "override", reason, _CTX.get("tool", ""), _CTX.get("summary", ""),
+                     _CTX.get("cwd"), env=ENV_ALLOW)
+        return 0
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "PreToolUse", "permissionDecision": "deny",
         "permissionDecisionReason": f"[block-protected] {reason}",
     }}, ensure_ascii=False))
+    log_decision("block-protected", "deny", reason, _CTX.get("tool", ""), _CTX.get("summary", ""), _CTX.get("cwd"))
     return 0
 
 
@@ -849,6 +864,8 @@ def main() -> int:
     try:
         return _main()
     except Exception as e:   # RecursionError（深い入れ子の JSON）・判定の不具合。Traceback を出さず止める
+        if os.environ.get(ENV_ALLOW) == "1":
+            return 0
         return deny(f"hook 内部エラー: {type(e).__name__}（判定不能なので止めた。続けて起きるなら保守者に hook の不具合として報告する）")
 
 
@@ -857,8 +874,7 @@ def _main() -> int:
         raw = sys.stdin.read()
     except (OSError, ValueError):
         raw = ""
-    if os.environ.get(ENV_ALLOW) == "1":
-        return 0
+    allow = os.environ.get(ENV_ALLOW) == "1"
     try:
         data = json.loads(raw)
         if not isinstance(data, dict):
@@ -867,10 +883,15 @@ def _main() -> int:
         if not isinstance(ti, dict):
             raise ValueError("tool_input がオブジェクトでない")
     except ValueError as e:
+        if allow:            # 解除中は従来どおり何もしない（読めない入力は数えない）
+            return 0
         return deny(f"hook の入力が読めない（{type(e).__name__}）ので止めた（fail-closed）。"
                     "続けて起きるなら Claude Code と hook の版の組み合わせを保守者に確認してもらう")
     tool = data.get("tool_name")
     cwd = data.get("cwd") if isinstance(data.get("cwd"), str) else None
+    _CTX.update(tool=tool if isinstance(tool, str) else "", summary=input_summary(ti), cwd=cwd)
+    if allow and (tool not in ("Write", "Edit", "MultiEdit", "NotebookEdit", "Bash") or analyze_command is None):
+        return 0
     if tool in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
         fp = ti.get("file_path") or ti.get("notebook_path")
         if not isinstance(fp, str) or not fp.strip():

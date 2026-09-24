@@ -389,10 +389,10 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <p class="why">Claude Code は <code>CLAUDE.md</code> を通して、Codex は <code>AGENTS.md</code> を直接読みます。この 1 行で、両方が同じ本体を読むようになります。スキルは <code>$名前</code>（例: <code>$done-gate</code>）で呼び、スラッシュメニューにも並びます。コマンドは <code>$cmd-&lt;名前&gt;</code>（例: <code>$cmd-trace</code>）です。</p>
           </li>
           <li><strong>（任意）壊れていないことを機械で確かめる</strong>
-            <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。838 ケース</span>
-./06_保守者向け/03_回帰テスト/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。188 ケース。本物の ~/.claude には触りません</span></code></pre>
+            <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。918 ケース</span>
+./06_保守者向け/03_回帰テスト/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。210 ケース。本物の ~/.claude には触りません</span></code></pre>
             <p class="expect"></p>
-            <pre><code>結果: PASS=838 / FAIL=0
+            <pre><code>結果: PASS=918 / FAIL=0
 ✅ 全て正常</code></pre>
           </li>
         </ol>
@@ -405,7 +405,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ├── rules/aidd-kit/      ← 規律 4 本
 ├── skills/              ← 手順書 21 本（各フォルダに SKILL.md）
 ├── commands/            ← スラッシュコマンド 19 本
-├── hooks/               ← 見張り役 23 本（うち secret_patterns.py は hook でなく共通部品）
+├── hooks/               ← 見張り役 24 本（うち secret_patterns.py は hook でなく共通部品）
 └── settings.json        ← hooks を Claude Code に登録する設定</code></pre>
         </div>
         <div class="card">
@@ -452,6 +452,15 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <li><code>verify.sh</code> が設定そのものの危険な組み合わせ（<code>bypassPermissions</code>・全許可の <code>Bash(*)</code>・<code>curl|sh</code>・秘密値）も監査します</li>
             <li>「完了しました」と報告したのに直近のテスト実行が無い・失敗している場合、<code>reply-language.py</code> が差し戻します（<strong>同じやり取りの中で2回まで</strong>。未実行なら「提案（未実行）」と書けば通ります）</li>
             <li>要件定義書に <code>.claude/phase-gate</code> があるプロジェクトでは、<code>req-lint.py</code> の指摘（数値の無い非機能要件・列挙数の不一致 等）が残っていると基本設計の入口で止まります</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>記録・再注入・デザイン検査・テストの検出力（8.6.0〜）</h3>
+          <ul>
+            <li>hooks が deny・警告するたびに <code>.claude/hook-decisions.log</code>（秘密値は伏字）へ1行記録します。<code>token_report.py --hooks</code> で hook 別の deny/warn 件数と、環境変数で通した回数（誤検知の目安）を集計できます</li>
+            <li>圧縮・再開の直後（<code>compact</code>・<code>resume</code>）は、新しい見張り役 <code>hooks/session-context.py</code> が <code>CURRENT_STATE.md</code> の要点を最大12行だけ自動で読み直します。最終更新から30日を超えていたら「古い」と表示されます</li>
+            <li><code>check_design.py</code> に a11y 検査（<code>alt</code> 抜け・ラベル無し入力・<code>lang</code> 抜け・空ボタン・見出し飛び・コントラスト比不足）と、AI にありがちな意匠（装飾グラデーション・絵文字アイコン）への警告を追加しました</li>
+            <li>E2E テストは <code>e2e_history.py</code> でテスト単位の合格率・flaky 率を追跡し、生成した Playwright テストは <code>pw-spec-lint.py</code> で固定待ちや壊れやすいセレクタを検査し、<code>test-weaken-check.py</code> が assert 削除や skip 追加など「テストの弱体化」を検知します</li>
           </ul>
         </div>
       </section>
@@ -800,7 +809,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
 ./scripts/check-approval.sh      <span class="c"># 工程の承認が揃っているか・失効していないか</span>
 ./00_導入/03_点検/token-audit.sh         <span class="c"># トークン節約の仕組みが配線されているか</span>
 ./scripts/test-metrics.sh        <span class="c"># テストの消化率・合格率・Critical/High 残・完了予測</span></code></pre>
-        <p>ほかに <code>test-trace-check.sh</code>（94）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（51）、<code>test-check-design.sh</code>（120）、<code>test-check-approval.sh</code>（67）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
+        <p>ほかに <code>test-trace-check.sh</code>（94）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（51）、<code>test-check-design.sh</code>（214）、<code>test-check-approval.sh</code>（67）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
 
         <h3>自分のプロジェクトで使う検査</h3>
         <table>

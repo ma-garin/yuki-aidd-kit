@@ -3,6 +3,22 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
+## Ver.8.6.0（2026-09-24）— 文脈と記録・デザイン検査の a11y・テストの検出力（M30）
+
+hook の deny・警告が誤検知かどうかを測る手段が無く、圧縮・再開の直後に `CURRENT_STATE.md` の制約が読まれず要約から落ちたまま戻らなかった。`adr-to-rules.py`・`cite-check.py` は生成先の paths が0件一致でも参照切れでも気づかず、statusline は文脈量・5時間/7日の使用率を見る手段が無かった（B-29）。デザイン検査は alt・label・`lang`・コントラスト比を見ておらず、AI にありがちな装飾グラデーション・絵文字アイコンを通していた。74観点にキーボード・支援技術の観点が0件だった（B-30）。E2E は回をまたぐ揺れ（flaky）と前回からの回帰が見えず、生成テストは固定待ちやCSS/XPathセレクタを防ぐ手段が無く、assertの削除やskipの追加でテストが緑のまま弱体化しても検知できなかった（B-31）。全件走査の採用テーマから3塊を並列実装し統合した。
+
+- **hook の deny・警告を `.claude/hook-decisions.log` に記録**: `secret_patterns.py` に共通関数 `log_decision` を追加し、block-destructive・block-protected・pre-read-guard・pre-write-check・skill-scan・reply-language の deny/block/warn のたびに時刻・hook・理由（40字）・対象（60字。**秘密値は伏字**）を JSONL へ追記。書けなくても止めない（fail-open）。`token_report.py --hooks` で hook 別の deny/warn 件数と `AIDD_*_OK` 等で解除した回数（誤検知の目安）を集計
+- **新規 `hooks/session-context.py`（SessionStart。matcher `compact|resume` のみ、`startup` は対象外）**: `CURRENT_STATE.md`（無ければ `.claude/CURRENT_STATE.md`）の「現在の作業」「制約」「次の一手」節から合計12行以内を additionalContext で再注入。最終更新から30日超は「古い（日付）」を先頭に付ける。ファイル無しは無出力。配線3経路（`hooks/settings.json`・`export-project.sh` ヒアドキュメント・キット自身の `.claude/settings.json` はパッチを別途保守者が適用）
+- **`verify.sh` に導入先の参照検査を追加**: `.claude/rules/*.md` の frontmatter `paths:` の各 glob が0件一致なら WARN、`CLAUDE.md`・`AGENTS.md` 内の `@path`／`` `path` `` 参照が実在しなければ NG（新しいツールは作らず既存を拡張。重複段落・MEMORY.md は対象外）
+- **`statusline.py` に文脈量と使用率**: 入力 JSON に `context_window`・`rate_limits` があれば「ctx 38%」「5h 72%（14:20）」を末尾に付ける（**無ければ何も足さない**。合成しない）。5時間の使用率が80%以上で `⚠` を付ける（止めない）
+- **`check_design.py` に a11y（D20〜D25）と AI 既定意匠 WARN（D26・D27）**: D20 `alt` 抜け（`alt=""` は許可）／D21 入力欄のラベル無し／D22 `<html lang="ja">` 抜け／D23 空のボタン・リンク／D24 見出しレベルの飛びを WARN／D25 文字色×背景色のコントラスト比不足（本文4.5:1・大きい文字/UI部品3:1未満で NG、ライト・ダーク両方）。新規 `02_共通/ひな形/ui/contrast-pairs.md` に対の表（`--color-text`×`--color-bg` 等）。D26 装飾グラデーション・D27 絵文字アイコンは WARN（`--baseline` 対象外）。全新規則とも出荷物（`02_共通/ひな形/ui`）・`01_利用者向け資料/90_サンプル/図書貸出/` は NG=0 のまま
+- **`uiux_review/references/viewpoints.md` に観点6件を追加（74→80、新設カテゴリ「キーボードと支援技術」）**: Tab順・フォーカスの可視・Esc で閉じる・矢印でリスト移動・スクリーンリーダの読み上げ順・`aria-live`。`system_test_cases.csv` のひな形にキーボード操作の行を2件追加（列は変えない）
+- **新規 `02_共通/ツール/e2e_history.py`**: Playwright の JSON reporter 出力を読み、テスト単位（file＋title）の結果を `.claude/e2e-history.jsonl` に追記（`add`）。`report` は直近N回（既定10）の通過率・flaky率（同テストでpass/fail混在）・前回からの回帰を表示。**履歴3回未満のテストは「判定不能」で合格に数えない**。CTRF・allureは依存にしない
+- **新規 `02_共通/ツール/pw-spec-lint.py`**: 生成 Playwright テストの locator 規約を grep 型で静的検査。NG は固定待ち（`waitForTimeout`・`sleep(`）・理由コメント無し `.only()`/`test.skip()`・旧API（`$()`/`$$()`）。WARN は `getByRole` 等に置換可能な CSS/XPath/`nth()`・弱いアサーション・`spec:` ID 無し。修復順は `locator-repair.md` と同じ。eslint-plugin-playwright は不使用
+- **新規 `02_共通/ツール/test-weaken-check.py`**: テストファイルの git diff からアサーション削除・`.skip()`/`.only()` 追加・retries 増加・`toBeTruthy()` への置換を検知して NG。近傍±3行の `weaken-ok: <理由>`（8字以上）で許可。`--staged` を `pre-commit`・`install-git-hooks.sh` の生成に、`--base <rev>` を `done-gate/SKILL.md` に配線
+- **回帰テストを拡充**: 新規 `test-e2e-history.sh`（37ケース）・`test-pw-spec-lint.sh`（56ケース）・`test-weaken-check.sh`（59ケース）を追加。既存の `test-hooks.sh`（838→918ケース）・`test-install.sh`（188→210ケース）・`test-agents.sh`（71→83ケース）・`test-check-design.sh`（120→214ケース）も拡張。回帰テストは20本に
+- **利用者向け資料・目録・INDEX を同期**: 新規 hook 1本（hooks 24→25）・ツール3本（18→21）・回帰テスト3本（17→20）・ひな形1本の掲載漏れを `check_docs.py` で検出して解消。`build_codex_skills.py` を再生成（`--check` exit 0）。利用ガイド・操作マニュアルに「（8.6.0〜）」の見出しで hook の deny 記録・圧縮再開の再注入・check_design の a11y と意匠 WARN・e2e_history/pw-spec-lint/test-weaken-check を追記
+
 ## Ver.8.5.0（2026-09-24）— セキュリティ運用・完了主張の照合・仕様品質（M29）
 
 外部スキル・MCP・プラグインを導入前に見る仕組みが無く、`verify.sh` は配置の有無しか見ておらず設定の危険な組み合わせ（`bypassPermissions`・`Bash(*)`・秘密値）を見逃していた（B-26）。「完了しました」と言いながら実行結果が伴わない報告や、仕様欠落が原因の失敗をその場の修整で閉じてしまう問題、AI 生成コード特有の欠陥のレビュー観点が無かった（B-27）。テストコードと追跡表が突き合わせられておらず、ADR・rules の引用が古くなっても気づけず、要件文の型も曖昧語もチェックする道具が無かった（B-28）。全件走査の採用テーマから 3 塊を並列実装し統合した。
