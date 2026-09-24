@@ -197,30 +197,15 @@ sedi "s/,$NEW\$/,REQ-F-001/" "$P/docs/system_test_cases.csv"
 OUT=$(run "$P" --level ST --gate)
 expect_out  "版の無い・壊れた記録は確かめられないので未検証（判定不能を合格に数えない）" "書式不正「REQ-F-001」" "$OUT"
 
-echo "[ケース12: 未確認の欠陥（B36 起票前トリアージ）は --gate に1行足る]"
+echo "[ケース12: 未確認の欠陥（B36 起票前トリアージ）は未解決に数え、--gate に1行足る]"
 P=$(proj); fill "$P"
 sedi 's/| DEF-001 | ST-003 | REQ-N-002 | Critical | 360px で横スクロール | e3 | 2026-09-12 | 未対応 |/| DEF-001 | ST-003 | REQ-N-002 | 未確認 | 360px で横スクロール | e3 | 2026-09-12 | 未対応 |/' "$P/docs/lifecycle/07-system-test.md"
 sedi 's/| DEF-002 | ST-003 | REQ-N-002 | Low | 余白が狭い | e3 | 2026-09-18 | 修正済 |/| DEF-002 | ST-003 | REQ-N-002 | 未確認 | 余白が狭い | e3 | 2026-09-18 | 修正済 |/' "$P/docs/lifecycle/07-system-test.md"
 sedi 's/| DEF-003 | UAT-003 | 予約が二重登録 | High | 2026-09-19 | 修正する |/| DEF-003 | UAT-003 | 予約が二重登録 | 未確認 | 2026-09-19 | 修正する |/' "$P/docs/lifecycle/08-acceptance-test.md"
-OUT=$(run "$P" --gate); RC1=$?
-expect_out  "--gate: 未確認 3 件を1行で出す" "未確認 3 件" "$OUT"
-expect_noout "--gate: 3 件ちょうどは WARN 記号を出さない" "⚠ 未確認" "$OUT"
-python3 - "$P/docs/lifecycle/07-system-test.md" <<'PY'
-import sys
-from pathlib import Path
-f = Path(sys.argv[1])
-s = f.read_text()
-s = s.replace(
-    "| DEF-002 | ST-003 | REQ-N-002 | 未確認 | 余白が狭い | e3 | 2026-09-18 | 修正済 |",
-    "| DEF-002 | ST-003 | REQ-N-002 | 未確認 | 余白が狭い | e3 | 2026-09-18 | 修正済 |\n"
-    "| DEF-004 | ST-003 | REQ-N-002 | 未確認 | 追加検証中 | e3 | 2026-09-18 | 未対応 |",
-    1,
-)
-f.write_text(s)
-PY
-OUT=$(run "$P" --gate); RC2=$?
-expect_out  "--gate: 未確認が 3 件を超えたら WARN 記号を出す（止めない）" "⚠ 未確認 4 件" "$OUT"
-expect_exit "--gate: WARN 記号が付いても exit code は変えない（止めない）" "$RC1" "$RC2"
+OUT=$(run "$P" --gate); RC=$?
+# DEF-002 は closed（修正済）なので未解決には数えない。DEF-001・DEF-003 は open で未解決 2 件。未確認は状態に関わらず 3 件
+expect_out  "--gate: 「未解決N件（うち未確認M件）」の1行を出す（closed の未確認は未解決に数えない）" "未解決 2 件（うち未確認 3 件" "$OUT"
+expect_exit "--gate: 未確認の Critical/High が未解決の間は exit 0 にならない（判定不能を合格に数えない）" 1 "$RC"
 
 
 # --- [検証: B-22] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
@@ -240,5 +225,23 @@ expect_out  "[検証] init-test-docs.sh で配った scripts/test_metrics.py で
 [ -f "$P/scripts/section_hash.py" ] && ok "[検証] test_metrics.py の隣に section_hash.py が配られる" || ng "[検証] test_metrics.py の隣に section_hash.py が配られる" "init-test-docs.sh が scripts/section_hash.py を置かない"
 
 echo ""
+# --- [検証: 塊H] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
+echo "[検証: 塊H]"
+P=$(proj); fill "$P"
+sedi 's/| ST-006 | REQ-N-003 | 信頼性 | 再接続 |  |  | 未実施 |/| ST-006 | REQ-N-003 | 信頼性 | 再接続 |  |  | pass |/; s/| ST-007 | REQ-N-004 | セキュリティ | XSS |  |  | blocked |/| ST-007 | REQ-N-004 | セキュリティ | XSS |  |  | pass |/; s/| ST-008 | REQ-N-004 | セキュリティ | CSRF |  |  |  |/| ST-008 | REQ-N-004 | セキュリティ | CSRF |  |  | pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| UAT-004 | 延滞 | REQ-F-004 |  |  |  |  |/| UAT-004 | 延滞 | REQ-F-004 |  |  |  | 合 |/; s/| UAT-005 | 検索 | REQ-F-005 |  |  |  |  |/| UAT-005 | 検索 | REQ-F-005 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| 2026-09-12 | 未対応 |/| 2026-09-12 | 修正済 |/; ' "$P/docs/lifecycle/07-system-test.md"; sedi 's/| 2026-09-19 | 修正する |/| 2026-09-19 | 修正済 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| たぶんOK |/| pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| ST-003 | REQ-N-002 | デバイス対応 | 360px |  |  | fail |/| ST-003 | REQ-N-002 | デバイス対応 | 360px |  |  | pass |/' "$P/docs/lifecycle/07-system-test.md"
+sedi 's/| UAT-003 | 予約 | REQ-F-003 |  |  |  | 否 |/| UAT-003 | 予約 | REQ-F-003 |  |  |  | 合 |/' "$P/docs/lifecycle/08-acceptance-test.md"
+sedi 's/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  |  |  |  |/| UT-002 | DD-001 | 異常系 | 入力不正 |  |  |  | pass |  |  |/; s/| UT-003 | DD-001 | 境界値 | 上限+1 |  |  |  |  |  |  |/| UT-003 | DD-001 | 境界値 | 上限+1 |  |  |  | pass |  |  |/' "$P/docs/lifecycle/05-unit-test.md"
+OUT=$(run "$P" --gate); RC=$?
+expect_exit "[検証] 前提: 全件 pass・Critical 解消なら exit 0" 0 "$RC"
+sedi 's/| DEF-001 | ST-003 | REQ-N-002 | Critical | 360px で横スクロール | e3 | 2026-09-12 | 修正済 |/| DEF-001 | ST-003 | REQ-N-002 | 未確認 | 360px で横スクロール | e3 | 2026-09-12 | 未対応 |/' "$P/docs/lifecycle/07-system-test.md"
+OUT=$(run "$P" --gate); RC=$?
+expect_out  "[検証] 前提: 書き換えた DEF-001 を未確認として数える" "未確認 1 件" "$OUT"
+# 重大度を確定しない＝Critical でないと確定したわけではない。未解決の未確認で Critical/High 未解決 0 の基準を満たさない（判定不能は不合格）
+[ "$RC" -ne 0 ] && ok "[検証] 未解決の Critical を「未確認」と書き換えても --gate は進める（exit 0）にならない" || ng "[検証] 未解決の Critical を「未確認」と書き換えても --gate は進める（exit 0）にならない" "exit=$RC: $(printf '%s' "$OUT" | grep -m1 'Critical')"
+
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }
