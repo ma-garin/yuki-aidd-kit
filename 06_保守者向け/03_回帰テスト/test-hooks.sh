@@ -762,6 +762,42 @@ for c in "cat .claude/settings.json" "cp .claude/settings.json /tmp/bk" "sed s/a
   OUT=$(bpb "$c"); RC=$?
   expect_empty "Bash を許可: $c" "$OUT" "$RC"
 done
+# パッチ・コミット経由（git apply / patch / git am / checkout・restore <rev> / cherry-pick・revert）。
+# 第 2 回で .claude/settings.json への Edit を止められた後、`git apply <patch>` で当てたら通った穴。一時リポの実物のコミットで確かめる
+BPG="$TMP/proj-bpg"
+gg() { git -C "$BPG" -c user.name=t -c user.email=t@example.com -c commit.gpgsign=false "$@"; }
+bpg() { printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":%s}}' "$BPG" "$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$1")" | HOME="$BPH" python3 "$HOOKS/block-protected.py"; }
+git -c init.defaultBranch=main init -q "$BPG" && mkdir -p "$BPG/.claude/hooks" "$BPG/src"
+echo '{}' > "$BPG/.claude/settings.json"; echo a > "$BPG/src/a.py"; gg add -A && gg commit -qm init
+echo '{"x":1}' > "$BPG/.claude/settings.json"; gg commit -qam evil; BPG_E=$(gg rev-parse HEAD)      # 保護パスを触るコミット
+echo b > "$BPG/src/a.py"; gg commit -qam ok; BPG_O=$(gg rev-parse HEAD)                            # 触らないコミット
+gg diff HEAD~2 HEAD~1 > "$BPG/p.diff"; gg diff HEAD~1 HEAD > "$BPG/ok.diff"
+gg format-patch -q -1 "$BPG_E" --stdout > "$BPG/m.patch"; gg format-patch -q -1 "$BPG_O" --stdout > "$BPG/okm.patch"
+printf 'diff --git a/settings.json b/settings.json\n--- a/settings.json\n+++ b/settings.json\n@@ -1 +1 @@\n-{}\n+{"x":1}\n' > "$BPG/x.diff"
+python3 -c 'import base64,sys;b=open(sys.argv[1],"rb").read();open(sys.argv[2],"wb").write(b"From 0 Mon Sep 17 00:00:00 2001\nFrom: t <t@example.com>\nSubject: [PATCH] x\nContent-Transfer-Encoding: base64\n\n"+base64.encodebytes(b"x\n---\n"+b))' "$BPG/p.diff" "$BPG/b64.patch"
+ln -s .claude "$BPG/cfg"; printf -- '--- cfg/settings.json\n+++ cfg/settings.json\n@@ -1 +1 @@\n-{}\n+{"x":1}\n' > "$BPG/s.diff"
+for c in "git apply p.diff" "patch -p1 < p.diff" "cat p.diff | git apply" "git apply <(cat p.diff)" "git am m.patch" \
+         "git checkout HEAD -- .claude/settings.json" "git restore --source=HEAD~1 .claude/hooks/x.py" "git cherry-pick $BPG_E" \
+         "git cherry-pick zzz" "bash -c 'git apply p.diff'" "sudo env A=1 git cherry-pick $BPG_E" "git revert $BPG_E" \
+         "git cherry-pick HEAD~2..HEAD" "git checkout HEAD~2 -- ." "git am b64.patch" "git apply --directory=.claude x.diff" \
+         "patch -p0 -i s.diff" "git -c alias.cp=cherry-pick cp $BPG_E" "git apply - < p.diff" $'git apply <<EOF\nx\nEOF' \
+         "echo x > ok.diff && git apply ok.diff" "git fetch && git cherry-pick $BPG_O" "patch -ti p.diff < ok.diff"; do
+  expect_contains "パッチ・コミット経由を deny: $c" '"permissionDecision": "deny"' "$(bpg "$c")"
+done
+expect_contains "パイプから当てる deny の理由に代わりの手順" "ファイルに書いてから" "$(deny_reason "$(bpg "cat p.diff | git apply")")"
+expect_contains "解決できないコミットは判定不能で deny" "zzz を解決できない" "$(deny_reason "$(bpg "git cherry-pick zzz")")"
+mkdir -p "$BPG/.git/sequencer"; printf 'pick %s evil\n' "$BPG_E" > "$BPG/.git/sequencer/todo"
+expect_contains "cherry-pick --continue は sequencer/todo の残りを見る → deny" '"permissionDecision": "deny"' "$(bpg "git cherry-pick --continue")"
+rm -rf "$BPG/.git/sequencer"
+for c in "git apply ok.diff" "git apply --check p.diff" "git am okm.patch" "git checkout HEAD -- src/a.py" "git cherry-pick $BPG_O" \
+         "git cherry-pick HEAD~1..HEAD" "bash -c 'git apply ok.diff'" "git checkout HEAD -- ." "patch --dry-run -p1 < p.diff" \
+         "git apply --check ok.diff && git apply ok.diff" "git status && git apply ok.diff" "git restore --staged .claude/settings.json" \
+         "patch -p1 < ok.diff" "git cherry-pick --continue" "git checkout main"; do
+  OUT=$(bpg "$c"); RC=$?
+  expect_empty "パッチ・コミット経由を許可: $c" "$OUT" "$RC"
+done
+OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"git apply p.diff"}}' "$BPG" | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py"); RC=$?
+expect_empty "AIDD_ALLOW_CONFIG_EDIT=1 なら git apply も許可" "$OUT" "$RC"
 OUT=$(printf 'not json' | python3 "$HOOKS/block-protected.py")
 expect_contains "壊れた入力は deny（fail-closed）" "hook の入力が読めない" "$(deny_reason "$OUT")"
 expect_contains "Write の .git/config も deny" '"permissionDecision": "deny"' "$(bpw "$BP/.git/config")"
