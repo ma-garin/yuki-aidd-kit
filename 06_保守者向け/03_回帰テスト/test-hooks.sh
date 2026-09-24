@@ -447,7 +447,20 @@ OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant
 expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"精読を待っています。実測: 1分未満（進行中）","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 委譲待ちの途中報告（進行中）は予実を突き合わせない" "$OUT" "$RC"
+# 完了報告を通したらターンの計測を区切る（上の「差異を説明」の報告で reset 済み → 経過は空）。
+# 委譲先の報告で続く次の応答が、保守者の発言からの累計経過と比較されないため（2026-09-24 01:35 に偽の予実 4 件）
+OUT=$(python3 "$HOOKS/tool-timer.py" elapsed)
+expect_empty "Stop: 完了報告（実測あり）を通したらターンの計測を区切る" "$OUT" 0
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"精読を待っています。実測: 1分未満（進行中）","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+printf '{"tool_name":"Bash","tool_use_id":"g2"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"g2"}' | python3 "$HOOKS/tool-timer.py" post
+# 前の完了報告（実測あり）より前の見積は使い切り。次の応答はそれと比較しない（見積 40 分 vs 経過数秒でも通す）
+{ u_text "調査して"; a_text "見積: 40分（23:00 完了予定）"; a_text "完了しました。見積: 40分 / 実測: 30分"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"委譲先の報告を受けて次を起動しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 前の完了報告より前の見積は拾わない（委譲先の報告で続く応答）" "$OUT" "$RC"
 { u_text "調査して"; a_text "見積: 1分（23:00 完了予定）"; } > "$TRJ"
+printf '{"tool_name":"Bash","tool_use_id":"g3"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"g3"}' | python3 "$HOOKS/tool-timer.py" post
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 3 分未満の見積は誤差が支配するので突合しない" "$OUT" "$RC"
 python3 "$HOOKS/tool-timer.py" reset-session
