@@ -1,0 +1,6 @@
+{"utterance": "この機能できたと思うんだけど、これで完了と言っていい?", "expect": "done-gate", "note": "description の「できた」「これで完了」"}
+{"utterance": "実装終わったのでリリースしていいか判定して", "expect": "done-gate", "note": "description の「終わった」「リリースしていい？」"}
+{"utterance": "このタスクをクローズする前に完了基準を満たしてるか確認して", "expect": "done-gate", "note": "description の「タスクをクローズしようとする時」"}
+{"utterance": "このPWAのスモークテストをPlaywrightで書いて", "expect": "test-automation", "note": "テストコード自体を書くのは test-automation"}
+{"utterance": "プロジェクトが一段落したので振り返りをしたい", "expect": "retro", "note": "振り返りは retro"}
+{"utterance": "ありがとうございます、助かりました", "expect": "none", "note": "お礼のみ"}

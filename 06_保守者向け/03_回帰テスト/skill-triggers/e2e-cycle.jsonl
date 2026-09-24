@@ -1,0 +1,6 @@
+{"utterance": "E2Eワークフローをフェーズ1のテスト設計から回してほしい", "expect": "e2e-cycle", "note": "description の「E2Eワークフロー」・フェーズ番号"}
+{"utterance": "システムテストを設計から実行、修整まで段階停止で進めたい", "expect": "e2e-cycle", "note": "description の「システムテストを設計から回したい」"}
+{"utterance": "テストして直すサイクルを1フェーズずつ止めながらやりたい", "expect": "e2e-cycle", "note": "description の「テスト→修整のサイクル」"}
+{"utterance": "テストレベルL1〜L4のゲート基準を設計してほしい", "expect": "test-strategy", "note": "テスト活動全体の設計は test-strategy"}
+{"utterance": "このHTMLツールのスモークテストコードを書いて", "expect": "test-automation", "note": "テストコード生成は test-automation"}
+{"utterance": "今日は何曜日ですか", "expect": "none", "note": "事実確認のみ"}

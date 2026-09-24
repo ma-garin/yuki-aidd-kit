@@ -1,0 +1,6 @@
+{"utterance": "今回のプロジェクトの振り返りをして、学びをlessonsにまとめたい", "expect": "retro", "note": "description の「振り返り」「学びをまとめて」"}
+{"utterance": "今回うまくいかなかった点を次はこうしたいという形で記録したい", "expect": "retro", "note": "description の「うまくいかなかった」「次はこうしたい」"}
+{"utterance": "retroをやって学びをまとめて", "expect": "retro", "note": "description の「retro」「lessons」"}
+{"utterance": "この設計判断をADRとして記録してほしい", "expect": "dev-lifecycle", "note": "ADRの作成は dev-lifecycle"}
+{"utterance": "この調査結果、出力が長すぎるので圧縮して", "expect": "context-compression", "note": "出力の圧縮は context-compression"}
+{"utterance": "変数のスペルミスを直して", "expect": "none", "note": "単純な誤字修正"}

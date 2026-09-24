@@ -1,0 +1,6 @@
+{"utterance": "日記アプリをpersonal PWAとしてGitHub Pagesにデプロイしたい", "expect": "personal-pwa", "note": "description の「personal PWA」"}
+{"utterance": "家計簿をスマホで使えるアプリにしたい", "expect": "personal-pwa", "note": "description の「家計簿」「スマホで使えるアプリ」"}
+{"utterance": "スケジュール管理アプリをlocalStorage永続化で作って", "expect": "personal-pwa", "note": "description の「スケジュール管理」"}
+{"utterance": "社内配布用のデモツールを単一HTMLファイルで作って", "expect": "single-html-tool", "note": "社内配布デモは single-html-tool"}
+{"utterance": "このアプリの非機能要件、オフライン対応を決めたい", "expect": "nfr-standards", "note": "非機能要件の定義は nfr-standards"}
+{"utterance": "コミットメッセージを英語にして", "expect": "none", "note": "単純な文言変更"}

@@ -202,8 +202,9 @@ def test_totals(root: Path, skip: bool) -> dict[str, int]:
             continue
         proc = subprocess.run(["bash", str(f)], cwd=root, capture_output=True, text=True, errors="replace",
                               env={**os.environ, "GATES_REQUESTED": "1"})
-        m = re.search(r"PASS=(\d+)\s*/\s*FAIL=(\d+)", proc.stdout)
-        if m:
+        matches = list(re.finditer(r"PASS=(\d+)\s*/\s*FAIL=(\d+)", proc.stdout))
+        if matches:
+            m = matches[-1]   # fixture 文字列（塊 H 等）が本物の集計より先に出ることがあるため最後の一致を採る
             totals[f.name] = int(m.group(1)) + int(m.group(2))
     return totals
 

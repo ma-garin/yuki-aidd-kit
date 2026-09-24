@@ -1,0 +1,6 @@
+{"utterance": "このReact finance PWAプロジェクトでECC活用をどう振り分ければいい?", "expect": "ecc-daily-router", "note": "description の「React finance PWA」「ECC活用」"}
+{"utterance": "QA document generatorプロジェクト向けにskills/rules/agentsをDAILYとLIBRARYに分類して", "expect": "ecc-daily-router", "note": "description の「QA document generator」"}
+{"utterance": "Djangoプロジェクトで毎回使うECC資産だけ選びたい", "expect": "ecc-daily-router", "note": "description の「Django」・DAILY/LIBRARY の分類"}
+{"utterance": "要件定義から工程を分けて設計書を作ってほしい", "expect": "dev-lifecycle", "note": "工程そのものの実行は dev-lifecycle"}
+{"utterance": "spec.md/plan.md/tasks.mdを作って仕様から進めたい", "expect": "sdd-ecc-workflow", "note": "SDDの実行は sdd-ecc-workflow"}
+{"utterance": "変数名をキャメルケースにリネームして", "expect": "none", "note": "単純なリファクタ依頼"}

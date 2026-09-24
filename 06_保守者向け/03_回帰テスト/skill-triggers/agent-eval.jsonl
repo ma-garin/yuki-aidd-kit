@@ -1,0 +1,6 @@
+{"utterance": "このRAGチャットボットの回答精度をevalしたいんだけど、どう進めればいい?", "expect": "agent-eval", "note": "description の「evalしたい」「精度を測りたい」"}
+{"utterance": "プロンプトを変えたら前と挙動が変わってないか、回帰をチェックしたい", "expect": "agent-eval", "note": "description の「プロンプト変更の回帰」"}
+{"utterance": "エージェントのハルシネーション率を測る仕組みを作りたい", "expect": "agent-eval", "note": "description の「ハルシネーションを検出」"}
+{"utterance": "サイクルではなくコードだけでいい、ログイン画面のE2Eテストコードを書いてほしい", "expect": "test-automation", "note": "「テストを書いて」はコードが動くかを見る方（検証B-25で e2e-cycle と紛らわしいと指摘され修正）"}
+{"utterance": "このUIレビューをISO 25010の観点でスコアリングして", "expect": "qa-review-standards", "note": "ISO準拠のスコアリングは qa-review-standards"}
+{"utterance": "おはよう、今日の予定を確認したいだけです", "expect": "none", "note": "スキル不要の雑談"}

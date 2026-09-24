@@ -1,0 +1,6 @@
+{"utterance": "似たような入力フォームが20画面くらいあるので、まとめて徹底的に洗い出してください", "expect": "atarimae-quality-audit", "note": "description の「似たようなものが大量にある」「徹底的に」"}
+{"utterance": "まだ通知バッジの表示がおかしい気がする、他にも同じ欠陥がないか全部洗い出して", "expect": "atarimae-quality-audit", "note": "description の「まだ○○がおかしい」"}
+{"utterance": "exhaustive review をお願いします、当たり前品質が抜けてないか見てほしい", "expect": "atarimae-quality-audit", "note": "description の「exhaustive review」"}
+{"utterance": "このダッシュボード画面を実際に開いて全状態レビューしてください", "expect": "uiux_review", "note": "実機で全状態を見るのは uiux_review"}
+{"utterance": "このタスク、これで完了と言っていいか判定して", "expect": "done-gate", "note": "完了判定は done-gate"}
+{"utterance": "変数名をキャメルケースにリネームして", "expect": "none", "note": "単純なリファクタ依頼"}

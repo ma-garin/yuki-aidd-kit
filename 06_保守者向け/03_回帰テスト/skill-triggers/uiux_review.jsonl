@@ -1,0 +1,6 @@
+{"utterance": "この管理画面を実際に開いて全状態を確認しながらレビューして", "expect": "uiux_review", "note": "description の「実際に開いて全状態を確認」"}
+{"utterance": "UIを直したので、完了報告する前にレビューしてほしい", "expect": "uiux_review", "note": "description の「UIを直したとき」「完了報告をする前」"}
+{"utterance": "このダッシュボードのUI/UXをレビューして", "expect": "uiux_review", "note": "description の「UIをレビューして」"}
+{"utterance": "似たような入力フォームが大量にあるので徹底的に洗い出して", "expect": "atarimae-quality-audit", "note": "欠陥クラスの網羅的洗い出しは atarimae-quality-audit"}
+{"utterance": "この画面の色とコンポーネントのデザインどうする?", "expect": "design-system", "note": "デザイン方針の決定は design-system"}
+{"utterance": "今何時ですか", "expect": "none", "note": "事実確認のみ"}

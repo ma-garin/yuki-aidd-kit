@@ -37,6 +37,12 @@
 - **回帰テストを拡充**: `test-hooks.sh` 620→712ケース、`test-install.sh` 155→156ケース、`test-agents.sh` 61→63ケース、`test-trace-check.sh` 15→70ケース（C7 suspect・`--impact`・`--refresh`）、`test-test-metrics.sh` 58ケース（根拠の版の未検証）、`test-token-audit.sh` 44ケース、`test-check-design.sh` 77→116ケース（規則 ID・基準線・新規則6種）。新規 `test-adr-to-rules.sh`（54ケース）・`test-security-scan.sh`（31ケース）を追加し、回帰テストは13本に
 - **利用者向け資料・目録・INDEX を同期**: 新規 hook 1本（hooks 22→23）・ツール3本・コマンド1本・回帰テスト2本の掲載漏れを `check_docs.py` で検出して解消。利用ガイド・操作マニュアルに「（8.4.0〜）」の見出しで injection-guard は警告専用・security-scan の未検査は不合格対象外・`check_design --baseline` は件数が減る方向だけ、を追記
 
+### 補遺（同日）
+
+- **速度規律を規則化**: `absolute-rules.md` に A-14（秘密ファイル・判定不能は安全側既定）、`model-routing.md` に5時間制限が近いときの手順と Opus の使いどころ、`speed-harness.md` の H-4/H-5/H-7/H-10 を整理（委譲の検証は2周まで・判断箇所の先出し）
+- **B-25 スキル発火テストを追加（新規 `skill_trigger_eval.py`・`test-skill-trigger-eval.sh`・`skill-triggers/*.jsonl` 20本・stub の `claude`）**: 回帰テストが13→14本に。正例・負例の発話ケース計120件、regression 29ケース。実 API は保守者の環境で手動実行のみ
+- 決定事項 Q-20（全緑ならマージは確認なし）を記録
+
 ## Ver.8.3.0（2026-09-24）— セキュリティ強制層と検証の型（M27）
 
 秘密ファイル名・秘密値・破壊的コマンドの判定規則が5か所に散って食い違い、`bash -c '…'` のようなラッパー越しの操作が hook を素通りしていた（B-19）ため、**規則を1か所に集約**し、ラッパーを剥がしてから照合する形に直した。あわせて、外部走査（GitHub 公開リポ 21,069 件）の指摘を受け、修整とテストの検証・QA の型そのものを機械判定できる形に揃えた。

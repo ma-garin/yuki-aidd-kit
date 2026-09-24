@@ -1,0 +1,6 @@
+{"utterance": "基本設計工程の承認ゲートを回して、指摘を出し切ってほしい", "expect": "phase-approval", "note": "description の「工程承認」「承認ゲート」"}
+{"utterance": "前工程の承認が失効してないか確認して、未承認のまま進めないようにしたい", "expect": "phase-approval", "note": "description の「承認が失効」「未承認のまま進めない」"}
+{"utterance": "/phase-reviewを実行してフェーズレビューをしたい", "expect": "phase-approval", "note": "description の「/phase-review 実行時」"}
+{"utterance": "詳細設計書を工程ごとに作ってほしい", "expect": "dev-lifecycle", "note": "成果物の作成自体は dev-lifecycle"}
+{"utterance": "この機能、これで完了と判定していい?", "expect": "done-gate", "note": "完了判定は done-gate"}
+{"utterance": "ありがとうございます、助かりました", "expect": "none", "note": "お礼のみ"}

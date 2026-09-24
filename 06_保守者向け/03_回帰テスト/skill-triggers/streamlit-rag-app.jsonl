@@ -1,0 +1,6 @@
+{"utterance": "business_agent_appに新しいPMO支援モジュールを追加したい", "expect": "streamlit-rag-app", "note": "description の「business_agent_app」「PMO支援」"}
+{"utterance": "エスカレーション判定の実装をStreamlitアプリに追加してほしい", "expect": "streamlit-rag-app", "note": "description の「エスカレーション判定」の実装"}
+{"utterance": "マルチテナント対応の意思決定支援機能をこのStreamlitアプリに実装したい", "expect": "streamlit-rag-app", "note": "description の「マルチテナント対応」「意思決定支援機能」"}
+{"utterance": "このエスカレーション判定の正確性をevalで測りたい", "expect": "agent-eval", "note": "正確性の評価は agent-eval"}
+{"utterance": "Streamlitの最新APIリファレンスを調べて", "expect": "code-doc-search", "note": "ドキュメント検索は code-doc-search"}
+{"utterance": "今日は何曜日ですか", "expect": "none", "note": "事実確認のみ"}

@@ -389,10 +389,10 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <p class="why">Claude Code は <code>CLAUDE.md</code> を通して、Codex は <code>AGENTS.md</code> を直接読みます。この 1 行で、両方が同じ本体を読むようになります。スキルは <code>$名前</code>（例: <code>$done-gate</code>）で呼び、スラッシュメニューにも並びます。コマンドは <code>$cmd-&lt;名前&gt;</code>（例: <code>$cmd-trace</code>）です。</p>
           </li>
           <li><strong>（任意）壊れていないことを機械で確かめる</strong>
-            <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。712 ケース</span>
-./06_保守者向け/03_回帰テスト/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。156 ケース。本物の ~/.claude には触りません</span></code></pre>
+            <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh      <span class="c"># 見張り役（hooks）が正しく反応するか。838 ケース</span>
+./06_保守者向け/03_回帰テスト/test-install.sh    <span class="c"># 導入・配布のスクリプトが正しく動くか。188 ケース。本物の ~/.claude には触りません</span></code></pre>
             <p class="expect"></p>
-            <pre><code>結果: PASS=712 / FAIL=0
+            <pre><code>結果: PASS=838 / FAIL=0
 ✅ 全て正常</code></pre>
           </li>
         </ol>
@@ -800,7 +800,7 @@ CURRENT_STATE.md に次のタスク 3 つと判断待ち 2 つを書きました
 ./scripts/check-approval.sh      <span class="c"># 工程の承認が揃っているか・失効していないか</span>
 ./00_導入/03_点検/token-audit.sh         <span class="c"># トークン節約の仕組みが配線されているか</span>
 ./scripts/test-metrics.sh        <span class="c"># テストの消化率・合格率・Critical/High 残・完了予測</span></code></pre>
-        <p>ほかに <code>test-trace-check.sh</code>（15）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（25）、<code>test-check-design.sh</code>（44）、<code>test-check-approval.sh</code>（54）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
+        <p>ほかに <code>test-trace-check.sh</code>（94）、<code>test-quality-harness.sh</code>（11）、<code>test-check-docs.sh</code>（51）、<code>test-check-design.sh</code>（120）、<code>test-check-approval.sh</code>（67）があります。すべて「結果: PASS=n / FAIL=0」なら正常です。</p>
 
         <h3>自分のプロジェクトで使う検査</h3>
         <table>
