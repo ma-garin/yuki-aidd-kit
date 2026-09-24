@@ -7,6 +7,8 @@
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
+# install.sh が呼ぶ skill-scan の判定の記録（B12）を隔離する。既定のままだとカレントの .claude/ に積まれる
+export AIDD_HOOK_LOG="$TMP/hook-decisions.log"
 PASS=0; FAIL=0
 
 ok() { echo "  ✅ $1"; PASS=$((PASS+1)); }
@@ -126,6 +128,33 @@ printf '%s\n' '{broken' > "$VP/.claude/settings.local.json"
 OUT=$(vrun); RC=$?
 expect_exit "判定不能: JSON として読めない設定は NG（exit 1）" 1 "$RC"
 rm -f "$VP/.claude/settings.local.json"
+
+# ---------------------------------------------------------------- verify.sh の導入先の文脈ファイル（B64）
+# rules の paths が 1 件も当たらない → WARN（exit 0 のまま）／ CLAUDE.md・AGENTS.md の参照切れ → NG（exit 1）
+echo "[verify.sh: 導入先の文脈ファイル（B64）]"
+mkdir -p "$VP/.claude/rules" "$VP/src/api"; : > "$VP/src/api/a.ts"
+printf '%s\n' '# P' '@AGENTS.md と `src/api/a.ts:3` を読む。成果物は `docs/out/`、状態は `.claude/mode`' '```' '`in/fence.md` はフェンスの中' '```' > "$VP/CLAUDE.md"
+printf '%s\n' '# A' '参照 `src/api/a.ts`・URL `https://example.com/a.md`・記入例 `<dir>/x.md`・glob `src/**/*.md`' > "$VP/AGENTS.md"
+printf '%s\n' '---' 'paths:' '  - "src/**/*.{ts,tsx}"' '---' '# r' > "$VP/.claude/rules/api.md"
+OUT=$(vrun); RC=$?
+expect_exit "正常: 参照先が在り paths も当たれば exit 0" 0 "$RC"
+expect_noout "正常: 文脈ファイルで警告を出さない（ディレクトリ・状態ファイル・URL・記入例・glob・フェンスは見ない）" "⚠" "$OUT"
+expect_out  "正常: 参照切れなしと出す" "CLAUDE.md: 参照切れなし" "$OUT"
+printf '%s\n' '---' 'paths: ["srv/**/*.py", "src/api/*.ts"]' '---' > "$VP/.claude/rules/typo.md"
+OUT=$(vrun); RC=$?
+expect_exit "WARN paths の 0 件一致は exit 0 のまま" 0 "$RC"
+expect_out  "WARN ファイル名と当たらない glob を出す" ".claude/rules/typo.md: paths の srv/**/*.py に一致するファイルが 0 件" "$OUT"
+expect_noout "WARN 当たる glob は出さない" "paths の src/api/*.ts" "$OUT"
+rm -f "$VP/.claude/rules/typo.md"
+printf '%s\n' '詳細は `docs/guide.md` と @./notes/plan.md' >> "$VP/CLAUDE.md"
+printf '%s\n' '@docs/missing-import.md' >> "$VP/AGENTS.md"
+OUT=$(vrun); RC=$?
+expect_exit "NG 参照切れは exit 1" 1 "$RC"
+expect_out  "NG コードスパンのパスの参照切れを行番号つきで出す" 'CLAUDE.md:6: `path` の参照先 docs/guide.md が無い' "$OUT"
+expect_out  "NG @import の参照切れ（./ 始まり）" "CLAUDE.md:6: @import の参照先 ./notes/plan.md が無い" "$OUT"
+expect_out  "NG AGENTS.md の @import の参照切れ" "AGENTS.md:3: @import の参照先 docs/missing-import.md が無い" "$OUT"
+expect_out  "NG 結果行に文脈ファイルの NG 数" "文脈ファイル 3" "$OUT"
+rm -rf "$VP/CLAUDE.md" "$VP/AGENTS.md" "$VP/.claude/rules" "$VP/src"
 
 # ---------------------------------------------------------------- install-guard.sh（指示優先 3 hook の最小導入・merge・冪等）
 echo "[install-guard.sh]"

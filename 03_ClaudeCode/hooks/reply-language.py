@@ -20,6 +20,12 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True  # hooks ディレクトリに __pycache__ を作らない
 
+try:   # 完了の主張の照合（B39）の差し戻し・通知を .claude/hook-decisions.log に記録する（B12。付け足し）
+    from secret_patterns import log_decision
+except ImportError:
+    def log_decision(*_a, **_k) -> None:
+        return None
+
 
 # 相槌・謝辞・待機表明だけの応答。これらを除いて何も残らなければ情報がゼロ
 FILLER_RE = re.compile(
@@ -342,19 +348,23 @@ def main() -> int:
         found = check_claim(g, tp0)
         if found is not None:
             kind, problem, idx, lines = found
+            cwd = data.get("cwd") if isinstance(data.get("cwd"), str) else None
             if kind == "info":
                 ctx = f"{CLAIM_MARKER}: {problem}"
                 print(json.dumps({"hookSpecificOutput": {
                     "hookEventName": "Stop", "additionalContext": ctx}}, ensure_ascii=False))
+                log_decision("reply-language", "warn", "完了の主張を照合できない", "Stop", problem, cwd)
                 return 0
             if claim_block_count(lines, idx) >= MAX_CLAIM_BLOCKS:
                 ctx = f"{CLAIM_MARKER}: {problem}（{MAX_CLAIM_BLOCKS} 回を超えたので通知に留める。無限ループ防止）"
                 print(json.dumps({"hookSpecificOutput": {
                     "hookEventName": "Stop", "additionalContext": ctx}}, ensure_ascii=False))
+                log_decision("reply-language", "warn", "完了の主張と実行結果が不一致（上限超え）", "Stop", problem, cwd)
                 return 0
             reason = (f"{CLAIM_MARKER}: {problem}。"
                       "実行してから主張するか、『提案（未実行）』と書き直す")
             print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+            log_decision("reply-language", "block", "完了の主張と実行結果が不一致", "Stop", problem, cwd)
             return 0
     # 委譲待ちの途中報告（「進行中」を含む）は完了報告ではないので、予実を突き合わせず履歴にも積まない。
     # 突き合わせると経過が見積に届く前に「過大見積」と誤判定し、偽の予実で校正係数を壊す（2026-09-23 に 5 回）

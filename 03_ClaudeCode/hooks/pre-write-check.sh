@@ -8,6 +8,8 @@
 #   - ファイル名だけの一致（.env 等）→ 警告のみ（.env.example に API_KEY=your-key-here を書くのは止めない）
 #   - 入力が JSON として読めない・オブジェクトでない（[1]・null・空）→ deny（fail-closed）。{} は通す
 #   - 03_ClaudeCode/hooks/secret_patterns.py が hook と同じ場所に無い・判定に失敗した → deny（判定不能は不合格）
+# deny・警告・AIDD_SECRET_OK での通過は .claude/hook-decisions.log に 1 行ずつ記録する（B12。secret_patterns.py の
+#   log_decision。秘密値は伏字。書けなくても止めない。secret_patterns.py が無いときは記録できない）
 
 INPUT=$(cat)
 deny() { printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"; exit 0; }
@@ -19,7 +21,8 @@ case "$SP_RC" in
   0) ;;
   3) deny "[pre-write-check] hook の入力が読めない（JSON のオブジェクトでない）ので止めた（fail-closed）。続けて起きるなら Claude Code と hook の版の組み合わせを保守者に確認してもらう" ;;
   2) deny "[pre-write-check] 判定不能で止めた: 03_ClaudeCode/hooks/secret_patterns.py が無い。hook と同じ場所に置く（保守者に install.sh / export-project.sh での入れ直しを依頼する）" ;;
-  *) deny "[pre-write-check] 秘密情報の検査に失敗した（secret_patterns.py が exit ${SP_RC}）ので止めた（判定不能）。保守者に hook の不具合として報告する" ;;
+  *) python3 "$SP" --log-decision pre-write-check deny "秘密情報の検査に失敗（exit ${SP_RC}）" >/dev/null 2>&1
+     deny "[pre-write-check] 秘密情報の検査に失敗した（secret_patterns.py が exit ${SP_RC}）ので止めた（判定不能）。保守者に hook の不具合として報告する" ;;
 esac
 case "$SP_OUT" in
   "{"*) printf '%s\n' "$SP_OUT"; exit 0 ;;   # deny の JSON はそのまま返す（警告の文字列と混ぜると JSON として読まれない）
@@ -42,6 +45,8 @@ if [[ "$FILE" =~ \.css$|\.js$ ]]; then
   PARENT=$(dirname "$FILE")
   if ls "$PARENT"/*.html &>/dev/null 2>&1; then
     ERRORS+=("⚠ 同階層にHTMLあり: 単一HTMLツールのプロジェクトならCSS/JS外部分割は規約違反です（通常のWebプロジェクトなら無視してよい）。意図的ですか？ ($FILE)")
+    TOOLN=$(printf '%s' "$INPUT" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("tool_name",""))' 2>/dev/null)
+    python3 "$SP" --log-decision pre-write-check warn "HTML 隣の CSS/JS 分割" "$TOOLN" "$FILE" >/dev/null 2>&1
   fi
 fi
 

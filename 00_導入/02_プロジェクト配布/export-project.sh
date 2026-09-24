@@ -99,6 +99,9 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
     "PreCompact": [
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/pre-compact.py", "timeout": 5 } ] }
     ],
+    "SessionStart": [
+      { "matcher": "compact|resume", "hooks": [ { "type": "command", "command": "python3 .claude/hooks/session-context.py", "timeout": 5 } ] }
+    ],
     "InstructionsLoaded": [
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/log-instructions.py", "timeout": 5 } ] }
     ],

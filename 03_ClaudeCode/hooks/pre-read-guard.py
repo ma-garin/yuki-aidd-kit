@@ -14,6 +14,7 @@
   - それ以外・バイナリ（画像/PDF は Read が自前で扱う）は素通り
 
 逃がし口は offset / limit の明示（既に Read が持っている）。環境変数のバイパスは作らない。
+deny のたびに `.claude/hook-decisions.log` へ 1 行記録する（B12。`secret_patterns.log_decision`。書けなくても止めない）。
 入力が JSON として読めない・オブジェクトでない（`[1]`・`null`・空）ときは deny する（fail-closed）。`{}` は判定するものが無いので通す。
 
 限界（止めない。テストにもしない）: Grep をディレクトリに掛けたとき（`path: .`）に中に入っている `.env` の中身、
@@ -31,6 +32,15 @@ try:
     from secret_patterns import SECRET_READ_REASON, is_secret_glob, is_secret_path
 except ImportError:          # 部品が欠けた導入。判定できないので deny する
     is_secret_path = None
+try:
+    from secret_patterns import input_summary, log_decision
+except ImportError:          # 記録は付け足し（B12）。部品が無くても deny の動作は変えない
+    def log_decision(*_a, **_k) -> None:
+        return None
+
+    def input_summary(_ti) -> str:
+        return ""
+_CTX: dict = {}              # deny の記録に使う（ツール名・パスの要約・cwd）
 
 LOCK_FILES = {"package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock", "Cargo.lock",
               "Gemfile.lock", "composer.lock", "Pipfile.lock", "uv.lock"}
@@ -45,6 +55,7 @@ def deny(reason: str) -> int:
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": reason,
     }}, ensure_ascii=False))
+    log_decision("pre-read-guard", "deny", reason, _CTX.get("tool", ""), _CTX.get("summary", ""), _CTX.get("cwd"))
     return 0
 
 
@@ -93,6 +104,8 @@ def _main() -> int:
         return deny(f"hook の入力が読めない（{type(e).__name__}）ので止めた（fail-closed）。"
                     "続けて起きるなら Claude Code と hook の版の組み合わせを保守者に確認してもらう（pre-read-guard.py）")
     tool = data.get("tool_name")
+    _CTX.update(tool=tool if isinstance(tool, str) else "", summary=input_summary(tool_input),
+                cwd=data.get("cwd") if isinstance(data.get("cwd"), str) else None)
     if tool in ("Read", "Grep", "Glob"):
         if is_secret_path is None:
             return deny("判定不能で止めた: `03_ClaudeCode/hooks/secret_patterns.py` が無い。hook と同じ場所に置く"
