@@ -12,6 +12,7 @@ description: タスクや機能を「完了」と判定する前の最終チェ�
 - [ ] qa-review-standardsの観点で自己レビュー済み（Critical/High残ゼロ）
 - [ ] **テストがpassする**（test-automationスキル。「動作確認した」は人力でなくテスト実行で判定）
 - [ ] テストが受入基準（Given/When/Then）を検証している。件数だけ数えるテスト・0 件実行の PASS・通すために弱めた assert が無い（実行件数を末尾 1 行に出す）
+- [ ] テストファイルを変えたなら `python3 scripts/test-weaken-check.py --base <分岐点>`（例 `--base main`）が NG=0（assert の削除・書き換え、skip/only の追加、retries の増加、toBeTruthy への置換。仕様変更など正当なものは近くに `weaken-ok: <理由>`）
 - [ ] 未検証の項目は「項目／確かめ方」の表にした（`02_共通/ひな形/CURRENT_STATE.md`。「動くはず」を書かない）
 - [ ] 秘密情報がコードに混入していない（grep確認）
 - [ ] 基準線（`scripts/security-scan.sh --baseline`・`check-design.sh --baseline`。書式は `scripts/baseline.py`）を使うなら: **件数は減る方向だけ**（増える更新は拒否される）。除外には**理由と期限（既定 90 日）**を書く。期限切れ・期限なし・理由なしの除外は NG（既知に数えない）。基準線を捨て場にしない

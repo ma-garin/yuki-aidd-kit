@@ -69,7 +69,8 @@ description: 段階停止型のE2Eテスト＆不具合修整ワークフロー�
      除外せず FAIL に含める（放置の温床にしない）。`@axe-core/playwright` は devDependency に留め、単一HTMLの
      出荷物（`02_共通/ひな形/ui/` 等）には組み込まない。コントラストは `check_design.py` の色系検査と重なるが、
      実行時の実測である axe の結果を正とする（check_design は直値の機械判定、axe は描画結果の判定）。
-4. スクリプトファイルおよび設定ファイルの作成が完了したら、絶対にスクリプトを実行せずに、「ステップ2完了」と報告してプロセスを完全に終了する。
+4. 生成したスクリプトに `python3 scripts/pw-spec-lint.py e2e`（テストは実行しない静的検査）を流し、NG=0 にしてからステップ3（実行）に進む。NG は固定待ち（`waitForTimeout`・`sleep`）・`.only`・理由の無い skip・旧 API（`page.$`）。WARN の locator は `references/failure-rules.md` の修復順（getByRole → getByLabel → getByText → getByTestId → CSS）で見直す。
+5. スクリプトファイルおよび設定ファイルの作成が完了したら、絶対にスクリプトを実行せずに、「ステップ2完了」と報告してプロセスを完全に終了する。
 
 ## ステップ3: 安全なテスト実行（実行フェーズ）
 
@@ -86,6 +87,8 @@ description: 段階停止型のE2Eテスト＆不具合修整ワークフロー�
 **目的**: テスト実行結果（JSONログ等）を読み込み、不具合のODC分析、ソースコードの修整、および再実行による検証を行う。自律ループによる暴走を防ぐため、以下のステップと停止条件を厳格に守る。
 
 1. 出力されたPlaywrightのテスト実行結果（JSONログ）を読み込む。
+   読む前に `python3 scripts/e2e_history.py add e2e/results/results.json` でテスト単位の履歴（`.claude/e2e-history.jsonl`。`.gitignore` に入れる）へ追記し、`python3 scripts/e2e_history.py report` で直近 10 回の通過率・flaky 率・前回からの回帰（前回 pass → 今回 fail）を見る。回帰を先に分析する。履歴 3 回未満のテストは「判定不能」で合格に数えない。
+   flaky 率 30% 以上のテストは再現性「間欠」として `references/failure-rules.md` の反復手順に回す。
 2. NGとなったテスト（不具合）について、まず6マス（原因側: 製品／テスト／環境 × 再現性: 常時／間欠）を必須欄として埋める。その上でODC（Orthogonal Defect Classification）を用いて分類・分析し、レポートを出力する。併せて「製品欠陥 / テスト陳腐化（locator破損／仕様変更） / 環境・データ依存 / flaky（タイミング／順序・共有状態／通信／乱数・時刻）」を判定し、テストと実装のどちらを直すかを `02_共通/ひな形/test/iso29119-incident-report.md` の形式で記録する。機能の正常性だけでなく、ユーザー価値やUI/UXの観点（アクセシビリティや使いやすさ）の評価も必ず含める。Playwrightのエラー文から分類への当てはめ、flaky判定の反復手順、locator破損の修復手順は `references/failure-rules.md` を見る。
 3. 分析結果に基づき、致命的な不具合やUI/UXを著しく損なっている箇所から順にソースコード（またはテスト資産）を修整する。locator破損の修整は locator の行だけの差分にし、アサーション・期待値は変えない。自動修復ライブラリは使わない。
 4. 【絶対遵守ルール: 修整と再テストの反復】一度にすべての不具合を直そうとしない。1〜2個の主要な不具合（または関連コンポーネント）の修整が完了するごとに、以下の検証手順を実行する:
