@@ -61,6 +61,11 @@ grep -q "^tools:.*Task" "$A/aidd-lead.md" && ok "aidd-lead だけが Task（委�
 OTHER=$(grep -l "^tools:.*Task" "$A"/*.md | grep -v aidd-lead | wc -l | tr -d " ")
 [ "$OTHER" -eq 0 ] && ok "実行役は Task を持たない（再委譲で無限に広がらない）" || ng "実行役は Task を持たない" "$OTHER 本が持っている"
 
+echo "[A20: E2E に axe のアクセシビリティ検査が組み込まれている]"
+E2E="$KIT_DIR/03_ClaudeCode/skills/e2e-cycle/SKILL.md"
+has "e2e-cycle: axe への言及がある" "axe" "$E2E"
+has "e2e-cycle: serious/critical を FAIL にする基準がある" "serious" "$E2E"
+
 echo ""
 echo "PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1

@@ -16,7 +16,7 @@
  */
 
 /* ── A) app 骨格 ── */
-.app { display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); min-height: 100vh; }
+.app { display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); min-height: 100dvh; }
 .app > * { min-width: 0; }   /* グリッド項目の min-width:auto を切る。globalbar の nowrap な中身が画面幅を押し広げない */
 .app-globalbar {
   display: flex; align-items: center; gap: var(--space-4);
@@ -35,7 +35,7 @@
   flex: 0 0 240px; width: 240px; min-height: 0;
   display: flex; flex-direction: column;
   background: var(--color-surface); border-right: 1px solid var(--color-border);
-  position: sticky; top: 0; height: calc(100vh - 44px); overflow-y: auto;   /* 本文と別にスクロール */
+  position: sticky; top: 0; height: calc(100dvh - 44px); overflow-y: auto;   /* 本文と別にスクロール */
   transition: width var(--motion-normal), flex-basis var(--motion-normal);
 }
 .sidebar-head { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-divider); }
@@ -58,7 +58,7 @@
   display: flex; align-items: center; gap: var(--space-4);
   min-height: 56px; flex: 0 0 auto; padding: var(--space-2) var(--space-6);
   background: var(--color-surface); border-bottom: 1px solid var(--color-border);
-  position: sticky; top: 0; z-index: 10;
+  position: sticky; top: 0; z-index: var(--z-sticky);
 }
 .app-topbar h1 { margin: 0; font-size: var(--text-xl); font-weight: 700; line-height: var(--leading-tight); }
 .app-topbar .breadcrumb { display: flex; gap: var(--space-2); font-size: var(--text-sm); line-height: var(--leading-tight); color: var(--color-text-secondary); }
@@ -73,7 +73,7 @@
 
 /* ── B) 2ペイン（軽量ツール） ── */
 .layout-2pane { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-.sidenav { background: var(--color-surface-2); border-right: 1px solid var(--color-border); padding: var(--space-4); position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidenav { background: var(--color-surface-2); border-right: 1px solid var(--color-border); padding: var(--space-4); position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
 .layout-2pane > main { padding: var(--space-6); min-width: 0; }
 
 /* ── KPI 列・フィルタ行（管理画面の定型） ── */
@@ -88,7 +88,7 @@
   .app-content { padding: var(--space-4); }
 }
 @media (max-width: 768px) {
-  .sidebar { position: fixed; left: 0; top: 44px; z-index: 50; transform: translateX(-100%); transition: transform var(--motion-normal); box-shadow: var(--shadow-pop); }
+  .sidebar { position: fixed; left: 0; top: 44px; z-index: var(--z-dropdown); transform: translateX(-100%); transition: transform var(--motion-normal); box-shadow: var(--shadow-pop); }
   .sidebar.open { transform: none; }
   .app-topbar { padding: var(--space-2) var(--space-4); }
   .app-globalbar .label-text { display: none; }   /* 狭幅ではアイコンだけ */
