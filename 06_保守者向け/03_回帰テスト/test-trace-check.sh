@@ -392,6 +392,22 @@ bash "$CHECK" "$Q5" --refresh DD-001 >/dev/null 2>&1
 grep -q 'DD-002' "$Q5/traceability-matrix.md" && ok "[検証] --refresh DD-001 は隣の DD-002（; 区切り）を消さない" || ng "[検証] --refresh DD-001 は隣の DD-002 を消さない" "$(sed -n 4p "$Q5/traceability-matrix.md" | cut -d'|' -f6)"
 grep -q '^補足: REQ-F-001@0000000 は' "$Q5/traceability-matrix.md" && ok "[検証] --refresh は表の外の行を書き換えない" || ng "[検証] --refresh は表の外の行を書き換えない" "書き換わった"
 
+echo "[検証: 塊I] C8/C9 の書き方の揺れ（--tests）"
+V="$TMP/vI"; mkdir -p "$V/docs" "$V/tests"
+printf 'テストID,期待される結果,仕様の状態\nST-001,a,\nST-002,a,\nST-003,a,\nST-005,a,\nST-008,a,\nST-009,a,範囲外（合意済み）\nST-010,a,未定\n' > "$V/docs/system_test_cases.csv"
+printf '// spec: ST-001, ST-002\n' > "$V/tests/a.spec.ts"
+printf '/** @spec ST-003 */\n' > "$V/tests/b.test.ts"
+printf 'def test_x():\n    """spec: ST-005"""\n' > "$V/tests/test_doc.py"
+printf '# spec:ST-008\n# spec: ST-099\n' > "$V/tests/nospace_test.py"
+OUT=$(bash "$CHECK" "$V/docs/lifecycle" --tests "$V/tests" -o "$V/r.md" 2>&1); RC=$?
+expect_report_lacks "複数 ID（, 区切り）の 2 つ目も対応済み" "| C8 テストコード未対応 | ST-002 |" "$V/r.md"
+expect_report_lacks "@spec 形は対応済み" "| C8 テストコード未対応 | ST-003 |" "$V/r.md"
+expect_report_lacks "docstring の中の spec: は対応済み" "| C8 テストコード未対応 | ST-005 |" "$V/r.md"
+expect_report_lacks "spec:ST-008（空白なし）も対応済み" "| C8 テストコード未対応 | ST-008 |" "$V/r.md"
+expect_report_has   "CSV に無い ID（ST-099）→ C9 WARN" "| C9 CSV に無い ID | ST-099 |" "$V/r.md"
+expect_report_lacks "未定の行は C8 の対象外" "| C8 テストコード未対応 | ST-010 |" "$V/r.md"
+expect_report_lacks "「範囲外（合意済み）」の行も C8 の対象外（test_metrics と iso29119 §6.1 の表記は前方一致で範囲外）" "| C8 テストコード未対応 | ST-009 |" "$V/r.md"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-req-lint.sh — req-lint.py（要件文の検査）の回帰テスト
-# NG 3 種（数値の無い非機能目標・列挙数の不一致・ID の重複）と WARN 2 種（曖昧語・EARS 型に当たらない）が出ること、
+# NG 3 種（数値の無い非機能目標・列挙数の不一致（直後の箇条書き）・ID の重複）と WARN 2 種（曖昧語・EARS 型に当たらない）が出ること、
 # 正しい EARS 型の要件と配布雛形は 0 件で通ること（誤検知しない）を確かめる。終了コード 0/1/2 の契約も見る。
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LINT="$KIT_DIR/02_共通/ツール/req-lint.py"
@@ -87,7 +87,7 @@ OUT=$(run "$TMP/bad.md"); RC=$?
 expect_exit "NG があれば exit 1" 1 "$RC"
 expect_out  "数値の無い非機能目標（性能）" "数値の無い非機能目標: $TMP/bad.md:20 REQ-N-001" "$OUT"
 expect_out  "数値の無い非機能目標（同時）" "数値の無い非機能目標: $TMP/bad.md:21 REQ-N-002" "$OUT"
-expect_out  "列挙数の不一致（同じ行の : の後ろ）" "「以下の 3 つ」に対して列挙が 2 件" "$OUT"
+expect_noout "文中の列挙（: の後ろの 、 区切り）は数えない" "「以下の 3 つ」に対して" "$OUT"
 expect_out  "列挙数の不一致（すぐ下の箇条書き）" "「以下の 2 つ」に対して列挙が 3 件" "$OUT"
 expect_out  "要件 ID の重複" "要件 ID の重複: $TMP/bad.md:8 REQ-F-002" "$OUT"
 expect_noout "RFD-001 の数字を数値と見ない（REQ-N-001 が NG のまま）" "REQ-N-001 — 「性能」があるが数値と単位が無い）" "$OUT"
@@ -122,6 +122,46 @@ OUT=$(run "$TMP/none.md"); RC=$?
 expect_exit "要件定義書が無い → exit 2" 2 "$RC"
 OUT=$(run "$TMP/w2.md" --words "$TMP/nowords.md"); RC=$?
 expect_exit "辞書が無い → exit 2" 2 "$RC"
+
+echo "[検証: 塊I] 誤検知（正当な要件は NG=0 / WARN=0。赤は実装担当が直す）"
+vrow() { printf '| ID | 特性 | 要件（EARS 型） | 由来 RFD | 判定基準 |\n|---|---|---|---|---|\n| %s | %s | %s | RFD-001 | %s |\n' "$1" "$2" "$3" "$4" > "$TMP/v.md"; run "$TMP/v.md"; }
+for r in "システムは、応答時間を 95 パーセンタイルで 2 秒以内に保つ。" "システムは、同時接続 100 ユーザーを処理する。" "システムは、可用性 99.9% を維持する。" "システムは、検索対象を 1万件まで扱う。"; do
+  OUT=$(vrow REQ-N-001 性能効率性 "$r" "負荷試験で計測")
+  expect_out "数値のある非機能要件は 0 件: $r" "NG=0 / WARN=0" "$OUT"
+done
+for r in "検索画面は、検索結果を一覧で表示する。" "利用者が送信ボタンを押したとき、システムは確認画面を表示する。" "利用者がログインしている間、システムはヘッダーに利用者名を表示する。" "入力値が不正な場合、システムはエラーメッセージを表示する。" "多言語設定を有効にした環境では、システムは英語の画面を表示する。" "When the user submits, the system shall respond within 2 s." "システムは、2 つの金額が等価かを判定し、等しい場合は平等に配分する。"; do
+  OUT=$(vrow REQ-F-001 機能 "$r" "x")
+  expect_out "EARS 5 型・英語・熟語の「等」は 0 件: $r" "NG=0 / WARN=0" "$OUT"
+done
+for r in "地図画面は、高速道路を青で表示する。" "システムは、入力欄に \`適切に\` の文字列を表示しない。" "システムは、「適切に」という語を含む入力を拒否する。" "システムは、同等の商品を表示する。" "システムは、三十分ごとにバックアップする。"; do
+  OUT=$(vrow REQ-F-001 機能 "$r" "x")
+  expect_out "語の一部・コードスパン・「」の中は曖昧語にしない: $r" "NG=0 / WARN=0" "$OUT"
+done
+OUT=$(vrow REQ-F-001 機能 "システムは、確認画面を表示する。" "NG 例: 適切に表示する")
+expect_out "「NG 例:」の中の曖昧語は WARN にしない" "NG=0 / WARN=0" "$OUT"
+printf '# 要件\n\n## 機能要件\n\n| ID | 要件 |\n|---|---|\n\n| REQ-F-001 | システムは、一覧を表示する。 |\n\n### 補足\n' > "$TMP/v.md"
+OUT=$(run "$TMP/v.md"); expect_out "見出し・表の罫線・空行だけでは何も出さない" "NG=0 / WARN=0" "$OUT"
+printf 'REQ-F-001: システムは、以下の 2 つの帳票を出力する。\n- 貸出票\n  - A4 で印刷する\n- 返却票\n' > "$TMP/v.md"
+OUT=$(run "$TMP/v.md"); expect_out "列挙数: 入れ子の箇条書きは数えない" "NG=0" "$OUT"
+printf 'REQ-F-001: システムは、以下の 3 つの帳票を出力する。\n\n- 貸出票\n\n- 返却票\n\n- 督促状\n' > "$TMP/v.md"
+OUT=$(run "$TMP/v.md"); expect_out "列挙数: 空行を挟む箇条書きも数える" "NG=0" "$OUT"
+printf 'REQ-F-001: システムは、以下の 2 つの日付形式を受け付ける: YYYY/MM/DD、YYYY-MM-DD\n' > "$TMP/v.md"
+OUT=$(run "$TMP/v.md"); expect_out "列挙数: 項目の中の / で数を増やさない" "NG=0" "$OUT"
+printf 'REQ-F-001: システムは、以下の 2 つの形式で出力する: CSV（カンマ区切り、UTF-8）、PDF\n' > "$TMP/v.md"
+OUT=$(run "$TMP/v.md"); expect_out "列挙数: 括弧の中の 、 で数を増やさない" "NG=0" "$OUT"
+
+echo "[検証: 塊I] 検出（出なければ赤）"
+OUT=$(vrow REQ-N-001 性能効率性 "応答は高速であること。" "x"); RC=$?
+expect_exit "「応答は高速であること」→ NG（exit 1）" 1 "$RC"
+expect_out  "「応答は高速であること」→ 曖昧語 WARN も出す" "「高速」" "$OUT"
+OUT=$(vrow REQ-F-001 機能 "必要に応じて再試行する。" "x")
+expect_out "「必要に応じて再試行する」→ 曖昧語" "「必要に応じて」" "$OUT"
+OUT=$(vrow REQ-F-001 機能 "システムは便利である。" "x")
+expect_out "型に当たらない「システムは便利である」→ EARS の WARN" "EARS 型に当たらない" "$OUT"
+printf 'REQ-F-001: システムは、以下の 3 つの形式で出力する。\n- CSV\n- PDF\n\n| ID | 要件 |\n|---|---|\n| REQ-F-001 | システムは、一覧を表示する。 |\n' > "$TMP/v.md"
+OUT=$(run "$TMP/v.md"); RC=$?
+expect_out "「以下の 3 つ」で箇条書き 2 個 → NG" "「以下の 3 つ」に対して列挙が 2 件" "$OUT"
+expect_out "行形式と表で同じ ID → 重複 NG" "要件 ID の重複" "$OUT"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

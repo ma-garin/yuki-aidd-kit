@@ -277,6 +277,28 @@ OUT=$(cd "$P" && python3 scripts/test_metrics.py --today "$TODAY" -o "$TMP/repor
 expect_out  "[検証] init-test-docs.sh で配った scripts/test_metrics.py でも、版が一致する PASS は合格（100.0%）" "合格率 100.0%" "$OUT"
 [ -f "$P/scripts/section_hash.py" ] && ok "[検証] test_metrics.py の隣に section_hash.py が配られる" || ng "[検証] test_metrics.py の隣に section_hash.py が配られる" "init-test-docs.sh が scripts/section_hash.py を置かない"
 
+echo "[検証: 塊I] 仕様の状態の 4 分類（--gate の有無・表記の揺れ）"
+V="$TMP/vI"; rm -rf "$V"; cp -r "$ALLPASS" "$V"
+sedi 's/| `progress >= 100` |/| `progress >= 50` |/' "$V/docs/test/TESTING_STRATEGY.md"
+vcsv() { printf 'テストID,ロール,対象機能,期待される結果,結果,実施日,実施者,仕様の状態\nST-301,一般,貸出,a,%s,%s,藤曲,%s\nST-302,一般,返却,b,pass,2026-09-19,藤曲,\nST-303,一般,予約,c,pass,2026-09-19,藤曲,\n' "$1" "$2" "$3" > "$V/docs/system_test_cases.csv"; }
+vcsv "" "" "確認待ち"
+OUT=$(run "$V" --gate); RC=$?
+expect_exit "確認待ち 1 件（結果は空）で --gate 1" 1 "$RC"
+OUT=$(run "$V"); RC=$?
+expect_exit "--gate 無しでは確認待ちがあっても exit 0（報告のみ）" 0 "$RC"
+expect_out  "--gate 無しでも確認待ちを検知に出す" "[spec-pending]" "$OUT"
+vcsv pass 2026-09-19 "仮置き（根拠付き）"
+OUT=$(run "$V" --gate); RC=$?
+expect_exit "「仮置き（根拠付き）」の表記でも WARN だけ（--gate 0）" 0 "$RC"
+expect_out  "「仮置き（根拠付き）」を仮置きとして出す" "仮置き 1 件" "$OUT"
+vcsv pass 2026-09-19 "範囲外（合意済み）"
+OUT=$(run "$V" --gate); RC=$?
+expect_exit "「範囲外（合意済み）」の表記でも --gate を止めない" 0 "$RC"
+vcsv pass 2026-09-19 ""
+OUT=$(run "$V" --gate); RC=$?
+expect_exit "空（確定）は従来どおり --gate 0" 0 "$RC"
+expect_noout "空（確定）では仕様の状態を検知しない" "[spec-" "$OUT"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

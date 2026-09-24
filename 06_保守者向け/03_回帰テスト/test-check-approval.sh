@@ -259,6 +259,12 @@ sedi 's/| REQ-N-001 | 性能効率性 |  | RFD-001 |/| REQ-N-001 | 性能効率�
 fill "$Q" 1 承認; mkdir -p "$Q/.claude"; touch "$Q/.claude/phase-gate"
 OUT=$(run "$Q" --gate 2); RC=$?
 expect_exit "phase-gate あり＋数値と単位のある要件 → exit 0（誤検知しない）" 0 "$RC"
+Q2=$(proj); start "$Q2" 1
+sedi 's/| REQ-N-001 | 性能効率性 |  | RFD-001 |/| REQ-N-001 | 性能効率性 | システムは、毎秒 100 リクエストの検索に応答する。 | RFD-001 |/' "$Q2/docs/lifecycle/01-requirements.md"
+printf '\nREQ-F-009: システムは、以下の 2 つの帳票を出力する。\n- 貸出票\n  - A4 で印刷する\n- 返却票\n' >> "$Q2/docs/lifecycle/01-requirements.md"
+fill "$Q2" 1 承認; mkdir -p "$Q2/.claude"; touch "$Q2/.claude/phase-gate"
+OUT=$(run "$Q2" --gate 2); RC=$?
+expect_exit "phase-gate あり＋「毎秒 100 リクエスト」・入れ子の箇条書き（req-lint の誤検知が消えた）→ exit 0" 0 "$RC"
 S="$TMP/solo-ca"; mkdir -p "$S"; cp "$KIT_DIR/02_共通/ツール/check_approval.py" "$KIT_DIR/02_共通/ツール/phase-hash.py" "$S/"
 OUT=$(python3 "$S/check_approval.py" --root "$Q" --gate 2 2>&1); RC=$?
 expect_exit "phase-gate ありで隣に req-lint.py が無い → exit 2（判定不能を合格に数えない）" 2 "$RC"
@@ -266,6 +272,15 @@ expect_out  "req-lint.py が無いと出す" "req-lint.py が" "$OUT"
 rm "$Q/.claude/phase-gate"
 OUT=$(python3 "$S/check_approval.py" --root "$Q" --gate 2 2>&1); RC=$?
 expect_exit "phase-gate が無ければ req-lint.py が無くても従来どおり exit 0" 0 "$RC"
+
+echo "[検証: 塊I] req-lint の誤検知が工程ゲートを止めない"
+V=$(proj); start "$V" 1
+sedi 's/| REQ-N-001 | 性能効率性 |  | RFD-001 |/| REQ-N-001 | 性能効率性 | システムは、検索対象を 1万件まで 3 秒以内に検索する。 | RFD-001 |/' "$V/docs/lifecycle/01-requirements.md"
+sedi 's/| REQ-F-001 |  | Must | RFD-001 |/| REQ-F-001 | システムは、以下の 2 つの形式で出力する: CSV（カンマ区切り、UTF-8）、PDF | Must | RFD-001 |/' "$V/docs/lifecycle/01-requirements.md"
+grep -q '1万件' "$V/docs/lifecycle/01-requirements.md" && grep -q 'カンマ区切り' "$V/docs/lifecycle/01-requirements.md" || ng "（前提）要件行を書き換えた" "書き換わっていない"
+fill "$V" 1 承認; mkdir -p "$V/.claude"; touch "$V/.claude/phase-gate"
+OUT=$(run "$V" --gate 2); RC=$?
+expect_exit "phase-gate あり＋正当な要件（括弧の中の 、）→ --gate 2 は 0" 0 "$RC"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
