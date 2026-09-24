@@ -16,7 +16,7 @@ hook の deny・警告が誤検知かどうかを測る手段が無く、圧縮�
 - **新規 `02_共通/ツール/e2e_history.py`**: Playwright の JSON reporter 出力を読み、テスト単位（file＋title）の結果を `.claude/e2e-history.jsonl` に追記（`add`）。`report` は直近N回（既定10）の通過率・flaky率（同テストでpass/fail混在）・前回からの回帰を表示。**履歴3回未満のテストは「判定不能」で合格に数えない**。CTRF・allureは依存にしない
 - **新規 `02_共通/ツール/pw-spec-lint.py`**: 生成 Playwright テストの locator 規約を grep 型で静的検査。NG は固定待ち（`waitForTimeout`・`sleep(`）・理由コメント無し `.only()`/`test.skip()`・旧API（`$()`/`$$()`）。WARN は `getByRole` 等に置換可能な CSS/XPath/`nth()`・弱いアサーション・`spec:` ID 無し。修復順は `locator-repair.md` と同じ。eslint-plugin-playwright は不使用
 - **新規 `02_共通/ツール/test-weaken-check.py`**: テストファイルの git diff からアサーション削除・`.skip()`/`.only()` 追加・retries 増加・`toBeTruthy()` への置換を検知して NG。近傍±3行の `weaken-ok: <理由>`（8字以上）で許可。`--staged` を `pre-commit`・`install-git-hooks.sh` の生成に、`--base <rev>` を `done-gate/SKILL.md` に配線
-- **回帰テストを拡充**: 新規 `test-e2e-history.sh`（37ケース）・`test-pw-spec-lint.sh`（37ケース）・`test-weaken-check.sh`（40ケース）を追加。既存の `test-hooks.sh`（838→904ケース）・`test-install.sh`（188→209ケース）・`test-agents.sh`（71→83ケース）・`test-check-design.sh`（120→203ケース）も拡張。回帰テストは20本に
+- **回帰テストを拡充**: 新規 `test-e2e-history.sh`（37ケース）・`test-pw-spec-lint.sh`（56ケース）・`test-weaken-check.sh`（59ケース）を追加。既存の `test-hooks.sh`（838→918ケース）・`test-install.sh`（188→210ケース）・`test-agents.sh`（71→83ケース）・`test-check-design.sh`（120→214ケース）も拡張。回帰テストは20本に
 - **利用者向け資料・目録・INDEX を同期**: 新規 hook 1本（hooks 24→25）・ツール3本（18→21）・回帰テスト3本（17→20）・ひな形1本の掲載漏れを `check_docs.py` で検出して解消。`build_codex_skills.py` を再生成（`--check` exit 0）。利用ガイド・操作マニュアルに「（8.6.0〜）」の見出しで hook の deny 記録・圧縮再開の再注入・check_design の a11y と意匠 WARN・e2e_history/pw-spec-lint/test-weaken-check を追記
 
 ## Ver.8.5.0（2026-09-24）— セキュリティ運用・完了主張の照合・仕様品質（M29）
