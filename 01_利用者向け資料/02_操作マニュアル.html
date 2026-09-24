@@ -1623,6 +1623,7 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
             コマンド置換（<code>$(...)</code>）で組み立てたコマンドは検出をすり抜けることがあります。
             本当に読ませたくないファイルはプロジェクトの <code>settings.sandbox.json</code> の <code>denyRead</code>
             （ファイルシステムレベルで遮断）も併用してください。
+            <code>block-protected.py</code> はパッチ・コミット経由（<code>git apply</code>・<code>patch</code>・<code>git am</code>・<code>git cherry-pick</code>・<code>git revert</code>・<code>git checkout &lt;rev&gt; -- &lt;path&gt;</code>・<code>git restore --source</code>）の書き込みも中身を見て止めますが、<code>git merge</code>・<code>git pull</code>・<code>git rebase</code>・<code>git stash pop</code>・ブランチの切り替えで入る変更は見ません。
           </p>
           <h3>セキュリティ監査と基準線（8.4.0〜）</h3>
           <ul>

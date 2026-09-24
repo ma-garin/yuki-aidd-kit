@@ -797,6 +797,42 @@ for c in "cat .claude/settings.json" "cp .claude/settings.json /tmp/bk" "sed s/a
   OUT=$(bpb "$c"); RC=$?
   expect_empty "Bash を許可: $c" "$OUT" "$RC"
 done
+# パッチ・コミット経由（git apply / patch / git am / checkout・restore <rev> / cherry-pick・revert）。
+# 第 2 回で .claude/settings.json への Edit を止められた後、`git apply <patch>` で当てたら通った穴。一時リポの実物のコミットで確かめる
+BPG="$TMP/proj-bpg"
+gg() { git -C "$BPG" -c user.name=t -c user.email=t@example.com -c commit.gpgsign=false "$@"; }
+bpg() { printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":%s}}' "$BPG" "$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$1")" | HOME="$BPH" python3 "$HOOKS/block-protected.py"; }
+git -c init.defaultBranch=main init -q "$BPG" && mkdir -p "$BPG/.claude/hooks" "$BPG/src"
+echo '{}' > "$BPG/.claude/settings.json"; echo a > "$BPG/src/a.py"; gg add -A && gg commit -qm init
+echo '{"x":1}' > "$BPG/.claude/settings.json"; gg commit -qam evil; BPG_E=$(gg rev-parse HEAD)      # 保護パスを触るコミット
+echo b > "$BPG/src/a.py"; gg commit -qam ok; BPG_O=$(gg rev-parse HEAD)                            # 触らないコミット
+gg diff HEAD~2 HEAD~1 > "$BPG/p.diff"; gg diff HEAD~1 HEAD > "$BPG/ok.diff"
+gg format-patch -q -1 "$BPG_E" --stdout > "$BPG/m.patch"; gg format-patch -q -1 "$BPG_O" --stdout > "$BPG/okm.patch"
+printf 'diff --git a/settings.json b/settings.json\n--- a/settings.json\n+++ b/settings.json\n@@ -1 +1 @@\n-{}\n+{"x":1}\n' > "$BPG/x.diff"
+python3 -c 'import base64,sys;b=open(sys.argv[1],"rb").read();open(sys.argv[2],"wb").write(b"From 0 Mon Sep 17 00:00:00 2001\nFrom: t <t@example.com>\nSubject: [PATCH] x\nContent-Transfer-Encoding: base64\n\n"+base64.encodebytes(b"x\n---\n"+b))' "$BPG/p.diff" "$BPG/b64.patch"
+ln -s .claude "$BPG/cfg"; printf -- '--- cfg/settings.json\n+++ cfg/settings.json\n@@ -1 +1 @@\n-{}\n+{"x":1}\n' > "$BPG/s.diff"
+for c in "git apply p.diff" "patch -p1 < p.diff" "cat p.diff | git apply" "git apply <(cat p.diff)" "git am m.patch" \
+         "git checkout HEAD -- .claude/settings.json" "git restore --source=HEAD~1 .claude/hooks/x.py" "git cherry-pick $BPG_E" \
+         "git cherry-pick zzz" "bash -c 'git apply p.diff'" "sudo env A=1 git cherry-pick $BPG_E" "git revert $BPG_E" \
+         "git cherry-pick HEAD~2..HEAD" "git checkout HEAD~2 -- ." "git am b64.patch" "git apply --directory=.claude x.diff" \
+         "patch -p0 -i s.diff" "git -c alias.cp=cherry-pick cp $BPG_E" "git apply - < p.diff" $'git apply <<EOF\nx\nEOF' \
+         "echo x > ok.diff && git apply ok.diff" "git fetch && git cherry-pick $BPG_O" "patch -ti p.diff < ok.diff"; do
+  expect_contains "パッチ・コミット経由を deny: $c" '"permissionDecision": "deny"' "$(bpg "$c")"
+done
+expect_contains "パイプから当てる deny の理由に代わりの手順" "ファイルに書いてから" "$(deny_reason "$(bpg "cat p.diff | git apply")")"
+expect_contains "解決できないコミットは判定不能で deny" "zzz を解決できない" "$(deny_reason "$(bpg "git cherry-pick zzz")")"
+mkdir -p "$BPG/.git/sequencer"; printf 'pick %s evil\n' "$BPG_E" > "$BPG/.git/sequencer/todo"
+expect_contains "cherry-pick --continue は sequencer/todo の残りを見る → deny" '"permissionDecision": "deny"' "$(bpg "git cherry-pick --continue")"
+rm -rf "$BPG/.git/sequencer"
+for c in "git apply ok.diff" "git apply --check p.diff" "git am okm.patch" "git checkout HEAD -- src/a.py" "git cherry-pick $BPG_O" \
+         "git cherry-pick HEAD~1..HEAD" "bash -c 'git apply ok.diff'" "git checkout HEAD -- ." "patch --dry-run -p1 < p.diff" \
+         "git apply --check ok.diff && git apply ok.diff" "git status && git apply ok.diff" "git restore --staged .claude/settings.json" \
+         "patch -p1 < ok.diff" "git cherry-pick --continue" "git checkout main"; do
+  OUT=$(bpg "$c"); RC=$?
+  expect_empty "パッチ・コミット経由を許可: $c" "$OUT" "$RC"
+done
+OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"git apply p.diff"}}' "$BPG" | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py"); RC=$?
+expect_empty "AIDD_ALLOW_CONFIG_EDIT=1 なら git apply も許可" "$OUT" "$RC"
 OUT=$(printf 'not json' | python3 "$HOOKS/block-protected.py")
 expect_contains "壊れた入力は deny（fail-closed）" "hook の入力が読めない" "$(deny_reason "$OUT")"
 expect_contains "Write の .git/config も deny" '"permissionDecision": "deny"' "$(bpw "$BP/.git/config")"
@@ -810,6 +846,50 @@ d = json.load(open(sys.argv[1]))
 print(sum(1 for e in d["hooks"]["PreToolUse"] if e.get("matcher") in ("Write|Edit|MultiEdit", "Bash")
           for h in e["hooks"] if "block-protected.py" in h.get("command", "")))' "$S")
   expect_eq "block-protected.py を Write 系と Bash の 2 か所に配線: ${S#$KIT_DIR/}" "2" "$N"
+done
+
+echo "[β 2周目] block-protected: 別コミットから戻す形・別名・GIT_DIR・git 自身の書き込み・fail-closed"
+# 検証担当が hook に流して通ってしまった形の再発防止（前の節の一時リポ $BPG をそのまま使う）
+gg config alias.cp cherry-pick; gg config alias.cp2 cp; gg config alias.st status; gg config alias.lg '!git log'
+gg config alias.a1 a2; gg config alias.a2 a3; gg config alias.a3 a4; gg config alias.a4 cherry-pick
+mkdir -p "$BPG/out" "$BPG/.claude/hooks/g"; NOGIT="$TMP/nogit"; mkdir -p "$NOGIT"; PY=$(command -v python3)
+for c in "git checkout HEAD~2 ." "git checkout ':/init' -- ." "git restore -s HEAD~2 ." "git restore --source=HEAD~2 --staged --worktree ." \
+         "git checkout HEAD~2 -- '*.json'" "git cp2 $BPG_E" "git a1 $BPG_O" "git lg" \
+         "GIT_CONFIG_PARAMETERS=\"'alias.zz=cherry-pick'\" git zz $BPG_E" \
+         "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.zz GIT_CONFIG_VALUE_0=cherry-pick git zz $BPG_O" \
+         "git --config-env=alias.zz=ZZ zz $BPG_O" "git -c alias.zz=log apply ok.diff" "git --work-tree=.claude apply x.diff" \
+         "GIT_WORK_TREE=cfg git apply x.diff" "git --git-dir=.claude/hooks/g apply ok.diff" 'GIT_DIR=$NOPE git apply ok.diff' \
+         "git --git-dir=nowhere apply ok.diff" "git diff --output=.claude/settings.json" "git log --output .git/config" \
+         "git format-patch -o .claude/hooks HEAD~1" "git mailsplit -o.git/hooks m.patch" "git bundle create .claude/hooks/b.bundle HEAD" \
+         "git archive -o .claude/settings.json HEAD" "git -C src archive --output=../.git/hooks/x.tar HEAD" "git config user.name x" \
+         "git config --global alias.x cherry-pick" "git config core.hooksPath /tmp/h" "git config --unset user.name" \
+         "git config set user.name x"; do
+  expect_contains "[β 2周目] deny: $c" '"permissionDecision": "deny"' "$(bpg "$c")"
+done
+expect_contains "[β 2周目] git config の deny 理由に解除の変数名" "AIDD_ALLOW_CONFIG_EDIT=1" "$(deny_reason "$(bpg "git config core.hooksPath /tmp/h")")"
+expect_contains "[β 2周目] シェルの別名は中身を確かめられないので deny" "シェルのコマンド" "$(deny_reason "$(bpg "git lg")")"
+expect_contains "[β 2周目] 別名が 3 段を超えたら deny" "3 段を超える" "$(deny_reason "$(bpg "git a1 $BPG_O")")"
+for c in "git checkout zzz -- src/a.py" "git restore --source=zzz src/a.py" "git st" "git -c core.quotepath=false apply ok.diff" \
+         "git -c alias.zz=log status" "git --git-dir=.git --work-tree=. apply ok.diff" "git nosuchcmd x" "git diff --output=out/p.diff" \
+         "git format-patch -o out HEAD~1" "git archive -o out/a.tar HEAD" "git bundle create out/b.bundle HEAD" \
+         "git config --get user.name" "git config -l" "git config --list --show-origin" "git config user.name" \
+         "git config --get-regexp alias"; do
+  OUT=$(bpg "$c"); RC=$?
+  expect_empty "[β 2周目] 許可: $c" "$OUT" "$RC"
+done
+OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"git config core.hooksPath x"}}' "$BPG" | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py"); RC=$?
+expect_empty "[β 2周目] AIDD_ALLOW_CONFIG_EDIT=1 なら git config も許可" "$OUT" "$RC"
+# fail-closed: git が PATH に無い・壊れた入力は deny。{}・command 無しは通す
+for c in "git cherry-pick $BPG_O" "git checkout HEAD -- src/a.py" "git nosuchcmd x"; do
+  OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"%s"}}' "$BPG" "$c" | PATH="$NOGIT" HOME="$BPH" "$PY" "$HOOKS/block-protected.py")
+  expect_contains "[β 2周目] git が PATH に無いなら deny: $c" '"permissionDecision": "deny"' "$OUT"
+done
+for IN in '{"tool_name":"Bash","tool_input":{"command":' 'null'; do
+  expect_contains "[β 2周目] 入力 '$IN' は deny" '"permissionDecision": "deny"' "$(printf '%s' "$IN" | python3 "$HOOKS/block-protected.py")"
+done
+for IN in '{}' '{"tool_name":"Bash","tool_input":{}}'; do
+  OUT=$(printf '%s' "$IN" | python3 "$HOOKS/block-protected.py"); RC=$?
+  expect_empty "[β 2周目] 入力 '$IN' は通す" "$OUT" "$RC"
 done
 
 echo "[secret_patterns.py]"
