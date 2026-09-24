@@ -115,6 +115,7 @@ class Metrics:
     not_run: int = 0
     unread: int = 0
     unverified: int = 0         # 根拠の版が現在と違う PASS（--gate のときだけ数える）
+    unconfirmed: int = 0        # severity=未確認 の欠陥（B36: 起票前トリアージで再現・実測の根拠が無かったもの）
     defects_known: bool = False
     defects_total: int = 0
     defects_open: int = 0
@@ -279,6 +280,7 @@ def compute(records: list[Record], defects: list[Defect], known: bool, unverifie
         total=len(records), executed=c[PASS] + c[FAIL], passed=c[PASS], failed=c[FAIL],
         blocked=c[BLOCKED], skipped=c[SKIP], not_run=c[NOT_RUN], unread=c[UNREAD],
         unverified=sum(1 for r in records if r.result == PASS and r in unverified),
+        unconfirmed=sum(1 for d in defects if d.severity.strip() == "未確認"),
         defects_known=known, defects_total=len(defects),
         defects_open=sum(1 for d in defects if d.open),
         defects_severe_open=sum(1 for d in defects if d.open and d.severe),
@@ -642,6 +644,10 @@ def main() -> int:
             print(f"  読まず {dt}")
         if total.unverified:
             print(f"  未検証 {total.unverified} 件（根拠の版が現在の上流と違う PASS。合格率の分子から外した）")
+        if total.unconfirmed:
+            mark = "⚠ " if total.unconfirmed > 3 else ""
+            print(f"  {mark}未確認 {total.unconfirmed} 件（Critical/High 起票前トリアージで再現・実測の根拠が無かったもの。"
+                  "合格の分子には数えない。3 件を超えたら WARN。exit code は変えない）")
         print(verdict_line(code, evals, total))
         print(f"詳細: {report}")
         return code

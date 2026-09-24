@@ -331,6 +331,11 @@ u_text()  { printf '{"type":"user","message":{"role":"user","content":"%s"}}\n' 
 u_tool()  { printf '{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"x","content":"ok"}]}}\n'; }
 a_text()  { printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"%s"}]}}\n' "$1"; }
 a_tool()  { printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"x","name":"Bash","input":{}}]}}\n'; }
+a_tool_result() { # コマンド, tool_result の本文（B39: reply-language の完了主張照合）
+  local id="tr$RANDOM"
+  printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"%s","name":"Bash","input":{"command":"%s"}}]}}\n' "$id" "$1"
+  printf '{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"%s","content":"%s"}]}}\n' "$id" "$2"
+}
 queued()  { printf '{"type":"attachment","attachment":{"type":"queued_command","prompt":"%s","humanTurn":true}}\n' "$1"; }
 enqueue() { printf '{"type":"queue-operation","operation":"enqueue","content":"%s"}\n' "$1"; }
 { u_text "日本語で報告しなさい"; a_tool; } > "$TRJ"
@@ -405,7 +410,7 @@ expect_empty "Stop: stop_hook_active なら何もしない（無限ループ防�
 { u_text "構成案を出して"; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 応答が未書込でも止めない（未応答の検出は PreToolUse 側の担当）" "$OUT" "$RC"
-{ u_text "日本語で報告しなさい"; a_text "報告します。"; } > "$TRJ"
+{ u_text "日本語で報告しなさい"; a_text "報告します。"; a_tool_result "pytest" "12 passed"; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 日本語で応答していれば何もしない" "$OUT" "$RC"
 # 相槌だけの応答は情報を渡さない（H-0）。内容か動作に出し直させる
@@ -437,7 +442,7 @@ python3 "$HOOKS/tool-timer.py" reset-session
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"はい、そうです。それは 3 番の仕様です。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: ツールを使っていないターンは実績を求めない" "$OUT" "$RC"
 # 予実の乖離（H-6）。見積 40 分に対し経過が数秒なら過大見積として差し戻す
-{ u_text "調査して"; a_text "見積: 40分（23:00 完了予定）"; } > "$TRJ"
+{ u_text "調査して"; a_text "見積: 40分（23:00 完了予定）"; a_tool_result "pytest" "12 passed"; } > "$TRJ"
 python3 "$HOOKS/tool-timer.py" reset-session
 printf '{"tool_name":"Bash","tool_use_id":"g1"}' | python3 "$HOOKS/tool-timer.py" pre
 printf '{"tool_name":"Bash","tool_use_id":"g1"}' | python3 "$HOOKS/tool-timer.py" post
@@ -458,7 +463,7 @@ printf '{"tool_name":"Bash","tool_use_id":"g2"}' | python3 "$HOOKS/tool-timer.py
 { u_text "調査して"; a_text "見積: 40分（23:00 完了予定）"; a_text "完了しました。見積: 40分 / 実測: 30分"; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"委譲先の報告を受けて次を起動しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 前の完了報告より前の見積は拾わない（委譲先の報告で続く応答）" "$OUT" "$RC"
-{ u_text "調査して"; a_text "見積: 1分（23:00 完了予定）"; } > "$TRJ"
+{ u_text "調査して"; a_text "見積: 1分（23:00 完了予定）"; a_tool_result "pytest" "12 passed"; } > "$TRJ"
 printf '{"tool_name":"Bash","tool_use_id":"g3"}' | python3 "$HOOKS/tool-timer.py" pre
 printf '{"tool_name":"Bash","tool_use_id":"g3"}' | python3 "$HOOKS/tool-timer.py" post
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
@@ -466,6 +471,36 @@ expect_empty "Stop: 3 分未満の見積は誤差が支配するので突合し�
 python3 "$HOOKS/tool-timer.py" reset-session
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":true,"last_assistant_message":"承知しました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 相槌でも stop_hook_active なら止めない（無限ループ防止）" "$OUT" "$RC"
+
+# --- B39: 完了の主張は同じターンのテスト実行結果と照合する ---
+python3 "$HOOKS/tool-timer.py" reset-session
+{ u_text "直して"; a_text "完了しました。実測: 1分未満"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: 完了を主張したのに同じターンでテスト実行が0回なら差し戻す" "テスト系の実行が 0 回" "$OUT"
+
+{ u_text "直して"; a_tool_result "bash test-hooks.sh" "24 PASS / 1 FAIL=1"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"修正しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: 直近のテスト実行が FAIL のままなら差し戻す" "結果が失敗" "$OUT"
+
+{ u_text "直して"; a_tool_result "bash test-hooks.sh" "25 PASS / FAIL=0"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"修正しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 直近のテスト実行が PASS なら通す" "$OUT" "$RC"
+
+{ u_text "直して"; a_text "確認中"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"修正しました。ただし提案（未実行）です。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 『未実行』と書けば照合しない（誤検知の逃がし）" "$OUT" "$RC"
+
+{ u_text "調べて"; a_text "調査中です。実測: 1分未満"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"調査中です。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 完了の主張が無ければ従来どおり通す" "$OUT" "$RC"
+
+# 同じ主張への差し戻しが2回続いたら、3回目は additionalContext の警告にして通す（無限ループ防止）
+FB="Stop hook feedback:[reply-language] 完了主張の照合 同じターンでテスト系の実行が 0 回。実行してから主張するか、『提案（未実行）』と書き直す"
+{ u_text "直して"; a_text "完了しました。実測: 1分未満"; u_text "$FB"; a_text "完了しました。実測: 1分未満"; u_text "$FB"; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_eq "Stop: 同じ主張の差し戻しが2回続いた3回目は exit 0" "0" "$RC"
+expect_absent "Stop: 3回目は decision block を出さない" '"decision": "block"' "$OUT"
+expect_contains "Stop: 3回目は additionalContext に警告だけ残す" "完了主張の照合" "$(ig_reason "$OUT")"
 # --- tool-timer.py: 見積の「実績」をツール実行時間で測る（入力待ち・思考時間を含まない） ---
 TT="$HOOKS/tool-timer.py"
 python3 "$TT" reset
