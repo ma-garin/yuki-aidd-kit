@@ -7,6 +7,7 @@
 |---|---|
 | `../tokens.css` | トークン定義（ライト＋ダーク）＋基本適用。**最初に読む** |
 | `components.css` | 部品（ボタン／入力／バッジ／カード／KPI／表／ページャ／トグル／ツールチップ／モーダル／コールアウト／空状態／スケルトン） |
+| `contrast-pairs.md` | 文字色×背景色の対の表。`check-design.sh` の D25 がライト／ダークのコントラスト比を計算する |
 | `layout.css` | 骨格（`.app` = globalbar / sidebar / topbar / content、`.layout-2pane`、KPI 列、ブレークポイント） |
 | `../components/feedback.js` | トースト・消えない失敗・処理中・空状態・確認ダイアログ（CSS 自己注入） |
 | `../components/icons.js` | Material Symbols 同梱（外部 CDN 不要） |
@@ -28,7 +29,7 @@
 ## 検証（どのフレームワークでも）
 
 ```bash
-./00_導入/03_点検/check-design.sh static src          # 直値・未定義トークン・外部 CDN・alert()・tokens.css 未読込（NG>0 で exit 1）
+./00_導入/03_点検/check-design.sh static src          # 直値・未定義トークン・外部 CDN・alert()・tokens.css 未読込・HTML の a11y・コントラスト（NG>0 で exit 1）
 ```
 
 - `uiux_review` で全状態（通常・実行中・失敗・0 件・狭い画面・モーダル）を実機で開く。幅は 360×820 / 768 / 1366×768 / 1920×1080

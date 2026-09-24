@@ -75,6 +75,13 @@ E2E="$KIT_DIR/03_ClaudeCode/skills/e2e-cycle/SKILL.md"
 has "e2e-cycle: axe への言及がある" "axe" "$E2E"
 has "e2e-cycle: serious/critical を FAIL にする基準がある" "serious" "$E2E"
 
+echo "[塊 K: B54 uiux_review の観点にキーボードと支援技術を足した]"
+VP="$KIT_DIR/03_ClaudeCode/skills/uiux_review/references/viewpoints.md"
+VPN=$(grep -c '^### VP-[0-9]\{3\} ' "$VP"); VPU=$(grep -o '^### VP-[0-9]\{3\}' "$VP" | sort -u | wc -l | tr -d ' ')
+[ "$VPN" -eq 80 ] && [ "$VPU" -eq 80 ] && head -1 "$VP" | grep -qF "（80件）" && grep -q '^### VP-080 ' "$VP" \
+  && ok "viewpoints.md の観点は 80 件（番号の重複なし・見出しの件数と一致・VP-080 まで）" \
+  || ng "viewpoints.md の観点は 80 件" "観点=$VPN 一意=$VPU 見出し=$(head -1 "$VP")"
+
 # --- [検証: 塊H] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
 echo "[検証: 塊H]"
 QAR="$KIT_DIR/03_ClaudeCode/skills/qa-review-standards/references/ai-code-review.md"
