@@ -55,7 +55,7 @@ const r = document.querySelector('.btn-primary').getBoundingClientRect();
 
 ### 2. 観点で照合する
 
-[references/viewpoints.md](references/viewpoints.md) の74観点を使う。
+[references/viewpoints.md](references/viewpoints.md) の80観点を使う。
 **照合していない観点は「未検査」と書く。** 全部見たふりをしない。
 
 分類は8つ。優先度「高」から見る。
