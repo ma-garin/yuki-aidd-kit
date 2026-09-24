@@ -53,4 +53,4 @@
 ## 関連
 <!-- 関連するspec.md / tasks.md / 他のADRへの参照 -->
 <!-- 根拠の引用はバッククォートで `path#見出し`・`path:行`・`path` と書く（背景・決定の本文でもよい）。
-     `scripts/cite-check.py .` が引用先の版（@7 桁）を書き足し、引用先が消えたら NG、変わったら stale を出す -->
+     `scripts/cite-check.py .` は引用先が消えたら NG。保守者が `--record` で版（@7 桁）を記録すると、変わったら stale を出す -->

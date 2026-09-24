@@ -345,6 +345,14 @@ mkdir -p "$Q/.claude/rules" && touch "$Q/.claude/rules/functional-integrity.md"
 OUT=$(python3 "$Q/scripts/quality_harness.py" --root "$Q" 2>&1); RC=$?
 expect_exit "配置直後の quality_harness.py が PASS" 0 "$RC"
 
+echo "[検証: 塊I] req-lint.py・cite-check.py の配布"
+expect_file "install.sh: req-lint.py が ~/.claude/scripts/ に置かれる（check_approval.py が隣を呼ぶ）" "$FAKE_HOME/.claude/scripts/req-lint.py"
+for f in scripts/req-lint.py scripts/cite-check.py scripts/section_hash.py .claude/skills/sdd-ecc-workflow/references/ambiguous-words.md; do
+  expect_file "export-project.sh: $f" "$P/$f"
+done
+OUT=$(cd "$P" && python3 scripts/cite-check.py . 2>&1); RC=$?
+expect_exit "配布先で cite-check.py が隣の section_hash.py で動く（exit 0）" 0 "$RC"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

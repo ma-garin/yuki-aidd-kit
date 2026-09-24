@@ -298,16 +298,15 @@ def compute(records: list[Record], defects: list[Defect], known: bool, unverifie
     )
 
 
-SPEC_STATES = ("確認待ち", "仮置き", "範囲外", "未定")
 SPEC_BLOCK = ("確認待ち", "未定")      # 判定できない期待結果。未実施に数え、--gate では進めない
 
 
 def normalize_spec_state(raw: str) -> str:
-    """「仕様の状態」の値 → 4 分類のどれか・""（確定）・"?"（語彙外）。後ろの補足（仮置き（〜まで） など）は許す。"""
-    v = (raw or "").strip()
-    if v in ("", "-", "確定"):
-        return ""
-    return next((w for w in SPEC_STATES if v.startswith(w)), "?")
+    """「仕様の状態」の分類は section_hash.spec_state（trace-check の C8 と共用）。
+    隣に section_hash.py が無ければ、空・確定以外は分類できないので "?"（--gate は判定できない）。"""
+    if section_hash is not None:
+        return section_hash.spec_state(raw)
+    return "" if (raw or "").strip() in ("", "-", "確定") else "?"
 
 
 BASIS_RE = re.compile(r"^((?:REQ-F|REQ-N|RFD|UAT|OPS|DEF|BD|DD|UT|IT|ST|T)-\d{3})@([0-9a-f]{7})$")

@@ -5,10 +5,12 @@ ADR や規則の主張がどこを根拠にしているかを引用で書かせ�
 版の計算は隣の section_hash.py（trace-check.sh の C7 と共用。正規化後 sha256 の先頭 7 桁）。標準ライブラリのみ・Python 3.9 互換。
 
 使い方:
-  python3 scripts/cite-check.py <root>              検査する。版の無い引用には現在の版を書き足す（WARN「版を記録した」）
-  python3 scripts/cite-check.py <root> --refresh    食い違う版を現在の版に書き換える
-    --refresh は「引用先の変更を読み、主張がまだ正しいと保守者が確かめた」記録。AI は打たない（AI は承認しない）。
-    手順（retro の最後）: cite-check を流す → stale の主張を読み直して直す → 保守者が --refresh → commit で残す。
+  python3 scripts/cite-check.py <root>              検査だけ（ファイルに一切書き込まない）
+  python3 scripts/cite-check.py <root> --record     版の無い引用に現在の版（@版）を書き足す
+  python3 scripts/cite-check.py <root> --refresh    stale（記録と現在が違う）の版を現在の版に書き換える
+  python3 scripts/cite-check.py <root> --strict     対象外にした引用（キット参照・配布された規則の未作成の参照）も WARN で出す
+    --record・--refresh は「引用先を読み、主張が正しいと保守者が確かめた」記録。保守者だけが打つ（AI は打たない＝AI は承認しない）。
+    手順（retro の最後）: cite-check を流す（書き込みなし）→ stale の主張を読み直して直す → 保守者が --refresh → commit で残す。
 終了コード: 0 = NG なし（WARN はあってよい）／ 1 = NG あり ／ 2 = 引数の誤り・section_hash.py が無い
 
 対象（<root> 配下。.git・node_modules・skills などのディレクトリは見ない。skills は対象外）:
@@ -19,12 +21,18 @@ ADR や規則の主張がどこを根拠にしているかを引用で書かせ�
   `path#見出し`   見出しの節（その見出しから、同じレベル以上の次の見出しの手前まで）。見出しは完全一致、無ければ部分一致で 1 つ
   `path:行` `path:行-行`   その行
   `path`          ファイル全体。末尾が / ならディレクトリ（有無だけ見る。版は持たない）
-  path は <root> からの相対（無ければ引用した文書からの相対）。<root> の外は見ない。
-  path の最後の要素は既知の拡張子（.md .py .ts など）を持つこと（`application/json`・`requests.get` を引用と見ない）。
-  版は後ろに `@版` で書く（例 `docs/spec.md#認証方式@a1b2c3d`）。版は本ツールが書く。手で作らない。
+  path は <root> → <root>/.claude（配布先のキットの配置: `rules/`・`skills/`・`templates/` は .claude/ の下）→ 引用した文書 の順に
+  相対で探す。<root> の外は見ない。
+  path はパス区切り（/）を含み、最後の要素が既知の拡張子（.md .py .ts など）を持つこと。ファイル名だけ（`prompt-priority.py`）・
+  `application/json`・`requests.get` は引用と見ない。
+  版は後ろに `@版` で書く（例 `docs/spec.md#認証方式@a1b2c3d`）。版は --record が書く。手で作らない。
+配布先の .claude/rules/ の対象外（数えない。--strict のときだけ WARN）:
+  - キット参照: 引用先がキットのディレクトリ（00_導入/ 〜 06_保守者向け/）で始まり、実在しない
+  - 未作成の参照: 版の無い引用で、引用先が実在しない（配布した規則が指すプロジェクトの成果物は、作られるまで無い）
+  版を記録した（@版 のある）引用の引用先が消えたら、.claude/rules/ でも NG。
 判定:
   NG   ファイル無し・見出し無し・見出しが曖昧（複数に当たる）・行が無い・版の書式不正（7 桁の小文字 16 進でない）
-  WARN stale（記録した版と現在の版が違う）／ 版を記録した（版の無い引用に現在の版を書き足した）
+  WARN stale（記録した版と現在の版が違う）。版の無い引用は件数だけ出す（--record で記録すると stale を検知できる）
 """
 from __future__ import annotations
 
@@ -57,6 +65,7 @@ HASH_RE = re.compile(r"^[0-9a-f]{7}$")
 HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.*?)[ \t]*#*[ \t]*$")
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
 COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+KIT_DIRS = ("00_導入/", "01_利用者向け資料/", "02_共通/", "03_ClaudeCode/", "04_Codex/", "05_プロジェクト管理/", "06_保守者向け/")
 
 
 def norm(s: str) -> str:
@@ -85,7 +94,9 @@ def targets(root: Path) -> list[Path]:
 
 
 def is_cite(path: str) -> bool:
-    """引用とみなす path か。ディレクトリは末尾 /、ファイルは最後の要素が既知の拡張子を持つ。"""
+    """引用とみなす path か。パス区切りを含み、ディレクトリは末尾 /、ファイルは最後の要素が既知の拡張子を持つ。"""
+    if "/" not in path:
+        return False                      # ファイル名だけ（prompt-priority.py）は引用にしない
     if path.endswith("/"):
         return bool(path.strip("/"))
     last = path.rsplit("/", 1)[-1]
@@ -128,7 +139,7 @@ class Cite:
 
 
 def resolve(root: Path, src: Path, rel: str) -> Path | None:
-    for base in (root, src.parent):
+    for base in (root, root / ".claude", src.parent):
         p = (base / rel).resolve()
         try:
             p.relative_to(root)
@@ -204,7 +215,9 @@ def rewrite(src: Path, fixes: dict[tuple[int, str], str]) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description="ADR・rules・lessons の引用先の消失・変更を検知する")
     ap.add_argument("root")
+    ap.add_argument("--record", action="store_true", help="版の無い引用に現在の版を書き足す（保守者の確認の記録。AI は打たない）")
     ap.add_argument("--refresh", action="store_true", help="食い違う版を現在の版に書き換える（保守者の再確認の記録。AI は打たない）")
+    ap.add_argument("--strict", action="store_true", help=".claude/rules/ で対象外にした引用も WARN で出す")
     a = ap.parse_args()
     root = Path(a.root).resolve()
     if not root.is_dir():
@@ -215,9 +228,10 @@ def main() -> int:
         return 2
     ng, warn, info = [], [], []
     files = targets(root)
-    ncites = 0
+    ncites = unversioned = skipped = 0
     for src in files:
         rel = src.relative_to(root)
+        in_rules = ("/" + rel.as_posix()).find("/.claude/rules/") >= 0
         fixes: dict[tuple[int, str], str] = {}
         if GENERATED_MARK in src.read_text(encoding="utf-8", errors="replace"):
             continue
@@ -225,36 +239,52 @@ def main() -> int:
             ncites += 1
             where = f"{rel}:{c.line_no}"
             if c.has_at and not HASH_RE.match(c.ver or ""):
-                ng.append(("版の書式不正", where, f"`{c.raw}`（@ の後は cite-check が書く 7 桁の小文字 16 進）"))
+                ng.append(("版の書式不正", where, f"`{c.raw}`（@ の後は cite-check --record が書く 7 桁の小文字 16 進）"))
                 continue
             cur, why = current_version(root, c)
+            if why and in_rules and why.startswith("ファイル無し"):
+                path = c.path[2:] if c.path.startswith("./") else c.path
+                kind = ("キット参照（対象外）" if path.startswith(KIT_DIRS) else
+                        "未作成の参照（対象外）" if not c.has_at else "")
+                if kind:
+                    skipped += 1
+                    if a.strict:
+                        warn.append((kind, where, f"`{c.raw}` — 配布先に無い"))
+                    continue
             if why:
                 ng.append(("引用先が無い", where, f"`{c.raw}` — {why}"))
                 continue
             if cur is None:
                 continue                     # ディレクトリ（版を持たない）
             if not c.has_at:
-                fixes[(c.line_no, c.raw)] = f"{c.base}@{cur}"
-                warn.append(("版を記録した", where, f"`{c.base}@{cur}`（今の引用先を読んで主張が正しいか確かめる）"))
+                unversioned += 1
+                if a.record:
+                    fixes[(c.line_no, c.raw)] = f"{c.base}@{cur}"
+                    info.append(f"  記録 {where}: `{c.base}@{cur}`")
             elif c.ver != cur:
                 if a.refresh:
                     fixes[(c.line_no, c.raw)] = f"{c.base}@{cur}"
-                    info.append(f"  {where}: `{c.raw}` → @{cur}")
+                    info.append(f"  更新 {where}: `{c.raw}` → @{cur}")
                 else:
                     warn.append(("stale", where, f"`{c.base}` が変わった（記録 {c.ver} → 現在 {cur}）。主張を見直し、"
                                                  "保守者が --refresh で記録し直す"))
         if fixes:
             rewrite(src, fixes)
     print(f"=== 引用の検査（cite-check）: {root} ===")
-    print(("❌" if ng else "✅") + f" NG={len(ng)} / WARN={len(warn)}（対象 {len(files)} ファイル・引用 {ncites} 件）")
+    print(("❌" if ng else "✅") + f" NG={len(ng)} / WARN={len(warn)}（対象 {len(files)} ファイル・引用 {ncites} 件"
+          f"・版の記録なし {unversioned} 件・対象外 {skipped} 件）")
     for kind, where, detail in ng:
         print(f"  NG   {kind}: {where} — {detail}")
     for kind, where, detail in warn:
         print(f"  WARN {kind}: {where} — {detail}")
+    if unversioned and not a.record:
+        print(f"ℹ 版の記録なし {unversioned} 件は有無だけ見た（保守者が --record で版を記録すると、変更を stale で検知できる）")
+    if skipped and not a.strict:
+        print(f"ℹ 対象外 {skipped} 件（.claude/rules/ のキット参照・未作成の参照。--strict で一覧）")
     if info:
-        print(f"記録を現在の版に書き換えた（{len(info)} 件）:")
+        print(f"版を書いた（{len(info)} 件）:")
         print("\n".join(info))
-        print("  これは保守者が引用先を読み直した記録。commit で残す（AI は --refresh を打たない）")
+        print("  これは保守者が引用先を読んだ記録。commit で残す（AI は --record・--refresh を打たない）")
     return 1 if ng else 0
 
 

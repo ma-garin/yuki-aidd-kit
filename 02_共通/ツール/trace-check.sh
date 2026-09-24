@@ -22,7 +22,8 @@
 #   テスト名）に `spec: ST-001` か `@spec ST-001`（複数は `,` 区切り）を書く。コメント記法に依らず 1 本の正規表現で拾う:
 #     (?:spec:|@spec)\s*([A-Z]{2,}-\d{3,}(?:\s*,\s*[A-Z]{2,}-\d{3,})*)
 #   C8 NG  : CSV（既定は 対象ディレクトリの親の system_test_cases.csv ＝ docs/system_test_cases.csv）の「テストID」が
-#            テストコードに 1 つも無い（テストコード未対応）。「仕様の状態」が 範囲外・未定 の行は対象外。
+#            テストコードに 1 つも無い（テストコード未対応）。「仕様の状態」が 範囲外・未定 で始まる行は対象外
+#            （分類は section_hash.spec_state。test_metrics.py と共用）。
 #   C9 WARN: テストコードの ID が CSV にも工程文書の定義にも無い。
 #   CSV・テストのディレクトリ・python3 が無ければ C8 は判定不能として NG（判定不能を合格に数えない）。
 #   --tests のときは工程文書が無くても C8・C9 だけを行う（e2e-cycle だけで回すプロジェクト向け）。
@@ -262,9 +263,14 @@ if [ -n "$TESTS" ]; then
     printf 'C8 テストコード未対応\t%s\t%s\n' "$TESTS" "判定不能（テストのディレクトリが無い）。判定不能は合格に数えない" >> "$TMP/ng.tsv"
   elif [ -z "$CSV" ] || [ ! -f "$CSV" ]; then
     printf 'C8 テストコード未対応\t%s\t%s\n' "${CSV:-system_test_cases.csv}" "判定不能（テストケースの CSV が無い。--csv で渡す）。判定不能は合格に数えない" >> "$TMP/ng.tsv"
-  elif ! python3 - "$TESTS" "$CSV" "$TMP/defs.tsv" > "$TMP/c8.tsv" 2> "$TMP/c8.err" <<'PY'
+  elif ! python3 - "$TESTS" "$CSV" "$TMP/defs.tsv" "$SCRIPT_DIR" > "$TMP/c8.tsv" 2> "$TMP/c8.err" <<'PY'
 import csv, os, re, sys
-tests, csv_path, defs_path = sys.argv[1:4]
+tests, csv_path, defs_path, script_dir = sys.argv[1:5]
+sys.path.insert(0, script_dir)
+try:
+    from section_hash import spec_state      # 「仕様の状態」の分類は test_metrics.py と共用（前方一致）
+except ImportError:                           # 隣に無ければ対象外を作らない（全行を C8 の対象にする＝緩めない側）
+    spec_state = lambda v: ""
 SUFFIXES = (".spec.ts", ".test.ts", ".test.js", "_test.py", ".spec.py")
 SPEC_RE = re.compile(r"(?:spec:|@spec)\s*([A-Z]{2,}-\d{3,}(?:\s*,\s*[A-Z]{2,}-\d{3,})*)")
 ID_RE = re.compile(r"^[A-Z]{2,}-\d{3,}$")
@@ -292,7 +298,7 @@ with open(csv_path, encoding="utf-8-sig", newline="") as fh:
     for k, row in enumerate(reader, start=2):
         tid = (row.get("テストID") or "").strip()
         if ID_RE.match(tid):
-            rows.setdefault(tid, -k if (row.get("仕様の状態") or "").strip() in NO_CODE else k)
+            rows.setdefault(tid, -k if spec_state(row.get("仕様の状態") or "") in NO_CODE else k)
 with open(defs_path, encoding="utf-8") as fh:
     defs = {l.split("\t", 1)[0] for l in fh if l.strip()}
 for tid, k in rows.items():
