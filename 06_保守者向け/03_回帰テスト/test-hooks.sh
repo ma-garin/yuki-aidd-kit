@@ -813,6 +813,50 @@ print(sum(1 for e in d["hooks"]["PreToolUse"] if e.get("matcher") in ("Write|Edi
   expect_eq "block-protected.py を Write 系と Bash の 2 か所に配線: ${S#$KIT_DIR/}" "2" "$N"
 done
 
+echo "[β 2周目] block-protected: 別コミットから戻す形・別名・GIT_DIR・git 自身の書き込み・fail-closed"
+# 検証担当が hook に流して通ってしまった形の再発防止（前の節の一時リポ $BPG をそのまま使う）
+gg config alias.cp cherry-pick; gg config alias.cp2 cp; gg config alias.st status; gg config alias.lg '!git log'
+gg config alias.a1 a2; gg config alias.a2 a3; gg config alias.a3 a4; gg config alias.a4 cherry-pick
+mkdir -p "$BPG/out" "$BPG/.claude/hooks/g"; NOGIT="$TMP/nogit"; mkdir -p "$NOGIT"; PY=$(command -v python3)
+for c in "git checkout HEAD~2 ." "git checkout ':/init' -- ." "git restore -s HEAD~2 ." "git restore --source=HEAD~2 --staged --worktree ." \
+         "git checkout HEAD~2 -- '*.json'" "git cp2 $BPG_E" "git a1 $BPG_O" "git lg" \
+         "GIT_CONFIG_PARAMETERS=\"'alias.zz=cherry-pick'\" git zz $BPG_E" \
+         "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.zz GIT_CONFIG_VALUE_0=cherry-pick git zz $BPG_O" \
+         "git --config-env=alias.zz=ZZ zz $BPG_O" "git -c alias.zz=log apply ok.diff" "git --work-tree=.claude apply x.diff" \
+         "GIT_WORK_TREE=cfg git apply x.diff" "git --git-dir=.claude/hooks/g apply ok.diff" 'GIT_DIR=$NOPE git apply ok.diff' \
+         "git --git-dir=nowhere apply ok.diff" "git diff --output=.claude/settings.json" "git log --output .git/config" \
+         "git format-patch -o .claude/hooks HEAD~1" "git mailsplit -o.git/hooks m.patch" "git bundle create .claude/hooks/b.bundle HEAD" \
+         "git archive -o .claude/settings.json HEAD" "git -C src archive --output=../.git/hooks/x.tar HEAD" "git config user.name x" \
+         "git config --global alias.x cherry-pick" "git config core.hooksPath /tmp/h" "git config --unset user.name" \
+         "git config set user.name x"; do
+  expect_contains "[β 2周目] deny: $c" '"permissionDecision": "deny"' "$(bpg "$c")"
+done
+expect_contains "[β 2周目] git config の deny 理由に解除の変数名" "AIDD_ALLOW_CONFIG_EDIT=1" "$(deny_reason "$(bpg "git config core.hooksPath /tmp/h")")"
+expect_contains "[β 2周目] シェルの別名は中身を確かめられないので deny" "シェルのコマンド" "$(deny_reason "$(bpg "git lg")")"
+expect_contains "[β 2周目] 別名が 3 段を超えたら deny" "3 段を超える" "$(deny_reason "$(bpg "git a1 $BPG_O")")"
+for c in "git checkout zzz -- src/a.py" "git restore --source=zzz src/a.py" "git st" "git -c core.quotepath=false apply ok.diff" \
+         "git -c alias.zz=log status" "git --git-dir=.git --work-tree=. apply ok.diff" "git nosuchcmd x" "git diff --output=out/p.diff" \
+         "git format-patch -o out HEAD~1" "git archive -o out/a.tar HEAD" "git bundle create out/b.bundle HEAD" \
+         "git config --get user.name" "git config -l" "git config --list --show-origin" "git config user.name" \
+         "git config --get-regexp alias"; do
+  OUT=$(bpg "$c"); RC=$?
+  expect_empty "[β 2周目] 許可: $c" "$OUT" "$RC"
+done
+OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"git config core.hooksPath x"}}' "$BPG" | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py"); RC=$?
+expect_empty "[β 2周目] AIDD_ALLOW_CONFIG_EDIT=1 なら git config も許可" "$OUT" "$RC"
+# fail-closed: git が PATH に無い・壊れた入力は deny。{}・command 無しは通す
+for c in "git cherry-pick $BPG_O" "git checkout HEAD -- src/a.py" "git nosuchcmd x"; do
+  OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"%s"}}' "$BPG" "$c" | PATH="$NOGIT" HOME="$BPH" "$PY" "$HOOKS/block-protected.py")
+  expect_contains "[β 2周目] git が PATH に無いなら deny: $c" '"permissionDecision": "deny"' "$OUT"
+done
+for IN in '{"tool_name":"Bash","tool_input":{"command":' 'null'; do
+  expect_contains "[β 2周目] 入力 '$IN' は deny" '"permissionDecision": "deny"' "$(printf '%s' "$IN" | python3 "$HOOKS/block-protected.py")"
+done
+for IN in '{}' '{"tool_name":"Bash","tool_input":{}}'; do
+  OUT=$(printf '%s' "$IN" | python3 "$HOOKS/block-protected.py"); RC=$?
+  expect_empty "[β 2周目] 入力 '$IN' は通す" "$OUT" "$RC"
+done
+
 echo "[secret_patterns.py]"
 # 秘密情報の判定の 1 か所（B-19）。自分の例と、他 4 か所（pre-write-check.sh・settings.sandbox.json・init-project.sh・pre-commit）との一致
 OUT=$(python3 "$HOOKS/secret_patterns.py" --self-test); RC=$?
