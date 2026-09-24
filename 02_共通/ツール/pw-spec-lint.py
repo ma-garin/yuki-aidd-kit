@@ -11,15 +11,17 @@ eslint-plugin-playwright は入れない（対象プロジェクトに依存を�
 
 対象ファイル: *.spec.{ts,js,mjs,cjs,tsx,jsx}・*.test.{同}（JS/TS）と、Playwright を使う test_*.py・*_test.py・*.spec.py（Python）。
   node_modules・.git・venv・.venv・__pycache__・test-results・playwright-report は見ない。
-  コメント（// ・/* */ ・#）と Python の三重引用符の文字列は照合しない（「使うな」と書いたコメントで誤検知しない）。
+  コメント（// ・/* */ ・#）・文字列リテラル・正規表現リテラル（= ( , : の直後の /…/flags）・Python の三重引用符の文字列は
+  照合しない（「使うな」と書いたコメントや /https?:\/\// の // で誤検知・見逃しをしない）。
 
 NG（exit 1）:
   固定待ち       page.waitForTimeout(（Python は wait_for_timeout(）。expect の自動待機か、状態を待つ waitFor に置き換える
   sleep          sleep(（time.sleep・asyncio.sleep を含む）と new Promise(… setTimeout(…) の手書きの待ち
   .only          test.only( ・describe.only( ・it.only(（他のテストが黙って走らなくなる）
-  理由の無い skip test.skip( ・describe.skip( ・it.skip( ・test.fixme( に理由が無い。理由は同じ行か直前の行のコメント、
-                 または条件付きの形 test.skip(<条件>, '<理由>') の文字列。Python は @pytest.mark.skip / skipif に reason= が無いか、
-                 引数の無い pytest.skip()（同じ行か直前の行のコメントがあれば許す）
+  理由の無い skip test.skip( ・describe.skip( ・it.skip( ・test.fixme( に理由が無い。理由は直前の行の `// reason: …`・
+                 `// 理由: …`・`// skip: …` のコメント（`// spec:`・`// eslint-disable` は数えない）、または条件付きの形
+                 test.skip(<条件>, '<理由>') の文字列（prettier で複数行に分かれていても括弧の対応でまとめて読む）。
+                 Python は @pytest.mark.skip / skipif に reason= が無いか、引数の無い pytest.skip()（直前の行の # reason: … は許す）
   旧 API         page.$( ・page.$$( ・$eval( ・$$eval(（Python は query_selector・query_selector_all・eval_on_selector）
 WARN（exit に影響しない）:
   CSS・XPath・nth  locator('#id')・locator('.class')・locator('button') のように引数が #id・.class・タグ名だけのもの
@@ -59,7 +61,7 @@ HINTS = {
     "fixed-wait": "expect(locator).toBeVisible() などの自動待機か、状態を待つ waitFor に置き換える",
     "sleep": "時間ではなく状態を待つ（expect の自動待機・waitForResponse など）",
     "only": ".only を外す（他のテストが走らないまま緑になる）",
-    "skip-no-reason": "同じ行か直前の行に理由のコメントを書く（条件付きなら test.skip(<条件>, '<理由>')、Python は reason=）",
+    "skip-no-reason": "直前の行に `// reason: <理由>`（`理由:`・`skip:` も可）を書く（条件付きなら test.skip(<条件>, '<理由>')、Python は reason=）",
     "legacy-api": "page.locator / getByRole などの Locator API に置き換える",
     "weak-assert": "値そのもの（toHaveText・toHaveCount・toBe(期待値)）を確かめる",
     "no-spec-id": "冒頭に `// spec: ST-xxx`（Python は `# spec: ST-xxx`）を 1 行書く",
@@ -79,7 +81,6 @@ PY_NG = [
 ]
 JS_SKIP = re.compile(r"\b(?:test|it|describe)\b[\w.]*\.(?:skip|fixme)\s*\(")
 # 条件付き skip: test.skip(<条件>, '<理由>')。第 1 引数が文字列（＝テスト名）のときは宣言の skip なので当たらない
-JS_SKIP_WITH_REASON = re.compile(r"\.(?:skip|fixme)\s*\(\s*(?!['\"`)])(?P<cond>.+?),\s*(['\"`])(?P<r>[^'\"`]*\S[^'\"`]*)\2\s*\)")
 PY_SKIP_MARK = re.compile(r"@pytest\.mark\.skip(?:if)?\b")
 PY_SKIP_CALL_EMPTY = re.compile(r"\bpytest\.skip\s*\(\s*\)")
 
@@ -141,6 +142,13 @@ def split_code(text: str, lang: str) -> list[tuple[str, str, str]]:
             if lang == "js" and line.startswith("/*", i):
                 state, i = "block", i + 2
                 continue
+            if lang == "js" and c == "/" and "".join(code).rstrip()[-1:] in ("=", "(", ",", ":"):
+                j = regex_end(line, i)            # 正規表現リテラル /…/flags（= ( , : の直後だけ）。中身は照合しない
+                if j > i:
+                    code.append(line[i:j])
+                    bare.append(" " * (j - i))
+                    i = j
+                    continue
             if lang == "py" and c == "#":
                 comment.append(line[i + 1:])
                 break
@@ -165,6 +173,79 @@ def split_code(text: str, lang: str) -> list[tuple[str, str, str]]:
             i += 1
         out.append(("".join(code), "".join(bare), "".join(comment).strip()))
     return out
+
+
+def regex_end(line: str, i: int) -> int:
+    """line[i] の / から始まる正規表現リテラルの終わり（フラグの後ろ）を返す。閉じなければ i（正規表現ではない）。"""
+    j, n, in_class = i + 1, len(line), False
+    while j < n:
+        c = line[j]
+        if c == "\\":
+            j += 2
+            continue
+        if c == "[":
+            in_class = True
+        elif c == "]":
+            in_class = False
+        elif c == "/" and not in_class:
+            j += 1
+            while j < n and line[j].isalpha():
+                j += 1
+            return j
+        j += 1
+    return i
+
+
+def call_args(rows: list[tuple[str, str, str]], idx: int, start: int, limit: int = 30) -> list[str] | None:
+    """rows[idx] の start 桁の ( から対応する ) までを、行をまたいで読み、最上位の引数に分けて返す（prettier の改行対策）。
+    文字列の中の括弧・カンマは数えない。閉じなければ None。"""
+    args, cur, depth, quote = [], [], 0, None
+    for k in range(idx, min(idx + limit, len(rows))):
+        text = rows[k][0][start:] if k == idx else rows[k][0]
+        i = 0
+        while i < len(text):
+            c = text[i]
+            if quote:
+                cur.append(c)
+                if c == "\\" and i + 1 < len(text):
+                    cur.append(text[i + 1])
+                    i += 1
+                elif c == quote:
+                    quote = None
+            elif c in "'\"`":
+                quote = c
+                cur.append(c)
+            elif c in "([{":
+                depth += 1
+                if depth > 1:
+                    cur.append(c)
+            elif c in ")]}":
+                depth -= 1
+                if depth == 0:
+                    args.append("".join(cur).strip())
+                    return [a for a in args if a]
+                cur.append(c)
+            elif c == "," and depth == 1:
+                args.append("".join(cur).strip())
+                cur = []
+            elif depth >= 1:
+                cur.append(c)
+            i += 1
+        quote = None if quote != "`" else quote   # ' と " は行をまたがない
+        cur.append(" ")
+    return None
+
+
+STRING_LIT = re.compile(r"""^(['"`])(?P<v>.*)\1$""", re.S)
+
+
+def skip_has_reason_arg(rows: list[tuple[str, str, str]], idx: int, m: re.Match) -> bool:
+    """条件付きの skip: test.skip(<条件>, '<理由>')。第 1 引数が文字列（テスト名）なら宣言の skip なので当たらない。"""
+    args = call_args(rows, idx, m.end() - 1)
+    if not args or len(args) < 2 or STRING_LIT.match(args[0]):
+        return False
+    last = STRING_LIT.match(args[-1])
+    return bool(last and last.group("v").strip())
 
 
 def is_test_file(p: Path) -> str | None:
@@ -195,13 +276,14 @@ def collect(target: Path) -> list[tuple[Path, str]]:
     return files
 
 
+REASON_COMMENT = re.compile(r"^(?:reason|理由|skip)\s*[:：]\s*\S", re.I)
+
+
 def has_reason_comment(rows: list[tuple[str, str, str]], idx: int) -> bool:
-    """同じ行のコメント、または直前の行（コメントだけの行）に 2 字以上の理由がある。"""
-    if len(rows[idx][2]) >= 2:
-        return True
+    """直前の行がコメントだけの行で、`reason:`・`理由:`・`skip:` で始まる理由がある（`spec:`・`eslint-disable` は数えない）。"""
     if idx > 0:
         code, _bare, comment = rows[idx - 1]
-        if not code.strip() and len(comment) >= 2:
+        if not code.strip() and REASON_COMMENT.match(comment):
             return True
     return False
 
@@ -223,8 +305,9 @@ def lint_file(path: Path, lang: str, shown: str) -> tuple[list[dict], list[dict]
         for rule, rx in (JS_NG if lang == "js" else PY_NG):
             if rx.search(bare):
                 add(ng, rule, ln, src)
-        if lang == "js" and JS_SKIP.search(bare):
-            if not (JS_SKIP_WITH_REASON.search(code) or has_reason_comment(rows, idx)):
+        sm = JS_SKIP.search(code) if lang == "js" and JS_SKIP.search(bare) else None
+        if sm:
+            if not (skip_has_reason_arg(rows, idx, sm) or has_reason_comment(rows, idx)):
                 add(ng, "skip-no-reason", ln, src)
         if lang == "py":
             if PY_SKIP_MARK.search(bare) and "reason=" not in bare and not has_reason_comment(rows, idx):

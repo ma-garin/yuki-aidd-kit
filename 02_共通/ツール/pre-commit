@@ -25,7 +25,7 @@ fi
 if [ -z "${AIDD_WEAKEN_IN_HOOK:-}" ]; then
   ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
   WEAKEN="$ROOT/scripts/test-weaken-check.py"
-  if [ -f "$WEAKEN" ] && git diff --cached --name-only 2>/dev/null | grep -qE '(^|/)([^/]+\.(spec|test)\.[^/]+|[^/]+_test\.py|test_[^/]*\.py|(playwright|jest|vitest)\.config\.[^/]+|pytest\.ini|pyproject\.toml|setup\.cfg|tox\.ini|conftest\.py)$'; then
+  if [ -f "$WEAKEN" ] && git diff --cached --name-only 2>/dev/null | grep -qE '(^|/)([^/]+\.(spec|test)\.[^/]+|[^/]+_test\.py|test_[^/]*\.py|(playwright|jest|vitest)\.config\.[^/]+|pytest\.ini|pyproject\.toml|setup\.cfg|tox\.ini|conftest\.py)$|(^|/)__tests__/|(^|/)tests/.*\.py$'; then
     if ! python3 "$WEAKEN" --staged; then
       echo "❌ テストの弱体化を検出。コミットを中止しました（正当な変更なら近くに weaken-ok: <理由> を書く）"
       exit 1
