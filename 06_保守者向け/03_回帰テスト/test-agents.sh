@@ -75,6 +75,13 @@ E2E="$KIT_DIR/03_ClaudeCode/skills/e2e-cycle/SKILL.md"
 has "e2e-cycle: axe への言及がある" "axe" "$E2E"
 has "e2e-cycle: serious/critical を FAIL にする基準がある" "serious" "$E2E"
 
+# --- [検証: 塊H] 検証担当が足した節（実装担当とは別。赤は赤のまま残す） ------------
+echo "[検証: 塊H]"
+QAR="$KIT_DIR/03_ClaudeCode/skills/qa-review-standards/references/ai-code-review.md"
+# ペルソナ 15 の本文（件数だけ数えるテスト・0 件で PASS・非決定的な生成）を ai-code-review.md に寄せた。寄せ先で観点が消えていないか
+has "[検証] ペルソナ15の観点「0 件で PASS」が寄せ先 ai-code-review.md に残る" "0 件" "$QAR"
+has "[検証] ペルソナ15の観点「件数だけ数えるテスト」が寄せ先 ai-code-review.md に残る" "件数" "$QAR"
+
 echo ""
 echo "PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] || exit 1

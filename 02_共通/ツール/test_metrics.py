@@ -109,7 +109,9 @@ class Defect:
 
     @property
     def severe(self) -> bool:
-        return self.severity.strip().lower() in SEVERE
+        # B36: 「未確認」は重大度を確定していないだけで、Critical/High でないと確定したわけではない。
+        # 判定不能を合格に数えない原則により、未解決の未確認は severe_open 側に数える（--gate を通さない）
+        return self.severity.strip().lower() in SEVERE or self.severity.strip() == "未確認"
 
 
 @dataclass
@@ -707,9 +709,9 @@ def main() -> int:
         if total.unverified:
             print(f"  未検証 {total.unverified} 件（根拠の版が現在の上流と違う PASS。合格率の分子から外した）")
         if total.unconfirmed:
-            mark = "⚠ " if total.unconfirmed > 3 else ""
-            print(f"  {mark}未確認 {total.unconfirmed} 件（Critical/High 起票前トリアージで再現・実測の根拠が無かったもの。"
-                  "合格の分子には数えない。3 件を超えたら WARN。exit code は変えない）")
+            print(f"  未解決 {total.defects_severe_open} 件（うち未確認 {total.unconfirmed} 件。"
+                  "Critical/High 起票前トリアージで再現・実測の根拠が無く、重大度を確定していないもの。"
+                  "未解決に数える＝判定不能を合格に数えない）")
         if pend:
             print(f"  ✗ 仕様の確認待ち・未定 {pend} 件（未実施に数えた。1 件でもあれば進めない）")
         if prov:

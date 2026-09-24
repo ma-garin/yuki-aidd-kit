@@ -63,23 +63,90 @@ ACTUAL_RE = re.compile(r"実測[:：]")
 
 # B39: 完了の主張は、同じターン（直近の人の発言以降）に実行したテストの結果と照合する。
 # 「完了しました」「全て PASS」等の主張だけで実行していない／FAIL のままなのを機械で止める（2026-09 指摘）。
+# 指揮官のセッションで毎応答に走るため誤検知ゼロを最優先にする（2026-09-24 差し戻し）。
 CLAIM_RE = re.compile(r"(完了しました|実装しました|修正しました|直しました|全て\s*PASS|全緑|テストは通|exit\s*0\s*です)")
 NOT_EXECUTED_RE = re.compile(r"(未実行|未検証)")
+# 否定形が同じ文にあれば主張と見なさない（「テストは通らなかった」を拾わない）
+NEGATION_RE = re.compile(r"(なかった|ません|失敗|通らない|止まった|未達)")
 TEST_CMD_RE = re.compile(
     r"(test-.*\.sh|pytest|npm\s+test|npx\s+(playwright|vitest|jest)|"
     r"check_docs|check_design|python3\s+-m\s+unittest)"
 )
+# 失敗の判定は構造化された合図だけを見る。exit 1・❌・Error の部分文字列だけでは判定しない
+# （ケース名や説明文に含まれるため。例: 「exit 1 が保たれる」というテストケース名）
 FAIL_EQ_RE = re.compile(r"FAIL=(\d+)")
-FAIL_LITERAL_RE = re.compile(r"exit 1|❌|Error")
+FAIL_COUNT_RE = re.compile(r"(\d+)\s*(?:failed|error(?:s)?)\b", re.IGNORECASE)
+FAIL_CODE_RE = re.compile(r"(?:exit\s*code|exit\s*status)\s+(\d+)", re.IGNORECASE)
+SUCCESS_RE = re.compile(r"FAIL=0|✅|passed|PASS=")
 CLAIM_MARKER = "[reply-language] 完了主張の照合"
 MAX_CLAIM_BLOCKS = 2  # 3 回目は additionalContext の警告にして通す（無限ループ防止）
+# B39 専用の「人の発言」境界判定で除く機械由来プレフィックス。
+# instruction_guard.MACHINE_MARKERS から [reply-language]・[instruction-guard] は外す
+# （保守者が hook の文言を引用して新しい指示を書いても、それは人の発言として数える。差し戻し回数を混ぜない）
+B39_MACHINE_PREFIXES = (
+    "Stop hook feedback:", "<agent-message", "[Subagent hand-back]",
+    "<task-notification>", "hook success:", "[SYSTEM NOTIFICATION - NOT USER INPUT]",
+)
 
 
-def test_failed(result: str) -> bool:
-    m = FAIL_EQ_RE.search(result)
-    if m and int(m.group(1)) >= 1:
-        return True
-    return bool(FAIL_LITERAL_RE.search(result))
+def strip_for_claim(msg: str) -> str:
+    """コードブロック・引用（行頭 >）・表（行頭 |）・「」『』の中を除いた地の文を返す。"""
+    t = _BLOCK_RE.sub("", msg)
+    t = re.sub(r"「[^「」]*」", "", t)
+    t = re.sub(r"『[^『』]*』", "", t)
+    kept = [line for line in t.splitlines() if not line.strip().startswith((">", "|"))]
+    return "\n".join(kept)
+
+
+def has_claim(msg: str) -> bool:
+    """完了の主張を含む文が 1 つでもあるか（否定形を含む文は除く）。"""
+    for sent in re.split(r"[。\n]", strip_for_claim(msg)):
+        if CLAIM_RE.search(sent) and not NEGATION_RE.search(sent):
+            return True
+    return False
+
+
+def test_result_kind(result: str, is_error: bool) -> str:
+    """'fail' | 'pass' | 'unknown' を返す。連結実行は出力全体の最後の一致で見る。"""
+    if is_error:
+        return "fail"
+    m = list(FAIL_EQ_RE.finditer(result))
+    if m and int(m[-1].group(1)) >= 1:
+        return "fail"
+    m = list(FAIL_COUNT_RE.finditer(result))
+    if m and int(m[-1].group(1)) >= 1:
+        return "fail"
+    m = list(FAIL_CODE_RE.finditer(result))
+    if m and int(m[-1].group(1)) != 0:
+        return "fail"
+    if SUCCESS_RE.search(result):
+        return "pass"
+    return "unknown"
+
+
+def human_turn_text(g, entry: dict) -> str | None:
+    """B39 専用の『人の発言』判定。Stop フックの差し戻し文など機械由来の行だけを除く。
+    [reply-language] 等の文言を人が引用しても、それは人の発言として数える。"""
+    t = entry.get("type")
+    if t == "user":
+        if entry.get("isMeta"):
+            return None
+        content = (entry.get("message") or {}).get("content")
+        if isinstance(content, list) and any(isinstance(b, dict) and b.get("type") == "tool_result" for b in content):
+            return None
+        s = g.visible_text(g.text_of(content))
+    elif t == "attachment":
+        att = entry.get("attachment") or {}
+        if att.get("type") != "queued_command":
+            return None
+        s = g.visible_text(g.text_of(att.get("prompt")))
+    elif t == "queue-operation" and entry.get("operation") == "enqueue":
+        s = g.visible_text(g.text_of(entry.get("content")))
+    else:
+        return None
+    if not s or s.startswith(B39_MACHINE_PREFIXES):
+        return None
+    return s
 
 
 def last_instruction_index(g, lines: list[str]) -> int | None:
@@ -88,15 +155,16 @@ def last_instruction_index(g, lines: list[str]) -> int | None:
             e = json.loads(lines[i])
         except ValueError:
             continue
-        if isinstance(e, dict) and not e.get("isSidechain") and g.instruction_of(e) is not None:
+        if isinstance(e, dict) and not e.get("isSidechain") and human_turn_text(g, e) is not None:
             return i
     return None
 
 
-def test_runs_since(g, lines: list[str], start: int) -> list[tuple[str, str]]:
-    """start 行目以降の、テスト系 Bash 実行 (command, tool_result本文) の一覧。"""
+def turn_activity(g, lines: list[str], start: int) -> tuple[int, tuple[str, str, bool] | None]:
+    """start 行目以降の (ツール実行の総数, 最後のテスト系 Bash の (command, tool_result本文, is_error) か None)。"""
+    total = 0
     pending: dict[str, str] = {}
-    runs: list[tuple[str, str]] = []
+    last: tuple[str, str, bool] | None = None
     for line in lines[start:]:
         try:
             e = json.loads(line)
@@ -105,24 +173,24 @@ def test_runs_since(g, lines: list[str], start: int) -> list[tuple[str, str]]:
         if not isinstance(e, dict):
             continue
         for tid, name, inp in g.tool_uses_of(e):
-            if name != "Bash":
-                continue
-            cmd = str((inp or {}).get("command", ""))
-            if TEST_CMD_RE.search(cmd):
-                pending[tid] = cmd
-        for tid, content in g.tool_result_of(e).items():
+            total += 1
+            if name == "Bash":
+                cmd = str((inp or {}).get("command", ""))
+                if TEST_CMD_RE.search(cmd):
+                    pending[tid] = cmd
+        for tid, (content, is_error) in g.tool_result_of(e).items():
             if tid in pending:
-                runs.append((pending[tid], content))
-    return runs
+                last = (pending[tid], content, is_error)
+    return total, last
 
 
 def claim_block_count(lines: list[str], start: int) -> int:
-    """同じターンで、この照合による差し戻しが transcript に何回残っているか（無限ループ防止用）。"""
+    """同じターン（直近の人の発言以降）で、この照合による差し戻しが transcript に何回残っているか。"""
     return sum(1 for l in lines[start:] if CLAIM_MARKER in l)
 
 
-def check_claim(g, tp0: str) -> tuple[str, int, list[str]] | None:
-    """完了の主張の根拠が無ければ (問題の説明, 直近の人の発言の行番号, transcript の行) を返す。
+def check_claim(g, tp0: str) -> tuple[str, str, int, list[str]] | None:
+    """(種別, 問題の説明, 直近の人の発言の行番号, transcript の行) を返す。種別は 'block' | 'info'。
     transcript が無い・人の発言が見つからない（判定できない）場合は None（fail-open）。
     """
     if not tp0 or not Path(tp0).is_file():
@@ -134,15 +202,20 @@ def check_claim(g, tp0: str) -> tuple[str, int, list[str]] | None:
     idx = last_instruction_index(g, lines)
     if idx is None:
         return None
-    runs = test_runs_since(g, lines, idx)
-    if not runs:
-        return ("同じターンでテスト系の実行が 0 回", idx, lines)
-    cmd, result = runs[-1]
-    if test_failed(result):
+    total, last = turn_activity(g, lines, idx)
+    if last is None:
+        if total == 0:
+            return ("block", "同じターンでツール実行が 0 回", idx, lines)
+        return None  # テスト系の実行が無いだけなら主張の対象外（指示書 1(a)）
+    cmd, result, is_error = last
+    kind = test_result_kind(result, is_error)
+    if kind == "fail":
         short_cmd = " ".join(cmd.split())[:40]
         short_result = " ".join(result.split())[:60]
-        return (f"直近の `{short_cmd}` の結果が失敗（{short_result}）", idx, lines)
-    return None
+        return ("block", f"直近の `{short_cmd}` の結果が失敗（{short_result}）", idx, lines)
+    if kind == "pass":
+        return None
+    return ("info", "直近のテスト実行結果を読めなかった（判定不能。止めない）", idx, lines)
 
 
 def missing_actual(msg: str) -> str | None:
@@ -265,10 +338,15 @@ def main() -> int:
         return 0
     g = load_guard()
     tp0 = data.get("transcript_path", "")
-    if CLAIM_RE.search(msg) and not NOT_EXECUTED_RE.search(msg):
+    if has_claim(msg) and not NOT_EXECUTED_RE.search(msg):
         found = check_claim(g, tp0)
         if found is not None:
-            problem, idx, lines = found
+            kind, problem, idx, lines = found
+            if kind == "info":
+                ctx = f"{CLAIM_MARKER}: {problem}"
+                print(json.dumps({"hookSpecificOutput": {
+                    "hookEventName": "Stop", "additionalContext": ctx}}, ensure_ascii=False))
+                return 0
             if claim_block_count(lines, idx) >= MAX_CLAIM_BLOCKS:
                 ctx = f"{CLAIM_MARKER}: {problem}（{MAX_CLAIM_BLOCKS} 回を超えたので通知に留める。無限ループ防止）"
                 print(json.dumps({"hookSpecificOutput": {

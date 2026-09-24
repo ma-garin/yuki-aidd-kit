@@ -132,14 +132,14 @@ def tool_uses_of(entry: dict) -> list[tuple[str, str, dict]]:
             for b in content if isinstance(b, dict) and b.get("type") == "tool_use"]
 
 
-def tool_result_of(entry: dict) -> dict[str, str]:
-    """user エントリの tool_result ブロック {tool_use_id: 本文} を返す（B39 で reply-language.py が使う）。"""
+def tool_result_of(entry: dict) -> dict[str, tuple[str, bool]]:
+    """user エントリの tool_result ブロック {tool_use_id: (本文, is_error)} を返す（B39 で reply-language.py が使う）。"""
     if entry.get("type") != "user":
         return {}
     content = (entry.get("message") or {}).get("content")
     if not isinstance(content, list):
         return {}
-    return {b.get("tool_use_id", ""): text_of(b.get("content"))
+    return {b.get("tool_use_id", ""): (text_of(b.get("content")), bool(b.get("is_error")))
             for b in content if isinstance(b, dict) and b.get("type") == "tool_result"}
 
 
