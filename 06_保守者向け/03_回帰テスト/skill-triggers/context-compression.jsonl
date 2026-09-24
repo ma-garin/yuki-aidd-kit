@@ -1,0 +1,6 @@
+{"utterance": "この監査結果、出力が長すぎるので圧縮してまとめて", "expect": "context-compression", "note": "description の「出力が長すぎる」「圧縮して」"}
+{"utterance": "トークンを節約したいので、大量ファイルの集計はスクリプト化して報告して", "expect": "context-compression", "note": "description の「トークンを節約」"}
+{"utterance": "コンテキストが長くなってきたので要約して", "expect": "context-compression", "note": "description の「コンテキストが長い」「要約して」"}
+{"utterance": "今回のプロジェクトの振り返りをして、学びをlessonsにまとめたい", "expect": "retro", "note": "振り返り・学びの蓄積は retro"}
+{"utterance": "テストレベルとゲート基準を設計してほしい", "expect": "test-strategy", "note": "テスト活動の設計は test-strategy"}
+{"utterance": "この関数のスペルミスを直して", "expect": "none", "note": "単純な誤字修正"}

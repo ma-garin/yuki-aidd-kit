@@ -20,7 +20,7 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 | `03_ClaudeCode/` | `CLAUDE.md.template`・`skills/`・`commands/`・`agents/`・`hooks/` | 配る（install で `~/.claude/` 直下、export で `<対象>/.claude/` 直下） |
 | `04_Codex/` | `AGENTS.md.template`・配置の説明 | 配る（`AGENTS.md`） |
 | `05_プロジェクト管理/` | 要求仕様・ロードマップ・構想・`構成管理/`（構成管理計画書・構成品目一覧） | 配らない |
-| `06_保守者向け/` | `内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`（回帰テスト 13 本と check-docs）・監査レポート | 配らない |
+| `06_保守者向け/` | `内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`（回帰テスト 14 本と check-docs）・監査レポート | 配らない |
 
 ## クイックスタート
 
@@ -46,6 +46,7 @@ open 01_利用者向け資料/02_操作マニュアル.html                  # H
 ./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（63ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（70ケース）
 ./06_保守者向け/03_回帰テスト/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
+./06_保守者向け/03_回帰テスト/test-skill-trigger-eval.sh                # skill_trigger_eval.py（スキル発火判定）の回帰テスト（29ケース。B-25）
 ./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
 ```
 
@@ -112,9 +113,9 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 22行 |
-| `speed-harness` | H-0〜H-10: 出力量・着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示・自己ウェイク禁止・往復と読み込みの規律 | #speed #process #token | 62行 |
-| `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 16行 |
+| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 23行 |
+| `speed-harness` | H-0〜H-10: 出力量・着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示・自己ウェイク禁止・往復と読み込みの規律 | #speed #process #token | 59行 |
+| `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 18行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
 
 ## 03_ClaudeCode/hooks/（settings.json で配線）

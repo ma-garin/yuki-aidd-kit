@@ -1,0 +1,5 @@
+{"marker": "FIRE_SKILL_A", "line": "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"skill-a\"}}]}}"}
+{"marker": "FIRE_SKILL_B", "line": "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"skill\": \"skill-b\"}}]}}"}
+{"marker": "NOFIRE", "line": "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"text\", \"text\": \"ok\"}]}}"}
+{"marker": "OTHER_TOOL", "line": "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Read\", \"input\": {}}]}}"}
+{"marker": "FIRE_LEGACY_NAME", "line": "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Skill\", \"input\": {\"name\": \"skill-a\"}}]}}"}

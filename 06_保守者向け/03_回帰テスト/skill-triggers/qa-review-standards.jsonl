@@ -1,0 +1,6 @@
+{"utterance": "このコード、品質観点で見てほしい", "expect": "qa-review-standards", "note": "description の「品質観点で見て」"}
+{"utterance": "ISO準拠でこのUIをレビューして", "expect": "qa-review-standards", "note": "description の「ISO準拠で」"}
+{"utterance": "テスト観点をISTQB準拠で出してほしい", "expect": "qa-review-standards", "note": "description の「テスト観点を出して」「ISTQB準拠で」"}
+{"utterance": "テスト計画とゲート基準をこのプロジェクト全体で設計して", "expect": "test-strategy", "note": "テスト活動全体の設計は test-strategy"}
+{"utterance": "この画面を実際に開いて全状態確認しながらレビューして", "expect": "uiux_review", "note": "実機で全状態を見るのは uiux_review"}
+{"utterance": "今日は何曜日ですか", "expect": "none", "note": "事実確認のみ"}
