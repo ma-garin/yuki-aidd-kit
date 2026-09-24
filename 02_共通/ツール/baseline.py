@@ -4,9 +4,12 @@
 check_design.py（デザイン検査）と security-scan.sh（セキュリティ走査）が同じ書式・同じ規律で使う。
 
 書式（1 行 1 件・タブ区切り）:
-  規則ID <TAB> 相対パス <TAB> 正規化した行 [<TAB> 理由 <TAB> 期限(YYYY-MM-DD)]
-  - 先頭 3 列が指紋（照合のキー）。4・5 列目（理由・期限）は任意。理由も期限も無い行は 3 列のまま書く
-    （check_design は 3 列で書く）。
+  規則ID <TAB> 相対パス <TAB> 正規化した行 <TAB> #n [<TAB> 理由 <TAB> 期限(YYYY-MM-DD)]
+  - 先頭 4 列が指紋（照合のキー）。#n は同じ「規則・パス・行」の n 番目の出現（number()）。同じ文面の行を
+    足したら #2 として新規に数える（「件数は減る方向だけ」を同じ文面の複製ですり抜けさせない）。
+  - 5・6 列目（理由・期限）は任意。理由も期限も無い行は 4 列で書く（check_design は 4 列）。
+  - 旧形式（#n の列が無い `規則ID 相対パス 正規化した行 [理由 期限]`）は #1 として読む。
+  - UTF-8 として読めない・列が足りない・#n が壊れている基準線は BaselineError（判定不能。呼び出し側は exit 2）。
   - security-scan は 3 列目に行そのものではなく `sha256:<先頭16桁>`（正規化した行の指紋）を書く。
     秘密値の指摘で値を基準線に残さないため。
   - 空行と `#` で始まる行は読み飛ばす。
@@ -15,7 +18,7 @@ check_design.py（デザイン検査）と security-scan.sh（セキュリティ
   - 除外には理由と期限（既定 90 日）。理由なし・期限なし・期限切れの既知は「既知」に数えない（audit_entry）。
 
 部品:
-  normalize_line(text) / fingerprint(text) / load(path) / load_keys(path) / save(path, keys, previous, reason, expires)
+  normalize_line(text) / fingerprint(text) / number(keys) / load(path) / load_keys(path) / save(path, keys, previous, reason, expires)
   update_allowed(existed, prev_total, current_total) / audit_entry(entry, today) / default_expiry(today)
 CLI（security-scan.sh から呼ぶ）:
   python3 baseline.py classify --baseline FILE --rows ROWS.tsv --root DIR --out OUT.tsv
@@ -23,7 +26,8 @@ CLI（security-scan.sh から呼ぶ）:
   ROWS.tsv は security-scan の行（ツール/規則/file:line/重大度/要旨）。重大度が中以上の行だけを基準線で扱う。
   OUT.tsv は入力の各行の末尾に区分（new / known / noreason / expired / low）を足したもの。
   標準出力に `key=value` の集計（known new noreason expired resolved prev current）を出す。
-  終了コード: 0 = 分類した／書いた、1 = 増える更新を拒否（書かない）、2 = 使い方の誤り・理由なしで新規を書こうとした。
+  終了コード: 0 = 分類した／書いた、1 = 増える更新を拒否（書かない）、2 = 使い方の誤り・理由なしで新規を書こうとした
+  （標準出力 `write=noreason`）・基準線を読めない（標準出力 `error=基準線を読めない（<path>）`。Traceback は出さない）。
   テスト用に環境変数 AIDD_TODAY=YYYY-MM-DD で「今日」を差し替えられる。
 
 標準ライブラリのみ。
@@ -39,7 +43,12 @@ import sys
 from pathlib import Path
 
 DEFAULT_EXPIRY_DAYS = 90
-Key = tuple[str, str, str]
+Key = tuple[str, str, str, str]   # (規則ID, 相対パス, 正規化した行 or 指紋, "#n")
+OCC_RE = re.compile(r"#[1-9][0-9]*")
+
+
+class BaselineError(Exception):
+    """基準線を読めない（UTF-8 でない・形式が壊れている）。判定不能として扱う。"""
 
 
 class Entry:
@@ -69,17 +78,40 @@ def _clean(s: str) -> str:
     return re.sub(r"[\t\r\n]+", " ", s).strip()
 
 
+def number(keys3: list[tuple[str, str, str]]) -> list[Key]:
+    """(規則, パス, 行) の並びに出現順の #n を付ける（同じ 3 つ組の 2 つ目は #2）。"""
+    seen: dict[tuple[str, str, str], int] = {}
+    out: list[Key] = []
+    for k in keys3:
+        seen[k] = seen.get(k, 0) + 1
+        out.append((k[0], k[1], k[2], f"#{seen[k]}"))
+    return out
+
+
 def load(path: Path | None) -> dict[Key, Entry]:
     out: dict[Key, Entry] = {}
     if path is None or not path.is_file():
         return out
-    for line in path.read_text(encoding="utf-8").splitlines():
+    try:
+        body = path.read_bytes().decode("utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        raise BaselineError(f"基準線を読めない（{path}）") from e
+    for no, line in enumerate(body.splitlines(), 1):
         if not line.strip() or line.startswith("#"):
             continue
         parts = line.split("\t")
-        if len(parts) >= 3:
-            key = (parts[0], parts[1], parts[2])
-            out[key] = Entry(key, parts[3].strip() if len(parts) > 3 else "", parts[4].strip() if len(parts) > 4 else "")
+        if len(parts) < 3 or not all(x.strip() for x in parts[:3]):
+            raise BaselineError(f"基準線を読めない（{path}）")
+        if len(parts) >= 4 and parts[3].startswith("#"):   # 新形式: 4 列目が #n
+            if not OCC_RE.fullmatch(parts[3]) or len(parts) > 6:
+                raise BaselineError(f"基準線を読めない（{path}）")
+            occ, rest = parts[3], parts[4:]
+        else:                                               # 旧形式（#n 無し）は #1
+            if len(parts) > 5:
+                raise BaselineError(f"基準線を読めない（{path}）")
+            occ, rest = "#1", parts[3:]
+        key = (parts[0], parts[1], parts[2], occ)
+        out[key] = Entry(key, rest[0].strip() if rest else "", rest[1].strip() if len(rest) > 1 else "")
     return out
 
 
@@ -92,7 +124,7 @@ def save(path: Path, keys: set[Key], previous: dict[Key, Entry] | None = None,
     """keys を書く。previous にある行は理由・期限を引き継ぐ。無い行には reason / expires を付ける。"""
     previous = previous or {}
     entries = [previous[k] if k in previous else Entry(k, _clean(reason), expires if reason else "")
-               for k in sorted(keys)]
+               for k in sorted(keys, key=lambda k: (k[0], k[1], k[2], int(k[3][1:])))]
     body = "\n".join(e.to_line() for e in entries)
     path.write_text(body + ("\n" if body else ""), encoding="utf-8")
 
@@ -159,7 +191,11 @@ def classify(a: argparse.Namespace) -> int:
     root = Path(a.root)
     bl = Path(a.baseline)
     existed = bl.is_file()
-    prev = load(bl)
+    try:
+        prev = load(bl)
+    except BaselineError as e:
+        print(f"error={e}")
+        return 2
     rows = []
     for line in Path(a.rows).read_text(encoding="utf-8").splitlines():
         cols = line.split("\t")
@@ -168,6 +204,9 @@ def classify(a: argparse.Namespace) -> int:
         tool, rule, loc, sev, summary = cols[:5]
         high = SEV_RANK.get(sev.strip().lower(), SEV_RANK.get(sev.strip(), 0)) >= 2
         rows.append((cols[:5], _row_key(root, tool, rule, loc, summary) if high else None))
+    # 同じ「規則・パス・行」の n 番目を区別する（同じ文面の行を足したら新規）
+    numbered = iter(number([k for _c, k in rows if k is not None]))
+    rows = [(c, next(numbered) if k is not None else None) for c, k in rows]
     current = {k for _c, k in rows if k is not None}
 
     if a.write:
@@ -223,7 +262,14 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError:
             print(f"❌ --expires は YYYY-MM-DD: {a.expires}", file=sys.stderr)
             return 2
-    return classify(a)
+    try:
+        return classify(a)
+    except BaselineError as e:
+        print(f"error={e}")
+        return 2
+    except Exception as e:   # 判定不能を Traceback で落とさない（呼び出し側は exit 2 を判定不能として扱う）
+        print(f"error=基準線を扱えない（{a.baseline}: {e.__class__.__name__}）")
+        return 2
 
 
 if __name__ == "__main__":

@@ -382,6 +382,13 @@ mkdir -p "$Q/.claude/rules" && touch "$Q/.claude/rules/functional-integrity.md"
 OUT=$(python3 "$Q/scripts/quality_harness.py" --root "$Q" 2>&1); RC=$?
 expect_exit "配置直後の quality_harness.py が PASS" 0 "$RC"
 
+echo "[検証: 塊G]"
+# 検証担当（塊G）が足した節。verify.sh の設定の監査で、形の崩れた permissions.allow（配列でない）を「問題なし」にしない。
+printf '%s\n' '{"permissions":{"allow":"Bash(*)"}}' > "$VP/.claude/settings.local.json"
+OUT=$(vrun)
+expect_out "allow が配列でない設定（文字列の Bash(*)）は判定不能として ❌" "❌ $VP/.claude/settings.local.json" "$OUT"
+rm -f "$VP/.claude/settings.local.json"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }

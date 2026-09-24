@@ -9,8 +9,10 @@ echo "=== AIDD Kit インストール（版: ${KIT_VERSION}）==="
 
 # 導入前の静的検査（B-24 B03。02_共通/ツール/skill-scan.py。実行せずに読むだけ）。スキル・コマンド・エージェント・
 # Codex 用スキル・hook の配線（settings.json）を走査し、DANGEROUS なら何も導入しない（AIDD_SKILL_SCAN_OK=1 の実行だけ
-# 1 回通す）。CAUTION・UNKNOWN は一覧を出して続ける。hook の本体（.py/.sh）は走査しない（検出規則の自己テスト用の
-# 文字列を含むため。中身は 06_保守者向け/03_回帰テスト/test-hooks.sh で確かめる。指示優先の hook は install_guard.py が走査する）
+# 1 回通す）。CAUTION・UNKNOWN は一覧を出して続ける。hook の本体（.py/.sh）は走査しない: block-destructive.py と
+# secret_patterns.py は止める対象の形（再帰の強制削除・秘密ファイルの読み出し等）を検出規則と
+# 自己テストの例として本文に持つので、走査すると DANGEROUS に当たる。中身は 06_保守者向け/03_回帰テスト/test-hooks.sh で
+# 確かめる。指示優先の 4 本（install_guard.py が配る）は install_guard.py が走査する）
 SCAN_RC=0
 SCAN_OUT=$(python3 "$KIT_DIR/02_共通/ツール/skill-scan.py" --brief "$KIT_DIR/03_ClaudeCode/skills" "$KIT_DIR/03_ClaudeCode/commands" \
   "$KIT_DIR/03_ClaudeCode/agents" "$KIT_DIR/04_Codex/skills" "$KIT_DIR/03_ClaudeCode/hooks/settings.json" 2>&1) || SCAN_RC=$?

@@ -144,9 +144,9 @@ expect_exit "理由（--reason）なしで新しい指摘を基準線に載せ�
 OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" --baseline-write --reason "移行中の旧コード。B-99 で置き換える" 2>&1); RC=$?
 expect_exit "理由付きの初回の --baseline-write は exit 0" 0 "$RC"
 [ "$(wc -l < "$BL" | tr -d ' ')" -eq 1 ] && ok "基準線に 1 件を記録" || ng "基準線に 1 件を記録" "$(wc -l < "$BL") 行"
-[ "$(awk -F'\t' '{print NF}' "$BL")" -eq 5 ] && ok "書式は 規則ID/相対パス/指紋/理由/期限 の 5 列（check_design と同じ先頭 3 列）" || ng "書式が 5 列" "$(cat "$BL")"
+[ "$(awk -F'\t' '{print NF}' "$BL")" -eq 6 ] && ok "書式は 規則ID/相対パス/指紋/#n/理由/期限 の 6 列（check_design と同じ先頭 4 列）" || ng "書式が 6 列" "$(cat "$BL")"
 grep -q "sha256:" "$BL" && ! grep -q "eval(cmd)" "$BL" && ok "3 列目は行そのものでなく指紋（sha256）" || ng "3 列目は指紋" "$(cat "$BL")"
-awk -F'\t' '{print $5}' "$BL" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' && ok "期限（既定 90 日後）を書く" || ng "期限を書く" "$(cat "$BL")"
+awk -F'\t' '{print $6}' "$BL" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' && ok "期限（既定 90 日後）を書く" || ng "期限を書く" "$(cat "$BL")"
 OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" 2>&1); RC=$?
 expect_exit "基準線に載った既知の指摘だけなら exit 0" 0 "$RC"
 expect_out  "既知の件数と前回を表示（件数の推移）" "既知 1（前回 1）" "$OUT"
@@ -163,10 +163,14 @@ printf '%s\n' 'def run(cmd):' '    eval(cmd)' > "$D/app.py"
 OUT=$(AIDD_TODAY=2099-01-01 PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" 2>&1); RC=$?
 expect_exit "期限切れの除外は既知に数えない（exit 1）" 1 "$RC"
 expect_out  "期限切れを表示" "期限なし/期限切れ 1" "$OUT"
-cut -f1-3 "$BL" > "$TMP/bl-noreason.tsv"
+cut -f1-3 "$BL" > "$TMP/bl-noreason.tsv"   # 旧形式（#n 無し・理由なし）
 OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$TMP/bl-noreason.tsv" 2>&1); RC=$?
 expect_exit "理由の無い除外は既知に数えない（exit 1）" 1 "$RC"
-expect_out  "理由なしを表示" "理由なし 1" "$OUT"
+expect_out  "理由なしを表示（旧形式の #n 無しは #1 として照合する）" "理由なし 1" "$OUT"
+printf 'x\n' > "$TMP/bl-short.tsv"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$TMP/bl-short.tsv" 2>&1); RC=$?
+expect_exit "列の足りない基準線は判定不能（exit 2）" 2 "$RC"
+expect_out  "理由は「基準線を読めない（パス）」" "基準線を読めない（$TMP/bl-short.tsv）" "$OUT"
 printf '%s\n' 'def run(cmd):' '    return cmd' > "$D/app.py"
 OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BL" 2>&1); RC=$?
 expect_out  "直した指摘は「解消」として数える" "解消 1" "$OUT"
@@ -190,6 +194,21 @@ grep -q "AKIAIOSFODNN7EXAMPLE" "$BL3" && ng "基準線に秘密値を書かな�
 OUT=$(PATH="$BROKEN:/usr/bin:/bin" bash "$SCAN" "$TMP/proj8" -o "$TMP/report.md" --baseline "$TMP/bl-broken.tsv" --baseline-write --reason x 2>&1); RC=$?
 expect_exit "解析失敗があるときの --baseline-write は exit 2" 2 "$RC"
 [ ! -e "$TMP/bl-broken.tsv" ] && ok "判定不能のときは基準線を書かない" || ng "判定不能のときは基準線を書かない" "書かれた"
+
+echo "[検証: 塊G]"
+# 検証担当（塊G）が足した節。基準線の指紋（規則・パス・行の文面）が同じ新規を既知に紛れさせないこと、壊れた基準線で落ちないこと。
+D="$TMP/projG"; mkdir -p "$D"
+printf '%s\n' 'def run(cmd):' '    eval(cmd)' > "$D/app.py"
+BLG="$TMP/baseline-G.tsv"
+PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BLG" --baseline-write --reason "旧コード" >/dev/null 2>&1
+printf '%s\n' 'def run2(cmd):' '    eval(cmd)' >> "$D/app.py"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$BLG" 2>&1); RC=$?
+expect_exit "同じ文面の eval を別の行に足した新規は既知に紛れさせない（exit 1）" 1 "$RC"
+expect_out  "同じ文面の新規も「新規 1」と数える（既知が前回より増えない）" "新規 1" "$OUT"
+printf '\xff\xfe\x00bad' > "$TMP/bl-bin.tsv"
+OUT=$(PATH="$NOTOOLS_PATH" bash "$SCAN" "$D" -o "$TMP/report.md" --baseline "$TMP/bl-bin.tsv" --baseline-write --reason x 2>&1); RC=$?
+expect_exit "UTF-8 でない基準線への --baseline-write は判定不能（exit 2）" 2 "$RC"
+printf '%s' "$OUT" | grep -q "Traceback" && ng "壊れた基準線で Traceback を出さない" "Traceback が出た（理由も「件数が増える方向」と誤表示）" || ok "壊れた基準線で Traceback を出さない"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

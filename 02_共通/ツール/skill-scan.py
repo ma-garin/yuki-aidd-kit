@@ -19,6 +19,7 @@
              K08 動的な eval（eval 関数・`eval "$(…)"`・new Function・復号やダウンロードを exec）
              K09 既知形式の秘密値（03_ClaudeCode/hooks/secret_patterns.py の値パターン）
              K10 すべての Bash を許す許可（permissions.allow の `Bash(*)`・`Bash`）
+             K11 画面に出ない所（HTML コメント・display:none）で秘密や外部 URL への送信を指示する
   CAUTION    C01 ネットワーク（curl・wget・fetch・requests・リモート MCP）／C02 ファイルの書き込み・削除
              ／C03 環境変数の参照／C04 `npx -y <未知のパッケージ>`（@modelcontextprotocol/ @playwright/ @anthropic-ai/ 以外）
              ／C05 注入の文言・HTML コメント内の指示／C06 広い許可（Write(*)・Bash(rm…)・Bash(sudo…)・allowed-tools の Bash）
@@ -26,6 +27,14 @@
   UNKNOWN    U01 読めない（UTF-8 でない・大きすぎる）／U02 JSON として読めない／U03 シンボリックリンク
              ／U04 パスが無い・検査できるファイルが無い／U05 秘密値の検査部品（secret_patterns.py）が見つからない
   SAFE       上のどれにも当たらない
+
+照合の前処理:
+  - Markdown は説明文の NG 例を数えない: コードブロック・コードスパン・「」『』の引用・行頭が 例:／NG 例:／OK 例:／>
+    の行を空白にしてから照合する。不可視文字（K05）・命令文になる base64（K06）・秘密値（K09）は覆わずに見る。
+  - 行ごとに secret_patterns の正規化（`$'\x72m'`・`${IFS}`・引用の連結 `r""m`・ラッパー剥がし・{a,b}）と、
+    コマンド名の /bin/・/usr/bin/ の接頭辞を落とした形でも照合する。
+  - JSON は構造で見る（scan_json）。permissions.deny の値は常に SAFE。settings*.json と .mcp.json は
+    allow・defaultMode・command 系のキー・MCP の command＋args・値の不可視文字と秘密値だけを判定する。
 
 扱い（呼び出し側。install.sh・install_guard.py）: DANGEROUS は導入しない（環境変数 AIDD_SKILL_SCAN_OK=1 で 1 回だけ通す）。
   UNKNOWN は CAUTION と同じ扱い（一覧を出して導入を続ける。SAFE には数えない）。
@@ -153,6 +162,21 @@ B64_SUSPICIOUS = re.compile(r"curl|wget|bash|/bin/sh|\bsh\b|eval|exec|rm -|https
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 COMMENT_IMPERATIVE_RE = re.compile(r"実行|無視|必ず|ignore|execute|\brun\b|curl|wget|送信", re.IGNORECASE)
 ALLOWED_TOOLS_RE = re.compile(r"^allowed-tools\s*:\s*(.*)$", re.MULTILINE)
+# 説明文の NG 例を数えないための覆い（Markdown だけ。スクリプトの ` はコマンド置換なので覆わない）
+FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
+CODE_SPAN_RE = re.compile(r"(`+)(?!`).+?(?<!`)\1(?!`)")
+QUOTE_JA_RE = re.compile(r"「[^」\n]*」|『[^』\n]*』")
+EXAMPLE_LINE_RE = re.compile(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)?(?:>|(?:NG|OK)\s*例\s*[:：]|例\s*[:：])")
+BIN_PREFIX_RE = re.compile(r"(?<![\w.~$/-])/(?:usr/(?:local/)?)?s?bin/(?=[\w.-])")
+# 画面に出ない所（HTML コメント・display:none・hidden）の送信の指示（K11）
+HIDDEN_ELEM_RE = re.compile(r"<(\w+)\b[^>]*(?:display\s*:\s*none|\bhidden\b)[^>]*>.*?</\1\s*>", re.IGNORECASE | re.DOTALL)
+HIDDEN_SECRET_SEND_RE = re.compile(r"(?:秘密|鍵|id_rsa|\.env|token).*(?:送信|送れ|POST|アップロード|upload|exfil)",
+                                   re.IGNORECASE | re.DOTALL)
+EXT_URL_RE = re.compile(EXT_URL, re.IGNORECASE)
+SEND_WORD_RE = re.compile(r"送信|送れ|送って|送る|POST|アップロード|upload|send|exfil", re.IGNORECASE)
+# JSON: 構造だけで見るファイル（settings*.json・.mcp.json）とコマンドとして判定するキー
+STRUCTURAL_JSON_RE = re.compile(r"^(?:settings(?:\.[\w-]+)*\.json|(?:.*\.)?mcp\.json|\.mcp\.json)$", re.IGNORECASE)
+COMMAND_KEYS = {"command", "apiKeyHelper", "awsAuthRefresh", "awsCredentialExport", "otelHeadersHelper"}
 
 
 class Finding:
@@ -200,33 +224,55 @@ def _b64_hidden(line: str) -> bool:
     return False
 
 
-def scan_lines(res: FileResult, text: str) -> None:
-    for no, line in enumerate(text.splitlines(), 1):
-        chk = line[1:] if no == 1 and line.startswith("﻿") else line   # 先頭の BOM だけは許す
-        if INVISIBLE_RE.search(chk):
-            res.add("DANGEROUS", "K05", no, "不可視文字・双方向制御文字・タグ文字を含む（見えない命令）")
-        hit_rm = False
-        for m in RM_RE.finditer(line):
+def _variants(line: str) -> list[str]:
+    """照合に使う書き換え。secret_patterns の正規化（`$'\\x72m'`・`${IFS}`・引用の連結 `r""m`・ラッパー剥がし・
+    {a,b} の展開）と、コマンド名の /bin/・/usr/bin/ の接頭辞を落とした形・引用符を外した形。"""
+    vs = [line]
+    if _SP is not None and re.search(r"['\"\\$`{]|/s?bin/", line):
+        try:
+            vs += [_SP.normalize(line)] + list(_SP.unwrap_command(line)) + list(_SP._expand_braces(line))
+        except Exception:   # 正規化の失敗で走査を止めない（元の行では照合する）
+            pass
+    extra = []
+    for v in vs:
+        extra.append(BIN_PREFIX_RE.sub("", v))
+        extra.append(BIN_PREFIX_RE.sub("", re.sub(r"[\"'\\]", "", v)))
+    return list(dict.fromkeys(vs + extra))
+
+
+def check_line(res: FileResult, no: int, line: str, prefix: str = "") -> None:
+    """1 行（またはコマンド 1 つ）に DANGEROUS・CAUTION の規則を当てる。"""
+    hit_rm = False
+    for v in _variants(line):
+        for m in RM_RE.finditer(v):
             if _rm_is_rf(m.group(1)):
-                res.add("DANGEROUS", "K02", no, "再帰の強制削除（rm に -r と -f）")
+                res.add("DANGEROUS", "K02", no, prefix + "再帰の強制削除（rm に -r と -f）")
                 hit_rm = True
-        if PS_REMOVE_RE.search(line):
-            res.add("DANGEROUS", "K02", no, "再帰の強制削除（Remove-Item -Recurse -Force）")
+        if PS_REMOVE_RE.search(v):
+            res.add("DANGEROUS", "K02", no, prefix + "再帰の強制削除（Remove-Item -Recurse -Force）")
             hit_rm = True
         for rid, desc, rx in DANGEROUS_RULES:
-            if rx.search(line):
-                res.add("DANGEROUS", rid, no, desc)
+            if rx.search(v):
+                res.add("DANGEROUS", rid, no, prefix + desc)
+    for rid, desc, rx in CAUTION_RULES:
+        if rid == "C02" and hit_rm and not rx.search(RM_RE.sub(" ", line)):
+            continue   # rm -rf は K02 で出したので、同じ行の C02 は重ねない
+        if rx.search(line):
+            res.add("CAUTION", rid, no, prefix + desc)
+    for m in NPX_RE.finditer(line):
+        pkg = m.group(1)
+        if not pkg.startswith(KNOWN_NPX_SCOPES):
+            res.add("CAUTION", "C04", no, prefix + f"npx -y で未知のパッケージを取得して実行（{pkg[:60]}。版と出所を確かめる）")
+
+
+def check_raw(res: FileResult, text: str) -> None:
+    """隠せないもの（不可視文字・命令文になる base64・秘密値）は生の本文で見る（コードスパンの中でも数える）。"""
+    for no, line in enumerate(text.splitlines(), 1):
+        chk = line[1:] if no == 1 and line.startswith("\ufeff") else line   # 先頭の BOM だけは許す
+        if INVISIBLE_RE.search(chk):
+            res.add("DANGEROUS", "K05", no, "不可視文字・双方向制御文字・タグ文字を含む（見えない命令）")
         if _b64_hidden(line):
             res.add("DANGEROUS", "K06", no, "復号すると命令文になる base64 を含む")
-        for rid, desc, rx in CAUTION_RULES:
-            if rid == "C02" and hit_rm and not rx.search(RM_RE.sub(" ", line)):
-                continue   # rm -rf は K02 で出したので、同じ行の C02 は重ねない
-            if rx.search(line):
-                res.add("CAUTION", rid, no, desc)
-        for m in NPX_RE.finditer(line):
-            pkg = m.group(1)
-            if not pkg.startswith(KNOWN_NPX_SCOPES):
-                res.add("CAUTION", "C04", no, f"npx -y で未知のパッケージを取得して実行（{pkg[:60]}。版と出所を確かめる）")
     if _SP is not None:
         for name, no in _SP.find_secret_values(text):
             res.add("DANGEROUS", "K09", no, f"既知形式の秘密値（{name}）を含む")
@@ -234,10 +280,58 @@ def scan_lines(res: FileResult, text: str) -> None:
         res.add("UNKNOWN", "U05", 0, "秘密値の検査部品 secret_patterns.py が見つからない（秘密値は未検査）")
 
 
+def _blank(m: re.Match[str]) -> str:
+    return re.sub(r"[^\n]", " ", m.group(0))
+
+
+def mask_code(text: str) -> str:
+    """コードブロック（``` / ~~~）の中身とコードスパンを空白にする（行の数と位置は保つ）。"""
+    out, fence = [], ""
+    for line in text.split("\n"):
+        m = FENCE_RE.match(line)
+        if fence:
+            if m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence):
+                fence = ""
+            out.append(" " * len(line))
+            continue
+        if m:
+            fence = m.group(1)
+            out.append(" " * len(line))
+            continue
+        out.append(CODE_SPAN_RE.sub(_blank, line))
+    return "\n".join(out)
+
+
+def mask_explanations(text: str) -> str:
+    """説明文の NG 例を数えない: コードブロック・コードスパン・「」『』の引用・行頭が 例:／NG 例:／OK 例:／> の行を空白にする。"""
+    lines = []
+    for line in mask_code(text).split("\n"):
+        lines.append(" " * len(line) if EXAMPLE_LINE_RE.match(line) else QUOTE_JA_RE.sub(_blank, line))
+    return "\n".join(lines)
+
+
+def scan_text(res: FileResult, text: str, markdown: bool) -> None:
+    check_raw(res, text)
+    body = mask_explanations(text) if markdown else text
+    for no, line in enumerate(body.splitlines(), 1):
+        if line.strip():
+            check_line(res, no, line)
+
+
+def scan_hidden(res: FileResult, text: str) -> None:
+    """画面に出ない所（HTML コメント・display:none・hidden）の指示。秘密や外部 URL への送信の指示は DANGEROUS。"""
+    body = mask_code(text)   # コードとして見せている例は除く（「」の引用では隠せない）
+    for rx in (HTML_COMMENT_RE, HIDDEN_ELEM_RE):
+        for m in rx.finditer(body):
+            chunk = m.group(0)
+            no = body.count("\n", 0, m.start()) + 1
+            if HIDDEN_SECRET_SEND_RE.search(chunk) or (EXT_URL_RE.search(chunk) and SEND_WORD_RE.search(chunk)):
+                res.add("DANGEROUS", "K11", no, "画面に出ない所（HTML コメント・display:none）で秘密や外部 URL への送信を指示している")
+            elif COMMENT_IMPERATIVE_RE.search(chunk):
+                res.add("CAUTION", "C05", no, "画面に出ない所（HTML コメント・display:none）に指示がある")
+
+
 def scan_markdown(res: FileResult, text: str) -> None:
-    for m in HTML_COMMENT_RE.finditer(text):
-        if COMMENT_IMPERATIVE_RE.search(m.group(0)):
-            res.add("CAUTION", "C05", text.count("\n", 0, m.start()) + 1, "HTML コメント（画面に出ない所）に指示がある")
     head = text[:4000]
     if head.startswith("---"):
         fm = head.split("---", 2)[1] if head.count("---") >= 2 else ""
@@ -254,17 +348,6 @@ def _line_of(text: str, value: str) -> int:
     return text.count("\n", 0, pos) + 1 if pos >= 0 else 0
 
 
-def _walk_strings(obj, path=""):
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            yield from _walk_strings(v, f"{path}.{k}")
-    elif isinstance(obj, list):
-        for i, v in enumerate(obj):
-            yield from _walk_strings(v, f"{path}[{i}]")
-    elif isinstance(obj, str):
-        yield path, obj
-
-
 def _mcp_servers(data) -> list[tuple[str, dict]]:
     out: list[tuple[str, dict]] = []
     if not isinstance(data, dict):
@@ -278,40 +361,77 @@ def _mcp_servers(data) -> list[tuple[str, dict]]:
     return out
 
 
-def scan_json(res: FileResult, text: str) -> None:
+def scan_json(res: FileResult, text: str, name: str) -> None:
+    """JSON は文字列照合ではなく構造で見る。permissions.deny の値は常に SAFE（止める対象を書いているだけ）。
+    判定するもの: permissions.allow・defaultMode・command 系のキー（hooks・statusLine・apiKeyHelper 等）の中身・
+    MCP の command＋args・package.json の scripts・値の不可視文字と秘密値。
+    settings*.json と .mcp.json はこれだけを見る。その他の JSON（plugin の manifest 等）は値の文字列にも行の規則を当てる。"""
     try:
         data = json.loads(text)
     except ValueError as e:
         res.add("UNKNOWN", "U02", getattr(e, "lineno", 0), "JSON として読めない（形式不明。中身を人が確かめる）")
+        scan_text(res, text, markdown=False)   # 構造で見られないので生の行で見る（判定不能を SAFE にしない）
         return
-    # JSON の \\u エスケープで書いた不可視文字は生の行に現れないので、値を展開して見る
-    for _p, s in _walk_strings(data):
-        if INVISIBLE_RE.search(s):
-            res.add("DANGEROUS", "K05", _line_of(text, s), "不可視文字・双方向制御文字を含む値（\\u エスケープ）")
-    perms = data.get("permissions") if isinstance(data, dict) else None
+    for no, line in enumerate(text.splitlines(), 1):   # 生の不可視文字（キーの中も）
+        if INVISIBLE_RE.search(line[1:] if no == 1 and line.startswith("\ufeff") else line):
+            res.add("DANGEROUS", "K05", no, "不可視文字・双方向制御文字・タグ文字を含む（見えない命令）")
+    structural_only = bool(STRUCTURAL_JSON_RE.match(name))
+
+    def walk(obj, path: tuple) -> None:
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if path[-1:] == ("permissions",) and k == "deny":
+                    continue   # deny に書いた危険な形は止める対象の一覧（常に SAFE）
+                walk(v, path + (k,))
+        elif isinstance(obj, list):
+            for v in obj:
+                walk(v, path + ("[]",))
+        elif isinstance(obj, str):
+            ln = _line_of(text, obj)
+            if INVISIBLE_RE.search(obj):
+                res.add("DANGEROUS", "K05", ln, "不可視文字・双方向制御文字を含む値（\\u エスケープ）")
+            if _SP is not None:
+                for sname, _no in _SP.find_secret_values(obj):
+                    res.add("DANGEROUS", "K09", ln, f"既知形式の秘密値（{sname}）を含む")
+            key = path[-1] if path else ""
+            is_cmd = key in COMMAND_KEYS or (name == "package.json" and len(path) >= 2 and path[-2] == "scripts")
+            if is_cmd or not structural_only:
+                for sub in obj.splitlines() or [obj]:
+                    check_line(res, ln, sub, f"{'.'.join(p for p in path if p != '[]')}: " if is_cmd else "")
+
+    walk(data, ())
+    if _SP is None:
+        res.add("UNKNOWN", "U05", 0, "秘密値の検査部品 secret_patterns.py が見つからない（秘密値は未検査）")
+    if not isinstance(data, dict):
+        return
+    perms = data.get("permissions")
     if isinstance(perms, dict):
-        for item in perms.get("allow") or []:
+        mode = INVISIBLE_RE.sub("", str(perms.get("defaultMode", "")))
+        if mode == "bypassPermissions":
+            res.add("DANGEROUS", "K04", _line_of(text, "defaultMode"), "permissions.defaultMode が bypassPermissions（許可確認を飛ばす）")
+        allow = perms.get("allow")
+        for item in allow if isinstance(allow, list) else []:
             if not isinstance(item, str):
                 continue
-            t = item.replace(" ", "")
+            t = INVISIBLE_RE.sub("", item).replace(" ", "")
             ln = _line_of(text, item)
             if t in ("Bash", "Bash(*)", "Bash(:*)"):
                 res.add("DANGEROUS", "K10", ln, f"permissions.allow の {item} はすべての Bash を許す")
             elif t in ("Write", "Write(*)", "Edit", "Edit(*)", "WebFetch", "WebFetch(*)") or t.startswith(("Bash(rm", "Bash(sudo")):
                 res.add("CAUTION", "C06", ln, f"permissions.allow の {item} は広い")
-    for name, srv in _mcp_servers(data):
+        if "allow" in perms and not isinstance(perms.get("allow"), list):
+            res.add("UNKNOWN", "U02", _line_of(text, "allow"), "permissions.allow が配列でない（形式不明）")
+    if INVISIBLE_RE.sub("", str(data.get("defaultMode", ""))) == "bypassPermissions":
+        res.add("DANGEROUS", "K04", _line_of(text, "defaultMode"), "defaultMode が bypassPermissions（許可確認を飛ばす）")
+    for sname, srv in _mcp_servers(data):
         cmd = " ".join(str(x) for x in [srv.get("command", "")] + list(srv.get("args") or []) if x)
-        ln = _line_of(text, str(srv.get("command") or name))
+        ln = _line_of(text, str(srv.get("command") or sname))
         if cmd:
-            sub = FileResult(res.path)
-            scan_lines(sub, cmd)
-            for f in sub.findings:
-                if f.rule != "U05":
-                    res.add(f.level, f.rule, ln, f"MCP サーバ {name}: {f.detail}")
+            check_line(res, ln, cmd, f"MCP サーバ {sname}: ")
         if srv.get("url") or str(srv.get("type", "")).lower() in ("http", "sse"):
-            res.add("CAUTION", "C01", ln, f"MCP サーバ {name} はリモート（{srv.get('type', 'url')}）。送る内容と出所を確かめる")
+            res.add("CAUTION", "C01", ln, f"MCP サーバ {sname} はリモート（{srv.get('type', 'url')}）。送る内容と出所を確かめる")
         if srv.get("env"):
-            res.add("CAUTION", "C03", ln, f"MCP サーバ {name} に環境変数を渡す（値は平文で書かない）")
+            res.add("CAUTION", "C03", ln, f"MCP サーバ {sname} に環境変数を渡す（値は平文で書かない）")
 
 
 def scan_file(p: Path, shown: str) -> FileResult:
@@ -330,11 +450,16 @@ def scan_file(p: Path, shown: str) -> FileResult:
     except OSError as e:
         res.add("UNKNOWN", "U01", 0, f"読めない（{e.__class__.__name__}）")
         return res
-    scan_lines(res, text)
-    if p.suffix.lower() in (".md", ".markdown", ".mdc"):
+    suffix = p.suffix.lower()
+    if suffix == ".json":
+        scan_json(res, text, p.name)
+        return res
+    markdown = suffix in (".md", ".markdown", ".mdc")
+    scan_text(res, text, markdown)
+    if markdown:
         scan_markdown(res, text)
-    if p.suffix.lower() == ".json" or p.name in (".mcp.json", "settings.json", "settings.local.json"):
-        scan_json(res, text)
+    if markdown or suffix in (".html", ".htm"):
+        scan_hidden(res, text)
     return res
 
 

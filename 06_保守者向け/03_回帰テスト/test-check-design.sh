@@ -323,6 +323,21 @@ reset; cat > "$P/02_共通/ひな形/ui/baseline.css" <<'CSS'
 CSS
 OUT=$(run --baseline "$BL2" --baseline-write 02_共通/ひな形/ui); RC=$?
 expect_exit "件数が減る更新は許可される" 0 "$RC"
+cat >> "$P/02_共通/ひな形/ui/baseline.css" <<'CSS'
+.a { color: red; }
+CSS
+OUT=$(run --baseline "$BL2" 02_共通/ひな形/ui); RC=$?
+expect_exit "同じ文面の NG を足しても既知に紛れない（#n で数える。exit 1）" 1 "$RC"
+cut -f1-3 "$BL2" > "$TMP/baseline-old.tsv"
+reset; cat > "$P/02_共通/ひな形/ui/baseline.css" <<'CSS'
+.a { color: red; }
+CSS
+OUT=$(run --baseline "$TMP/baseline-old.tsv" 02_共通/ひな形/ui); RC=$?
+expect_exit "旧形式（#n 無しの 3 列）の基準線は #1 として読む（exit 0）" 0 "$RC"
+printf '\xff\xfe\x00bad\n' > "$TMP/baseline-bin.tsv"
+OUT=$(run --baseline "$TMP/baseline-bin.tsv" 02_共通/ひな形/ui); RC=$?
+expect_exit "UTF-8 でない基準線は判定不能（exit 2）" 2 "$RC"
+expect_noout "壊れた基準線で Traceback を出さない" "Traceback" "$OUT"
 
 echo "[ケース16: --json が妥当な JSON]"
 reset; cat > "$P/02_共通/ひな形/ui/json.css" <<'CSS'
