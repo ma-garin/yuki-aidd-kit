@@ -61,6 +61,13 @@ description: 段階停止型のE2Eテスト＆不具合修整ワークフロー�
    - テスト実行時に画面のスクリーンショットおよび動画（`video: 'on'`, `screenshot: 'on'`）を自動取得し、指定ディレクトリ（`e2e/artifacts/` 等）に保存すること。
    - テスト結果とエラー詳細をJSON形式で出力するレポーター設定（`outputFile: 'e2e/results/results.json'` 等）を含めること。
    - 失敗時のトレースを保存すること（`trace: 'retain-on-failure'`）。ステップ4のlocator破損の修復とflaky判定はこのトレースを見て行う。
+   - **アクセシビリティ**: 画面・主要な状態（一覧／編集中／エラー表示／モーダル開など）ごとに `@axe-core/playwright` の
+     `new AxeBuilder({ page }).analyze()` を走らせ、`impact` が `serious` または `critical` の違反があれば FAIL にする
+     （`minor`/`moderate` は記録のみ）。既存画面で今回のスコープ外の違反は `references/axe-exclusions.md` の形式で
+     規則ID・理由・期限を書いた除外リストをプロジェクト側の docs 配下（ファイル名は任意）に作り、期限切れの項目は
+     除外せず FAIL に含める（放置の温床にしない）。`@axe-core/playwright` は devDependency に留め、単一HTMLの
+     出荷物（`02_共通/ひな形/ui/` 等）には組み込まない。コントラストは `check_design.py` の色系検査と重なるが、
+     実行時の実測である axe の結果を正とする（check_design は直値の機械判定、axe は描画結果の判定）。
 4. スクリプトファイルおよび設定ファイルの作成が完了したら、絶対にスクリプトを実行せずに、「ステップ2完了」と報告してプロセスを完全に終了する。
 
 ## ステップ3: 安全なテスト実行（実行フェーズ）

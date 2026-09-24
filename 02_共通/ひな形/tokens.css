@@ -64,9 +64,18 @@
 
   /* ── 動き: 0.12〜0.3 秒 ── */
   --motion-fast: .12s;  --motion-normal: .2s;  --motion-slow: .3s;
+  --motion-loop: 1.2s;  /* skeleton 等の繰り返しアニメーション */
+  --motion-spin: 1s;    /* スピナーの 1 周 */
 
   /* ── 触れる大きさ ── */
   --tap-min: 44px;
+
+  /* ── 重ね順: この 5 段だけを使う（check_design.py D15） ── */
+  --z-base:     0;
+  --z-sticky:   10;   /* ヘッダー等の position: sticky */
+  --z-dropdown: 30;   /* ツールチップ・ポップオーバー・モバイルの一時的な重ね（同格） */
+  --z-modal:    100;  /* モーダル背景・本体 */
+  --z-toast:    1000; /* トースト（最前面） */
 }
 
 /* ── ダーク: 変数名は変えず値だけ上書き（メディアクエリと data-theme の両対応が必須） ── */

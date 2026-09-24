@@ -11,9 +11,14 @@
 モード:
   test_metrics.py [--level UT|IT|ST|UAT]     status。指標と検知を 3 層で出す。常に exit 0（情報提供）
   test_metrics.py --gate                     TESTING_STRATEGY.md §7 の表を読み基準ごとに判定。exit 0 進める / 1 進めない / 2 判定できない・基準なし
+                                             system_test_cases.csv の「根拠の版」（例 REQ-F-001@a1b2c3d。空可）が上流の現在の版と
+                                             食い違う PASS は「未検証」として合格率の分子から外す（消化率には数える）
   test_metrics.py --history                  docs/test/metrics-history.tsv に 1 行追記し、前回との差分を出す
   test_metrics.py --into <report.md>         <!-- metrics:begin/end --> の間を §2 の表と基準評価で置き換える
 結果の語彙: pass / fail / blocked / skip / 未実施（UAT は 合 / 否 も可）。語彙外は unread。
+根拠の版: 版は隣の section_hash.py（trace-check.sh の C7 と共用）が docs/lifecycle の ID の定義単位から出す。
+  `python3 scripts/section_hash.py hash docs/lifecycle REQ-F-001` の出力をそのまま貼る（手で作らない）。
+  版を確かめられない（書式不正・定義が無い・section_hash.py が無い）ものも未検証に数える（判定不能を合格に数えない）。
 """
 from __future__ import annotations
 
@@ -26,6 +31,12 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import section_hash         # 版の計算は trace-check.sh（C7）と共用する
+except ImportError:             # 配布先で隣に無い場合。根拠の版がある PASS は未検証に数える
+    section_hash = None
 
 LEVELS = ("UT", "IT", "ST", "UAT")
 TEST_ID_RE = re.compile(r"^(UT|IT|ST|UAT)-(\d{3})$")
@@ -65,6 +76,7 @@ class Record:
     assignee: str
     group: str
     source: str
+    basis: str = ""             # 根拠の版（CSV の「根拠の版」列。例 REQ-F-001@a1b2c3d）
 
     @property
     def executed(self) -> bool:
@@ -102,6 +114,7 @@ class Metrics:
     skipped: int = 0
     not_run: int = 0
     unread: int = 0
+    unverified: int = 0         # 根拠の版が現在と違う PASS（--gate のときだけ数える）
     defects_known: bool = False
     defects_total: int = 0
     defects_open: int = 0
@@ -117,7 +130,7 @@ class Metrics:
 
     @property
     def pass_rate(self) -> float | None:
-        return None if not self.executed else self.passed / self.executed * 100
+        return None if not self.executed else (self.passed - self.unverified) / self.executed * 100
 
     @property
     def defect_density(self) -> float | None:
@@ -252,22 +265,61 @@ def read_csv(root: Path) -> list[Record]:
                 raw = row.get("結果") or ""
                 grp = next((row.get(g) or "" for g in ("ロール", "対象機能") if row.get(g)), "")
                 out.append(Record(tid, level, normalize_result(raw), raw, parse_date(row.get("実施日") or ""),
-                                  (row.get("実施者") or "").strip(), grp.strip(), p.name))
+                                  (row.get("実施者") or "").strip(), grp.strip(), p.name,
+                                  (row.get("根拠の版") or "").strip()))
         break
     return out
 
 
 # ---- 集計と検知 -----------------------------------------------------------------------------
 
-def compute(records: list[Record], defects: list[Defect], known: bool) -> Metrics:
+def compute(records: list[Record], defects: list[Defect], known: bool, unverified: frozenset = frozenset()) -> Metrics:
     c = Counter(r.result for r in records)
     return Metrics(
         total=len(records), executed=c[PASS] + c[FAIL], passed=c[PASS], failed=c[FAIL],
         blocked=c[BLOCKED], skipped=c[SKIP], not_run=c[NOT_RUN], unread=c[UNREAD],
+        unverified=sum(1 for r in records if r.result == PASS and r in unverified),
         defects_known=known, defects_total=len(defects),
         defects_open=sum(1 for d in defects if d.open),
         defects_severe_open=sum(1 for d in defects if d.open and d.severe),
     )
+
+
+BASIS_RE = re.compile(r"^((?:REQ-F|REQ-N|RFD|UAT|OPS|DEF|BD|DD|UT|IT|ST|T)-\d{3})@([0-9a-f]{7})$")
+
+
+def check_basis(records: list[Record], root: Path) -> list[tuple[Record, str]]:
+    """根拠の版が現在の版と食い違う（または確かめられない）PASS を (レコード, 理由) で返す。空欄は対象外（従来どおり）。"""
+    targets = [r for r in records if r.result == PASS and r.basis]
+    if not targets:
+        return []
+    if section_hash is None:
+        return [(r, "section_hash.py が無く版を確かめられない") for r in targets]
+    d = root / "docs" / "lifecycle"
+    cur = section_hash.current_hashes(section_hash.lifecycle_files(d)) if d.is_dir() else {}
+    out = []
+    for r in targets:
+        why = []
+        for ent in (e for e in re.split(r"[\s,、，;()（）]+", r.basis) if e):
+            m = BASIS_RE.match(ent)
+            if not m:
+                why.append(f"書式不正「{ent}」")
+            elif m.group(1) not in cur:
+                why.append(f"{m.group(1)} の定義が無い")
+            elif cur[m.group(1)] != m.group(2):
+                why.append(f"{m.group(1)}: 記録 {m.group(2)} → 現在 {cur[m.group(1)]}")
+        if why:
+            out.append((r, "・".join(why)))
+    return out
+
+
+def find_unverified(stale: list[tuple[Record, str]], gate: bool) -> list[Finding]:
+    if not stale:
+        return []
+    ex = "、".join(f"{r.id}（{why}）" for r, why in stale[:3]) + ("　ほか" if len(stale) > 3 else "")
+    how = "合格率の分子から外した" if gate else "--gate では合格率の分子から外す"
+    return [Finding("unverified", f"根拠の版が現在の上流と違う PASS {len(stale)} 件＝未検証（{how}。消化率には数える）",
+                    ex + "。上流の変更に合わせて再テストし、根拠の版を section_hash.py hash の値に更新する")]
 
 
 def find_unread(records: list[Record]) -> list[Finding]:
@@ -538,15 +590,17 @@ def main() -> int:
         print("  雛形: ./00_導入/02_プロジェクト配布/init-lifecycle.sh <対象> ／ ./00_導入/02_プロジェクト配布/init-test-docs.sh <対象>")
         return 2 if a.gate else 0
 
+    stale = check_basis(records, root)
+    unv = frozenset(r for r, _ in stale) if a.gate else frozenset()
     by_level: dict[str, Metrics] = {}
     for lv in LEVELS:
         rs = [r for r in records if r.level == lv]
         if rs:
-            by_level[lv] = compute(rs, [d for d in defects if d.level == lv], known)
-    total = compute(records, defects, known)
+            by_level[lv] = compute(rs, [d for d in defects if d.level == lv], known, unv)
+    total = compute(records, defects, known, unv)
     by_level["ALL"] = total
 
-    findings: list[Finding] = find_unread(records) + find_severe(defects) + find_stale(defects, today) + find_bias(records, total) + find_duplicates(records)
+    findings: list[Finding] = find_unread(records) + find_unverified(stale, a.gate) + find_severe(defects) + find_stale(defects, today) + find_bias(records, total) + find_duplicates(records)
     fc = forecast(records, total, today)
     if fc:
         findings.append(fc)
@@ -586,6 +640,8 @@ def main() -> int:
             print(f"  手動 {mt}")
         for dt in dropped:
             print(f"  読まず {dt}")
+        if total.unverified:
+            print(f"  未検証 {total.unverified} 件（根拠の版が現在の上流と違う PASS。合格率の分子から外した）")
         print(verdict_line(code, evals, total))
         print(f"詳細: {report}")
         return code

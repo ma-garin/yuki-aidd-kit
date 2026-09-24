@@ -78,6 +78,7 @@ description: プロジェクトのテスト活動全体（テストレベル L1�
 | 機能契約ハーネス | UI だけあって実行経路が無い機能、critical/high に失敗系テストが無い機能、契約未登録の新モジュール | `scripts/quality_harness.py` + `quality/feature_contracts.yml`（`references/feature-contracts.md`） |
 | ゲートの無断実行 | 要求されていない pytest / make test | `hooks/block-gates.py` |
 | 秘密情報 | API キー等の混入 | `scripts/pre-commit` |
+| セキュリティ走査 | 依存の既知脆弱性・危険なコード・秘密の混入をマイルストーンで見逃す（未導入の走査器は合格に数えない） | `02_共通/ツール/security-scan.sh` + `commands/security-audit.md` |
 
 ## ISO/IEC/IEEE 29119 文書との対応（雛形: `02_共通/ひな形/test/`、配置: `./00_導入/02_プロジェクト配布/init-test-docs.sh <対象>`）
 

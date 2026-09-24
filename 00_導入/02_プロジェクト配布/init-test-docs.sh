@@ -4,7 +4,7 @@
 #   docs/test/      TESTING_STRATEGY / DEFINITION_OF_DONE / iso29119-*（計画・設計仕様・完了報告・インシデント）
 #   01_利用者向け資料/           system_test_cases.csv（e2e-cycle ステップ1 の出力形式）
 #   quality/        feature_contracts.yml
-#   scripts/        quality_harness.py / ui-hash.py / pre-commit-ui-gate.sh / test_metrics.py / test-metrics.sh
+#   scripts/        quality_harness.py / ui-hash.py / pre-commit-ui-gate.sh / test_metrics.py / test-metrics.sh / section_hash.py（test_metrics.py が隣から import する）
 #   --ci            .github/workflows/test-gates.yml
 # 既存ファイルは上書きしない。運用は skills/test-strategy/SKILL.md。
 set -e
@@ -24,7 +24,7 @@ for f in TESTING_STRATEGY.md DEFINITION_OF_DONE.md iso29119-test-plan.md iso2911
 done
 put "$KIT_DIR/02_共通/ひな形/test/system_test_cases.csv" "$TARGET/docs/system_test_cases.csv"
 put "$KIT_DIR/02_共通/ひな形/test/feature_contracts.yml" "$TARGET/quality/feature_contracts.yml"
-for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh test_metrics.py test-metrics.sh; do
+for s in quality_harness.py ui-hash.py pre-commit-ui-gate.sh test_metrics.py test-metrics.sh section_hash.py; do
   put "$KIT_DIR/02_共通/ツール/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"
 done
 mkdir -p "$TARGET/docs/quality/evidence"

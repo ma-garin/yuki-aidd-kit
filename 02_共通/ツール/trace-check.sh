@@ -7,6 +7,13 @@
 # 使い方:
 #   ./scripts/trace-check.sh [対象ディレクトリ] [-o 詳細レポートの出力先]
 #   （既定: 対象=docs/lifecycle / 詳細=./trace-check-report.md）
+#   ./scripts/trace-check.sh [対象ディレクトリ] --impact <ID>    ID を上流に持つ下流を連鎖で一覧（変更前に見る）
+#   ./scripts/trace-check.sh [対象ディレクトリ] --refresh <ID>   追跡表の ID の記録を現在の版に書き換える
+#                                                               （保守者の再確認の記録。AI は打たない＝AI は承認しない）
+#
+# 版つきリンク（C7）: 追跡表のセルに `REQ-F-001@a1b2c3d`（@ 以降は任意）と書くと、確認時点の上流の版を記録したことになる。
+#   版は隣の section_hash.py が出す（ID の定義単位の正規化後 sha256 先頭 7 桁。単位の規約は section_hash.py）。
+#   現在の版と食い違うリンクは suspect として NG。@ の無いリンクは従来どおり（C7 の対象外）。
 #
 # 出力は context-compression の3層要約に従う。
 # 会話・CI ログには「結論と根拠」だけを出し、全件は詳細レポートへ書き出す。
@@ -14,15 +21,34 @@
 
 DIR="docs/lifecycle"
 REPORT="./trace-check-report.md"
+MODE=""; MODE_ID=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SECTION_HASH="$SCRIPT_DIR/section_hash.py"
 
+usage() { echo "使い方: $0 [対象ディレクトリ] [-o 詳細レポート出力先] | [対象ディレクトリ] --impact <ID> | [対象ディレクトリ] --refresh <ID>"; }
 while [ $# -gt 0 ]; do
   case "$1" in
-    -o) REPORT="$2"; shift 2 ;;
-    -h|--help)
-      echo "使い方: $0 [対象ディレクトリ] [-o 詳細レポート出力先]"; exit 0 ;;
+    -o|--impact|--refresh)
+      # 値が無い・空・次のオプションなら止める（shift 2 の失敗で同じ引数を回り続けないため）
+      if [ $# -lt 2 ] || [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
+        echo "❌ $1 には値を渡す"; usage; exit 2
+      fi
+      if [ "$1" = "-o" ]; then REPORT="$2"; else MODE="${1#--}"; MODE_ID="$2"; fi
+      shift 2 ;;
+    -h|--help) usage; exit 0 ;;
     *) DIR="$1"; shift ;;
   esac
 done
+
+# --impact / --refresh は検査をせず section_hash.py に渡す（版の計算を trace-check と test_metrics で共用するため）
+if [ -n "$MODE" ]; then
+  if [ -z "$MODE_ID" ]; then echo "❌ --$MODE には ID を渡す（例: --$MODE REQ-F-001）"; exit 2; fi
+  if [ ! -d "$DIR" ]; then echo "❌ 対象ディレクトリが存在しない: $DIR"; exit 1; fi
+  if [ ! -f "$SECTION_HASH" ] || ! command -v python3 >/dev/null 2>&1; then
+    echo "❌ --$MODE には python3 と隣の section_hash.py が要る（$SECTION_HASH）"; exit 2
+  fi
+  exec python3 "$SECTION_HASH" "$MODE" "$DIR" "$MODE_ID"
+fi
 
 if [ ! -d "$DIR" ]; then
   echo "ℹ 対象ディレクトリが存在しないためスキップ: $DIR"
@@ -144,7 +170,7 @@ if [ -n "$MATRIX" ]; then
     function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
     /^\|/ {
       n = split($0, c, "|")
-      for (i = 1; i <= n; i++) c[i] = trim(c[i])
+      for (i = 1; i <= n; i++) { c[i] = trim(c[i]); gsub(/@[^ ,|]*/, "", c[i]) }   # 版つきリンク（@ 以降）は外して読む
       if (c[2] ~ /REQ-ID/) {                      # ヘッダ行: 列位置を学習する
         delete col
         for (i = 2; i < n; i++) {
@@ -184,6 +210,17 @@ if [ -n "$MATRIX" ]; then
     grep -qx "$id" "$TMP/in_matrix.txt" || \
       printf '孤立テスト\t%s\t%s\n' "$id" "追跡表から参照されていない（検証対象の要件が不明）" >> "$TMP/ng.tsv"
   done
+
+  # C7: suspect（版つきリンク `ID@版` の記録が、上流の現在の版と食い違う）。@ が無ければ従来どおり対象外
+  if grep -Eq '^\|.*(REQ-F|REQ-N|RFD|UAT|OPS|DEF|BD|DD|UT|IT|ST|T)-[0-9]{3}@' "$MATRIX"; then
+    if [ -f "$SECTION_HASH" ] && command -v python3 >/dev/null 2>&1; then
+      if ! python3 "$SECTION_HASH" check "$DIR" --matrix "$MATRIX" >> "$TMP/ng.tsv" 2>"$TMP/c7.err"; then
+        printf 'C7 suspect\t%s\t%s\n' "$MATRIX" "判定不能（section_hash.py が失敗: $(head -1 "$TMP/c7.err")）。判定不能は合格に数えない" >> "$TMP/ng.tsv"
+      fi
+    else
+      printf 'C7 suspect\t%s\t%s\n' "$MATRIX" "判定不能（版つきリンクがあるが python3 か隣の section_hash.py が無い: $SECTION_HASH）。判定不能は合格に数えない" >> "$TMP/ng.tsv"
+    fi
+  fi
 else
   printf '追跡表なし\t-\t%s\n' "*traceability*.md が $DIR に無い。要件とテストの突合ができない" >> "$TMP/warn.tsv"
 fi

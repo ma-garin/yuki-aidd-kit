@@ -44,6 +44,7 @@
 | 表に無い・迷った | `<YOUR_WORKSPACE>/yuki-aidd-kit/INDEX.md`（全資産の地図。**毎回は読まない**） |
 
 - grep/glob で絞ってから読む。ただし変更対象の依存先・呼び出し元は読む（不整合な修正の方が高くつく）
+- `.claude/rules/` の `decisions-*.md`（採用済み ADR・lessons の要旨。retro で書き出す）は、frontmatter の paths に当たるファイルを扱うときに読む。捨てた案を再提案しない（Claude Code は paths で自動で載る）
 - 指示された範囲はマージまで完遂する。セッション分割は提案しない
 
 ## Codex では機械が止めないもの（効くふりをしない）

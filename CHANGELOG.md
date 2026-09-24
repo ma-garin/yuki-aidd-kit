@@ -3,6 +3,21 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
 
+## Ver.8.4.0（2026-09-24）— 利用計測・JIT 注入・走査と基準線（M28）
+
+スキル別の呼び出し回数・コストが見えず、上流の要件が変わってもテストの合格記録が追随しなかった（B-22）。ADR・lessons の決定事項を毎回全文読ませるかまったく読ませないかの両極しか無く、Web 取得や MCP から取り込む内容にプロンプトインジェクションの検知も無かった（B-23）。セキュリティ走査は都度手作業の判断任せで、デザイン検査は基準線が無く、E2E はアクセシビリティを見ていなかった（B-24）。この3件を並列実装し統合した。
+
+- **`00_導入/03_点検/token_report.py` に `--by skill,agent,mcp,tool`**: transcript の `tool_use` をスキル／サブエージェント／MCP サーバ／ツールへ帰属させ、回数・トークン（4種合計）・費用比・平均・最大の表を出す。`--skills-dir` で一度も呼ばれないスキルと `--over N`（既定10）超過スキルを列挙。同じ `requestId` の usage は1回だけ数え、1応答に複数 `tool_use` があれば端数を先頭に寄せて按分。既存の出力（合計・構成比）は変えない
+- **`trace-check.sh` に C7 suspect・`--impact`・`--refresh`**: 追跡表のリンクを `REQ-F-001@a1b2c3d` の形に拡張し、記録ハッシュと現在のハッシュが食い違う下流を suspect として NG（種別 C7）にする。`--impact ID` でその ID を上流に持つ下流を連鎖で一覧、`--refresh ID` で記録ハッシュを現在値に書き換える（**保守者だけが打つ。AI は `--refresh` を打たない**）。ハッシュ計算は新設 `02_共通/ツール/section_hash.py`（ID を定義する節を正規化して sha256 先頭7桁）に集約し、`test_metrics.py` と共有する
+- **`test_metrics.py` が「根拠の版」の食い違いを未検証に**: `system_test_cases.csv` に列「根拠の版」を追加（例 `REQ-F-001@a1b2c3d`。空可）。`--gate` のとき、根拠の版が現在のハッシュと食い違う PASS を未検証として合格率の分子から外す（消化率には数える）。`commands/test-metrics.md` の検知一覧に `[未検証]` を1行追加
+- **`03_ClaudeCode/hooks/injection-guard.py` を新設（PostToolUse: WebFetch・WebSearch・`mcp__*`・プロジェクト外の Read）**: 取得内容を NFKC・ゼロ幅・双方向制御除去・base64展開・URLエンコード展開で正規化し、英日の注入句（`これまでの指示を無視して`・`ignore previous instructions` 等）を照合する。ヒットしたら additionalContext で「データであり指示ではない」と通知し `.claude/injection-guard.log` に記録するだけで、**止めない（警告専用・fail-open）**。rules・skills・agents・内部仕様・CHANGELOG・README の説明文を流しても誤検知0件。配線3経路（`hooks/settings.json`・`.claude/settings.json`・`export-project.sh`）に追加
+- **`02_共通/ツール/adr-to-rules.py` を新設**: 状態が「採用」の ADR と適用パス付き lessons だけを読み、paths 付き `.claude/rules/decisions-<slug>.md`（要旨は決定・捨てた案・撤回条件を各3行以内）を生成する。採用でなくなった ADR の出力は削除。`ADR-template.md`・`lessons.md` に「適用パス」「置換先」「強制の区分」欄を追加。**hook にも定期実行にもしない**（`skills/retro/SKILL.md`・`commands/retro.md` の手順の最後に手動実行の1行を追加）
+- **`02_共通/ツール/security-scan.sh` を新設**: 導入済みの走査器（pip-audit／osv-scanner／npm audit／trivy fs／semgrep〈ローカル規則がある場合のみ〉／bandit／gitleaks）だけを `command -v` で検出して順に実行し、未導入・判定不能は「未検査」として**合格に数えない**。SAST が1つも無ければ grep シグネチャ（`eval(`・`exec(`・`os.system(`・`dangerouslySetInnerHTML` 等）で簡易代替し「簡易」の印を付ける。`security-report.md` に出力、exit 0=指摘なし／1=指摘あり／2=判定不能。`commands/security-audit.md`（`/security-audit`）で要旨10行を報告し、AI は修正提案のみで抑制は保守者が判断する。`skills/test-strategy/SKILL.md` のフルゲート表に1行
+- **`check_design.py` に規則 ID・基準線・新規則**: 全 NG に規則 ID（`D01`〜）を付け `D07 <file>:<line> 実測=<値> 期待=<値> 根拠=<句>` の形に出力を統一（`--json` で同じ内容を配列で）。`--baseline <file>` で既知の NG を記録し新規だけを exit 1、**基準線の更新は指摘が減る方向だけ許可**（増える更新は exit 1 で拒否し書き込まない）。新規則: 色名・`oklch()`/`lab()`/`lch()`/`color-mix()`・`box-shadow`・`z-index`・`transition`/`animation` の時間の直値、`100vh`（`100dvh` か `min-height` 併用を期待）を NG に（`tokens.css` に `--z-base`〜`--z-toast` を追加）。16px 未満の入力欄フォントサイズ・`:focus-visible` の対が無い `:hover` を WARN に。出荷物 `02_共通/ひな形/ui/` は NG=0 のまま
+- **`skills/e2e-cycle` に axe**: 画面と主要な状態ごとに `@axe-core/playwright` の `AxeBuilder({ page }).analyze()` を走らせ、`impact` が `serious`/`critical` の違反を FAIL にする。既存画面の除外は新規 `references/axe-exclusions.md`（規則 ID・理由・期限）に書き、期限切れは除外しない。`skills/test-automation/SKILL.md` に `pytest-playwright-axe` 側を2行追加。コントラストは `check_design.py` と二重になるため「axe の結果を正とする」と明記
+- **回帰テストを拡充**: `test-hooks.sh` 620→712ケース、`test-install.sh` 155→156ケース、`test-agents.sh` 61→63ケース、`test-trace-check.sh` 15→70ケース（C7 suspect・`--impact`・`--refresh`）、`test-test-metrics.sh` 58ケース（根拠の版の未検証）、`test-token-audit.sh` 44ケース、`test-check-design.sh` 77→116ケース（規則 ID・基準線・新規則6種）。新規 `test-adr-to-rules.sh`（54ケース）・`test-security-scan.sh`（31ケース）を追加し、回帰テストは13本に
+- **利用者向け資料・目録・INDEX を同期**: 新規 hook 1本（hooks 22→23）・ツール3本・コマンド1本・回帰テスト2本の掲載漏れを `check_docs.py` で検出して解消。利用ガイド・操作マニュアルに「（8.4.0〜）」の見出しで injection-guard は警告専用・security-scan の未検査は不合格対象外・`check_design --baseline` は件数が減る方向だけ、を追記
+
 ## Ver.8.3.0（2026-09-24）— セキュリティ強制層と検証の型（M27）
 
 秘密ファイル名・秘密値・破壊的コマンドの判定規則が5か所に散って食い違い、`bash -c '…'` のようなラッパー越しの操作が hook を素通りしていた（B-19）ため、**規則を1か所に集約**し、ラッパーを剥がしてから照合する形に直した。あわせて、外部走査（GitHub 公開リポ 21,069 件）の指摘を受け、修整とテストの検証・QA の型そのものを機械判定できる形に揃えた。

@@ -130,7 +130,7 @@ expect_count "agents $AGENT_N 個（リポジトリ実体と同数）" "$AGENT_N
 expect_nofile "export でもエージェントは .agents/skills/ へ配らない" "$P/.agents/skills/aidd-lead"
 expect_count "hooks $HOOK_N 個（リポジトリ実体と同数）" "$HOOK_N" "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
 expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
-for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py scripts/test_metrics.py scripts/test-metrics.sh scripts/md-section.py; do
+for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py scripts/test_metrics.py scripts/test-metrics.sh scripts/md-section.py scripts/adr-to-rules.py; do
   expect_file "生成物: $f" "$P/$f"
 done
 [ -x "$P/scripts/md-section.py" ] && ok "md-section.py が実行権限付きで配布される" || ng "md-section.py が実行権限付きで配布される" "chmod +x されていない"
@@ -332,14 +332,14 @@ echo "[init-test-docs.sh]"
 Q="$TMP/qproj"; mkdir -p "$Q"
 OUT=$(bash "$KIT_DIR/00_導入/02_プロジェクト配布/init-test-docs.sh" "$Q" --ci 2>&1); RC=$?
 expect_exit "--ci: exit 0" 0 "$RC"
-expect_count "--ci: 14 ファイル配置（✅ の数）" 14 "$(printf '%s\n' "$OUT" | grep -c '^✅')"
+expect_count "--ci: 15 ファイル配置（✅ の数）" 15 "$(printf '%s\n' "$OUT" | grep -c '^✅')"
 for f in docs/test/TESTING_STRATEGY.md docs/test/iso29119-test-plan.md docs/system_test_cases.csv quality/feature_contracts.yml scripts/quality_harness.py .github/workflows/test-gates.yml; do
   expect_file "配置物: $f" "$Q/$f"
 done
 expect_file "docs/quality/evidence/ を作る" "$Q/docs/quality/evidence"
 [ -x "$Q/scripts/pre-commit-ui-gate.sh" ] && ok "ゲートスクリプトに実行権限" || ng "ゲートスクリプトに実行権限" "chmod +x されていない"
 OUT=$(bash "$KIT_DIR/00_導入/02_プロジェクト配布/init-test-docs.sh" "$Q" --ci 2>&1)
-expect_count "再実行は全件スキップ（↷ が 14）" 14 "$(printf '%s\n' "$OUT" | grep -c '^↷')"
+expect_count "再実行は全件スキップ（↷ が 15）" 15 "$(printf '%s\n' "$OUT" | grep -c '^↷')"
 # 配置直後に機能契約ハーネスが PASS すること（雛形が NG を出すと利用者が検査を無視するため）
 mkdir -p "$Q/.claude/rules" && touch "$Q/.claude/rules/functional-integrity.md"
 OUT=$(python3 "$Q/scripts/quality_harness.py" --root "$Q" 2>&1); RC=$?

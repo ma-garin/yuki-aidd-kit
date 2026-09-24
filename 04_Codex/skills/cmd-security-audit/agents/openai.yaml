@@ -1,0 +1,3 @@
+display_name: "/security-audit"
+short_description: "/security-audit — 導入済みの無料走査器によるセキュリティ監査"
+allow_implicit_invocation: true

@@ -14,7 +14,7 @@
   .row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
   .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); }
   .empty-host { border: 1px dashed var(--color-border); border-radius: var(--radius-md); }
-  .theme-btn { position: fixed; top: var(--space-4); right: var(--space-4); z-index: 20; }
+  .theme-btn { position: fixed; top: var(--space-4); right: var(--space-4); z-index: var(--z-dropdown); }
   .pos { position: relative; }
   @media (max-width: 480px) { .theme-btn { position: static; margin: var(--space-4) var(--space-4) 0; } }
 </style>

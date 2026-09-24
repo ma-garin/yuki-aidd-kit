@@ -19,6 +19,9 @@ description: "/token-check — トークン節約の仕組みが効いている�
    - `/usage` — スキル・サブエージェント・MCP 別の消費。「キャッシュミス」「長コンテキスト」のフラグが出ていれば `/clear` の頻度を上げる
    - `/doctor` — CLAUDE.md の削減案
 3. 実測が出たら `docs/lessons.md` の週次表に 1 行残す（`rules/model-routing.md`「測る」）
+4. 何に使ったかを数えるときは `python3 00_導入/03_点検/token_report.py --by skill,agent,mcp,tool [セッションの JSONL]` を実行する（省略時は最新セッション。サブエージェントの transcript も合算）
+   - 区分・名前・回数・トークン・費用比・平均・最大の表が出る。1 応答に tool_use が複数あれば usage を等分し、同じ requestId は 1 回だけ数える
+   - `--skills-dir 03_ClaudeCode/skills` で一度も呼ばれないスキル、`--over N`（既定 10）で 1 セッションに N 回を超えたスキルを出す（事後に読むだけで、常時記録や外部送出はしない）
 
 ## 何が自動で効いているか（点検の対象）
 

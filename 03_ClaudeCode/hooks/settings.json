@@ -184,6 +184,17 @@
             "command": "bash ~/.claude/hooks/post-write-html.sh"
           }
         ]
+      },
+      {
+        "matcher": "WebFetch|WebSearch|mcp__.*|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/injection-guard.py",
+            "timeout": 5,
+            "statusMessage": "取得内容に埋め込まれた指示を確認中"
+          }
+        ]
       }
     ],
     "Stop": [

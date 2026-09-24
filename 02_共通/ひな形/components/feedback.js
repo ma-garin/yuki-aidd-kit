@@ -45,7 +45,7 @@
   }
 
   const CSS = `
-.toast-host { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 1000;
+.toast-host { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: var(--z-toast);
   display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2, 8px);
   width: min(360px, calc(100vw - var(--space-8, 32px))); pointer-events: none; }
 .toast { display: flex; align-items: flex-start; gap: var(--space-3, 12px); padding: var(--space-3, 12px) var(--space-4, 16px);
@@ -60,7 +60,7 @@
 .toast-error { border-color: var(--color-critical-border, #F4B4B4); } .toast-error .toast-icon { color: var(--color-critical, #D32F2F); }
 .toast-info  .toast-icon { color: var(--color-info, #0288D1); }
 .toast-busy  .toast-icon { color: var(--color-text-secondary, #616161); }
-.toast-icon-spin .icon { animation: toast-spin 1s linear infinite; }
+.toast-icon-spin .icon { animation: toast-spin var(--motion-spin) linear infinite; }
 @keyframes toast-spin { to { transform: rotate(360deg); } }
 .toast-body { flex: 1; min-width: 0; }
 .toast-message { margin: 0; font-weight: 600; }
