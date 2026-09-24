@@ -1380,6 +1380,12 @@ expect_absent "記録に GitHub トークンの値（の一部も）を書かな
 expect_absent "記録に AWS キーの値（の一部も）を書かない" "${FAKE_AWS:0:12}" "$(cat "$HDL")"
 expect_absent "記録に password= の値を書かない" "hunter2" "$(cat "$HDL")"
 expect_contains "伏字は *** で、残りのコマンドは読める" 'DB_PASSWORD=*** echo *** *** && git reset --hard' "$(tail -1 "$HDL")"
+KEYH="-----BEGIN OPENSSH ""PRIVATE KEY-----"
+N=$(hd_n); python3 -c 'import json,sys;print(json.dumps({"tool_name":"Bash","tool_input":{"command":"git reset --hard; cat <<E\n"+sys.argv[1]+"\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQ\nNOENDLINE"}}))' "$KEYH" | python3 "$HOOKS/block-destructive.py" >/dev/null
+expect_eq "END の無い秘密鍵入りのコマンドの deny も 1 行増える" "$((N+1))" "$(hd_n)"
+expect_absent "END が無ければ BEGIN 以降を全部伏せる（鍵の本文を残さない）" "b3BlbnNzaC1rZXkt" "$(tail -1 "$HDL")"
+expect_absent "END が無ければ BEGIN 以降を全部伏せる（後続の行も）" "NOENDLINE" "$(tail -1 "$HDL")"
+expect_contains "記録は 1 行にまとめる" "git reset --hard; cat <<E ***" "$(tail -1 "$HDL")"
 # 誤検知の逆: 通した操作は記録しない
 N=$(hd_n); bash_json "git status" | python3 "$HOOKS/block-destructive.py" >/dev/null
 printf '{"tool_name":"Read","tool_input":{"file_path":"%s/notes.md"}}' "$TMP" | python3 "$HOOKS/pre-read-guard.py" >/dev/null
@@ -1401,7 +1407,7 @@ expect_eq "AIDD_HOOK_LOG が無ければ \$CLAUDE_PROJECT_DIR/.claude/hook-decis
 # 集計: token_report.py --hooks
 OUT=$(python3 "$KIT_DIR/00_導入/03_点検/token_report.py" --hooks "$HDL"); RC=$?
 expect_eq "token_report.py --hooks が exit 0" "0" "$RC"
-expect_contains "hook 別の deny 回数（block-destructive は 2 回）" "| block-destructive | 2 | 0 | 0 | 0 |" "$OUT"
+expect_contains "hook 別の deny 回数（block-destructive は 3 回）" "| block-destructive | 3 | 0 | 0 | 0 |" "$OUT"
 expect_contains "解除で通した回数を別列に出す（block-protected は 1 回・変数名つき）" "| 1（AIDD_ALLOW_CONFIG_EDIT） |" "$OUT"
 expect_contains "reply-language の block を数える" "| reply-language | 0 | 1 | 0 | 0 |" "$OUT"
 printf 'broken\n' >> "$HDL"
@@ -1439,6 +1445,10 @@ OLD=$(python3 -c 'import datetime;print((datetime.date.today()-datetime.timedelt
 sedi "s/^$TODAY\$/$OLD/" "$SC/CURRENT_STATE.md"
 CTX=$(sc_ctx "$(scj compact | CLAUDE_PROJECT_DIR="$SC" python3 "$HOOKS/session-context.py")")
 expect_contains "最終更新が 31 日前なら先頭に「古い（日付）」" "古い（$OLD）" "$(printf '%s\n' "$CTX" | head -1)"
+sedi "s/^$OLD\$/2026-13-45/" "$SC/CURRENT_STATE.md"
+CTX=$(sc_ctx "$(scj compact | CLAUDE_PROJECT_DIR="$SC" python3 "$HOOKS/session-context.py")")
+expect_contains "存在しない日付（2026-13-45）でも本文は注入する" "【次の一手】- 一手 1" "$CTX"
+expect_absent "存在しない日付では「古い」を付けない" "古い（" "$CTX"
 OUT=$(scj compact | CLAUDE_PROJECT_DIR="$TMP/sc-none" python3 "$HOOKS/session-context.py"); RC=$?
 expect_contains "\$CLAUDE_PROJECT_DIR に無ければ入力の cwd を見る" "【現在の作業】" "$(sc_ctx "$OUT")"
 rm -f "$SC/CURRENT_STATE.md"; mkdir -p "$SC/.claude"; cp "$KIT_DIR/02_共通/ひな形/CURRENT_STATE.md" "$SC/.claude/CURRENT_STATE.md"
@@ -1476,6 +1486,26 @@ OUT=$(printf '{"model":{"id":"x"},"context_window":{"current_usage":null,"contex
 expect_absent "フィールドなし: ctx を合成しない" "ctx" "$OUT"
 expect_absent "フィールドなし: 5h を合成しない" "5h" "$OUT"
 expect_absent "フィールドなし: 区切りも足さない" "｜" "$OUT"
+OUT=$(printf '%s' '{"context_window":{"used_percentage":NaN}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1); RC=$?
+expect_eq "nan の使用率は何も足さない（exit 0）" "0:$(basename "$PWD")" "$RC:$OUT"
+OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":-5,"resets_at":Infinity},"seven_day":{"used_percentage":130}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1); RC=$?
+expect_eq "負値・100 超の使用率は何も足さない（exit 0）" "0:$(basename "$PWD")" "$RC:$OUT"
+OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":90,"resets_at":1e400}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1)
+expect_contains "戻る時刻が inf でも使用率は出す（時刻だけ落とす）" "⚠ 5h 90%" "$OUT"
+expect_absent "戻る時刻が inf でも Traceback を出さない" "Traceback" "$OUT"
+
+
+echo "[検証: 塊J]"
+JV_LOG=$(mktemp)
+# B12: 秘密鍵の本文（BEGIN 行の次の行）が記録の要約に残らない
+OUT=$(python3 -c 'import json;k="-----BEGIN RSA PRIVATE"+" KEY-----\nMIIEowIBAAKCAQEAjvSECRETBODYzz\n-----END RSA PRIVATE"+" KEY-----";print(json.dumps({"tool_name":"Bash","tool_input":{"command":"printf %s \""+k+"\" > .claude/settings.json"}}))' | AIDD_HOOK_LOG="$JV_LOG" python3 "$HOOKS/block-protected.py")
+expect_contains "[検証] 鍵を書く Bash は deny のまま" '"permissionDecision": "deny"' "$OUT"
+expect_absent "[検証] 記録の要約に秘密鍵の本文が残らない" "MIIEowIBAAKCAQEA" "$(cat "$JV_LOG")"
+rm -f "$JV_LOG"
+# B76: 数値でない数（JSON の Infinity）でも従来表示を消さない（「表示の失敗で従来表示を消さない」）
+OUT=$(printf '%s' '{"context_window":{"used_percentage":Infinity}}' | python3 "$HOOKS/statusline.py" 2>&1); RC=$?
+expect_eq "[検証] statusline: used_percentage が Infinity でも exit 0" "0" "$RC"
+expect_absent "[検証] statusline: Traceback を出さない" "Traceback" "$OUT"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

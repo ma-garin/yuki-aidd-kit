@@ -27,7 +27,8 @@ pre-commit・文書）に散って食い違っていた。判定はここだけ�
         JSONL で 1 行追記する（B12。時刻・hook・decision・理由 40 字・ツール・コマンドやパスの要約 60 字・解除に使った変数）。
         置き場は injection-guard.log とそろえる（`$CLAUDE_PROJECT_DIR/.claude/`、無ければ呼び出し側の cwd・
         カレントの `.claude/`、どれも無ければ `~/.claude/`）。環境変数 AIDD_HOOK_LOG でファイルを直に指定できる（テスト用）。
-        秘密値は伏字にしてから切り詰める（(b) の値パターンに当たる部分と `password=…` 形の値を `***`）。
+        秘密値は伏字にしてから 1 行にまとめて切り詰める（(b) の値パターンに当たる部分・秘密鍵は BEGIN〜END を丸ごと
+        （END が無ければ BEGIN 以降を全部）・`password=…` 形の値・base64 らしき 40 字以上の連なりを `***`）。
         書けなくても例外を出さない（記録のために止めない。deny の動作は変えない）。集計は `token_report.py --hooks`
       一致検査は片方向（4 か所に書かれた名前 ⊂ (a)）。pre-write-check.sh に独自の拡張子一覧が残っていれば
       `=~ \.(env|pem|…)$` の形だけを読む（別の書き方にすると検査から漏れる）
@@ -211,6 +212,12 @@ _MASK_RX = tuple(re.compile(rf"(?:{rx.pattern})[A-Za-z0-9_\-.+/=]*") for _n, _kw
 _MASK_KV = re.compile(r"(?i)\b([A-Za-z0-9_.-]*(?:passw(?:or)?d|secret|token|api[_-]?key|credential)[A-Za-z0-9_.-]*"
                       r"[\"']?\s*[=:]\s*)(\"[^\"]*\"|'[^']*'|[^\s;&|]+)")
 _MASK_BEARER = re.compile(r"(?i)\b(bearer\s+)[A-Za-z0-9_\-.+/=]+")
+# 秘密鍵は BEGIN から END まで（複数行・エスケープの \\n も）を丸ごと。END が無ければ BEGIN 以降を全部
+_MASK_KEY_BLOCK = re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY[A-Z ]*-----.*?(?:-----END [A-Z0-9 ]*PRIVATE KEY[A-Z ]*-----|\Z)",
+                             re.S)
+# base64 らしき 40 字以上の連なり（大文字・小文字・数字が混ざるもの。git の SHA やふつうのパスは当てない）
+_MASK_B64 = re.compile(r"(?<![A-Za-z0-9+/])(?=[A-Za-z0-9+/]*[A-Z])(?=[A-Za-z0-9+/]*[a-z])(?=[A-Za-z0-9+/]*[0-9])"
+                       r"[A-Za-z0-9+/]{40,}={0,2}")
 LOG_NAME = "hook-decisions.log"
 DECISIONS = ("deny", "block", "warn", "override")
 
@@ -219,10 +226,12 @@ def mask_secrets(text: str) -> str:
     """秘密値らしい部分を *** にする。プレースホルダの行も伏せる（記録は安全側に倒す）。"""
     if not isinstance(text, str):
         return ""
+    text = _MASK_KEY_BLOCK.sub("***", text)
     for rx in _MASK_RX:
         text = rx.sub("***", text)
     text = _MASK_KV.sub(lambda m: m.group(1) + "***", text)
-    return _MASK_BEARER.sub(lambda m: m.group(1) + "***", text)
+    text = _MASK_BEARER.sub(lambda m: m.group(1) + "***", text)
+    return _MASK_B64.sub("***", text)
 
 
 def _short(text: str, n: int) -> str:
@@ -809,7 +818,12 @@ def self_test() -> list[str]:
             bad.append(f"describe_hits が {name} の値を出している")
         if val in mask_secrets(f"curl -H 'X: {val}' https://a.test") or val[4:] in mask_secrets(f"k={val}"):
             bad.append(f"mask_secrets が {name} の値を伏せていない")
+    key = "-----BEGIN RSA " + "PRIVATE KEY-----"
     for raw, want in (("DB_PASSWORD=hunter2 ./run", "DB_PASSWORD=*** ./run"),
+                      (f"printf '{key}\nMIIEowIBAAKCzz\n-----END RSA " + "PRIVATE KEY-----' > k", "printf '***' > k"),
+                      (f"cat <<E\n{key}\nMIIEowIBAAKCzz\nrest", "cat <<E\n***"),
+                      ("x " + "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVowMTIzNDU2Nzg5YWJj" + " y", "x *** y"),
+                      ("git show 3f2a9c0e1b7d4a6f8e2c5b9d0a1f3e7c6b4d2a8e", "git show 3f2a9c0e1b7d4a6f8e2c5b9d0a1f3e7c6b4d2a8e"),
                       ("curl -H 'Authorization: Bearer abc.def' x", "curl -H 'Authorization: Bearer ***' x"),
                       ("git status && ls -la", "git status && ls -la")):
         if mask_secrets(raw) != want:
