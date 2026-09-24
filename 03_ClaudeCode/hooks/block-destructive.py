@@ -43,6 +43,7 @@ Bash を構文解析しない限界（止めない。テストにもしない）
 解除は環境変数ではなく、**人間が同じコマンドを自分で叩く**。安全装置に抜け道を作らない
 （`rules/speed-harness.md`「安全フックに止められたら、安全装置が正しく働いた結果として受け入れる」）。
 ヒアドキュメント本文と引用文字列は照合前に除去する（文書やコミットメッセージの中の語で止めない）。
+deny のたびに `.claude/hook-decisions.log` へ 1 行記録する（B12。`secret_patterns.log_decision`。秘密値は伏字。書けなくても止めない）。
 **入力が読めなければ deny する（fail-closed）**。ただし `tool_input.command` が無い・空なら何もしない。
 入れ子が 2 段を超えて判定しきれないときも deny する（判定不能は不合格）。
 `03_ClaudeCode/hooks/secret_patterns.py` が hook と同じ場所に無ければ、すべての Bash を deny する（同梱物の欠落に最初のコマンドで気づかせる）。
@@ -55,6 +56,15 @@ try:
     from secret_patterns import SECRET_READ_REASON, analyze_command, glob_may_match_secret, is_secret_path
 except ImportError:          # 部品が欠けた導入。判定できないので main で deny する
     analyze_command = None
+try:
+    from secret_patterns import input_summary, log_decision
+except ImportError:          # 記録は付け足し（B12）。部品が無くても deny の動作は変えない
+    def log_decision(*_a, **_k) -> None:
+        return None
+
+    def input_summary(_ti) -> str:
+        return ""
+_CTX: dict = {}              # deny の記録に使う（ツール名・コマンドの要約・cwd）
 
 _HEREDOC = re.compile(r"<<-?\s*'?\"?(\w+)'?\"?.*?\n.*?\n\1\s*$", re.DOTALL | re.MULTILINE)
 _QUOTED = re.compile(r"'[^']*'|\"[^\"]*\"")
@@ -456,6 +466,8 @@ def deny(reason: str) -> int:
         "hookEventName": "PreToolUse", "permissionDecision": "deny",
         "permissionDecisionReason": f"[block-destructive] {reason}",
     }}, ensure_ascii=False))
+    log_decision("block-destructive", "deny", reason.removeprefix("取り返しのつかない操作を止めた: "),
+                 _CTX.get("tool", ""), _CTX.get("summary", ""), _CTX.get("cwd"))
     return 0
 
 
@@ -472,6 +484,7 @@ def _main() -> int:
                     "続けて起きるなら Claude Code と hook の版の組み合わせを保守者に確認してもらう")
     if data.get("tool_name") != "Bash":
         return 0
+    _CTX.update(tool="Bash", summary=input_summary(ti), cwd=data.get("cwd") if isinstance(data.get("cwd"), str) else None)
     cmd = ti.get("command")
     if not isinstance(cmd, str) or not cmd.strip():
         return 0

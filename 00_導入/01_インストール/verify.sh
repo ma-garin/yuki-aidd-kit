@@ -10,6 +10,11 @@
 #   WARN        : allow の Bash(rm…)・Bash(sudo…)・Write(*) ／ hook がプロジェクトと ~/.claude の外のスクリプトを呼ぶ ／
 #                 MCP の command が npx -y で @scope の無いパッケージ
 #   秘密値は場所と型だけを出す（値は出さない）。会話履歴（~/.claude/projects 等）は読まない。
+# [導入先の文脈ファイル]（B64）はプロジェクト（同じく AIDD_VERIFY_PROJECT）の文脈ファイルを読むだけで点検する:
+#   WARN        : .claude/rules/**/*.md の frontmatter `paths:` の glob に一致するファイルが 0 件（当たらない rules は読まれない）
+#   NG（exit 1）: CLAUDE.md・.claude/CLAUDE.md・AGENTS.md の `@path`（拡張子付きか ./ ../ 始まり）と `path`（コードスパン。
+#                 / を含み、最後の成分に拡張子があるもの）の参照先が無い。フェンスの中・URL・glob・<…>・変数・
+#                 絶対パスと ~ 始まり・node_modules / dist 等の生成物の下は見ない。重複段落と MEMORY.md は対象外
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CLAUDE_DIR="$HOME/.claude"
 OK=0; NG=0; AUDIT_NG=0; AUDIT_WARN=0
@@ -206,9 +211,191 @@ while IFS=$'\t' read -r kind msg; do
   esac
 done <<< "$AUDIT_OUT"
 
+echo "[導入先の文脈ファイル（rules の paths の一致・CLAUDE.md / AGENTS.md の参照切れ）]"
+CTX_NG=0
+CTX_OUT=$(AIDD_VERIFY_PROJECT="${AIDD_VERIFY_PROJECT:-$PWD}" python3 - <<'PY'
+import os, re, subprocess, sys
+from pathlib import Path
+proj = Path(os.environ["AIDD_VERIFY_PROJECT"]).resolve()
+SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "dist", "build", "coverage", ".next"}
+
+
+def project_paths():
+    """プロジェクト内のファイルとディレクトリ（相対パス）。git 管理なら ls-files（未追跡も含む・ignore は除く）。"""
+    files = None
+    try:
+        r = subprocess.run(["git", "-C", str(proj), "ls-files", "-co", "--exclude-standard"],
+                           capture_output=True, text=True, timeout=10)
+        if r.returncode == 0:
+            files = [l for l in r.stdout.splitlines() if l]
+    except (OSError, subprocess.SubprocessError):
+        pass
+    if files is None:
+        files = []
+        for root, dirs, names in os.walk(proj):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            rel = Path(root).relative_to(proj)
+            files += [(rel / n).as_posix() for n in names]
+    out = set(files)
+    for f in files:
+        parts = f.split("/")
+        out.update("/".join(parts[:i]) for i in range(1, len(parts)))
+    return out
+
+
+def expand_braces(p, limit=64):
+    m = re.search(r"\{([^{}]*)\}", p)
+    if not m or limit <= 0:
+        return [p]
+    out = []
+    for alt in m.group(1).split(","):
+        out += expand_braces(p[:m.start()] + alt + p[m.end():], limit - 1)
+    return out
+
+
+def glob_rx(g):
+    i, rx = 0, ""
+    while i < len(g):
+        if g.startswith("**/", i):
+            rx += "(?:.*/)?"; i += 3
+        elif g.startswith("**", i):
+            rx += ".*"; i += 2
+        elif g[i] == "*":
+            rx += "[^/]*"; i += 1
+        elif g[i] == "?":
+            rx += "[^/]"; i += 1
+        elif g[i] == "[":
+            j = g.find("]", i + 1)
+            if j < 0:
+                rx += re.escape(g[i]); i += 1
+            else:
+                body = g[i + 1:j]
+                rx += "[" + ("^" + body[1:] if body.startswith("!") else body) + "]"; i = j + 1
+        else:
+            rx += re.escape(g[i]); i += 1
+    return re.compile(rx + "(?:/.*)?")
+
+
+def matches(glob, paths):
+    g = glob.strip().lstrip("./") if glob.strip().startswith("./") else glob.strip().lstrip("/")
+    for alt in expand_braces(g):
+        rx = glob_rx(alt)
+        if any(rx.fullmatch(p) for p in paths):
+            return True
+        if "/" not in alt and any(rx.fullmatch(p.rsplit("/", 1)[-1]) for p in paths):
+            return True
+    return False
+
+
+def front_paths(text):
+    """frontmatter の paths:（YAML の列・[a, b]・1 行の文字列）。無ければ None。"""
+    m = re.match(r"---\r?\n(.*?)\r?\n---\s*(?:\n|$)", text, re.S)
+    if not m:
+        return None
+    lines = m.group(1).splitlines()
+    for i, line in enumerate(lines):
+        k = re.match(r"paths\s*:\s*(.*)$", line)
+        if not k:
+            continue
+        rest = k.group(1).strip()
+        vals = []
+        if rest.startswith("["):
+            vals = [v for v in re.split(r",(?![^{]*\})", rest.strip("[]")) if v.strip()]
+        elif rest:
+            vals = [rest]
+        else:
+            for l in lines[i + 1:]:
+                it = re.match(r"\s*-\s*(.*)$", l)
+                if it:
+                    vals.append(it.group(1))
+                elif l.strip() and not l.startswith((" ", "\t")):
+                    break
+        return [v.strip().strip("'\"") for v in vals if v.strip().strip("'\"")]
+    return None
+
+
+CODE_SPAN = re.compile(r"(`+)(.+?)\1")
+IMPORT = re.compile(r"(?:^|(?<=\s))@((?:~/|\.{1,2}/|/)?[\w.~/-]*[\w-])")
+BAD = re.compile(r"[\s*?\[\]{}<>$|:;,'\"=()…]|\.\.\.|○|XX|^-|^https?|^/|^~")
+
+
+def refs(text):
+    """(行番号, 種類, パス)。フェンスの中は見ない。@import はコードスパンの外だけ。"""
+    fence = False
+    for no, line in enumerate(text.splitlines(), 1):
+        if re.match(r"\s*(```|~~~)", line):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        for m in CODE_SPAN.finditer(line):
+            s = re.sub(r"(?::\d+(?:-\d+)?|#L\d+(?:-L?\d+)?)$", "", m.group(2).strip())
+            # ファイルを指す形だけ（最後の成分に拡張子）。末尾 / のディレクトリ・拡張子の無い状態ファイル（.claude/mode 等）は
+            # 「無ければ作る・有無で切り替える」場所として書かれることが多いので見ない
+            if "/" in s and not BAD.search(s) and re.search(r"[^/.][^/]*\.\w+$", s.rsplit("/", 1)[-1]):
+                yield no, "`path`", s
+        prose = CODE_SPAN.sub(" ", line)
+        for m in IMPORT.finditer(prose):
+            s = m.group(1)
+            if s.startswith(("~/", "/")) or not (re.search(r"\.\w+$", s) or s.startswith(("./", "../"))):
+                continue
+            yield no, "@import", s
+
+
+paths = None
+rules_dir = proj / ".claude" / "rules"
+for f in sorted(rules_dir.rglob("*.md")) if rules_dir.is_dir() else []:
+    try:
+        globs = front_paths(f.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError):
+        print(f"NG\t{f.relative_to(proj)}: 読めない（判定不能は不合格）")
+        continue
+    if not globs:
+        continue
+    if paths is None:
+        paths = project_paths()
+    for g in globs:
+        if not matches(g, paths):
+            print(f"WARN\t{f.relative_to(proj)}: paths の {g} に一致するファイルが 0 件（綴りを確かめる。当たらない rules は読み込まれない）")
+for name in ("CLAUDE.md", ".claude/CLAUDE.md", "AGENTS.md"):
+    f = proj / name
+    if not f.is_file():
+        continue
+    try:
+        text = f.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        print(f"NG\t{name}: 読めない（判定不能は不合格）")
+        continue
+    bad = 0
+    for no, kind, s in refs(text):
+        s2 = s[2:] if s.startswith("./") else s
+        if (proj / s2).exists() or (f.parent / s).exists():
+            continue
+        if s2.split("/", 1)[0] in SKIP_DIRS:
+            continue
+        print(f"NG\t{name}:{no}: {kind} の参照先 {s} が無い（パスを直すか、記述を消す）")
+        bad += 1
+    if not bad:
+        print(f"OK\t{name}: 参照切れなし")
+PY
+)
+CTX_RC=$?
+if [ "$CTX_RC" -ne 0 ]; then
+  echo "  ❌ 文脈ファイルの点検を実行できない（python3 が exit $CTX_RC。判定不能は不合格）"; NG=$((NG+1)); CTX_NG=$((CTX_NG+1))
+fi
+[ -z "$CTX_OUT" ] && { echo "  ✅ 文脈ファイル: 0 件一致の paths・参照切れなし"; OK=$((OK+1)); }
+while IFS=$'\t' read -r kind msg; do
+  case "$kind" in
+    NG)   echo "  ❌ $msg"; NG=$((NG+1)); CTX_NG=$((CTX_NG+1)) ;;
+    WARN) echo "  ⚠ $msg"; AUDIT_WARN=$((AUDIT_WARN+1)) ;;
+    OK)   echo "  ✅ $msg"; OK=$((OK+1)) ;;
+  esac
+done <<< "$CTX_OUT"
+
 echo ""
-echo "結果: OK=$OK / NG=$NG（うち設定の監査 $AUDIT_NG）／ 警告=$AUDIT_WARN"
+echo "結果: OK=$OK / NG=$NG（うち設定の監査 $AUDIT_NG・文脈ファイル $CTX_NG）／ 警告=$AUDIT_WARN"
 if [ "$NG" -eq 0 ]; then echo "✅ 全て正常"; exit 0; fi
 [ "$AUDIT_NG" -gt 0 ] && echo "⚠ 設定の監査で NG（bypassPermissions・Bash(*)・curl|sh の hook・平文の秘密値）。上の ❌ を直す（install.sh では直らない）"
-[ "$NG" -gt "$AUDIT_NG" ] && echo "⚠ 未配置あり。install.shを再実行してください"
+[ "$CTX_NG" -gt 0 ] && echo "⚠ 文脈ファイルの参照切れ。上の ❌ のパスを直す（install.sh では直らない）"
+[ "$NG" -gt "$((AUDIT_NG+CTX_NG))" ] && echo "⚠ 未配置あり。install.shを再実行してください"
 exit 1

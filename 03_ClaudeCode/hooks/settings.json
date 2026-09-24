@@ -155,6 +155,18 @@
         ]
       }
     ],
+    "SessionStart": [
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/session-context.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "InstructionsLoaded": [
       {
         "hooks": [
