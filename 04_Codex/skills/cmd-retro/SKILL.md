@@ -20,5 +20,6 @@ retroスキルに従い振り返りを行う。
    - 発火しなかったスキル → description追加案
    - 繰り返した手作業 → コマンド化案
    - 繰り返したミス → hook / done-gate項目追加案
+5. `python3 scripts/adr-to-rules.py <ADR のディレクトリ> <lessons.md> --out .claude/rules` を実行し、採用済み ADR・適用パスのある lessons を paths 付き rules に書き出す
 
 引数が空なら直近の作業を対象にする。

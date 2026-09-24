@@ -23,6 +23,9 @@ scaffoldは references/ を参照（playwright_smoke.py / pytest_streamlit.py）
 - localStorageにデータが永続化される（reload後も残る）
 - 折りたたみ端末カバー幅（360px）でレイアウトが崩れない（viewport指定）
 - オフライン（offline=true）で主要機能が動く
+- アクセシビリティ（画面・主要な状態ごとに `impact` が `serious`/`critical` の違反があれば FAIL）:
+  Playwright は `@axe-core/playwright`、Streamlit/pytest 側は `pytest-playwright-axe` を同じ基準で使う
+  （導入手順・除外リストの書式は `skills/e2e-cycle/references/axe-exclusions.md`）
 
 ## Streamlit（business_agent系）の観点
 - st.AppTestでアプリが例外なく起動する

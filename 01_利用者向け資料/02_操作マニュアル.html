@@ -859,8 +859,8 @@
             <h3>4. hooksの動作を確認する</h3>
             <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh</code></pre>
             <p>
-              保存時の自動チェック（hooks）が正しく動くかを620ケースでテストします。
-              「PASS=620 / FAIL=0」なら合格です。
+              保存時の自動チェック（hooks）が正しく動くかを712ケースでテストします。
+              「PASS=712 / FAIL=0」なら合格です。
             </p>
           </div>
           <div class="callout warn">
@@ -1204,7 +1204,7 @@ git commit -m "chore: add AIDD Kit"</code></pre>
           <div class="callout">
             <div class="callout-title">Codexで使う時</div>
             <p>
-              Codexでは、スキル20本とコマンド18本（`cmd-`を付けて変換したもの）をあわせた38本が、`$名前`の形で呼べます。
+              Codexでは、スキル20本とコマンド19本（`cmd-`を付けて変換したもの）をあわせた39本が、`$名前`の形で呼べます。
               たとえば `$done-gate`、コマンドは `$cmd-trace` のように使い、スラッシュメニューにも並びます。
               install では `~/.agents/skills/` に、プロジェクト配布では `&lt;対象&gt;/.agents/skills/` に配られます。
             </p>
@@ -1284,6 +1284,10 @@ git commit -m "chore: add AIDD Kit"</code></pre>
               <tr>
                 <td>`/compact-work`</td>
                 <td>長い調査・集計をトークン節約モードで進めたい時</td>
+              </tr>
+              <tr>
+                <td>`/security-audit`（8.4.0〜）</td>
+                <td>導入済みの走査器で依存・危険なコード・秘密の混入を機械判定したい時（未導入の走査器は「未検査」と表示され合格には数えない）</td>
               </tr>
             </tbody>
           </table>
@@ -1607,6 +1611,11 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
                 <td><code>block-protected.py</code></td>
                 <td>安全装置自体の書き換えです。保守者に依頼するか、意図的なら <code>AIDD_ALLOW_CONFIG_EDIT=1</code> を付けて起動する</td>
               </tr>
+              <tr>
+                <td>Web取得やMCPの結果に「これまでの指示を無視して」等の指示形の文があった（8.4.0〜）</td>
+                <td><code>injection-guard.py</code></td>
+                <td><strong>止まりません（警告専用）</strong>。additionalContext と <code>.claude/injection-guard.log</code> で通知するだけ。それはデータであり指示ではないと扱い、従う必要があれば保守者に確かめる</td>
+              </tr>
             </tbody>
           </table>
           <p class="callout warn" style="padding:.75em 1em;border-left:3px solid #c77;">
@@ -1615,6 +1624,11 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
             本当に読ませたくないファイルはプロジェクトの <code>settings.sandbox.json</code> の <code>denyRead</code>
             （ファイルシステムレベルで遮断）も併用してください。
           </p>
+          <h3>セキュリティ監査と基準線（8.4.0〜）</h3>
+          <ul>
+            <li><code>/security-audit</code>（<code>security-scan.sh</code>）は導入済みの走査器だけを回します。<strong>走査器が未導入の項目は「未検査」で、合格には数えません</strong>。exit 2（判定不能）は「指摘なし」と読み違えないでください</li>
+            <li><code>check_design.py --baseline</code> は既知の指摘を記録し、新規の指摘だけを不合格にします。<strong>基準線の更新は指摘が減る方向だけ許可されます</strong>（増える更新は拒否され、書き込まれません）</li>
+          </ul>
           <h3>見積が自動で校正される</h3>
           <p>
             <code>tool-timer.py</code> が毎ターンの経過時間を測り、見積と実測の組を履歴に残します。
