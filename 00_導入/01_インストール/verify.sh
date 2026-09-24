@@ -138,10 +138,17 @@ def audit(path, mcp_only=False):
         for name, _no in sp.find_secret_values(raw):
             ng.append(f"平文の秘密値（{name}）を含む。値は環境変数や鍵管理へ移す")
     if not mcp_only and isinstance(d, dict):
-        perms = d.get("permissions") if isinstance(d.get("permissions"), dict) else {}
+        perms = d.get("permissions", {})
+        if not isinstance(perms, dict):
+            ng.append("settings の形式が不正（permissions がオブジェクトでない。判定不能は不合格）")
+            perms = {}
+        allow = perms.get("allow", [])
+        if not isinstance(allow, list):
+            ng.append("settings の形式が不正（permissions.allow が配列でない。判定不能は不合格）")
+            allow = []
         if "bypassPermissions" in (perms.get("defaultMode"), d.get("defaultMode")):
             ng.append("defaultMode が bypassPermissions（許可確認を全部飛ばす）")
-        for item in perms.get("allow") or []:
+        for item in allow:
             if not isinstance(item, str):
                 continue
             t = item.replace(" ", "")

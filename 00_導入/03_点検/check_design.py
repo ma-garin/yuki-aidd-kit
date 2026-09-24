@@ -34,10 +34,11 @@
   PATH 省略時は 02_共通/ひな形/ui templates/components。ディレクトリは .css / .html / .js を再帰的に集める
   （.claude/ .git/ node_modules/ は除外。配布先で `.` を渡してもキットの雛形を検査対象にしない）。
   --tokens 省略時は 02_共通/ひな形/tokens.css → .claude/templates/tokens.css の順に探す（キット本体と配布先の両方で動く）。
-  --baseline FILE  既知の NG を `規則ID\\t相対パス\\t正規化した行` で記録したファイル。指定すると、そこに載っている
+  --baseline FILE  既知の NG を `規則ID\\t相対パス\\t正規化した行\\t#n` で記録したファイル。指定すると、そこに載っている
                    NG は「既知」として数え、新しい NG だけを exit 1 にする（未指定時は全 NG が対象＝従来どおり）。
   --baseline-write 現在の NG 一覧で --baseline のファイルを書く。**件数が前回より増える更新は拒否**（exit 1・書かない）。
-  基準線の書式と規律は 02_共通/ツール/baseline.py（security-scan.sh と共用）。
+  基準線の書式と規律は 02_共通/ツール/baseline.py（security-scan.sh と共用。同じ文面の n 番目 #n まで照合する。
+  旧形式の 3 列は #1 として読む。壊れた基準線は判定不能で exit 2）。
 """
 from __future__ import annotations
 
@@ -461,11 +462,11 @@ def write_report(path: Path, root: Path, files: list[Path], r: Result, new_ng: l
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def load_baseline(path: Path) -> set[tuple[str, str, str]]:
+def load_baseline(path: Path) -> set[tuple[str, str, str, str]]:
     return baseline.load_keys(path)
 
 
-def save_baseline(path: Path, entries: set[tuple[str, str, str]]) -> None:
+def save_baseline(path: Path, entries: set[tuple[str, str, str, str]]) -> None:
     baseline.save(path, entries, baseline.load(path))   # 既存行に理由・期限の列があれば引き継ぐ
 
 
@@ -519,9 +520,17 @@ def main() -> int:
     baseline_path = Path(a.baseline) if a.baseline else None
     if baseline_path and not baseline_path.is_absolute():
         baseline_path = root / baseline_path
-    baseline_set = load_baseline(baseline_path) if baseline_path else set()
+    try:
+        baseline_set = load_baseline(baseline_path) if baseline_path else set()
+    except baseline.BaselineError as e:   # 壊れた基準線は判定不能（Traceback を出さない）
+        if a.json:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False))
+        else:
+            print(f"❌ 判定不能: {e}")
+        return 2
     prev_total = len(baseline_set)
-    new_ng = [x for x in r.ng if r.baseline_key(x) not in baseline_set]
+    ng_keys = baseline.number([r.baseline_key(x) for x in r.ng])   # 同じ文面の n 番目（#n）まで含めて照合する
+    new_ng = [x for x, k in zip(r.ng, ng_keys) if k not in baseline_set]
     known_count = len(r.ng) - len(new_ng)
 
     if a.baseline and a.baseline_write:
@@ -529,7 +538,7 @@ def main() -> int:
         if not baseline.update_allowed(baseline_path.is_file(), prev_total, current_total):
             out(f"❌ 基準線の更新を拒否: 現在の NG={current_total} 件 > 前回={prev_total} 件（増える方向）")
             return 1
-        save_baseline(baseline_path, {r.baseline_key(x) for x in r.ng})
+        save_baseline(baseline_path, set(ng_keys))
         out(f"✅ 基準線を更新: {current_total} 件を記録（{baseline_path}）")
         return 0
 

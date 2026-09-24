@@ -24,10 +24,11 @@
 #          [--baseline FILE [--baseline-write --reason 理由 [--expires YYYY-MM-DD]]]
 #
 # 基準線（B15。書式・規律は同じ場所の baseline.py。check_design.py と同形）:
-#   --baseline FILE   既知の指摘（重大度が中以上）を `規則ID<TAB>相対パス<TAB>行の指紋<TAB>理由<TAB>期限` で記録した
+#   --baseline FILE   既知の指摘（重大度が中以上）を `規則ID<TAB>相対パス<TAB>行の指紋<TAB>#n<TAB>理由<TAB>期限` で記録した
 #                     ファイル。載っている指摘は「既知」として数えず、新規だけで exit 1 にする。ただし理由の無い行・
 #                     期限の無い行・期限切れの行は既知に数えない（NG のまま）。3 列目は行の sha256 の先頭 16 桁
-#                     （秘密値を基準線に書かない）。
+#                     （秘密値を基準線に書かない）。#n は同じ文面の n 番目（同じ文面を足したら新規）。
+#                     UTF-8 として読めない・形式の壊れた基準線は判定不能（exit 2）。
 #   --baseline-write  現在の指摘で FILE を書く。**件数が前回より増える更新は拒否**（exit 1・書かない）。
 #                     新しく載せる指摘には --reason が要る（無ければ exit 2）。期限は --expires、既定は 90 日後。
 #                     判定不能（走査器の解析失敗・対象なし）のときは書かない（exit 2）。
@@ -294,7 +295,10 @@ if [ -n "$BASELINE" ] && [ "$BASELINE_WRITE" -eq 1 ]; then
   case "$WRC" in
     0) echo "✅ 基準線を更新: $(printf '%s' "$WOUT" | sed -n 's/.*current=\([0-9]*\).*/\1/p') 件を記録（$BASELINE。$WOUT）" ;;
     1) echo "❌ 基準線の更新を拒否: 件数が増える方向（$WOUT）。直すか、除外の理由を保守者が判断する" ;;
-    *) echo "❌ 基準線を書かない: 新しく載せる指摘には理由が要る（--reason。$WOUT）" ;;
+    *) case "$WOUT" in
+         *write=noreason*) echo "❌ 基準線を書かない: 新しく載せる指摘には理由が要る（--reason。$WOUT）" ;;
+         *) echo "❌ 判定不能: $(printf '%s' "$WOUT" | sed -n 's/^error=//p' | head -1)（基準線は書き換えない）"; WRC=2 ;;
+       esac ;;
   esac
   exit "$WRC"
 fi
@@ -303,7 +307,7 @@ BL_SUMMARY=""
 if [ -n "$BASELINE" ]; then
   BL_STATUS="$TMP/rows_classified.tsv"
   BL_SUMMARY=$(python3 "$BASELINE_PY" classify --baseline "$BASELINE" --rows "$ROWS" --root "$DIR" --out "$BL_STATUS" 2>/dev/null) || {
-    echo "❌ 判定不能: 基準線 $BASELINE を読めない"
+    echo "❌ 判定不能: 基準線を読めない（$BASELINE）"
     exit 2
   }
 fi
