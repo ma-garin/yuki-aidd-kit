@@ -315,7 +315,7 @@ Claude Code / Codex
           <div class="card"><h4>AGENTS.md / CLAUDE.md（共通の約束事）</h4><p>AI が毎回いちばん最初に読む 1 枚。「やりたいこと → 最初に使う手順書」の対応表もここ。CLAUDE.md は AGENTS.md を読み込む 1 行と、Claude Code だけで効く設定を持つ小さなファイルです。</p></div>
           <div class="card"><h4>rules/（規律 4 本）</h4><p>毎回読むのは 3 本だけ（合計 100 行以下に抑えてあります）。4 本目の「機能完全性」は、コードや画面を触ったときだけ読まれます。</p></div>
           <div class="card"><h4>agents/（5 体のエージェント）</h4><p>「図書管理システムを作って」のように<strong>成果物ごと頼む</strong>と、<code>aidd-lead</code> が受けて、種類の判定・工程分け・設計・実装・画面・テストまで自分で進めます。どの手順書を使うかを、あなたが選ぶ必要はありません。</p></div>
-          <div class="card"><h4>skills/（20 の手順書）</h4><p>毎日の進め方を決める 13 本と、プロジェクトの種類で選ぶ 7 本。1 本 200 行以下。AI はあなたの言葉で「どれを開くか」を決めます。</p></div>
+          <div class="card"><h4>skills/（21 の手順書）</h4><p>毎日の進め方を決める 13 本と、プロジェクトの種類で選ぶ 8 本。1 本 200 行以下。AI はあなたの言葉で「どれを開くか」を決めます。</p></div>
           <div class="card"><h4>commands/（19 のコマンド）</h4><p>会話の中で <code>/plan</code> のように打つと決まった手順が走ります。よく使うのは <code>/plan</code> <code>/implement</code> <code>/qa-review</code> <code>/retro</code>。</p></div>
           <div class="card"><h4>hooks/（7 の見張り）</h4><p>「頼んでいないテストを拒否」「実装中の調べ直しを拒否」「1 分超の作業の進み具合を表示」など。口約束を機械にしたものです。</p></div>
           <div class="card"><h4>00_導入/ と 02_共通/ひな形/</h4><p>人が使う道具と雛形。導入（install / export）、検査（verify / check-docs / check-design）、雛形（工程文書 11・テスト文書 8・デザインの CSS と部品）。</p></div>
@@ -358,14 +358,14 @@ cd yuki-aidd-kit</code></pre>
             <pre><code>./00_導入/01_インストール/install.sh</code></pre>
             <p class="expect"></p>
             <pre><code>=== AIDD Kit インストール（版: 6.3.0 xxxxxxx 2026-09-17）===
-✅ スキル: 20個
+✅ スキル: 21個
 ✅ コマンド: 19個
 ✅ Hooks: 7個
 ✅ Rules: 4個（~/.claude/rules/aidd-kit/）
 ✅ KIT_VERSION: 6.3.0 xxxxxxx 2026-09-17
 
 Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または cp）</code></pre>
-            <p class="why">スキル・コマンド・hooks・規律・共通の約束事を <code>~/.claude/</code> にコピーしています。<strong>すでにあった自分の <code>CLAUDE.md</code> は消さず <code>CLAUDE.md.bak</code> に退避</strong>します。<code>settings.json</code> がすでにあると「手動でマージしてください」と出ます（<a href="#trouble">困ったとき</a>参照）。Codex 用のスキル 39 本（Claude Code のスキル 20 本 ＋ コマンド 19 本を <code>cmd-&lt;名前&gt;</code> に変換したもの）は <code>~/.agents/skills/</code> に、この利用ガイドなどの資料は <code>~/.claude/docs/aidd-kit/</code> にも配られます。</p>
+            <p class="why">スキル・コマンド・hooks・規律・共通の約束事を <code>~/.claude/</code> にコピーしています。<strong>すでにあった自分の <code>CLAUDE.md</code> は消さず <code>CLAUDE.md.bak</code> に退避</strong>します。<code>settings.json</code> がすでにあると「手動でマージしてください」と出ます（<a href="#trouble">困ったとき</a>参照）。Codex 用のスキル 40 本（Claude Code のスキル 21 本 ＋ コマンド 19 本を <code>cmd-&lt;名前&gt;</code> に変換したもの）は <code>~/.agents/skills/</code> に、この利用ガイドなどの資料は <code>~/.claude/docs/aidd-kit/</code> にも配られます。</p>
           </li>
           <li><strong>ちゃんと入ったか確認する</strong>
             <pre><code>./00_導入/01_インストール/verify.sh</code></pre>
@@ -403,7 +403,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 ├── CLAUDE.md            ← 「@AGENTS.md を読め」＋ Claude Code だけの設定
 ├── KIT_VERSION          ← どの版のキットを入れたか（版・コミット・日付）
 ├── rules/aidd-kit/      ← 規律 4 本
-├── skills/              ← 手順書 20 本（各フォルダに SKILL.md）
+├── skills/              ← 手順書 21 本（各フォルダに SKILL.md）
 ├── commands/            ← スラッシュコマンド 19 本
 ├── hooks/               ← 見張り役 23 本（うち secret_patterns.py は hook でなく共通部品）
 └── settings.json        ← hooks を Claude Code に登録する設定</code></pre>
@@ -445,6 +445,15 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <li><code>check_design.py --baseline</code> は既知の指摘を基準線として記録し、新規の指摘だけを不合格にします。<strong>基準線は指摘が減る方向にしか更新できません</strong>（増える更新は拒否されます）</li>
           </ul>
         </div>
+        <div class="card">
+          <h3>セキュリティ運用・完了主張の照合・仕様品質（8.5.0〜）</h3>
+          <ul>
+            <li>外部スキル・MCP・プラグインを導入する前に <code>skill-scan.py</code> が静的検査します。<strong>DANGEROUS（危険）と判定されたら導入を止めます</strong>。テスト用に1回だけ通したいときは <code>AIDD_SKILL_SCAN_OK=1</code> を付けてください</li>
+            <li><code>verify.sh</code> が設定そのものの危険な組み合わせ（<code>bypassPermissions</code>・全許可の <code>Bash(*)</code>・<code>curl|sh</code>・秘密値）も監査します</li>
+            <li>「完了しました」と報告したのに直近のテスト実行が無い・失敗している場合、<code>reply-language.py</code> が差し戻します（<strong>同じやり取りの中で2回まで</strong>。未実行なら「提案（未実行）」と書けば通ります）</li>
+            <li>要件定義書に <code>.claude/phase-gate</code> があるプロジェクトでは、<code>req-lint.py</code> の指摘（数値の無い非機能要件・列挙数の不一致 等）が残っていると基本設計の入口で止まります</li>
+          </ul>
+        </div>
       </section>
 
       <section id="export">
@@ -457,7 +466,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <p class="expect"></p>
             <pre><code>=== AIDD Kit プロジェクト配布（版: 6.3.0 xxxxxxx 2026-09-17）===
 対象: <対象ディレクトリ>
-✅ スキル: 20個
+✅ スキル: 21個
 ✅ コマンド: 19個
 ✅ Hooks: 7個（プロジェクトスコープ・相対パス参照。block-explore.sh も配線済み）
 ✅ Rules: 4個（.claude/rules/）
@@ -664,7 +673,7 @@ cd ~/work/library-loan &amp;&amp; claude</code></pre>
             <p class="expect"></p>
             <pre><code>✅ 単一HTMLツール スキャフォールド作成
 === AIDD Kit プロジェクト配布（版: 6.3.0 ...）===
-✅ スキル: 20個 ... ✅ .claude/KIT_VERSION: ...</code></pre>
+✅ スキル: 21個 ... ✅ .claude/KIT_VERSION: ...</code></pre>
           </li>
           <li><strong>依頼を 1 行で出す</strong>
             <div class="chat">
@@ -1245,7 +1254,7 @@ big.py は 900 行あるため先頭 300 行だけ読みました（pre-read-gua
       <section id="next">
         <h2><span class="h2-ic">→</span>次に読むもの</h2>
         <ol>
-          <li><a href="02_操作マニュアル.html">取り扱い説明書</a> — エージェント 5 体・スキル 20 本の選び方・コマンド 19 本の一覧・ECC との関係・プロジェクト別の使い分け・困った時</li>
+          <li><a href="02_操作マニュアル.html">取り扱い説明書</a> — エージェント 5 体・スキル 21 本の選び方・コマンド 19 本の一覧・ECC との関係・プロジェクト別の使い分け・困った時</li>
           <li><code>README.md</code> — 版ごとに何が増えたか、フォルダ構成の全体図</li>
           <li><code>INDEX.md</code> — 全ファイルの地図。1 行要約と「読むと何行か」</li>
           <li><code>01_利用者向け資料/04_運用モード.md</code> — 日常の標準作業モード（種別判定・読む範囲・実装ループ・完了判定）</li>

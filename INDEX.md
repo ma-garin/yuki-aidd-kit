@@ -20,7 +20,7 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 | `03_ClaudeCode/` | `CLAUDE.md.template`・`skills/`・`commands/`・`agents/`・`hooks/` | 配る（install で `~/.claude/` 直下、export で `<対象>/.claude/` 直下） |
 | `04_Codex/` | `AGENTS.md.template`・配置の説明 | 配る（`AGENTS.md`） |
 | `05_プロジェクト管理/` | 要求仕様・ロードマップ・構想・`構成管理/`（構成管理計画書・構成品目一覧） | 配らない |
-| `06_保守者向け/` | `内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`（回帰テスト 13 本と check-docs）・監査レポート | 配らない |
+| `06_保守者向け/` | `内部仕様/`・`学んだこと.md`・`設計判断の根拠/`・`回帰テスト/`（回帰テスト 17 本と check-docs）・監査レポート | 配らない |
 
 ## クイックスタート
 
@@ -41,10 +41,10 @@ open 01_利用者向け資料/01_利用ガイド.html                      # ユ
 open 01_利用者向け資料/02_操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（06_保守者向け/ は配布しない）
-./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（712ケース）
-./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（156ケース）
-./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（63ケース）
-./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（70ケース）
+./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（838ケース）
+./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（188ケース）
+./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（71ケース）
+./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（94ケース）
 ./06_保守者向け/03_回帰テスト/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
 ```
@@ -71,9 +71,9 @@ python3 scripts/md-section.py search <語>     # Markdown 文書を見出し単�
 | エージェント | 担当 | ループの終了条件（機械判定） | コスト |
 |---|---|---|---|
 | `aidd-lead` | 統括。種別判定・進め方の選択・工程の駆動・差し戻しの配分 | 工程 2〜7 が収束し受け入れ材料が揃う | 79行 |
-| `spec-agent` | 工程 2・3（基本設計・詳細設計） | `trace-check.sh` NG=0・TBD 残ゼロ | 49行 |
+| `spec-agent` | 工程 2・3（基本設計・詳細設計） | `trace-check.sh` NG=0・TBD 残ゼロ | 50行 |
 | `build-agent` | 工程 4（実装＋デザイン。指示が無くても design-system を適用する） | `check-design.sh` NG=0・実行経路の疎通 | 50行 |
-| `verify-agent` | 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行） | Critical/High 残ゼロ・`test-metrics.sh --gate` exit 0 | 53行 |
+| `verify-agent` | 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行） | Critical/High 残ゼロ・`test-metrics.sh --gate` exit 0 | 54行 |
 | `gate-agent` | 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す） | 差し戻し 0 件。**承認欄は空のまま人間へ** | 45行 |
 
 AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない線）。中間工程は「AI 検証完了・承認待ち」として積み、受け入れ時に人間がまとめて判定する。
@@ -84,24 +84,25 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 |---|---|---|---|
 | `dev-lifecycle` | RFD→要件定義→基本/詳細設計→実装→単体/結合/システム/受け入れテスト→保守運用。工程ゲートとトレーサビリティ | #lifecycle #process | 119行 |
 | `context-compression` | 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存 | #token #process | 63行 |
-| `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 60行 |
-| `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 59行 |
-| `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only。references/personas.md に検証ペルソナ 16 体（作った本人に検証させない・順次）と準拠の主張範囲 | #qa #review | 58行 |
+| `ecc-daily-router` | プロジェクトに合うECC資産をDAILY/LIBRARYに分類（真実源は ECC-ASSET-MAP） | #ecc #routing | 61行 |
+| `sdd-ecc-workflow` | 仕様駆動開発の10ステップ。spec/plan/tasks生成と役割分離 | #sdd #process | 61行 |
+| `qa-review-standards` | ISO 25010・ISTQB severity・Whittakerツアーをレビューに注入。evidence-only。references/personas.md に検証ペルソナ 16 体（作った本人に検証させない・順次）と準拠の主張範囲 | #qa #review | 60行 |
 | `atarimae-quality-audit` | 当たり前品質(Kano must-be)を発見者として徹底監査。症状の裏の欠陥クラスを全列挙し実機で目視 | #qa #audit | 76行 |
-| `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 63行 |
-| `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 116行 |
-| `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 108行 |
+| `test-automation` | Playwright/pytestで「動いた」をテスト実行判定に置き換える | #qa #test | 65行 |
+| `test-strategy` | テストレベル L1〜L4・ゲート基準・実行タイミング・変更タイプ別 DoD・29119 文書・機能契約ハーネス・UI 検証マーカー | #qa #test #process | 122行 |
+| `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 109行 |
 | `phase-approval` | 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る | #lifecycle #qa #process | 98行 |
-| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 65行 |
+| `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 66行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 200行 |
-| `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 46行 |
+| `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 47行 |
 
 ## LIBRARY スキル（種別・場面で選ぶ）
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
 | `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/ に tokens.md（値の理由）・components.md（部品の使い分けと落とし穴）・frameworks.md（分担）。実物は templates/tokens.css・templates/ui/ | #ui #design | 121行 |
-| `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値 | #nfr #spec | 94行 |
+| `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値。references/ に LLM・Agentic Top10 の点検表 | #nfr #spec | 101行 |
+| `security-audit`（8.5.0〜） | 走査器の結果＋スタック別 OWASP/ASVS 観点表でセキュリティ監査。明示の依頼だけ（`ecc-daily-router` からは自動で振らない） | #qa #security | 82行 |
 | `agent-eval` | LLM/RAG/エージェント出力の品質をデータセット＋スコアラーで回帰評価 | #ai #eval | 72行 |
 | `code-doc-search` | 技術ドキュメント検索のクエリ最適化 | #search #docs | 59行 |
 | `single-html-tool` | 単一HTMLツール（社内配布・PoC）の開発規約 | #html #tool | 41行 |
@@ -112,9 +113,9 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 22行 |
-| `speed-harness` | H-0〜H-10: 出力量・着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示・自己ウェイク禁止・往復と読み込みの規律 | #speed #process #token | 62行 |
-| `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 16行 |
+| `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 23行 |
+| `speed-harness` | H-0〜H-10: 出力量・着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示・自己ウェイク禁止・往復と読み込みの規律 | #speed #process #token | 59行 |
+| `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 18行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 17行 |
 
 ## 03_ClaudeCode/hooks/（settings.json で配線）
@@ -130,7 +131,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `block-gates.py` | PreToolUse Bash | pytest / make test / lint をユーザー要求時（`GATES_REQUESTED=1`）以外は deny |
 | `block-ci.py` | PreToolUse（全ツール） | ScheduleWakeup・CronCreate・send_later 等の自己ウェイク／定期実行と、`gh run watch` 等の CI 起動・待機を deny（Bash は `CI_REQUESTED=1` で許可） |
 | `instruction-guard.py` | PreToolUse | 未応答の指示・言語・見積の欠落に加え、**自分が問うた直後の着手**を検出して待たせる（A-13・A-2・A-7） |
-| `reply-language.py` | Stop | 日本語・相槌のみ・実測の無い報告・散文 12 行超・予実の乖離で block（傾向 #32〜36） |
+| `reply-language.py` | Stop | 日本語・相槌のみ・実測の無い報告・散文 12 行超・予実の乖離で block（傾向 #32〜36）。完了主張（「完了しました」等）と直近のテスト系実行結果の食い違いも block（同一ターン2回まで。B-27） |
 | `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
 | `block-destructive.py` | PreToolUse(Bash) | 取り返しのつかない操作を deny（reset --hard / clean -fd / stash drop / checkout -- / push --force / add -A / rm -rf）。代替手段を理由に載せる。ラッパー（bash -c・sudo・env・xargs 等）を剥がしてから照合し、秘密ファイルを読むコマンドも deny（B-19） |
 | `block-protected.py` | PreToolUse(Write/Edit/MultiEdit, Bash) | `.claude/settings*.json`・`.claude/hooks/`・`.git/hooks/` 等の書き換えを realpath 解決の上で deny。`AIDD_ALLOW_CONFIG_EDIT=1` で解除。判定不能は deny（B-19） |
@@ -169,7 +170,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `/doc-search` | 技術ドキュメント特化検索 | #search | 14行 |
 | `/retro` | レトロ実行と lessons.md 追記 | #improve | 18行 |
 | `/token-check` | トークン使用量の確認と最適化提案 | #token | 31行 |
-| `/security-audit` | 導入済みの無料走査器（依存・SAST・秘密）でセキュリティ監査。未検査は合格に数えない | #qa #security | 25行 |
+| `/security-audit` | 導入済みの無料走査器（依存・SAST・秘密）でセキュリティ監査。未検査は合格に数えない | #qa #security | 30行 |
 
 ## ECC 連携
 
@@ -196,8 +197,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け
 
 | ファイル | 1行要約 | コスト |
 |---|---|---|
-| `01_利用者向け資料/01_利用ガイド.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1333行 |
-| `01_利用者向け資料/02_操作マニュアル.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `01_利用ガイド.html`・事例・V字章へ導線 | 1799行 |
+| `01_利用者向け資料/01_利用ガイド.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1342行 |
+| `01_利用者向け資料/02_操作マニュアル.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `01_利用ガイド.html`・事例・V字章へ導線 | 1817行 |
 | `01_利用者向け資料/03_ClaudeProjects設定手順.md` | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ） | 58行 |
 | `01_利用者向け資料/04_運用モード.md` | 日常の標準作業モード | 106行 |
 | `01_利用者向け資料/05_ECC資産対応表.md` | ECCプロジェクト別対応表（真実源） | 148行 |

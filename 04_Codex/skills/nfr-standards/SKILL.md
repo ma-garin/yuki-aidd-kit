@@ -88,6 +88,13 @@ description: "AIDDプロジェクト向けの非機能要件（NFR）定義ス�
 - APIキーは環境変数（.env）から読み込み。コードにハードコードしない
 - .envは.gitignoreに必ず追加
 
+## NFR: LLM・エージェントを含む場合（どの種別にも足す）
+
+- 点検表 `references/llm-agentic-top10.md`（OWASP LLM Top 10 と Agentic Top 10。1 行 1 リスクで「キットの対策」「未対応」「確認方法」）を、
+  利用者のアプリ（RAG・LLM API）と、キット自身（skills・agents の tools・hooks・導入する MCP）の両方に当てる
+- 適用しない行は「対象外（理由）」と spec.md に書く。未対応の行は要件にするか、受け入れる理由を書く
+- 監査として file:line の根拠付きで見るときは `security-audit`（明示の依頼だけ）
+
 ## 適用範囲と引き継ぎ
 
 **使わない場面**: 数値の検証そのものには使わない（決めるまでが範囲）。画面の実測は `uiux_review`。

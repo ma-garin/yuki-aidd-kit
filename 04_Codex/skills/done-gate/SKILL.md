@@ -14,6 +14,7 @@ description: "タスクや機能を「完了」と判定する前の最終チェ
 - [ ] テストが受入基準（Given/When/Then）を検証している。件数だけ数えるテスト・0 件実行の PASS・通すために弱めた assert が無い（実行件数を末尾 1 行に出す）
 - [ ] 未検証の項目は「項目／確かめ方」の表にした（`02_共通/ひな形/CURRENT_STATE.md`。「動くはず」を書かない）
 - [ ] 秘密情報がコードに混入していない（grep確認）
+- [ ] 基準線（`scripts/security-scan.sh --baseline`・`check-design.sh --baseline`。書式は `scripts/baseline.py`）を使うなら: **件数は減る方向だけ**（増える更新は拒否される）。除外には**理由と期限（既定 90 日）**を書く。期限切れ・期限なし・理由なしの除外は NG（既知に数えない）。基準線を捨て場にしない
 - [ ] CURRENT_STATE.md を更新した
 - [ ] implement.md に作業記録を追記した
 - [ ] コミット済み（Conventional Commits形式）
