@@ -624,6 +624,40 @@ expect_nrgrep "出荷物の対の表は読めている（対の表が無い警�
 N=$(grep -c '^| `--' "$TMP/report.md")
 [ "$N" -ge 12 ] && ok "対照表に 6 対以上 × 2 テーマ（$N 行）" || ng "対照表に 6 対以上 × 2 テーマ" "$N 行"
 
+echo "[ケースK12: 差し戻し — 装飾 img・子孫の名前・<template> の除外]"
+reset; cat > "$P/02_共通/ひな形/ui/k12.html" <<'HTML'
+<!doctype html><html lang="ja"><head><link rel="stylesheet" href="../tokens.css"></head><body>
+<img src="a.png" role="none" width="40" height="40">
+<img src="b.png" aria-hidden="false" width="40" height="40">
+<button type="button"><span><span aria-label="検索"></span></span></button>
+<a href="/"><span><svg><title>ホーム</title></svg></span></a>
+<button type="button"><span aria-labelledby="lb1"></span></button>
+<template><button type="button"></button><img src="c.png"><input id="tpl"></template>
+<button type="button"></button>
+</body></html>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_exit "template の外の空 button で exit 1" 1 "$RC"
+expect_nrgrep "role=none の img は D20 にしない" "| D20 | img alt欠落 | 02_共通/ひな形/ui/k12.html:2 |"
+expect_rgrep "aria-hidden=false の img（alt 無し）は D20 のまま" "| D20 | img alt欠落 | 02_共通/ひな形/ui/k12.html:3 |"
+for n in 4 5 6; do expect_nrgrep "子孫の aria-label・<svg><title>・aria-labelledby で名前がある button/a は D23 にしない（$n 行目）" "k12.html:$n |"; done
+expect_nrgrep "<template> の中（空 button・alt 無し img・ラベル無し input）は走査しない" "k12.html:7 |"
+expect_rgrep "<template> の後ろの空 button は行番号どおり D23" "| D23 | 名前の無いボタン・リンク | 02_共通/ひな形/ui/k12.html:8 |"
+
+echo "[検証: 塊K]"
+# 実装担当とは別担当による確認。D20/D23 の判定に見つかった誤検知を赤のまま残す（実装担当が直す）。
+reset; cat > "$P/02_共通/ひな形/ui/verify-fp.html" <<'HTML'
+<!doctype html><html lang="ja"><head><title>t</title></head><body>
+<img src="a.png" role="presentation">
+<img src="b.png" aria-hidden="true">
+<button type="button"><svg aria-label="閉じる"></svg></button>
+</body></html>
+HTML
+OUT=$(run 02_共通/ひな形/ui); RC=$?
+expect_nrgrep "role=presentation の img（alt 無し）を D20 で誤検知しない" "| D20 | img alt欠落 | 02_共通/ひな形/ui/verify-fp.html:2 |"
+expect_nrgrep "aria-hidden=true の img（alt 無し）を D20 で誤検知しない" "| D20 | img alt欠落 | 02_共通/ひな形/ui/verify-fp.html:3 |"
+expect_nrgrep "中の <svg aria-label> だけを持つ button を D23 で誤検知しない" "verify-fp.html:4 |"
+
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 [ "$FAIL" -eq 0 ] && { echo "✅ 全て正常"; exit 0; } || { echo "⚠ 失敗あり"; exit 1; }
