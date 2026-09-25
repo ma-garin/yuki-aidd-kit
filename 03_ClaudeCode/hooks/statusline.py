@@ -5,7 +5,7 @@
 従来表示（~/.claude/statusline.sh）の前に連結して出す。従来表示は常に消さない。
 待機中: 従来表示のみ。
 常時: セッションの累計消費を差分読みで出す（⚠ Σ268.4M 出力1,341/t 660t ｜ API換算 $12.30（¥1,968）直近+$0.041（¥7））。
-  料金は transcript の usage を model 別に単価表 _PRICES で自前計算（入力・5m/1h キャッシュ書込・キャッシュ読出・出力の 5 区分）。
+  料金は transcript の usage を model 別に単価表 _PRICES で自前計算し、[S $0.86 F $4.33 sub $0.30] の内訳を添える（sub はサブエージェント分。Σ と $ に合算）。（入力・5m/1h キャッシュ書込・キャッシュ読出・出力の 5 区分）。
   円は _JPY_PER_USD の固定レート。単価表に無い model があれば末尾に ※。消費を尋ねるターン自体が文脈全量を読み直すため、表示で済ませる。
 末尾（B76）: 入力 JSON に Claude Code が渡す `context_window`・`rate_limits` が**あれば**、今の文脈の使用率と
   5 時間枠・週次枠の使用率と戻る時刻を足す（ctx 38% 5h 72%（14:20） 7d 40%（9/28 09:00））。5h が 80% 以上なら ⚠ を付ける
@@ -100,39 +100,70 @@ def _human(n: int) -> str:
     return f"{n / 1e6:.1f}M" if n >= 1e6 else f"{n / 1e3:.0f}k"
 
 
+def _abbr(model: str) -> str:
+    """内訳表示用の頭文字（S/O/F/H/M）。単価表に無い model は ?。"""
+    for key, ch in (("sonnet", "S"), ("opus", "O"), ("fable", "F"), ("haiku", "H"), ("mythos", "M")):
+        if key in (model or ""):
+            return ch
+    return "?"
+
+
+def _scan(path: pathlib.Path, st: dict, c: dict, sub: bool) -> None:
+    """transcript を前回の位置から差分で読み、c（合計）と c["by"]（model 別）に足す。sub=True はサブエージェント分。"""
+    if st.get("offset", 0) > path.stat().st_size:
+        st.update(offset=0, last="")
+    with path.open("rb") as f:
+        f.seek(st.get("offset", 0))
+        for raw in f:
+            if not raw.endswith(b"\n"):
+                break  # 書きかけの行は次回
+            st["offset"] = st.get("offset", 0) + len(raw)
+            try:
+                e = json.loads(raw)
+            except ValueError:
+                continue
+            m = e.get("message") if e.get("type") == "assistant" else None
+            if not isinstance(m, dict) or not m.get("usage") or m.get("id") == st.get("last"):
+                continue
+            st["last"] = m.get("id") or ""
+            u = m["usage"]
+            tok = sum(int(u.get(k) or 0) for k in _USAGE_KEYS)
+            cc = u.get("cache_creation")
+            if not u.get("cache_creation_input_tokens") and isinstance(cc, dict):  # 内訳だけ来る形にも備える
+                tok += sum(int(v or 0) for v in cc.values() if isinstance(v, (int, float)))
+            c["total"] += tok
+            usd = _usd(m.get("model") or "", u)
+            if sub:
+                c["sub_n"] += 1
+                if usd is not None:
+                    c["usd"] += usd
+                    c["sub_usd"] += usd
+                continue
+            c["out"] += int(u.get("output_tokens") or 0)
+            c["n"] += 1
+            if usd is None:
+                c["unpriced"] += 1
+            else:
+                c["usd"] += usd
+                c["last_usd"] = usd
+                k = _abbr(m.get("model") or "")
+                c["by"][k] = c["by"].get(k, 0.0) + usd
+
+
 def _token_part(stdin_raw: str) -> str:
-    """セッションの累計消費（Σ）・1 応答あたり出力・応答数。前回の読み終わり位置から差分だけ読む。"""
+    """セッションの累計消費（Σ）・1 応答あたり出力・応答数・API 換算料金（model 別内訳＋サブエージェント分）。差分読み。"""
     try:
         path = pathlib.Path(json.loads(stdin_raw or "{}").get("transcript_path") or "")
         if not path.is_file():
             return ""
         c = json.loads(_TOKEN_CACHE.read_text(encoding="utf-8")) if _TOKEN_CACHE.exists() else {}
-        if c.get("path") != str(path) or c.get("offset", 0) > path.stat().st_size or "usd" not in c:
-            c = {"path": str(path), "offset": 0, "total": 0, "out": 0, "n": 0, "last": "", "usd": 0.0, "last_usd": 0.0, "unpriced": 0}
-        with path.open("rb") as f:
-            f.seek(c["offset"])
-            for raw in f:
-                if not raw.endswith(b"\n"):
-                    break  # 書きかけの行は次回
-                c["offset"] += len(raw)
-                try:
-                    e = json.loads(raw)
-                except ValueError:
-                    continue
-                m = e.get("message") if e.get("type") == "assistant" else None
-                if not isinstance(m, dict) or not m.get("usage") or m.get("id") == c["last"]:
-                    continue
-                c["last"] = m.get("id") or ""
-                u = m["usage"]
-                c["total"] += sum(int(u.get(k) or 0) for k in _USAGE_KEYS)
-                c["out"] += int(u.get("output_tokens") or 0)
-                c["n"] += 1
-                usd = _usd(m.get("model") or "", u)
-                if usd is None:
-                    c["unpriced"] += 1
-                else:
-                    c["usd"] += usd
-                    c["last_usd"] = usd
+        if c.get("path") != str(path) or "by" not in c:
+            c = {"path": str(path), "main": {"offset": 0, "last": ""}, "subs": {}, "total": 0, "out": 0, "n": 0,
+                 "usd": 0.0, "last_usd": 0.0, "unpriced": 0, "by": {}, "sub_usd": 0.0, "sub_n": 0}
+        _scan(path, c["main"], c, sub=False)
+        # サブエージェント: <dir>/<session>/subagents/agent-*.jsonl（同じ usage 形式。Σ と $ に合算し、内訳に sub で出す）
+        for sp in sorted((path.parent / path.stem / "subagents").glob("*.jsonl")):
+            _scan(sp, c["subs"].setdefault(str(sp), {"offset": 0, "last": ""}), c, sub=True)
         _TOKEN_CACHE.parent.mkdir(parents=True, exist_ok=True)
         _TOKEN_CACHE.write_text(json.dumps(c), encoding="utf-8")
         if not c["n"]:
@@ -140,7 +171,12 @@ def _token_part(stdin_raw: str) -> str:
         per = c["out"] // c["n"]
         warn = "⚠ " if per > _OUT_WARN else ""
         mark = "※" if c.get("unpriced") else ""
-        cost = f"API換算 ${c['usd']:,.2f}（¥{round(c['usd'] * _JPY_PER_USD):,}）直近+${c['last_usd']:.3f}（¥{round(c['last_usd'] * _JPY_PER_USD):,}）{mark}"
+        parts = [f"{k} ${v:.2f}" for k, v in sorted(c["by"].items(), key=lambda kv: -kv[1])]
+        if c["sub_n"]:
+            parts.append(f"sub ${c['sub_usd']:.2f}")
+        detail = f"[{' '.join(parts)}] " if len(parts) > 1 else ""
+        cost = (f"API換算 ${c['usd']:,.2f}（¥{round(c['usd'] * _JPY_PER_USD):,}）{detail}"
+                f"直近+${c['last_usd']:.3f}（¥{round(c['last_usd'] * _JPY_PER_USD):,}）{mark}")
         return f"{warn}Σ{_human(c['total'])} 出力{per:,}/t {c['n']}t ｜ {cost}"
     except (OSError, ValueError, TypeError, AttributeError):
         return ""  # 表示の失敗で従来表示を消さない
