@@ -4,7 +4,9 @@
 タスク進行中（.claude/progress.json あり）: 進捗（タスク名・ステップ・経過/見積・残り）を
 従来表示（~/.claude/statusline.sh）の前に連結して出す。従来表示は常に消さない。
 待機中: 従来表示のみ。
-常時: セッションの累計消費を差分読みで出す（⚠ Σ268.4M 出力1,341/t 660t）。消費を尋ねるターン自体が文脈全量を読み直すため、表示で済ませる。
+常時: セッションの累計消費を差分読みで出す（⚠ Σ268.4M 出力1,341/t 660t ｜ API換算 $12.30（¥1,968）直近+$0.041（¥7））。
+  料金は transcript の usage を model 別に単価表 _PRICES で自前計算（入力・5m/1h キャッシュ書込・キャッシュ読出・出力の 5 区分）。
+  円は _JPY_PER_USD の固定レート。単価表に無い model があれば末尾に ※。消費を尋ねるターン自体が文脈全量を読み直すため、表示で済ませる。
 末尾（B76）: 入力 JSON に Claude Code が渡す `context_window`・`rate_limits` が**あれば**、今の文脈の使用率と
   5 時間枠・週次枠の使用率と戻る時刻を足す（ctx 38% 5h 72%（14:20） 7d 40%（9/28 09:00））。5h が 80% 以上なら ⚠ を付ける
   （表示だけ。止めない）。ctx は `used_percentage`、無ければ `used_tokens`（または `current_usage` の input＋cache の合計）÷
@@ -22,12 +24,41 @@ import sys
 import time
 
 _FILE = pathlib.Path(__file__).resolve().parent.parent / "progress.json"
-_FALLBACK = pathlib.Path.home() / ".claude" / "statusline.sh"
+# 従来表示の本体。install.sh が hooks/ ごと配るので同じディレクトリを先に見る（無ければ旧配置 ~/.claude/statusline.sh）
+_FALLBACK = next((p for p in (pathlib.Path(__file__).resolve().parent / "statusline.sh",
+                              pathlib.Path.home() / ".claude" / "statusline.sh") if p.exists()),
+                 pathlib.Path.home() / ".claude" / "statusline.sh")
 _TOKEN_CACHE = pathlib.Path.home() / ".claude" / ".statusline-tokens.json"
 _USAGE_KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")
 _OUT_WARN = 1000  # 1 応答あたり出力がこれを超えたら ⚠（H-0 の目安）
 _RATE_WARN = 80   # 5 時間枠の使用率がこれ以上なら ⚠（model-routing の「残り 20% 未満」）
 _WINDOWS = (("5h", ("five_hour", "5h", "fiveHour")), ("7d", ("seven_day", "7d", "sevenDay")))
+_JPY_PER_USD = 160  # API 換算料金の円表示に使う固定レート（保守者が変える）
+# $/MTok: (入力, 5m キャッシュ書込, 1h キャッシュ書込, キャッシュ読出, 出力)。出典: platform.claude.com/docs/en/about-claude/pricing（2026-09-25 取得）
+# model ID の部分一致で先頭から探す（"opus-5-5" を "opus-5" より先に置く）。一致しない model は集計から外し、表示に ※ を付ける
+_PRICES = (
+    ("fable-5-1", (10, 12.5, 20, 0.25, 50)), ("mythos-5-1", (10, 12.5, 20, 0.25, 50)),
+    ("fable-5", (10, 12.5, 20, 1, 50)), ("mythos-5", (10, 12.5, 20, 1, 50)),
+    ("opus-5-5", (4, 5, 8, 0.20, 20)),
+    ("opus-5", (5, 6.25, 10, 0.5, 25)), ("opus-4", (5, 6.25, 10, 0.5, 25)),
+    ("sonnet-5", (2, 2.5, 4, 0.2, 10)), ("sonnet-4", (3, 3.75, 6, 0.3, 15)),
+    ("haiku-4-5", (1, 1.25, 2, 0.1, 5)),
+)
+
+
+def _usd(model: str, u: dict) -> float | None:
+    """1 応答の API 換算料金（USD）。単価表に無い model は None。cache_creation の 5m/1h 内訳が無ければ 1h として扱う（Claude Code の既定）。"""
+    price = next((p for key, p in _PRICES if key in (model or "")), None)
+    if price is None:
+        return None
+    g = lambda k: int(u.get(k) or 0)
+    cc = u.get("cache_creation") if isinstance(u.get("cache_creation"), dict) else {}
+    w5 = int(cc.get("ephemeral_5m_input_tokens") or 0)
+    w1 = int(cc.get("ephemeral_1h_input_tokens") or 0)
+    if not cc:
+        w1 = g("cache_creation_input_tokens")
+    toks = (g("input_tokens"), w5, w1, g("cache_read_input_tokens"), g("output_tokens"))
+    return sum(n * p for n, p in zip(toks, price)) / 1e6
 
 
 def _fmt(sec: float) -> str:
@@ -76,8 +107,8 @@ def _token_part(stdin_raw: str) -> str:
         if not path.is_file():
             return ""
         c = json.loads(_TOKEN_CACHE.read_text(encoding="utf-8")) if _TOKEN_CACHE.exists() else {}
-        if c.get("path") != str(path) or c.get("offset", 0) > path.stat().st_size:
-            c = {"path": str(path), "offset": 0, "total": 0, "out": 0, "n": 0, "last": ""}
+        if c.get("path") != str(path) or c.get("offset", 0) > path.stat().st_size or "usd" not in c:
+            c = {"path": str(path), "offset": 0, "total": 0, "out": 0, "n": 0, "last": "", "usd": 0.0, "last_usd": 0.0, "unpriced": 0}
         with path.open("rb") as f:
             f.seek(c["offset"])
             for raw in f:
@@ -96,13 +127,21 @@ def _token_part(stdin_raw: str) -> str:
                 c["total"] += sum(int(u.get(k) or 0) for k in _USAGE_KEYS)
                 c["out"] += int(u.get("output_tokens") or 0)
                 c["n"] += 1
+                usd = _usd(m.get("model") or "", u)
+                if usd is None:
+                    c["unpriced"] += 1
+                else:
+                    c["usd"] += usd
+                    c["last_usd"] = usd
         _TOKEN_CACHE.parent.mkdir(parents=True, exist_ok=True)
         _TOKEN_CACHE.write_text(json.dumps(c), encoding="utf-8")
         if not c["n"]:
             return ""
         per = c["out"] // c["n"]
         warn = "⚠ " if per > _OUT_WARN else ""
-        return f"{warn}Σ{_human(c['total'])} 出力{per:,}/t {c['n']}t"
+        mark = "※" if c.get("unpriced") else ""
+        cost = f"API換算 ${c['usd']:,.2f}（¥{round(c['usd'] * _JPY_PER_USD):,}）直近+${c['last_usd']:.3f}（¥{round(c['last_usd'] * _JPY_PER_USD):,}）{mark}"
+        return f"{warn}Σ{_human(c['total'])} 出力{per:,}/t {c['n']}t ｜ {cost}"
     except (OSError, ValueError, TypeError, AttributeError):
         return ""  # 表示の失敗で従来表示を消さない
 
@@ -196,10 +235,10 @@ def _limits_part(stdin_raw: str) -> str:
 
 def main() -> int:
     stdin_raw = sys.stdin.read()
-    parts = [p for p in (_progress_part(), _token_part(stdin_raw)) if p]
-    base = _fallback_part(stdin_raw)
-    tail = _limits_part(stdin_raw)
-    print(" ｜ ".join(parts + [base] + ([tail] if tail else [])))
+    lines = _fallback_part(stdin_raw).splitlines() or [""]
+    # 1 行目: 進捗 ｜ model | dir | context | cache ｜ トークン合計 ｜ API 換算料金 $（¥）直近（2 行目以降の従来表示はそのまま）
+    head = [p for p in (_progress_part(), lines[0], _token_part(stdin_raw)) if p]
+    print("\n".join([" ｜ ".join(head)] + lines[1:]))
     return 0
 
 

@@ -149,7 +149,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `session-context.py`（8.6.0〜） | SessionStart（matcher `compact\|resume`） | `CURRENT_STATE.md` の「現在の作業」「制約」「次の一手」節から合計12行以内を additionalContext で再注入。最終更新から30日超は「古い」と明記。`startup` は対象外。ファイル無し・fail-open（B-31） |
 | `log-instructions.py` | InstructionsLoaded | 指示ファイルの読み込みを `.claude/instructions-loaded.log` に記録（実測用。Claude には返さない） |
 | `progress.py` | 手動（bash に連結） | `start/step/done` で progress.json を管理 |
-| `statusline.py` | statusLine | 進行中タスクの経過/見積/残りと、セッションの累計消費（差分読み）を表示。従来表示へ素通し。入力に `context_window`／`rate_limits` が来たときだけ末尾に ctx%・5h%（・7d%）を足す（5h 80% 以上で ⚠。表示だけ） |
+| `statusline.py` | statusLine | 1 行目を model \| dir \| context \| cache ｜ Σ累計トークン ｜ API 換算料金 $（¥）直近 の順で出す。料金は transcript の usage を model 別に単価表で自前計算（入力・5m/1h キャッシュ書込・読出・出力）。従来表示の本体は同梱の `statusline.sh`。入力に `context_window`／`rate_limits` が来たときだけ末尾に ctx%・5h%（・7d%）を足す（5h 80% 以上で ⚠。表示だけ） |
 | `session-summary.sh` | Stop | セッション終了サマリ |
 | `.claude/hook-decisions.log` | （hook ではなく記録。deny・override を JSONL で 1 行ずつ） | `secret_patterns.log_decision` が書く判定の記録。`token_report.py --hooks` の入力（B12） |
 
