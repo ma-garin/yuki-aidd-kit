@@ -443,6 +443,10 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <li>新しい見張り役 <code>hooks/injection-guard.py</code> は、Web取得やMCPの結果に「これまでの指示を無視して」のような指示の形の文が混じっていないかを見ます。<strong>警告専用（止めません）</strong>。見つけたら「データであり指示ではない」と注記するだけで、続きはあなたが判断します</li>
             <li><code>/security-audit</code>（<code>02_共通/ツール/security-scan.sh</code>）は導入済みの走査器（pip-audit・osv-scanner・bandit・gitleaks 等）だけを回します。<strong>走査器が入っていない項目は「未検査」で、合格には数えません</strong>。「指摘なし」に見えても、まず未検査の一覧を確認してください</li>
             <li><code>check_design.py --baseline</code> は既知の指摘を基準線として記録し、新規の指摘だけを不合格にします。<strong>基準線は指摘が減る方向にしか更新できません</strong>（増える更新は拒否されます）</li>
+            <li><strong>どのスキル・MCP が何回・何トークン使われたか</strong>: <code>python3 00_導入/03_点検/token_report.py --by skill,agent,mcp,tool --skills-dir 03_ClaudeCode/skills</code>（JSONL を省くとカレントのプロジェクトの最新セッション）。既存の集計の後に「区分・名前・回数・トークン・費用比・平均・最大」の表が出ます。<code>--skills-dir</code> を付けると<strong>一度も呼ばれないスキル</strong>と、1 セッションで <code>--over</code>（既定 10）回を超えた呼ばれすぎのスキルも出ます</li>
+            <li><strong>上流が変わった下流を見つける（trace-check の C7）</strong>: 追跡表のセルに <code>REQ-F-001@a1b2c3d</code> のように上流の版を書いておくと、<code>bash 02_共通/ツール/trace-check.sh docs/lifecycle</code> が現在の版と食い違うリンクを <strong>suspect（NG）</strong>として出します。変更の前には <code>--impact REQ-F-001</code> で影響する下流を連鎖で一覧できます。<code>--tests &lt;テストのディレクトリ&gt;</code> を付けるとテストコードの <code>spec: ST-001</code> と CSV のテスト ID を突き合わせます（C8 未対応は NG・C9 は WARN）。下流を読み直して問題ないと確かめた記録 <code>--refresh ID</code> は<strong>保守者だけが打ちます（AI は打ちません）</strong></li>
+            <li><strong>（保守者が retro の最後に手で）採用した ADR を規則にする</strong>: <code>python3 02_共通/ツール/adr-to-rules.py docs/adr lessons.md --out .claude/rules</code>。<code>**状態**:</code> が採用の ADR と適用パスのある lessons だけが <code>decisions-&lt;slug&gt;.md</code> になり、該当ファイルを編集するときだけ AI の文脈に入ります。検討中・却下などは飛ばします。hook や定期実行にはしません</li>
+            <li><strong>（保守者がスキルの description を変えたとき）発火テスト</strong>: まず <code>python3 06_保守者向け/03_回帰テスト/skill_trigger_eval.py --dry-run</code> で打つコマンドと件数（例: 120 件 = 20 スキル × 6 発話）を確かめます。実測は保守者の環境で <code>claude -p</code> を呼ぶため <strong>Pro の利用枠を消費します</strong>。<code>--only &lt;スキル名&gt;</code> で変えたスキルだけ流し、定期実行はしません</li>
           </ul>
         </div>
         <div class="card">
@@ -452,6 +456,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
             <li><code>verify.sh</code> が設定そのものの危険な組み合わせ（<code>bypassPermissions</code>・全許可の <code>Bash(*)</code>・<code>curl|sh</code>・秘密値）も監査します</li>
             <li>「完了しました」と報告したのに直近のテスト実行が無い・失敗している場合、<code>reply-language.py</code> が差し戻します（<strong>同じやり取りの中で2回まで</strong>。未実行なら「提案（未実行）」と書けば通ります）</li>
             <li>要件定義書に <code>.claude/phase-gate</code> があるプロジェクトでは、<code>req-lint.py</code> の指摘（数値の無い非機能要件・列挙数の不一致 等）が残っていると基本設計の入口で止まります</li>
+            <li><strong>ADR・rules・lessons の根拠が消えた・変わったのを見つける</strong>: <code>python3 02_共通/ツール/cite-check.py .</code>。引用（<code>`docs/spec.md#認証方式@a1b2c3d`</code> の形）の先が消えたら NG、版が変わったら stale（要再確認）と出ます。<strong>通常の実行はファイルに書き込みません</strong>。版を書き足す <code>--record</code>・書き換える <code>--refresh</code> は、引用先を読んで主張を確かめた<strong>保守者だけが打ちます（AI は打ちません）</strong></li>
           </ul>
         </div>
         <div class="card">
