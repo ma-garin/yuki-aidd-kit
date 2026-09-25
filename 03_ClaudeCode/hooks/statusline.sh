@@ -89,8 +89,7 @@ elif [ "$cache_warm" = "false" ]; then
 fi
 branch=$(git -C "$dir" branch --show-current 2>/dev/null); [ -z "$branch" ] && branch="-"
 
-line1="${model} ${effort:-?} | ${dir##*/} | context ${ctx}% 残${ctx_left}k"
-[ -n "$cache" ] && line1="${line1} | ${cache}"
+line1="${model} ${effort:-?} | ${dir##*/}"
 echo "$line1"
 echo "current $(bar "$five") ${five}% ↻$(fmt_time "$five_reset")"
 echo "weekly  $(bar "$week") ${week}% ↻$(fmt_time "$week_reset")"
