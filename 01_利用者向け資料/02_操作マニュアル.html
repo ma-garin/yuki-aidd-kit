@@ -1640,7 +1640,8 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
           <h3>セキュリティ監査と基準線（8.4.0〜）</h3>
           <ul>
             <li><code>/security-audit</code>（<code>security-scan.sh</code>）は導入済みの走査器だけを回します。<strong>走査器が未導入の項目は「未検査」で、合格には数えません</strong>。exit 2（判定不能）は「指摘なし」と読み違えないでください</li>
-            <li><code>check_design.py --baseline</code> は既知の指摘を記録し、新規の指摘だけを不合格にします。<strong>基準線の更新は指摘が減る方向だけ許可されます</strong>（増える更新は拒否され、書き込まれません）</li>
+            <li><code>check_design.py --baseline &lt;file&gt;</code>: 既知の NG を記録したファイルを指定すると、新規の NG だけが exit 1 になります</li>
+            <li><code>check_design.py --baseline &lt;file&gt; --baseline-write</code>: 現在の NG でそのファイルを書きます。<strong>件数が減る方向の更新だけが書かれます</strong>（増える更新は拒否され（exit 1）、書き込まれません）</li>
           </ul>
           <h3>手順: スキル・MCP の利用回数とトークンを調べる（8.4.0〜）</h3>
           <ol>
@@ -1653,7 +1654,7 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
             <li>変更の前に <code>bash 02_共通/ツール/trace-check.sh docs/lifecycle --impact REQ-F-001</code> で影響する下流を一覧する</li>
             <li>変更後に <code>bash 02_共通/ツール/trace-check.sh docs/lifecycle</code> を打ち、C7 の suspect（記録した版 <code>REQ-F-001@a1b2c3d</code> と現在の版の食い違い）が出た下流を読み直す</li>
             <li>読み直して問題ないと<strong>保守者が</strong>確かめたら <code>--refresh REQ-F-001</code> で追跡表の版を現在の版に書き換える（AI は打たない）</li>
-            <li>テストとの対応も見るときは <code>--tests tests/e2e</code> を付ける（C8: CSV のテスト ID がテストコードに無いと NG ／ C9: 定義に無い ID は WARN）</li>
+            <li>テストとの対応も見るときは <code>--tests tests/e2e</code> を付ける（C8: CSV のテスト ID がテストコードに無いと NG ／ C9: 定義に無い ID は WARN）。テストケースの CSV は既定で対象ディレクトリの親の <code>system_test_cases.csv</code>（<code>docs/system_test_cases.csv</code>）を探す。別の場所なら <code>--csv &lt;path&gt;</code>。CSV が無いと C8 は判定不能（NG）</li>
           </ol>
           <h3>手順: 採用した ADR を rules に書き出す（保守者が retro の最後に手で。8.4.0〜）</h3>
           <ol>
@@ -1676,7 +1677,8 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
           </ul>
           <h3>手順: ADR・rules・lessons の引用切れを調べる（cite-check。8.5.0〜）</h3>
           <ol>
-            <li><code>python3 02_共通/ツール/cite-check.py .</code> を打つ（ファイルには書き込まない。終了コード 0 = NG なし ／ 1 = NG あり）</li>
+            <li><code>python3 02_共通/ツール/cite-check.py .</code> を<strong>プロジェクトのルートで</strong>打つ（ファイルには書き込まない。終了コード 0 = NG なし ／ 1 = NG あり）。キット直下で打つと rules の相対引用が NG になるので、キット直下では打たない</li>
+            <li>NG の読み方: 引用先のファイルが無い（ファイル無し）か、<code>#見出し</code> の見出しが見つからない（見出し無し）。どちらも引用先が消えたか名前が変わったということ</li>
             <li>NG（引用先が消えた）は引用を直す。stale（版が変わった）は引用先を読み直し、主張が今も正しいか確かめて直す</li>
             <li>確かめ終えたら<strong>保守者が</strong> <code>--refresh</code>（版の無い引用に版を足すときは <code>--record</code>）を打ち、commit で残す（AI は打たない）</li>
           </ol>
