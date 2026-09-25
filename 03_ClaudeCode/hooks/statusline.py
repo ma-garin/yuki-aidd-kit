@@ -156,8 +156,11 @@ def _token_part(stdin_raw: str) -> str:
         path = pathlib.Path(json.loads(stdin_raw or "{}").get("transcript_path") or "")
         if not path.is_file():
             return ""
-        c = json.loads(_TOKEN_CACHE.read_text(encoding="utf-8")) if _TOKEN_CACHE.exists() else {}
-        if c.get("path") != str(path) or "by" not in c:
+        try:
+            c = json.loads(_TOKEN_CACHE.read_text(encoding="utf-8")) if _TOKEN_CACHE.exists() else {}
+        except (ValueError, OSError):
+            c = {}  # 壊れたキャッシュは捨てて transcript から再集計する（表示を消さない）
+        if not isinstance(c, dict) or c.get("path") != str(path) or "by" not in c:
             c = {"path": str(path), "main": {"offset": 0, "last": ""}, "subs": {}, "total": 0, "out": 0, "n": 0,
                  "usd": 0.0, "last_usd": 0.0, "unpriced": 0, "by": {}, "sub_usd": 0.0, "sub_n": 0}
         _scan(path, c["main"], c, sub=False)
@@ -165,7 +168,11 @@ def _token_part(stdin_raw: str) -> str:
         for sp in sorted((path.parent / path.stem / "subagents").glob("*.jsonl")):
             _scan(sp, c["subs"].setdefault(str(sp), {"offset": 0, "last": ""}), c, sub=True)
         _TOKEN_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        _TOKEN_CACHE.write_text(json.dumps(c), encoding="utf-8")
+        # 5 秒ごとの起動が重なると同じファイルへの同時書き込みで JSON の後ろにゴミが残る（2026-09-25 に発生）。
+        # 一時ファイルに書いて os.replace で原子的に置き換える
+        tmp = _TOKEN_CACHE.with_suffix(f".{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(c), encoding="utf-8")
+        os.replace(tmp, _TOKEN_CACHE)
         if not c["n"]:
             return ""
         per = c["out"] // c["n"]
