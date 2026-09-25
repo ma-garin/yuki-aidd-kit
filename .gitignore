@@ -36,3 +36,4 @@ tool-time.json
 progress.json
 # hook の判定の記録（B12。*.log でも外れるが、記録先を明示する）
 .claude/hook-decisions.log
+.claude/injection-guard.log
