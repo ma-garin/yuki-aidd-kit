@@ -1642,6 +1642,31 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
             <li><code>/security-audit</code>（<code>security-scan.sh</code>）は導入済みの走査器だけを回します。<strong>走査器が未導入の項目は「未検査」で、合格には数えません</strong>。exit 2（判定不能）は「指摘なし」と読み違えないでください</li>
             <li><code>check_design.py --baseline</code> は既知の指摘を記録し、新規の指摘だけを不合格にします。<strong>基準線の更新は指摘が減る方向だけ許可されます</strong>（増える更新は拒否され、書き込まれません）</li>
           </ul>
+          <h3>手順: スキル・MCP の利用回数とトークンを調べる（8.4.0〜）</h3>
+          <ol>
+            <li>キットのフォルダで <code>python3 00_導入/03_点検/token_report.py --by skill,agent,mcp,tool --skills-dir 03_ClaudeCode/skills</code> を打つ（特定のセッションを見るときは末尾に JSONL のパスを足す）</li>
+            <li>表の「回数」「トークン」「費用比」で、重いスキル・MCP を見つける</li>
+            <li>「一度も呼ばれない」に出たスキルは description の見直しか削除を検討する。呼ばれすぎの基準は <code>--over 5</code> のように変えられる</li>
+          </ol>
+          <h3>手順: 上流の変更の影響を追う（trace-check。8.4.0〜）</h3>
+          <ol>
+            <li>変更の前に <code>bash 02_共通/ツール/trace-check.sh docs/lifecycle --impact REQ-F-001</code> で影響する下流を一覧する</li>
+            <li>変更後に <code>bash 02_共通/ツール/trace-check.sh docs/lifecycle</code> を打ち、C7 の suspect（記録した版 <code>REQ-F-001@a1b2c3d</code> と現在の版の食い違い）が出た下流を読み直す</li>
+            <li>読み直して問題ないと<strong>保守者が</strong>確かめたら <code>--refresh REQ-F-001</code> で追跡表の版を現在の版に書き換える（AI は打たない）</li>
+            <li>テストとの対応も見るときは <code>--tests tests/e2e</code> を付ける（C8: CSV のテスト ID がテストコードに無いと NG ／ C9: 定義に無い ID は WARN）</li>
+          </ol>
+          <h3>手順: 採用した ADR を rules に書き出す（保守者が retro の最後に手で。8.4.0〜）</h3>
+          <ol>
+            <li>ADR の <code>**状態**:</code> が「採用」になっていることを確かめる（検討中・却下などは書き出されない）</li>
+            <li><code>python3 02_共通/ツール/adr-to-rules.py docs/adr lessons.md --out .claude/rules</code> を打つ</li>
+            <li>生成された <code>.claude/rules/decisions-*.md</code> を確かめて commit する（hook や定期実行にはしない）</li>
+          </ol>
+          <h3>手順: スキルの発火テスト（保守者が description を変えたとき。8.4.0〜）</h3>
+          <ol>
+            <li><code>python3 06_保守者向け/03_回帰テスト/skill_trigger_eval.py --dry-run</code> で打つコマンドと件数を確かめる（claude は呼ばない）</li>
+            <li>保守者の環境で <code>python3 06_保守者向け/03_回帰テスト/skill_trigger_eval.py --only &lt;スキル名&gt;</code> を打つ。<code>claude -p</code> を件数分呼ぶので <strong>Pro の利用枠を消費する</strong>。定期実行はしない</li>
+            <li>正例の発火率・負例の誤発火率が基準（<code>--min-hit</code>・<code>--max-miss</code>）を満たすか見る</li>
+          </ol>
           <h3>セキュリティ運用・完了主張の照合・仕様品質（8.5.0〜）</h3>
           <ul>
             <li>外部スキル・MCP・プラグインの導入前に <code>skill-scan.py</code> が静的検査し、<strong>DANGEROUS（危険）は導入を止めます</strong>（<code>AIDD_SKILL_SCAN_OK=1</code> で1回だけ通せます）</li>
@@ -1649,6 +1674,12 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
             <li>「完了しました」の報告と直近のテスト実行結果が食い違うと <code>reply-language.py</code> が差し戻します（同じやり取りで2回まで）</li>
             <li><code>.claude/phase-gate</code> があるプロジェクトでは、<code>req-lint.py</code>（要件定義書の検査）の指摘が残っていると基本設計の入口で止まります</li>
           </ul>
+          <h3>手順: ADR・rules・lessons の引用切れを調べる（cite-check。8.5.0〜）</h3>
+          <ol>
+            <li><code>python3 02_共通/ツール/cite-check.py .</code> を打つ（ファイルには書き込まない。終了コード 0 = NG なし ／ 1 = NG あり）</li>
+            <li>NG（引用先が消えた）は引用を直す。stale（版が変わった）は引用先を読み直し、主張が今も正しいか確かめて直す</li>
+            <li>確かめ終えたら<strong>保守者が</strong> <code>--refresh</code>（版の無い引用に版を足すときは <code>--record</code>）を打ち、commit で残す（AI は打たない）</li>
+          </ol>
           <h3>記録・再注入・デザイン検査・テストの検出力（8.6.0〜）</h3>
           <ul>
             <li>hooks が deny・警告するたびに <code>.claude/hook-decisions.log</code>（JSONL。秘密値は伏字）へ記録します。<code>token_report.py --hooks</code> で hook 別の deny/warn 件数と、環境変数（<code>AIDD_*_OK</code> 等）で解除した回数を集計できます（誤検知率の目安）</li>
