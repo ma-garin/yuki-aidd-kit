@@ -4,7 +4,7 @@
 タスク進行中（.claude/progress.json あり）: 進捗（タスク名・ステップ・経過/見積・残り）を
 従来表示（~/.claude/statusline.sh）の前に連結して出す。従来表示は常に消さない。
 待機中: 従来表示のみ。
-常時: セッションの累計消費を差分読みで出す（⚠ Σ268.4M 出力1,341/t 660t ｜ API換算 $12.30（¥1,968）直近+$0.041（¥7））。
+常時: セッションの累計消費を差分読みで出す（⚠ Σ268.4M 出力1,341/t 660t ｜ API換算 $12.30（¥1,968）[S $0.86（¥138）F $4.33（¥693）sub $0.30（¥48）] 直近+$0.04（¥7））。
   料金は transcript の usage を model 別に単価表 _PRICES で自前計算し、[S $0.86 F $4.33 sub $0.30] の内訳を添える（sub はサブエージェント分。Σ と $ に合算）。（入力・5m/1h キャッシュ書込・キャッシュ読出・出力の 5 区分）。
   円は _JPY_PER_USD の固定レート。単価表に無い model があれば末尾に ※。消費を尋ねるターン自体が文脈全量を読み直すため、表示で済ませる。
 末尾（B76）: 入力 JSON に Claude Code が渡す `context_window`・`rate_limits` が**あれば**、今の文脈の使用率と
@@ -171,12 +171,12 @@ def _token_part(stdin_raw: str) -> str:
         per = c["out"] // c["n"]
         warn = "⚠ " if per > _OUT_WARN else ""
         mark = "※" if c.get("unpriced") else ""
-        parts = [f"{k} ${v:.2f}" for k, v in sorted(c["by"].items(), key=lambda kv: -kv[1])]
+        money = lambda v: f"${v:,.2f}（¥{round(v * _JPY_PER_USD):,}）"  # $ は常に小数 2 桁で、必ず円とセット
+        parts = [f"{k} {money(v)}" for k, v in sorted(c["by"].items(), key=lambda kv: -kv[1])]
         if c["sub_n"]:
-            parts.append(f"sub ${c['sub_usd']:.2f}")
+            parts.append(f"sub {money(c['sub_usd'])}")
         detail = f"[{' '.join(parts)}] " if len(parts) > 1 else ""
-        cost = (f"API換算 ${c['usd']:,.2f}（¥{round(c['usd'] * _JPY_PER_USD):,}）{detail}"
-                f"直近+${c['last_usd']:.3f}（¥{round(c['last_usd'] * _JPY_PER_USD):,}）{mark}")
+        cost = f"API換算 {money(c['usd'])}{detail}直近+{money(c['last_usd'])}{mark}"
         return f"{warn}Σ{_human(c['total'])} 出力{per:,}/t {c['n']}t ｜ {cost}"
     except (OSError, ValueError, TypeError, AttributeError):
         return ""  # 表示の失敗で従来表示を消さない
