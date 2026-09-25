@@ -100,7 +100,8 @@ def load(path: Path | None) -> dict[Key, Entry]:
         if not line.strip() or line.startswith("#"):
             continue
         parts = line.split("\t")
-        if len(parts) < 3 or not all(x.strip() for x in parts[:3]):
+        # 3 列目（正規化した行）はファイル単位の NG（D02・D06 等）では空になる。空を許す（書いたものを読めない不整合を防ぐ）
+        if len(parts) < 3 or not all(x.strip() for x in parts[:2]):
             raise BaselineError(f"基準線を読めない（{path}）")
         if len(parts) >= 4 and parts[3].startswith("#"):   # 新形式: 4 列目が #n
             if not OCC_RE.fullmatch(parts[3]) or len(parts) > 6:
