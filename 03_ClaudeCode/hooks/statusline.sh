@@ -90,7 +90,7 @@ fi
 warn200=""; [ "$over200k" = "true" ] && warn200=" 200k超"
 branch=$(git -C "$dir" branch --show-current 2>/dev/null); [ -z "$branch" ] && branch="-"
 
-line1="${model} | ${dir##*/} | context ${ctx}% 残${ctx_left}k${warn200}"
+line1="${model} ${effort:-?} | ${dir##*/} | context ${ctx}% 残${ctx_left}k${warn200}"
 [ -n "$cache" ] && line1="${line1} | ${cache}"
 echo "$line1"
 echo "current $(bar "$five") ${five}% ↻$(fmt_time "$five_reset")"
