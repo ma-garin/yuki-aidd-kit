@@ -1536,7 +1536,7 @@ ECCはDAILYだけ使って、SwiftやDjango系はLIBRARY扱いにしてくださ
           <div class="callout">
             <div class="callout-title">進み具合が見える</div>
             <p>
-              1分を超える作業では、AIが <code>progress.py</code> で開始・途中・完了を記録し、画面下のステータスラインに「⏱ タスク名 [2/5 配線] 経過 1:20/見積 4:00 残り 2:40」のように出ます。
+              1分を超える作業では、AIが <code>progress.py</code> で開始・途中・完了を記録し、画面下のステータスラインに「⏱ タスク名 [2/5 配線] 経過 1:20/見積 4:00 残り 2:40」のように出ます。Claude Code が <code>context_window</code>／<code>rate_limits</code> を渡したときだけ、末尾に文脈の使用率（ctx 38%）と 5 時間枠の使用率（5h 72%）も出ます（5h が 80% 以上で ⚠。表示だけで止めません）。
               待たされているのか、進んでいるのかが分かります。
             </p>
           </div>
