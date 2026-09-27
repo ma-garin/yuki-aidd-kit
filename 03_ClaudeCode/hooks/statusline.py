@@ -28,7 +28,9 @@ _FILE = pathlib.Path(__file__).resolve().parent.parent / "progress.json"
 _FALLBACK = next((p for p in (pathlib.Path(__file__).resolve().parent / "statusline.sh",
                               pathlib.Path.home() / ".claude" / "statusline.sh") if p.exists()),
                  pathlib.Path.home() / ".claude" / "statusline.sh")
-_TOKEN_CACHE = pathlib.Path.home() / ".claude" / ".statusline-tokens.json"
+# 差分読みキャッシュはセッション（transcript）ごとに分ける。1 ファイル共有だと複数セッションが 5 秒ごとに上書きし合い、
+# 毎回リセット→全量読み直しになる（2026-09-25 に発生）
+_TOKEN_CACHE_DIR = pathlib.Path.home() / ".claude" / ".statusline-tokens"
 _USAGE_KEYS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")
 _OUT_WARN = 1000  # 1 応答あたり出力がこれを超えたら ⚠（H-0 の目安）
 _RATE_WARN = 80   # 5 時間枠の使用率がこれ以上なら ⚠（model-routing の「残り 20% 未満」）
@@ -156,8 +158,9 @@ def _token_part(stdin_raw: str) -> str:
         path = pathlib.Path(json.loads(stdin_raw or "{}").get("transcript_path") or "")
         if not path.is_file():
             return ""
+        cache = _TOKEN_CACHE_DIR / f"{path.stem}.json"
         try:
-            c = json.loads(_TOKEN_CACHE.read_text(encoding="utf-8")) if _TOKEN_CACHE.exists() else {}
+            c = json.loads(cache.read_text(encoding="utf-8")) if cache.exists() else {}
         except (ValueError, OSError):
             c = {}  # 壊れたキャッシュは捨てて transcript から再集計する（表示を消さない）
         if not isinstance(c, dict) or c.get("path") != str(path) or "by" not in c:
@@ -167,12 +170,12 @@ def _token_part(stdin_raw: str) -> str:
         # サブエージェント: <dir>/<session>/subagents/agent-*.jsonl（同じ usage 形式。Σ と $ に合算し、内訳に sub で出す）
         for sp in sorted((path.parent / path.stem / "subagents").glob("*.jsonl")):
             _scan(sp, c["subs"].setdefault(str(sp), {"offset": 0, "last": ""}), c, sub=True)
-        _TOKEN_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        cache.parent.mkdir(parents=True, exist_ok=True)
         # 5 秒ごとの起動が重なると同じファイルへの同時書き込みで JSON の後ろにゴミが残る（2026-09-25 に発生）。
         # 一時ファイルに書いて os.replace で原子的に置き換える
-        tmp = _TOKEN_CACHE.with_suffix(f".{os.getpid()}.tmp")
+        tmp = cache.with_suffix(f".{os.getpid()}.tmp")
         tmp.write_text(json.dumps(c), encoding="utf-8")
-        os.replace(tmp, _TOKEN_CACHE)
+        os.replace(tmp, cache)
         if not c["n"]:
             return ""
         per = c["out"] // c["n"]
