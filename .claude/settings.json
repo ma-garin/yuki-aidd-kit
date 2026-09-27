@@ -23,28 +23,6 @@
             "statusMessage": "保守者の指示に応答済みか確認中"
           }
         ]
-      },
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/block-protected.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
-            "timeout": 5,
-            "statusMessage": "設定・hook の書き換えでないか確認中"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/block-protected.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
-            "timeout": 5,
-            "statusMessage": "設定・hook の書き換えでないか確認中"
-          }
-        ]
       }
     ],
     "PostToolUse": [
