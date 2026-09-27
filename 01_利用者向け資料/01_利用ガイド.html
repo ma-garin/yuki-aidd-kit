@@ -428,8 +428,6 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
           <p>
             秘密ファイル名・秘密値の判定は <code>secret_patterns.py</code>（hook ではなく共通部品）に1か所へまとめました。
             書き込む本文に AWS キーや GitHub トークンなど既知形式の値があれば <code>pre-write-check.sh</code> が止めます。
-            設定・hook 自体の書き換え（<code>.claude/settings.json</code>・<code>.claude/hooks/</code>・<code>.git/hooks/</code>）は
-            <code>block-protected.py</code> が新たに止めます。
           </p>
           <p>
             <strong>限界</strong>: hooks は Bash を構文解析しません。<code>python -c "..."</code> や変数代入・コマンド置換

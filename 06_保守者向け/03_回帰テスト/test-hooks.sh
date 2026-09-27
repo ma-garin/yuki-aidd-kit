@@ -762,138 +762,6 @@ for S in "$HOOKS/settings.json" "$KIT_DIR/.claude/settings.json" "$KIT_DIR/00_�
   expect_contains "SubagentStart の配線: ${S#$KIT_DIR/}" "subagent-context.py" "$OUT"
 done
 
-echo "[block-protected.py]"
-# 設定・hook・git hook の書き換えを止める（PreToolUse Write 系と Bash。B-19）
-BP="$TMP/proj-bp"; BPH="$TMP/bp-home"; mkdir -p "$BP/.claude/hooks" "$BP/.git/hooks" "$BP/src" "$BPH/.claude"
-bpw() { printf '{"tool_name":"Write","cwd":"%s","tool_input":{"file_path":"%s","content":"x"}}' "$BP" "$1" | HOME="$BPH" python3 "$HOOKS/block-protected.py"; }
-bpb() { printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":%s}}' "$BP" "$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$1")" | HOME="$BPH" python3 "$HOOKS/block-protected.py"; }
-for f in "$BPH/.claude/settings.json" "$BPH/.claude/settings.local.json" "$BPH/.claude/hooks/x.py" "$BP/.claude/settings.json" \
-         "$BP/.claude/hooks/x.py" "$BP/.git/hooks/pre-commit" "$BP/.CLAUDE/Settings.json"; do
-  expect_contains "Write を deny: ${f#$TMP/}" '"permissionDecision": "deny"' "$(bpw "$f")"
-done
-expect_contains "deny 理由に解除の環境変数名を書く" "AIDD_ALLOW_CONFIG_EDIT=1" "$(deny_reason "$(bpw "$BP/.claude/settings.json")")"
-ln -s "$BP/.claude" "$BP/cfg"
-expect_contains "シンボリックリンク越しの .claude/settings.json も deny（realpath）" '"permissionDecision": "deny"' "$(bpw "$BP/cfg/settings.json")"
-OUT=$(printf '{"tool_name":"Write","cwd":"%s","tool_input":{"file_path":"%s/.claude/hooks/x.py"}}' "$BP" "$BP" | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py"); RC=$?
-expect_empty "AIDD_ALLOW_CONFIG_EDIT=1 なら許可" "$OUT" "$RC"
-for f in "$BP/src/a.py" "$BP/.claude/rules/x.md" "$KIT_DIR/03_ClaudeCode/hooks/x.py"; do
-  OUT=$(bpw "$f"); RC=$?
-  expect_empty "Write を許可: ${f#$TMP/}" "$OUT" "$RC"
-done
-for c in "echo x > .claude/settings.json" "tee .claude/hooks/a.py" "echo x >> ~/.claude/settings.json" "sudo tee -a .git/hooks/pre-commit" \
-         "bash -c 'cp /tmp/x .git/hooks/pre-commit'" "cd .claude && echo x > settings.json" "mv .claude/hooks/a.py /tmp/" \
-         "sed -i s/a/b/ .claude/settings.json" "ln -sf /tmp/evil .claude/hooks/x" "curl -o .claude/hooks/x.py https://x/y" \
-         "rm .git/hooks/pre-commit" 'echo x > "$UNKNOWN/.claude/settings.json"' "rm -r .claude/hooks" \
-         "echo x >> .git/info/exclude" "chattr +i .claude/settings.json" "curl --output=.claude/hooks/x https://x/y" \
-         "curl -sSLo .claude/hooks/x https://x/y" "wget -O.claude/hooks/x https://x/y" "wget -P .claude/hooks https://x/y" \
-         "cp -t.claude/hooks a.py" "truncate -s 0 .git/config" "echo x > */settings.json" "rsync -a x/ .claude/hooks/" \
-         "tar --directory=.git/hooks -xf x.tar" "unzip -o x.zip -d .claude/hooks" "gawk -i inplace '{print}' .git/config" \
-         "find .claude/hooks -name '*.py' -delete"; do
-  expect_contains "Bash を deny: $c" '"permissionDecision": "deny"' "$(bpb "$c")"
-done
-for c in "cat .claude/settings.json" "cp .claude/settings.json /tmp/bk" "sed s/a/b/ .claude/settings.json" "echo x > src/a.py" \
-         "ls .claude/hooks" "git status 2>&1 | head" 'echo x > "$OUT_FILE"' "cat .git/config" "stat .git/config" \
-         "diff .git/config /tmp/x" "grep url .git/config" "ls .git/info" "chmod +x scripts/run.sh" "curl -o /tmp/a.json https://x/y" \
-         "wget -qO- https://x/y" "truncate -r ref.txt notes.txt" "rsync -a .claude/hooks/ /tmp/bk/" "tar -xzf x.tgz -C /tmp/out" \
-         "unzip x.zip -d /tmp/x" "awk '{print}' .claude/settings.json" "find .git/hooks -type f"; do
-  OUT=$(bpb "$c"); RC=$?
-  expect_empty "Bash を許可: $c" "$OUT" "$RC"
-done
-# パッチ・コミット経由（git apply / patch / git am / checkout・restore <rev> / cherry-pick・revert）。
-# 第 2 回で .claude/settings.json への Edit を止められた後、`git apply <patch>` で当てたら通った穴。一時リポの実物のコミットで確かめる
-BPG="$TMP/proj-bpg"
-gg() { git -C "$BPG" -c user.name=t -c user.email=t@example.com -c commit.gpgsign=false "$@"; }
-bpg() { printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":%s}}' "$BPG" "$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$1")" | HOME="$BPH" python3 "$HOOKS/block-protected.py"; }
-git -c init.defaultBranch=main init -q "$BPG" && mkdir -p "$BPG/.claude/hooks" "$BPG/src"
-echo '{}' > "$BPG/.claude/settings.json"; echo a > "$BPG/src/a.py"; gg add -A && gg commit -qm init
-echo '{"x":1}' > "$BPG/.claude/settings.json"; gg commit -qam evil; BPG_E=$(gg rev-parse HEAD)      # 保護パスを触るコミット
-echo b > "$BPG/src/a.py"; gg commit -qam ok; BPG_O=$(gg rev-parse HEAD)                            # 触らないコミット
-gg diff HEAD~2 HEAD~1 > "$BPG/p.diff"; gg diff HEAD~1 HEAD > "$BPG/ok.diff"
-gg format-patch -q -1 "$BPG_E" --stdout > "$BPG/m.patch"; gg format-patch -q -1 "$BPG_O" --stdout > "$BPG/okm.patch"
-printf 'diff --git a/settings.json b/settings.json\n--- a/settings.json\n+++ b/settings.json\n@@ -1 +1 @@\n-{}\n+{"x":1}\n' > "$BPG/x.diff"
-python3 -c 'import base64,sys;b=open(sys.argv[1],"rb").read();open(sys.argv[2],"wb").write(b"From 0 Mon Sep 17 00:00:00 2001\nFrom: t <t@example.com>\nSubject: [PATCH] x\nContent-Transfer-Encoding: base64\n\n"+base64.encodebytes(b"x\n---\n"+b))' "$BPG/p.diff" "$BPG/b64.patch"
-ln -s .claude "$BPG/cfg"; printf -- '--- cfg/settings.json\n+++ cfg/settings.json\n@@ -1 +1 @@\n-{}\n+{"x":1}\n' > "$BPG/s.diff"
-for c in "git apply p.diff" "patch -p1 < p.diff" "cat p.diff | git apply" "git apply <(cat p.diff)" "git am m.patch" \
-         "git checkout HEAD -- .claude/settings.json" "git restore --source=HEAD~1 .claude/hooks/x.py" "git cherry-pick $BPG_E" \
-         "git cherry-pick zzz" "bash -c 'git apply p.diff'" "sudo env A=1 git cherry-pick $BPG_E" "git revert $BPG_E" \
-         "git cherry-pick HEAD~2..HEAD" "git checkout HEAD~2 -- ." "git am b64.patch" "git apply --directory=.claude x.diff" \
-         "patch -p0 -i s.diff" "git -c alias.cp=cherry-pick cp $BPG_E" "git apply - < p.diff" $'git apply <<EOF\nx\nEOF' \
-         "echo x > ok.diff && git apply ok.diff" "git fetch && git cherry-pick $BPG_O" "patch -ti p.diff < ok.diff"; do
-  expect_contains "パッチ・コミット経由を deny: $c" '"permissionDecision": "deny"' "$(bpg "$c")"
-done
-expect_contains "パイプから当てる deny の理由に代わりの手順" "ファイルに書いてから" "$(deny_reason "$(bpg "cat p.diff | git apply")")"
-expect_contains "解決できないコミットは判定不能で deny" "zzz を解決できない" "$(deny_reason "$(bpg "git cherry-pick zzz")")"
-mkdir -p "$BPG/.git/sequencer"; printf 'pick %s evil\n' "$BPG_E" > "$BPG/.git/sequencer/todo"
-expect_contains "cherry-pick --continue は sequencer/todo の残りを見る → deny" '"permissionDecision": "deny"' "$(bpg "git cherry-pick --continue")"
-rm -rf "$BPG/.git/sequencer"
-for c in "git apply ok.diff" "git apply --check p.diff" "git am okm.patch" "git checkout HEAD -- src/a.py" "git cherry-pick $BPG_O" \
-         "git cherry-pick HEAD~1..HEAD" "bash -c 'git apply ok.diff'" "git checkout HEAD -- ." "patch --dry-run -p1 < p.diff" \
-         "git apply --check ok.diff && git apply ok.diff" "git status && git apply ok.diff" "git restore --staged .claude/settings.json" \
-         "patch -p1 < ok.diff" "git cherry-pick --continue" "git checkout main"; do
-  OUT=$(bpg "$c"); RC=$?
-  expect_empty "パッチ・コミット経由を許可: $c" "$OUT" "$RC"
-done
-OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"git apply p.diff"}}' "$BPG" | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py"); RC=$?
-expect_empty "AIDD_ALLOW_CONFIG_EDIT=1 なら git apply も許可" "$OUT" "$RC"
-OUT=$(printf 'not json' | python3 "$HOOKS/block-protected.py")
-expect_contains "壊れた入力は deny（fail-closed）" "hook の入力が読めない" "$(deny_reason "$OUT")"
-expect_contains "Write の .git/config も deny" '"permissionDecision": "deny"' "$(bpw "$BP/.git/config")"
-OUT=$(printf '{"tool_name":"Bash","tool_input":{}}' | python3 "$HOOKS/block-protected.py"); RC=$?
-expect_empty "command が無ければ何もしない" "$OUT" "$RC"
-OUT=$(printf '{"tool_name":"Read","tool_input":{"file_path":"%s/.claude/settings.json"}}' "$BP" | python3 "$HOOKS/block-protected.py"); RC=$?
-expect_empty "Read は対象外（読むのは止めない）" "$OUT" "$RC"
-for S in "$HOOKS/settings.json" "$KIT_DIR/.claude/settings.json"; do
-  N=$(python3 -c 'import json,sys
-d = json.load(open(sys.argv[1]))
-print(sum(1 for e in d["hooks"]["PreToolUse"] if e.get("matcher") in ("Write|Edit|MultiEdit", "Bash")
-          for h in e["hooks"] if "block-protected.py" in h.get("command", "")))' "$S")
-  expect_eq "block-protected.py を Write 系と Bash の 2 か所に配線: ${S#$KIT_DIR/}" "2" "$N"
-done
-
-echo "[β 2周目] block-protected: 別コミットから戻す形・別名・GIT_DIR・git 自身の書き込み・fail-closed"
-# 検証担当が hook に流して通ってしまった形の再発防止（前の節の一時リポ $BPG をそのまま使う）
-gg config alias.cp cherry-pick; gg config alias.cp2 cp; gg config alias.st status; gg config alias.lg '!git log'
-gg config alias.a1 a2; gg config alias.a2 a3; gg config alias.a3 a4; gg config alias.a4 cherry-pick
-mkdir -p "$BPG/out" "$BPG/.claude/hooks/g"; NOGIT="$TMP/nogit"; mkdir -p "$NOGIT"; PY=$(command -v python3)
-for c in "git checkout HEAD~2 ." "git checkout ':/init' -- ." "git restore -s HEAD~2 ." "git restore --source=HEAD~2 --staged --worktree ." \
-         "git checkout HEAD~2 -- '*.json'" "git cp2 $BPG_E" "git a1 $BPG_O" "git lg" \
-         "GIT_CONFIG_PARAMETERS=\"'alias.zz=cherry-pick'\" git zz $BPG_E" \
-         "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.zz GIT_CONFIG_VALUE_0=cherry-pick git zz $BPG_O" \
-         "git --config-env=alias.zz=ZZ zz $BPG_O" "git -c alias.zz=log apply ok.diff" "git --work-tree=.claude apply x.diff" \
-         "GIT_WORK_TREE=cfg git apply x.diff" "git --git-dir=.claude/hooks/g apply ok.diff" 'GIT_DIR=$NOPE git apply ok.diff' \
-         "git --git-dir=nowhere apply ok.diff" "git diff --output=.claude/settings.json" "git log --output .git/config" \
-         "git format-patch -o .claude/hooks HEAD~1" "git mailsplit -o.git/hooks m.patch" "git bundle create .claude/hooks/b.bundle HEAD" \
-         "git archive -o .claude/settings.json HEAD" "git -C src archive --output=../.git/hooks/x.tar HEAD" "git config user.name x" \
-         "git config --global alias.x cherry-pick" "git config core.hooksPath /tmp/h" "git config --unset user.name" \
-         "git config set user.name x"; do
-  expect_contains "[β 2周目] deny: $c" '"permissionDecision": "deny"' "$(bpg "$c")"
-done
-expect_contains "[β 2周目] git config の deny 理由に解除の変数名" "AIDD_ALLOW_CONFIG_EDIT=1" "$(deny_reason "$(bpg "git config core.hooksPath /tmp/h")")"
-expect_contains "[β 2周目] シェルの別名は中身を確かめられないので deny" "シェルのコマンド" "$(deny_reason "$(bpg "git lg")")"
-expect_contains "[β 2周目] 別名が 3 段を超えたら deny" "3 段を超える" "$(deny_reason "$(bpg "git a1 $BPG_O")")"
-for c in "git checkout zzz -- src/a.py" "git restore --source=zzz src/a.py" "git st" "git -c core.quotepath=false apply ok.diff" \
-         "git -c alias.zz=log status" "git --git-dir=.git --work-tree=. apply ok.diff" "git nosuchcmd x" "git diff --output=out/p.diff" \
-         "git format-patch -o out HEAD~1" "git archive -o out/a.tar HEAD" "git bundle create out/b.bundle HEAD" \
-         "git config --get user.name" "git config -l" "git config --list --show-origin" "git config user.name" \
-         "git config --get-regexp alias"; do
-  OUT=$(bpg "$c"); RC=$?
-  expect_empty "[β 2周目] 許可: $c" "$OUT" "$RC"
-done
-OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"git config core.hooksPath x"}}' "$BPG" | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py"); RC=$?
-expect_empty "[β 2周目] AIDD_ALLOW_CONFIG_EDIT=1 なら git config も許可" "$OUT" "$RC"
-# fail-closed: git が PATH に無い・壊れた入力は deny。{}・command 無しは通す
-for c in "git cherry-pick $BPG_O" "git checkout HEAD -- src/a.py" "git nosuchcmd x"; do
-  OUT=$(printf '{"tool_name":"Bash","cwd":"%s","tool_input":{"command":"%s"}}' "$BPG" "$c" | PATH="$NOGIT" HOME="$BPH" "$PY" "$HOOKS/block-protected.py")
-  expect_contains "[β 2周目] git が PATH に無いなら deny: $c" '"permissionDecision": "deny"' "$OUT"
-done
-for IN in '{"tool_name":"Bash","tool_input":{"command":' 'null'; do
-  expect_contains "[β 2周目] 入力 '$IN' は deny" '"permissionDecision": "deny"' "$(printf '%s' "$IN" | python3 "$HOOKS/block-protected.py")"
-done
-for IN in '{}' '{"tool_name":"Bash","tool_input":{}}'; do
-  OUT=$(printf '%s' "$IN" | python3 "$HOOKS/block-protected.py"); RC=$?
-  expect_empty "[β 2周目] 入力 '$IN' は通す" "$OUT" "$RC"
-done
-
 echo "[secret_patterns.py]"
 # 秘密情報の判定の 1 か所（B-19）。自分の例と、他 4 か所（pre-write-check.sh・settings.sandbox.json・init-project.sh・pre-commit）との一致
 OUT=$(python3 "$HOOKS/secret_patterns.py" --self-test); RC=$?
@@ -916,7 +784,7 @@ expect_contains "不一致の語を出す" "foo_word" "$OUT"
 
 echo "[fail-closed: 入力が読めなければ 4 hook とも deny]"
 # 読めない・オブジェクトでない入力は deny（Traceback を出さない）。{} は判定するものが無いので通す（B-19）
-for H in block-destructive.py block-protected.py pre-read-guard.py pre-write-check.sh; do
+for H in block-destructive.py pre-read-guard.py pre-write-check.sh; do
   run_h() { case "$H" in *.sh) bash "$HOOKS/$H" ;; *) python3 "$HOOKS/$H" ;; esac; }
   for IN in '[1]' 'null' '' '{broken'; do
     OUT=$(printf '%s' "$IN" | run_h 2>"$TMP/stderr"); ERR=$(cat "$TMP/stderr")
@@ -982,10 +850,11 @@ printf '%s\n' '{"type":"assistant","message":{"id":"m1","usage":{"input_tokens":
   '{"type":"assistant","message":{"id":"m1","usage":{"input_tokens":10,"cache_read_input_tokens":1000,"output_tokens":200}}}' \
   '{"type":"assistant","message":{"id":"m2","usage":{"cache_read_input_tokens":2000,"output_tokens":400}}}' > "$TJ"
 OUT=$(printf '{"transcript_path":"%s"}' "$TJ" | HOME="$TMP" python3 "$HOOKS/statusline.py")
-expect_contains "同一 id を 1 回と数え累計・1 応答あたり出力・応答数を出す" "Σ4k 出力300/t 2t" "$OUT"
+expect_contains "同一 id を 1 回と数え累計・応答数を出す" "Σ4k 2t" "$OUT"
 printf '%s\n' '{"type":"assistant","message":{"id":"m3","usage":{"output_tokens":2600}}}' >> "$TJ"
 OUT=$(printf '{"transcript_path":"%s"}' "$TJ" | HOME="$TMP" python3 "$HOOKS/statusline.py")
-expect_contains "差分だけ読み足し、1 応答 1000 超で ⚠" "⚠ Σ6k 出力1,066/t 3t" "$OUT"
+expect_contains "差分だけ読み足す" "Σ6k 3t" "$OUT"
+expect_absent "1 応答あたり出力は出さない" "出力" "$OUT"
 OUT=$(python3 "$KIT_DIR/00_導入/03_点検/token_report.py" "$TJ")
 expect_contains "token_report.py が区分別の表を出す" "| cache_read | 3,000 |" "$OUT"
 
@@ -1125,17 +994,12 @@ for c in "git \$'reset' --hard" "git\${IFS}reset\${IFS}--hard" "git -c alias.r='
   expect_contains "検証 deny: $c" '"permissionDecision": "deny"' "$(bd "$c")"
 done
 c="echo '[core] hooksPath = /dev/null' >> .git/config"
-expect_contains "検証 deny（block-destructive か block-protected）: $c" '"permissionDecision": "deny"' "$(bd "$c")$(bpb "$c")"
+expect_contains "検証 deny（block-destructive）: $c" '"permissionDecision": "deny"' "$(bd "$c")"
 OUT=$(bd "cp .env.example .env"); RC=$?
 expect_empty "検証 許可: cp .env.example .env（読む元は雛形。書き先が .env なだけ）" "$OUT" "$RC"
 # pre-read-guard: Grep の glob で .env を狙う
 OUT=$(printf '{"tool_name":"Grep","tool_input":{"pattern":"KEY","glob":"**/.en?"}}' | rg)
 expect_contains "検証 deny: Grep glob **/.en?" '"permissionDecision": "deny"' "$OUT"
-# block-protected: 展開・値の付いたオプション・権限変更で書き先を通す
-for c in "echo x | tee .claude/s{e,}ttings.json" "echo x > .cl*/settings.json" "curl -o.claude/hooks/x https://x/y" \
-         "chmod -x .git/hooks/pre-commit"; do
-  expect_contains "検証 deny: $c" '"permissionDecision": "deny"' "$(bpb "$c")"
-done
 # pre-write-check: 雛形の置き場所の値（既知形式でない）で止めない
 OUT=$(wj Write "$TMP/proj/.env.example" content "SLACK_BOT_TOKEN=xoxb-your-token-here" | bash "$HOOKS/pre-write-check.sh"); RC=$?
 expect_empty "検証 許可: .env.example に SLACK_BOT_TOKEN=xoxb-your-token-here" "$OUT" "$RC"
@@ -1148,7 +1012,7 @@ for c in "{git,} reset --hard" "git {add,} -A" '$"git" reset --hard' 'f() { git 
   expect_contains "検証2 deny: $c" '"permissionDecision": "deny"' "$(bd "$c")"
 done
 c="git config alias.r 'reset --hard'"
-expect_contains "検証2 deny（block-destructive か block-protected）: $c" '"permissionDecision": "deny"' "$(bd "$c")$(bpb "$c")"
+expect_contains "検証2 deny（block-destructive）: $c" '"permissionDecision": "deny"' "$(bd "$c")"
 # block-destructive: 「表示せずに消費する」例外の悪用（例外の後ろで表示する・例外の範囲が広すぎる・-f が env ファイルでない）
 for c in "direnv exec . cat .env" "docker run --env-file .env alpine sh -c 'cat /proc/1/environ'" \
          "docker run --env-file .env alpine printenv" "dotenvx get -f .env" "npx dotenv -e .env -p API_KEY" \
@@ -1159,11 +1023,6 @@ done
 # block-destructive: 読まないコマンドの例外がパイプで xargs に渡る・cp -t の最後の引数は読む元・雛形の印を部分一致で見る
 for c in "echo .env | xargs cat" "cp -t /tmp ~/.config/gh/hosts.yml && cat /tmp/hosts.yml" "cat certs/www.distance.jp.key"; do
   expect_contains "検証2 deny: $c" '"permissionDecision": "deny"' "$(bd "$c")"
-done
-# block-protected: 書き先を見るコマンドの一覧外
-for c in "rsync x .claude/hooks/" "tar -xf x.tar -C .claude/hooks" "unzip x.zip -d .claude/hooks" \
-         "awk -i inplace '{print}' .claude/settings.json" "find .git/hooks -type f -exec rm {} +"; do
-  expect_contains "検証2 deny（block-destructive か block-protected）: $c" '"permissionDecision": "deny"' "$(bd "$c")$(bpb "$c")"
 done
 # 誤検知: 引数が秘密ファイル名で終わるだけの文字列（コミットメッセージ・grep の検索語）
 for c in 'git commit -m "chore: ignore .env"' 'grep -rn ".env" src/'; do
@@ -1182,11 +1041,9 @@ OUT=$(wj Write "$TMP/proj/docs/a.md" content "AKIAKA" | bash "$HOOKS/pre-write-c
 expect_empty "検証2 許可（pre-write）: Write content に短い語 AKIAKA" "$OUT" "$RC"
 OUT=$(wj Edit "$TMP/proj/docs/a.md" new_string "Slack のボットトークンは xoxb- で始まる（値は .env に置く）" | bash "$HOOKS/pre-write-check.sh"); RC=$?
 expect_empty "検証2 許可（pre-write）: Edit new_string に xoxb- の説明文" "$OUT" "$RC"
-OUT=$(printf '{"tool_name":"Edit","cwd":"%s","tool_input":{"file_path":"%s","old_string":"a","new_string":"b"}}' "$KIT_DIR" "$HOOKS/block-destructive.py" | python3 "$HOOKS/block-protected.py"); RC=$?
-expect_empty "検証2 許可（block-protected）: キットの 03_ClaudeCode/hooks/block-destructive.py を Edit" "$OUT" "$RC"
 # fail-closed: 深い入れ子の JSON（RecursionError）で Traceback を出して exit 1（Claude Code は続行する）
 DEEP=$(python3 -c "print('{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"ls\",\"x\":' + '['*3000 + ']'*3000 + '}}')")
-for H in block-destructive.py block-protected.py pre-read-guard.py; do
+for H in block-destructive.py pre-read-guard.py; do
   OUT=$(printf '%s' "$DEEP" | python3 "$HOOKS/$H" 2>"$TMP/stderr")
   expect_contains "検証2 $H: 深い入れ子の JSON は deny（Traceback: $(grep -c Traceback "$TMP/stderr")）" '"permissionDecision":' "$OUT"
 done
@@ -1196,7 +1053,7 @@ echo "[検証: B-19 3周目（検証担当が追加。直した箇所の周辺�
 for c in 'for f in *.md; do echo "$f"; done' "(cd sub && npm test)" "diff <(sort a) <(sort b)" \
          "if [ -f .env ]; then echo yes; fi" 'git commit -m "fix(a): {x,y}"' "echo '{\"a\":1}' > out.json" \
          "[[ -f .env ]] && echo yes"; do
-  OUT="$(bd "$c")$(bpb "$c")"
+  OUT="$(bd "$c")"
   expect_empty "検証3 許可: $c" "$OUT" 0
 done
 # 2. 絞った例外: 許可する形と、例外の後ろ・同じ行で表示する形
@@ -1348,13 +1205,6 @@ hd_case() { # 名前, hook, decision, 実行前の行数, [env]
 rm -f "$HDL"
 N=$(hd_n); bash_json "git reset --hard" | python3 "$HOOKS/block-destructive.py" >/dev/null
 hd_case "block-destructive の deny" block-destructive deny "$N"
-N=$(hd_n); wj Write "$TMP/hd/.claude/settings.json" content '{}' | python3 "$HOOKS/block-protected.py" >/dev/null
-hd_case "block-protected の deny" block-protected deny "$N"
-N=$(hd_n); OUT=$(wj Write "$TMP/hd/.claude/settings.json" content '{}' | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py"); RC=$?
-expect_empty "block-protected: AIDD_ALLOW_CONFIG_EDIT=1 なら従来どおり通す" "$OUT" "$RC"
-hd_case "block-protected の解除（override・env 付き）" block-protected override "$N" AIDD_ALLOW_CONFIG_EDIT
-N=$(hd_n); wj Write "$TMP/hd/notes.md" content 'x' | AIDD_ALLOW_CONFIG_EDIT=1 python3 "$HOOKS/block-protected.py" >/dev/null
-expect_eq "block-protected: 解除中でも止める対象でない書き込みは記録しない" "$N" "$(hd_n)"
 N=$(hd_n); printf '{"tool_name":"Read","tool_input":{"file_path":"%s/.env"}}' "$TMP" | python3 "$HOOKS/pre-read-guard.py" >/dev/null
 hd_case "pre-read-guard の deny" pre-read-guard deny "$N"
 N=$(hd_n); wj Write "$TMP/app.py" content "K=$FAKE_AWS" | bash "$HOOKS/pre-write-check.sh" >/dev/null
@@ -1389,7 +1239,6 @@ expect_contains "記録は 1 行にまとめる" "git reset --hard; cat <<E ***"
 # 誤検知の逆: 通した操作は記録しない
 N=$(hd_n); bash_json "git status" | python3 "$HOOKS/block-destructive.py" >/dev/null
 printf '{"tool_name":"Read","tool_input":{"file_path":"%s/notes.md"}}' "$TMP" | python3 "$HOOKS/pre-read-guard.py" >/dev/null
-wj Write "$TMP/hd/notes.md" content 'x' | python3 "$HOOKS/block-protected.py" >/dev/null
 wj Write "$TMP/app.py" content 'x = 1' | bash "$HOOKS/pre-write-check.sh" >/dev/null
 expect_eq "通した操作（git status・通常の Read / Write）は記録しない" "$N" "$(hd_n)"
 # 書けない場所（置き場がファイル）でも deny は従来どおり・exit 0・stderr に何も出さない
@@ -1408,7 +1257,6 @@ expect_eq "AIDD_HOOK_LOG が無ければ \$CLAUDE_PROJECT_DIR/.claude/hook-decis
 OUT=$(python3 "$KIT_DIR/00_導入/03_点検/token_report.py" --hooks "$HDL"); RC=$?
 expect_eq "token_report.py --hooks が exit 0" "0" "$RC"
 expect_contains "hook 別の deny 回数（block-destructive は 3 回）" "| block-destructive | 3 | 0 | 0 | 0 |" "$OUT"
-expect_contains "解除で通した回数を別列に出す（block-protected は 1 回・変数名つき）" "| 1（AIDD_ALLOW_CONFIG_EDIT） |" "$OUT"
 expect_contains "reply-language の block を数える" "| reply-language | 0 | 1 | 0 | 0 |" "$OUT"
 printf 'broken\n' >> "$HDL"
 expect_contains "壊れた行は数えずに件数を出す" "読めない行 1 件" "$(python3 "$KIT_DIR/00_導入/03_点検/token_report.py" --hooks "$HDL")"
@@ -1498,9 +1346,6 @@ expect_absent "戻る時刻が inf でも Traceback を出さない" "Traceback"
 echo "[検証: 塊J]"
 JV_LOG=$(mktemp)
 # B12: 秘密鍵の本文（BEGIN 行の次の行）が記録の要約に残らない
-OUT=$(python3 -c 'import json;k="-----BEGIN RSA PRIVATE"+" KEY-----\nMIIEowIBAAKCAQEAjvSECRETBODYzz\n-----END RSA PRIVATE"+" KEY-----";print(json.dumps({"tool_name":"Bash","tool_input":{"command":"printf %s \""+k+"\" > .claude/settings.json"}}))' | AIDD_HOOK_LOG="$JV_LOG" python3 "$HOOKS/block-protected.py")
-expect_contains "[検証] 鍵を書く Bash は deny のまま" '"permissionDecision": "deny"' "$OUT"
-expect_absent "[検証] 記録の要約に秘密鍵の本文が残らない" "MIIEowIBAAKCAQEA" "$(cat "$JV_LOG")"
 rm -f "$JV_LOG"
 # B76: 数値でない数（JSON の Infinity）でも従来表示を消さない（「表示の失敗で従来表示を消さない」）
 OUT=$(printf '%s' '{"context_window":{"used_percentage":Infinity}}' | python3 "$HOOKS/statusline.py" 2>&1); RC=$?

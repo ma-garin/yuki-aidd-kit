@@ -139,7 +139,6 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `reply-language.py` | Stop | 日本語・相槌のみ・実測の無い報告・散文 12 行超・予実の乖離で block（傾向 #32〜36）。完了主張（「完了しました」等）と直近のテスト系実行結果の食い違いも block（同一ターン2回まで。B-27） |
 | `prompt-priority.py` | UserPromptSubmit | 「今すぐ・報告・説明・なぜ・止め」を含む発言に「作業より優先」を注入 |
 | `block-destructive.py` | PreToolUse(Bash) | 取り返しのつかない操作を deny（reset --hard / clean -fd / stash drop / checkout -- / push --force / add -A / rm -rf）。代替手段を理由に載せる。ラッパー（bash -c・sudo・env・xargs 等）を剥がしてから照合し、秘密ファイルを読むコマンドも deny（B-19） |
-| `block-protected.py` | PreToolUse(Write/Edit/MultiEdit, Bash) | `.claude/settings*.json`・`.claude/hooks/`・`.git/hooks/` 等の書き換えを realpath 解決の上で deny。`AIDD_ALLOW_CONFIG_EDIT=1` で解除。判定不能は deny（B-19） |
 | `secret_patterns.py` | （hook ではなく部品。他の hook から import） | 秘密ファイル名・秘密値の正規表現・コマンドのラッパー剥がしを1か所に持つ共通判定。`--check-consistency`/`--self-test`/`--pre-write` の CLI も持つ（B-19） |
 | `injection-guard.py` | PostToolUse(WebFetch/WebSearch/mcp__*/プロジェクト外の Read) | 取得内容の指示形の文（英日の注入句）を正規化（NFKC・ゼロ幅・双方向制御・base64・URL エンコード）して検知し additionalContext で「データとして扱う」を通知。`.claude/injection-guard.log` に記録。**止めない**（警告専用・fail-open）（B-23） |
 | `tool-timer.py` | PreToolUse / PostToolUse / UserPromptSubmit | 経過時間を積算する（実測の真実源。`report` が `実測: N分` の1行、`--full` で内訳、`reset-session` で通算も 0 に） |

@@ -17,7 +17,7 @@
 | LLM03 Supply Chain | `skill-scan.py`（導入前の静的検査）、`verify.sh` の設定の監査（MCP が取得して実行する未知のパッケージ）、`security-scan.sh`（依存） | モデルの版の固定・出所の記録 | 設定にモデル ID を版まで書いているか grep。導入前に skill-scan を流したか |
 | LLM04 Data and Model Poisoning | なし | (a) 取り込む文書の出所の管理・承認 | 取り込み元の一覧と、誰が足したかの記録があるか |
 | LLM05 Improper Output Handling | `nfr-standards`（innerHTML を避ける）、`security-scan.sh` の簡易シグネチャ | (a) LLM の出力が SQL・シェル・HTML・動的評価に入る経路 | LLM ラッパーの戻り値を受ける所を grep し、描画・実行の前に検証があるか見る |
-| LLM06 Excessive Agency | hooks（`block-destructive.py`・`block-protected.py`・`block-gates.py`・`block-ci.py`）、`verify.sh`（すべての Bash を許す allow と、許可確認を飛ばす既定モードを NG） | (b) 5 エージェントの tools が全員 Bash・Write・Edit を持つ（検証役の書き込みを絞る余地）。(a) ツール呼び出しの権限 | `grep -n '^tools:' 03_ClaudeCode/agents/*.md`、`verify.sh` の「設定の監査」 |
+| LLM06 Excessive Agency | hooks（`block-destructive.py`・`block-gates.py`・`block-ci.py`）、`verify.sh`（すべての Bash を許す allow と、許可確認を飛ばす既定モードを NG） | (b) 5 エージェントの tools が全員 Bash・Write・Edit を持つ（検証役の書き込みを絞る余地）。(a) ツール呼び出しの権限 | `grep -n '^tools:' 03_ClaudeCode/agents/*.md`、`verify.sh` の「設定の監査」 |
 | LLM07 System Prompt Leakage | なし | システムプロンプトに秘密・内部 URL を書かない規約が無い | プロンプトの定義ファイルを grep（キー・URL・社内名） |
 | LLM08 Vector and Embedding Weaknesses | `nfr-standards`（テナント ID を全クエリの第一キーに） | (a) ベクトル検索の filter にテナント条件があるか | 検索呼び出しの引数を grep。越境の単体テスト |
 | LLM09 Misinformation | `agent-eval`（Faithfulness・ハルシネーション）、`done-gate`（AI を含む場合の追加項目） | 出典の表示を必須にする規約 | `agent-eval` のベースラインを下回らないか |
@@ -29,7 +29,7 @@
 |---|---|---|---|
 | ASI01 Agent Goal Hijack | `injection-guard.py`、`subagent-context.py`（取り込んだ内容の指示に従わない規約を委譲先に注入）、`prompt-priority.py` | 取り込み内容の遮断（警告だけで止めない） | 注入文を含むページを読ませて作業が逸れないか（手動） |
 | ASI02 Tool Misuse and Exploitation | `block-destructive.py`・`block-gates.py`・`filter-output.py`、`verify.sh` の設定の監査 | MCP ツールごとの許可の点検 | `test-hooks.sh`、`verify.sh` |
-| ASI03 Identity and Privilege Abuse | `block-protected.py`（設定・hook・git hook の書き換えを止める）、承認は人（approver 欄を AI が埋めない・`check_approval.py`） | 秘密を扱う操作の本人確認 | `test-git-gates.sh`・`test-check-approval.sh` |
+| ASI03 Identity and Privilege Abuse | 承認は人（approver 欄を AI が埋めない・`check_approval.py`） | 秘密を扱う操作の本人確認 | `test-git-gates.sh`・`test-check-approval.sh` |
 | ASI04 Agentic Supply Chain Vulnerabilities | `skill-scan.py`（install.sh・install-guard が導入前に流す）、`verify.sh`（MCP の定義） | 導入後の更新（版の変化）の再走査 | 取り込むたびに `python3 02_共通/ツール/skill-scan.py <パス>` |
 | ASI05 Unexpected Code Execution | `skill-scan.py`（取得物をシェルへ流す形・動的評価）、`verify.sh`（hook の curl … sh を NG）、`block-destructive.py` | (a) LLM の出力をコードとして実行する経路 | 出力を実行する所を grep（LLM05 と同じ） |
 | ASI06 Memory and Context Poisoning | `pre-compact.py`（圧縮で残すものを指定）、rules は採用済み ADR からだけ作る（`adr-to-rules.py`） | CURRENT_STATE.md・lessons の書き込みを人が読む仕組み | 差分を保守者が読むか（`retro`） |
