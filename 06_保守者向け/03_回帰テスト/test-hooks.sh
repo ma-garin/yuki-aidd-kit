@@ -1334,10 +1334,12 @@ OUT=$(printf '{"model":{"id":"x"},"context_window":{"current_usage":null,"contex
 expect_absent "フィールドなし: ctx を合成しない" "ctx" "$OUT"
 expect_absent "フィールドなし: 5h を合成しない" "5h" "$OUT"
 expect_absent "フィールドなし: 区切りも足さない" "｜" "$OUT"
+SLBASE=$(printf '{}' | HOME="$SLH" python3 "$HOOKS/statusline.py")  # 何も足さないときの従来表示（同梱 statusline.sh の出力）
 OUT=$(printf '%s' '{"context_window":{"used_percentage":NaN}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1); RC=$?
-expect_eq "nan の使用率は何も足さない（exit 0）" "0:$(basename "$PWD")" "$RC:$OUT"
+expect_eq "nan の使用率は何も足さない（exit 0）" "0:$SLBASE" "$RC:$OUT"
 OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":-5,"resets_at":Infinity},"seven_day":{"used_percentage":130}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1); RC=$?
-expect_eq "負値・100 超の使用率は何も足さない（exit 0）" "0:$(basename "$PWD")" "$RC:$OUT"
+expect_eq "負値・100 超の使用率でも exit 0" "0" "$RC"
+expect_absent "負値・100 超の使用率は何も足さない（同梱 statusline.sh は rate_limits を自前で描くため区切りで判定）" "｜" "$OUT"
 OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":90,"resets_at":1e400}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1)
 expect_contains "戻る時刻が inf でも使用率は出す（時刻だけ落とす）" "⚠ 5h 90%" "$OUT"
 expect_absent "戻る時刻が inf でも Traceback を出さない" "Traceback" "$OUT"

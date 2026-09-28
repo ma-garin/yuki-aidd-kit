@@ -279,8 +279,9 @@ def _limits_part(stdin_raw: str) -> str:
 def main() -> int:
     stdin_raw = sys.stdin.read()
     lines = _fallback_part(stdin_raw).splitlines() or [""]
-    # 1 行目: 進捗 ｜ model effort | dir ｜ トークン合計 ｜ API 換算料金 $（¥）直近（2 行目以降の従来表示はそのまま）
-    head = [p for p in (_progress_part(), lines[0], _token_part(stdin_raw)) if p]
+    # 1 行目: 進捗 ｜ model effort | dir ｜ トークン合計 ｜ API 換算料金 $（¥）直近 ｜ ctx 5h 7d（2 行目以降の従来表示はそのまま）
+    # 末尾（B76）: ctx・5h・7d。フィールドが無ければ区切りごと足さない
+    head = [p for p in (_progress_part(), lines[0], _token_part(stdin_raw), _limits_part(stdin_raw)) if p]
     print("\n".join([" ｜ ".join(head)] + lines[1:]))
     return 0
 
