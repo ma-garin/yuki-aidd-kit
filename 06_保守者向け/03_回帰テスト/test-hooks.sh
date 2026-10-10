@@ -454,6 +454,13 @@ OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant
 expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"精読を待っています。実測: 1分未満（進行中）","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 委譲待ちの途中報告（進行中）は予実を突き合わせない" "$OUT" "$RC"
+# 冒頭の【見積：…】（作業全体）より末尾行の `見積: N分 / 実測:` を優先する（2026-10-10 に 11 回誤判定）
+{ u_text "進めて"; a_text "【見積：10分 | 開始:20:01 | 終了:20:11 | タスク数：4】"; a_tool; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"【見積：10分 | 開始:20:01 | 終了:20:11 | タスク数：4】\\n委譲しました。\\n見積: 0分 / 実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 末尾行の見積を優先し【見積：】の全体見積とは比較しない" "$OUT" "$RC"
+{ u_text "進めて"; a_text "【見積：10分 | 開始:20:01 | 終了:20:11 | タスク数：4】"; a_tool; } > "$TRJ"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"【見積：10分 | 開始:20:01 | 終了:20:11 | タスク数：4】\\n委譲しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 【見積：】の計測行は比較に使わない" "$OUT" "$RC"
 # 完了報告を通したらターンの計測を区切る（上の「差異を説明」の報告で reset 済み → 経過は空）。
 # 委譲先の報告で続く次の応答が、保守者の発言からの累計経過と比較されないため（2026-09-24 01:35 に偽の予実 4 件）
 OUT=$(python3 "$HOOKS/tool-timer.py" elapsed)
