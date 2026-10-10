@@ -241,7 +241,21 @@ def missing_actual(msg: str) -> str | None:
 
 # 見積の分と、差異を説明した形跡。H-6「見積の 1.5 倍を超えたら原因 1 行」を両方向に広げる
 # （このセッションで起きたのは逆向きの乖離＝見積 40 分に対し実測 6 分。過大見積も同じ害）
-EST_RE = re.compile(r"見積[:：]\s*(\d+)\s*分")
+# 【見積：N分 | 開始:… | タスク数：k】は作業全体の計測行。このターンの見積ではないので比較に使わない（2026-10-10 に 11 回誤判定）
+EST_RE = re.compile(r"(?<!【)見積[:：]\s*(\d+)\s*分")
+# 応答の最後の行の `見積: N分 / 実測: M分` はこのターンの予実。あれば最優先で比較に使う
+FINAL_EST_RE = re.compile(r"見積[:：]\s*(\d+)\s*分\s*/\s*実測[:：]")
+OVERALL_RE = re.compile(r"【見積[:：]\s*(\d+)\s*分[^】]*\|[^】]*】")
+ZERO_EST_GRACE = 2  # 末尾行の見積が 0 分なら、経過 2 分以内は乖離を見ない
+
+
+def final_line_estimate(msg: str) -> int | None:
+    """応答の最後の非空行が `見積: N分 / 実測: M分` なら N を返す。"""
+    lines = [l for l in (msg or "").splitlines() if l.strip()]
+    if not lines:
+        return None
+    m = FINAL_EST_RE.search(lines[-1])
+    return int(m.group(1)) if m else None
 GAP_RE = re.compile(r"(差異|超過|再見積|見込み違い|見積より)")
 GAP_MIN_EST = 3   # 3 分未満の見積は誤差が支配するので見ない
 
@@ -369,10 +383,17 @@ def main() -> int:
     # 委譲待ちの途中報告（「進行中」を含む）は完了報告ではないので、予実を突き合わせず履歴にも積まない。
     # 突き合わせると経過が見積に届く前に「過大見積」と誤判定し、偽の予実で校正係数を壊す（2026-09-23 に 5 回）
     if not GAP_RE.search(msg) and "進行中" not in msg and tp0 and Path(tp0).is_file():
-        try:
-            est = estimate_min(g, g.tail_lines(Path(tp0)))
-        except OSError:
-            est = None
+        final_est = final_line_estimate(msg)
+        if final_est is not None:
+            est = final_est
+        else:
+            try:
+                est = estimate_min(g, g.tail_lines(Path(tp0)))
+            except OSError:
+                est = None
+        om = OVERALL_RE.search(msg)
+        if om:  # 作業全体の見積は記録だけ（比較しない）
+            log_decision("reply-language", "info", f"作業全体の見積 {om.group(1)} 分", "Stop", "", data.get("cwd") if isinstance(data.get("cwd"), str) else None)
         raw = timer("elapsed")
         if est is not None and raw:
             try:
@@ -383,7 +404,8 @@ def main() -> int:
             if elapsed is not None:
                 # 予実を履歴に積む。次の見積の校正に使う（prompt-priority が係数を注入する）
                 timer("record", str(est), f"{elapsed:.2f}")
-                note = gap_note(est, elapsed)
+                if not (final_est == 0 and elapsed <= ZERO_EST_GRACE):
+                    note = gap_note(est, elapsed)
             if note:
                 reason = (f"[reply-language] 予実が離れている: {note}。原因を 1 行で書き、"
                           "`06_保守者向け/02_設計判断の根拠/speed-harness.md` の実測記録に追記してから報告する"
