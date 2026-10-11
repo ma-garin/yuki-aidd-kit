@@ -16,6 +16,7 @@
   python3 .claude/hooks/tool-timer.py record <見積分> <実測分>   # 予実を履歴に積む（Stop フックが呼ぶ）
   python3 .claude/hooks/tool-timer.py factor  # 校正係数（実測/見積 の中央値）と件数。3 件未満は空
   python3 .claude/hooks/tool-timer.py reset          # ターンの計測を 0 に戻す（UserPromptSubmit に配線済み）
+  python3 .claude/hooks/tool-timer.py close          # ターンを閉じる（reply-language が Stop を通したとき呼ぶ）
   python3 .claude/hooks/tool-timer.py reset-session  # 通算も 0 に戻す（新しい作業を始めるとき）
 
 記録先は `.claude/tool-time.json`。hook は失敗しても作業を止めない（常に exit 0）。
@@ -36,7 +37,7 @@ _FILE = pathlib.Path(os.environ.get("AIDD_TOOL_TIME")
                      or pathlib.Path(__file__).resolve().parent.parent / "tool-time.json")
 # total_* はターン単位（UserPromptSubmit の reset で 0 に戻る）。session_* は通算で、
 # reset では消えない（複数ターンにまたがる作業の実測を出すため。2026-09-22 の残課題）
-_EMPTY = {"total_sec": 0.0, "count": 0, "inflight": {}, "since": None, "window_start": None,
+_EMPTY = {"total_sec": 0.0, "count": 0, "inflight": {}, "since": None, "window_start": None, "open": False,
           "session_sec": 0.0, "session_count": 0, "history": []}
 HISTORY_MAX = 20   # 直近 20 ターン分の予実。これより古いものは捨てる（傾向が変わるため）
 
@@ -184,8 +185,17 @@ def main() -> int:
         if isinstance(prompt, str) and any(m in prompt for m in MACHINE_MARKERS):
             return 0
         old = load()
-        save(dict(_EMPTY, inflight={}, since=time.time(), history=old.get("history", []),
+        # ターンの途中で届いた保守者の発言では起点を動かさない。起点はそのターンの最初の発言
+        # （途中の発言から測ると経過が 0 分になり、過大見積の誤判定が出る。2026-10-11 の指摘）
+        if old.get("open") and isinstance(old.get("since"), (int, float)):
+            return 0
+        save(dict(_EMPTY, inflight={}, since=time.time(), open=True, history=old.get("history", []),
                   session_sec=float(old["session_sec"]), session_count=int(old["session_count"])))
+    elif cmd == "close":
+        # ターンの終わり（Stop を通した時点）。次の発言で起点を取り直す
+        data = load()
+        data["open"] = False
+        save(data)
     elif cmd == "reset-session":
         # 通算も 0 に。**履歴は消さない**（見積の腕前はセッションを跨いで学ぶもの）
         save(dict(_EMPTY, inflight={}, since=time.time(), history=load().get("history", [])))
