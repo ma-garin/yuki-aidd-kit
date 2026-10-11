@@ -232,6 +232,9 @@ def missing_actual(msg: str) -> str | None:
     """
     if ACTUAL_RE.search(msg):
         return None
+    # 経過が短い軽い操作（記憶の書き込み・git log 確認等）では求めない。計測行【見積：】を出したターンは求める
+    if not OVERALL_RE.search(msg) and is_short_turn():
+        return None
     # 回数の判定は内訳（--full）で行い、返すのは最短形にする
     if "/ 0回" in timer("report", "--full"):
         return None
@@ -246,6 +249,22 @@ EST_RE = re.compile(r"(?<!【)見積[:：]\s*(\d+)\s*分")
 # 応答の最後の行の `見積: N分 / 実測: M分` はこのターンの予実。あれば最優先で比較に使う
 FINAL_EST_RE = re.compile(r"見積[:：]\s*(\d+)\s*分\s*/\s*実測[:：]")
 OVERALL_RE = re.compile(r"【見積[:：]\s*(\d+)\s*分[^】]*\|[^】]*】")
+SHORT_TURN_SEC = 60  # 経過がこれ未満のターンは実測行も予実乖離も求めない（2026-10-11 保守者「ただの会話にいる?」）
+
+
+def turn_elapsed_sec() -> float | None:
+    raw = timer("elapsed")
+    try:
+        return float(raw) * 60.0 if raw else None
+    except ValueError:
+        return None
+
+
+def is_short_turn() -> bool:
+    sec = turn_elapsed_sec()
+    return sec is not None and sec < SHORT_TURN_SEC
+
+
 ZERO_EST_GRACE = 2  # 末尾行の見積が 0 分なら、経過 2 分以内は乖離を見ない
 
 
@@ -327,6 +346,23 @@ def last_instruction(g, lines: list[str]) -> str | None:
 
 
 def main() -> int:
+    """判定本体を走らせ、差し戻さなかったらターンを閉じる（次の保守者発言で計測の起点を取り直す）。"""
+    import io
+    buf, real = io.StringIO(), sys.stdout
+    sys.stdout = buf
+    try:
+        rc = _main()
+    finally:
+        sys.stdout = real
+    out = buf.getvalue()
+    if out:
+        real.write(out)
+    if '"decision": "block"' not in out:
+        timer("close")
+    return rc
+
+
+def _main() -> int:
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, ValueError):
@@ -401,6 +437,8 @@ def main() -> int:
             except ValueError:
                 elapsed = None
             note = None
+            if elapsed is not None and elapsed * 60.0 < SHORT_TURN_SEC:
+                elapsed = None  # 短いターンは誤差が支配するので突き合わせも記録もしない
             if elapsed is not None:
                 # 予実を履歴に積む。次の見積の校正に使う（prompt-priority が係数を注入する）
                 timer("record", str(est), f"{elapsed:.2f}")

@@ -435,6 +435,11 @@ expect_empty "Stop: 箇条書き・表・見出しは行数に数えない" "$OU
 python3 "$HOOKS/tool-timer.py" reset
 printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py" pre
 printf '{"tool_name":"Bash","tool_use_id":"r1"}' | python3 "$HOOKS/tool-timer.py" post
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"記憶に書きました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
+expect_empty "Stop: 経過 60 秒未満のターンは実測行なしで通す" "$OUT" "$RC"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"【見積：1分 | 開始:20:01 | 終了:20:02 | タスク数：1】\\n記憶に書きました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: 計測行があれば短いターンでも実測行を求める" "応答の最後に実測が無い" "$OUT"
+python3 -c 'import json,os,time;p=os.environ["AIDD_TOOL_TIME"];d=json.load(open(p));d["since"]=time.time()-120;json.dump(d,open(p,"w"))'   # 経過 2 分に戻す（60 秒未満は判定対象外）
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。テストは全て PASS です。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
 expect_contains "Stop: ツールを使ったのに実測が無ければ差し戻す" "応答の最後に実測が無い" "$OUT"
 expect_contains "Stop: 差し戻し文に貼るべき実測値を含める" "実測: " "$OUT"
@@ -448,12 +453,30 @@ expect_empty "Stop: ツールを使っていないターンは実績を求めな
 python3 "$HOOKS/tool-timer.py" reset-session
 printf '{"tool_name":"Bash","tool_use_id":"g1"}' | python3 "$HOOKS/tool-timer.py" pre
 printf '{"tool_name":"Bash","tool_use_id":"g1"}' | python3 "$HOOKS/tool-timer.py" post
+python3 -c 'import json,os,time;p=os.environ["AIDD_TOOL_TIME"];d=json.load(open(p));d["since"]=time.time()-90;json.dump(d,open(p,"w"))'   # 経過 2 分に戻す（60 秒未満は判定対象外）
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
 expect_contains "Stop: 見積が経過の 3 倍超なら過大見積として差し戻す" "過大見積" "$OUT"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"完了しました。実測: 1分未満。差異は読む対象が 5 ファイルに収束したため","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 差異を説明していれば通す" "$OUT" "$RC"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"精読を待っています。実測: 1分未満（進行中）","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
 expect_empty "Stop: 委譲待ちの途中報告（進行中）は予実を突き合わせない" "$OUT" "$RC"
+# 計測の起点はターンの最初の保守者発言。途中の発言で起点を動かさない／Stop を通したら次の発言で取り直す
+python3 "$HOOKS/tool-timer.py" reset-session; python3 "$HOOKS/tool-timer.py" close
+printf '{"prompt":"やって"}' | python3 "$HOOKS/tool-timer.py" reset
+python3 -c 'import json,os,time;p=os.environ["AIDD_TOOL_TIME"];d=json.load(open(p));d["since"]=time.time()-300;json.dump(d,open(p,"w"))'
+printf '{"prompt":"あとこれも"}' | python3 "$HOOKS/tool-timer.py" reset
+printf '{"tool_name":"Bash","tool_use_id":"s1"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"s1"}' | python3 "$HOOKS/tool-timer.py" post
+EL=$(python3 "$HOOKS/tool-timer.py" elapsed)
+expect_eq "tool-timer: 途中の発言があっても起点は最初の発言（経過 5 分前後）" "1" "$(python3 -c "print(1 if 4.9<=float('$EL')<=5.5 else 0)")"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"終わりました。","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py")
+expect_contains "Stop: 経過 60 秒以上で実測行が無ければ差し戻す" "応答の最後に実測が無い" "$OUT"
+python3 "$HOOKS/tool-timer.py" close
+printf '{"prompt":"次"}' | python3 "$HOOKS/tool-timer.py" reset
+printf '{"tool_name":"Bash","tool_use_id":"s2"}' | python3 "$HOOKS/tool-timer.py" pre
+printf '{"tool_name":"Bash","tool_use_id":"s2"}' | python3 "$HOOKS/tool-timer.py" post
+EL=$(python3 "$HOOKS/tool-timer.py" elapsed)
+expect_eq "tool-timer: ターンを閉じた後の発言で起点を取り直す" "1" "$(python3 -c "print(1 if float('$EL')<0.5 else 0)")"
 # 冒頭の【見積：…】（作業全体）より末尾行の `見積: N分 / 実測:` を優先する（2026-10-10 に 11 回誤判定）
 { u_text "進めて"; a_text "【見積：10分 | 開始:20:01 | 終了:20:11 | タスク数：4】"; a_tool; } > "$TRJ"
 OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"【見積：10分 | 開始:20:01 | 終了:20:11 | タスク数：4】\\n委譲しました。\\n見積: 0分 / 実測: 1分未満","transcript_path":"%s"}' "$TRJ" | python3 "$HOOKS/reply-language.py"); RC=$?
@@ -512,6 +535,7 @@ expect_absent "Stop: 3回目は decision block を出さない" '"decision": "bl
 expect_contains "Stop: 3回目は additionalContext に警告だけ残す" "完了主張の照合" "$(ig_reason "$OUT")"
 # --- tool-timer.py: 見積の「実績」をツール実行時間で測る（入力待ち・思考時間を含まない） ---
 TT="$HOOKS/tool-timer.py"
+python3 "$TT" close   # 前のターンを閉じる（開いたターン中の発言では起点を動かさない）
 python3 "$TT" reset
 printf '{"tool_name":"Bash","tool_use_id":"a"}' | python3 "$TT" pre
 printf '{"tool_name":"Read","tool_use_id":"b"}' | python3 "$TT" pre
@@ -533,6 +557,7 @@ expect_contains "tool-timer: ツールが走っていない時間は加算しな
 OUT=$(printf '{"tool_name":"Bash","tool_use_id":"zz"}' | python3 "$TT" post; python3 "$TT" report --full)
 expect_contains "tool-timer: 対になる pre が無い post で件数が増えない" "/ 3回" "$OUT"
 # 機械が書いた発言（完了通知・サブエージェントの報告）ではターンを区切らない。人の発言では区切る
+python3 "$TT" close   # 前のターンを閉じる（開いたターン中の発言では起点を動かさない）
 python3 "$TT" reset < /dev/null
 printf '{"tool_name":"Bash","tool_use_id":"m1"}' | python3 "$TT" pre; sleep 1
 printf '{"tool_name":"Bash","tool_use_id":"m1"}' | python3 "$TT" post
@@ -540,6 +565,7 @@ printf '{"prompt":"<task-notification>\\n<status>completed</status>"}' | python3
 expect_contains "tool-timer: 完了通知では reset しない（委譲待ちの経過を保つ）" "/ 1回" "$(python3 "$TT" report --full)"
 printf '{"prompt":"Another Claude session sent a message:\\n<agent-message from=\\"a\\">"}' | python3 "$TT" reset
 expect_contains "tool-timer: サブエージェントの報告でも reset しない" "/ 1回" "$(python3 "$TT" report --full)"
+python3 "$TT" close   # 前のターンを閉じる（開いたターン中の発言では起点を動かさない）
 printf '{"prompt":"次は S3 を進めて"}' | python3 "$TT" reset
 expect_contains "tool-timer: 人の発言では reset する" "/ 0回" "$(python3 "$TT" report --full)"
 printf '{"tool_name":"Bash","tool_use_id":"m2"}' | python3 "$TT" pre   # 以降の検査のためにツール実行 1 回の状態へ戻す
@@ -550,6 +576,7 @@ OUT=$(python3 "$TT" report --full)
 expect_contains "tool-timer: 既定は分だけの最短形" "実測: " "$(python3 "$TT" report)"
 OUT=$(python3 "$TT" elapsed)
 expect_contains "tool-timer: elapsed は数値だけを返す" "." "$OUT"
+python3 "$TT" close   # 前のターンを閉じる（開いたターン中の発言では起点を動かさない）
 python3 "$TT" reset
 OUT=$(python3 "$TT" report --full)
 expect_contains "tool-timer: reset はターンの計測だけ 0 に戻す" "ツール 0秒 / 0回" "$OUT"
@@ -571,6 +598,7 @@ expect_empty "tool-timer: 履歴 3 件未満では係数を出さない" "$OUT" 
 for pair in "40 6" "15 5" "8 2"; do python3 "$TT" record $pair; done
 expect_contains "tool-timer: 予実から校正係数（実測/見積 の中央値）を出す" "0.25" "$(python3 "$TT" factor)"
 expect_contains "tool-timer: 係数に件数を添える" "3" "$(python3 "$TT" factor)"
+python3 "$TT" close   # 前のターンを閉じる（開いたターン中の発言では起点を動かさない）
 python3 "$TT" reset
 expect_contains "tool-timer: reset で予実の履歴は消えない" "0.25" "$(python3 "$TT" factor)"
 python3 "$TT" reset-session
