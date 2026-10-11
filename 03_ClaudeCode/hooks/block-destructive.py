@@ -114,6 +114,9 @@ _RULES: tuple[tuple[re.Pattern[str], str, str], ...] = (
     (re.compile(_START + r"rm\s+(?=(?:" + _ARGS + r"\s)?(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)(?:\s|$))(?=(?:"
                 + _ARGS + r"\s)?(?:-[a-zA-Z]*f[a-zA-Z]*|--force)(?:\s|$))"),
      "再帰削除は取り消せない", "`mv <対象> <scratchpad>/` で退避する（H-2 の標準。削除でなく退避）"),
+    (re.compile(_START + r"(?:pkill|killall)(?:\s|$)"),
+     "名前・パスの一致でプロセスを止めると、他セッションや自分自身（argv に同じパスを含む）まで巻き込む",
+     "自分が起動して記録した PID だけを `kill <PID>` で止める。サーバならポートで `kill $(lsof -ti:<PORT>)`"),
     (re.compile(_START + r"find\b" + _ARGS + r"\s-delete(?:\s|$)"),
      "find -delete は対象を見ないまま消える", "`find … -print` で対象を出し、`mv <対象> <scratchpad>/` で退避する"),
     (re.compile(r"(?<!\|)\|(?!\|)\s*(?:sudo\s+(?:-\S+\s+)*)?(?:env\s+(?:\S+=\S*\s+)*)?(?:\S*/)?" + _SH + r"(?=\s|$|\))"),
@@ -131,7 +134,9 @@ _RULES: tuple[tuple[re.Pattern[str], str, str], ...] = (
 # 引用の中身を消すと見えなくなる形（`sh -c "$(curl …)"`・`bash <(curl …)`）は元の文字列に当てる
 _RAW_RULES: tuple[tuple[re.Pattern[str], str, str], ...] = (
     (re.compile(r"\b(?:(?:ba|z|da|k)?sh\s+(?:-\S+\s+)*-\S*c|eval)\s+[\"']?\$\(\s*(?:curl|wget)\b"),
-     "取得したスクリプトを中身を見ずに実行する", "`curl -fsSL <URL> -o <scratchpad>/x.sh` で保存し、中身を読んでから保守者に実行を依頼する"),
+     "取得したスクリプトを中身を見ずに実行する", "`curl -fsSL <URL> -o <scratchpad>/x.sh` で保存し、中身を読んでから保守者に実行を依頼する"),    (re.compile(r"\bpgrep\b[^\n;&]*\|[^\n;&]*\bkill\b|\bkill\b[^\n;&]*\$\(\s*pgrep\b"),
+     "名前・パスの一致で拾った PID をまとめて止めると、他セッションや自分自身まで巻き込む",
+     "自分が起動して記録した PID だけを `kill <PID>` で止める。サーバならポートで `kill $(lsof -ti:<PORT>)`"),
 )
 # 秘密ファイルが引数に現れても中身を読まないコマンド（それ以外はすべて deny。読み出しコマンドの一覧は漏れるので持たない）。
 # ただし出力がパイプで次へ流れる断片では例外にしない（`echo .env | xargs cat`）

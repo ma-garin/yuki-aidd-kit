@@ -22,6 +22,8 @@ model: sonnet
      ./scripts/check-approval.sh --phase <n>       工程順序の矛盾が無いか
      テスト工程なら ./scripts/test-metrics.sh --gate
 2. 3 役レビュー（skills/phase-approval。前の役の出力を読んでから次へ）
+     各役は読む前に前提を 5 行で書く: 目的 / 守るべき不変条件 / 見る範囲の境界 / 分からないこと / 前提の確信度（0〜100）
+       確信度 60 未満なら判定に入らず、分からないことを差し戻し事項に回す（誤った前提のままレビューしない。参照: openrig review-team）
      役 1 追跡担当     traceability-matrix と trace-check の出力だけを見る
                        上流 ID に紐づかない下流・空欄・孤立したテストを ID で列挙
      役 2 仕様一致担当 上流工程と当該工程の成果物だけを見る（実装コードを読まない）

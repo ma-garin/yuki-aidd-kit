@@ -16,7 +16,7 @@
 ```bash
 <起動コマンド>                                                                 # 検証用: 認証オフ・ブラウザ自動オープンなし
 curl -s --retry 15 --retry-delay 1 --retry-connrefused -o /dev/null -w "%{http_code}" http://127.0.0.1:<PORT>/   # 待機ループを組まない
-kill $(lsof -ti:<PORT>) 2>/dev/null                                            # pkill -f は効かないことがある。ポートで殺す
+kill $(lsof -ti:<PORT>) 2>/dev/null                                            # ポートで止める。pkill・killall・pgrep|kill は他セッションと自分を巻き込むので hook が止める
 ```
 - 編集の反映条件（再起動が要るか / ホットリロードか）: <記入>　／　認証・外部通信を止める手段: <記入>
 - 既知の不具合・触ってはいけないファイル: <記入>　／　スクショは scratchpad の絶対パスを最初から `filename` に指定

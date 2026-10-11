@@ -12,6 +12,7 @@ paths:
 
 Critical / High リスクの機能で必ず確認する: happy path／failure path／timeout・cancellation／auth・login wall／robots・制限の扱い／partial result・recovery／ログまたは証跡／ユーザーに見えるエラー・状態表示
 
+- **入口をすべて踏む**: 1 つの機能に入口が複数ある（画面・API・CLI・設定・ショートカット・文書）なら、直した入口と「該当なし」と判断した入口を一覧で報告する。試した 1 経路だけ直して他を漏らさない。**足したら戻す手段も作る**（追加に対する削除・取り消し・無効化。片道の操作はバグ）（参照: t3code AGENTS.md "Hit every surface"）
 - ゲート（テスト・verify-ui 等）の実行はユーザーが明示的に要求した時だけ（`rules/speed-harness.md` H-7）。要求が無ければ未実行の項目をすべて `未実行` / `未検証` と明記して提出し、1つでも未検証があれば `未確認` と書いて完了として提示しない
 - 実行経路の存在は人の注意力でなく機械で検証する: `quality/feature_contracts.yml`（機能ごとの UI/route/core・出力・永続化・failure_modes・required_tests）を `scripts/quality_harness.py` が検査する（`skills/test-strategy/references/feature-contracts.md`）
 - 開発プロセス上の失敗には名前のある RCA 枠組み（5 Whys / Fishbone / FMEA / CAPA / DoD 更新）を使う。枠組み名を持たない場当たりの原因分析は禁止
