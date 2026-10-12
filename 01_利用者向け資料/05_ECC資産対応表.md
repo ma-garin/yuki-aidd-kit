@@ -1,5 +1,7 @@
 # ECC Asset Map for AIDD
 
+最終更新: 2026-10-12
+
 `<APP_WORKSPACE>` の実プロジェクト群に対して、ECC の資産を DAILY / LIBRARY に分けた対応表です。
 
 ## STACK
@@ -129,6 +131,21 @@ Kit:
 - `streamlit-rag-app` when AI module work is involved
 - `qa-review-standards`
 - `agent-eval`
+
+## Kit 側の追加資産（2026-09-21 以降）
+
+ECC とは別に、kit 自身が提供する資産です。上の「Kit:」に載せた既存スキルはすべて現存を確認済みです。
+
+| 資産 | 種別 | 使い方 |
+|---|---|---|
+| `aidd-lead` | agent | 成果物レベルの依頼（「〇〇システムを作って」）を受ける統括。種別・進め方・デザインを人間に聞かない |
+| `spec-agent` / `build-agent` / `verify-agent` | agent | 工程 2〜3（設計）／工程 4（実装＋デザイン）／工程 5〜7（テスト）を `aidd-lead` の下で回す |
+| `gate-agent` | agent | 各工程の出口で機械判定と 3 役レビューを行い、差し戻す。承認欄は空のまま人間へ渡す |
+| `advisor`（skill / agent） | skill / agent | 大きな判断の前・詰まったとき・完了の前に別の強いモデルへ相談する。助言は参考で、最終判断は自分と利用者 |
+| `security-audit`（`/security-audit`） | skill / command | 導入済みの無料走査器でセキュリティ監査。明示の依頼のみ。未検査は合格に数えない |
+| `ai-trend-research` | skill | AI・LLM・開発ツールの最新動向を公開 API・RSS・GitHub・Web から調べる（読み取り専用） |
+| `agent-ready`（`/agent-ready`） | skill / command | プロジェクトが AI エージェントで開発しやすいかを 100 点で採点する（対象は変更しない） |
+| `skill-guide` | skill | やりたいことから使うスキル・コマンドを案内する。利用者が呼ぶ専用 |
 
 ## Install Guidance
 

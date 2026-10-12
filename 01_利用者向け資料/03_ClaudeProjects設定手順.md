@@ -42,9 +42,9 @@ claude.ai サイドバー → 「Projects」→「New Project」→ 名前: `AID
 「Add content」→ 以下のファイルをアップロード:
 - `INDEX.md`（キットの索引。どの資産があるかを会話横断で参照できる）
 - `03_ClaudeCode/CLAUDE.md.template`
-- `skills/sdd-ecc-workflow/SKILL.md`
-- `skills/qa-review-standards/SKILL.md`
-- SDD+ECCガイドライン HTML（手元にある場合）
+- `03_ClaudeCode/skills/sdd-ecc-workflow/SKILL.md`
+- `03_ClaudeCode/skills/qa-review-standards/SKILL.md`
+- `01_利用者向け資料/01_利用ガイド.html`（手元にある場合）
 
 ### 4. 使い方
 - **新しい会話を始める時**: 必ずこのプロジェクト内で開始する
