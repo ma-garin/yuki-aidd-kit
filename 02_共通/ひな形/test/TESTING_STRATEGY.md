@@ -40,6 +40,14 @@
 | **マイルストーン**（機能の区切り・PR マージ前・リリース判断） | フルゲート: `<make test>` / `<make verify-ui>` / `<make lint>` / `<make security>` / `python3 scripts/quality_harness.py`。結果を `docs/quality/evidence/` に保存 |
 | ユーザーが要求した時 | 要求されたもの（`GATES_REQUESTED=1`） |
 
+### 4.1 テストの書き方・回し方
+
+- `sleep` やポーリングで待たない。イベント・完了通知を待つ（flaky の最大要因）
+- 手元で回すのは**触ったテストだけ**と、対象を絞った lint。全件はマイルストーンで回す
+- 1 テストは 30 秒以内。超えるなら分割する
+
+（参照: t3code AGENTS.md Verifying, AnyPS5 CONTRIBUTING）
+
 ## 5. ツールチェーン
 
 | カテゴリ | ツール | バージョン | 用途 |
