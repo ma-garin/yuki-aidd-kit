@@ -67,7 +67,7 @@ hook が既に絞った出力（systemMessage に「絞りました」）？ ─
 上のどれでもなく文脈が重い？                  ── yes → /compact（PreCompact hook が引き継ぎを残す）
 ```
 
-参照: mattpocock/skills `skills/engineering/ask-matt/PHASE-BOUNDARIES.md`
+参照: mattpocock/skills skills/engineering/ask-matt/PHASE-BOUNDARIES.md（外部リポジトリ）
 
 ## 出力
 

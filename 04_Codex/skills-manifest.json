@@ -1,18 +1,38 @@
 {
-  "count": 40,
+  "count": 50,
   "generator": "04_Codex/build_codex_skills.py",
   "skills": {
+    "advisor": {
+      "files": 3,
+      "sha256": "d4eee23b3550fe441a5835253015f8dd519a7e34d9e0d764ee04eeaddbd8a787"
+    },
     "agent-eval": {
       "files": 5,
       "sha256": "71ad094015df50bf70a6a1a08eecb585a8aa6c26ebbd955de93f29f97e24b84c"
+    },
+    "agent-ready": {
+      "files": 3,
+      "sha256": "e21cd4cfafd037510a70f6fb816e9e90c53b07b3f777ac79081ec16cdda74241"
+    },
+    "ai-trend-research": {
+      "files": 5,
+      "sha256": "4e5027f4902cebe688b9c799c982bd148725c23fc6f1c2d5a5bcab32d132cf2c"
     },
     "atarimae-quality-audit": {
       "files": 3,
       "sha256": "fd072bce189fd59dd0b03cc0bce5dc0759fa3148a69e38b10d41f45c72545bb6"
     },
+    "cmd-agent-ready": {
+      "files": 2,
+      "sha256": "93f3a72b36501738cb1f990026b480dedba28448ea5725fef8012a7e17aadd48"
+    },
     "cmd-app-scan": {
       "files": 2,
       "sha256": "d557d2337fc1c0aae9e7c05d18d9f922289b48638d0f18d17c108789a00df7c6"
+    },
+    "cmd-cancel-ralph": {
+      "files": 2,
+      "sha256": "65225a22f264e5ed1e68981a58fec79d3636088e68287a03040e56aa5ba48d71"
     },
     "cmd-compact-work": {
       "files": 2,
@@ -33,6 +53,10 @@
     "cmd-eval": {
       "files": 2,
       "sha256": "8d08e7ec45d146a92b014c08ec95f3e7af855d99e351ee1141c71eb0f7eb0216"
+    },
+    "cmd-grill": {
+      "files": 2,
+      "sha256": "dd13951f1b9962161f3718958680db53d5698067d98885f8cca994dbc5dbb4f5"
     },
     "cmd-implement": {
       "files": 2,
@@ -58,9 +82,13 @@
       "files": 2,
       "sha256": "bcf3ee90a82c1786ad010cde6dc75b2d366734a83a296a791c24f10d53a10811"
     },
+    "cmd-ralph": {
+      "files": 2,
+      "sha256": "c531ff2f580a3f550a3b35737e6fb1d5050b9037943caebaa734f7d771353c0c"
+    },
     "cmd-retro": {
       "files": 2,
-      "sha256": "b7a7bf2820b91c4d6d4f22f5c3da59628f51abd3cf7564c124d0cd8c719ca170"
+      "sha256": "9d2348828ae73fe2ef2e11b4eb9404a36e347ca11c1aef47ebedeb35e695b910"
     },
     "cmd-rfd": {
       "files": 2,
@@ -86,13 +114,17 @@
       "files": 2,
       "sha256": "6df709cf61c0cd7dd7e9dadc36898450746312b0486d7646849b03e777c931a7"
     },
+    "cmd-wait-what": {
+      "files": 2,
+      "sha256": "58d402440152ad94fc254996e6d3e0c6a0355bd5683404990b2dc01cb5dd09e1"
+    },
     "code-doc-search": {
       "files": 2,
       "sha256": "d062f3f958b9b0ecdb3ff5a1ad471a85b04d08ace22ae879782eace4fe6decd5"
     },
     "context-compression": {
       "files": 2,
-      "sha256": "a10fa66752930155a3e6a86a8b9c0600a03c92daad323844ada0bdcae0830d82"
+      "sha256": "79884014fbc3e657fe236024901ee4198a17287df80ec1e8723f21b28f0f3101"
     },
     "design-system": {
       "files": 5,
@@ -114,6 +146,10 @@
       "files": 2,
       "sha256": "f739a0b4ce766b5ffc924832024c8924f0ab30e8f81b5d5ff661f7758ea489dd"
     },
+    "handoff": {
+      "files": 2,
+      "sha256": "ed6d35a457f9bc268d19681ba78ede00a57c61fabf407f4988cb6eed5a001008"
+    },
     "nfr-standards": {
       "files": 3,
       "sha256": "67cf7394e3a79b7e156aac8046ba711ec8dbc1ef69a772082e362d2dbfaf7d10"
@@ -128,11 +164,11 @@
     },
     "qa-review-standards": {
       "files": 4,
-      "sha256": "95ed6ce5e344b180e7661218c9525eaee7e9256776909effd1df9dc888786602"
+      "sha256": "66a219d1b4fbaa8f66f658a5781e7fafdc6c22a42b4167d2a2ca69e7dbce42d0"
     },
     "retro": {
-      "files": 2,
-      "sha256": "0b02962b70a39c6a53e8c3fc532233544eab02a9b84aba7ec27dd80b5036c890"
+      "files": 4,
+      "sha256": "a8c4fd860ae05d9c03d44c45e06185ca1bc229bc21039783bbddc37cfc4c785e"
     },
     "sdd-ecc-workflow": {
       "files": 4,
@@ -145,6 +181,10 @@
     "single-html-tool": {
       "files": 2,
       "sha256": "e4e50ab57b68401ceaab367bdcb6ad92ce283e6990b83c9232c73c04338165fd"
+    },
+    "skill-guide": {
+      "files": 2,
+      "sha256": "f385922df70211b7008f3f9d414974be14aeaf303cb78796bc904dfa3da64c9e"
     },
     "streamlit-rag-app": {
       "files": 2,
