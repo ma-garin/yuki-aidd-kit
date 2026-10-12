@@ -23,6 +23,17 @@
             "statusMessage": "保守者の指示に応答済みか確認中"
           }
         ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/pre-read-guard.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "timeout": 5,
+            "statusMessage": "読む価値とサイズを確認中"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -31,6 +42,11 @@
           {
             "type": "command",
             "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/tool-timer.py\"; [ -f \"$f\" ] && exec python3 \"$f\" post || exit 0'",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/observe.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
             "timeout": 5
           }
         ]
@@ -84,6 +100,23 @@
           {
             "type": "command",
             "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/reply-language.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/ralph-stop.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/session-context.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
             "timeout": 5
           }
         ]
