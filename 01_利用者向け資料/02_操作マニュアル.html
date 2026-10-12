@@ -861,8 +861,8 @@
             <h3>4. hooksの動作を確認する</h3>
             <pre><code>./06_保守者向け/03_回帰テスト/test-hooks.sh</code></pre>
             <p>
-              保存時の自動チェック（hooks）が正しく動くかを918ケースでテストします。
-              「PASS=918 / FAIL=0」なら合格です。
+              保存時の自動チェック（hooks）が正しく動くかを836ケースでテストします。
+              「PASS=836 / FAIL=0」なら合格です。
             </p>
           </div>
           <div class="callout warn">
@@ -1206,10 +1206,32 @@ git commit -m "chore: add AIDD Kit"</code></pre>
           <div class="callout">
             <div class="callout-title">Codexで使う時</div>
             <p>
-              Codexでは、スキル21本とコマンド19本（`cmd-`を付けて変換したもの）をあわせた40本が、`$名前`の形で呼べます。
+              Codexでは、スキル26本とコマンド24本（`cmd-`を付けて変換したもの）をあわせた50本が、`$名前`の形で呼べます。
               たとえば `$done-gate`、コマンドは `$cmd-trace` のように使い、スラッシュメニューにも並びます。
               install では `~/.agents/skills/` に、プロジェクト配布では `&lt;対象&gt;/.agents/skills/` に配られます。
             </p>
+          </div>
+          <div class="callout">
+            <div class="callout-title">新しく加わったもの（8.7.0〜 未リリース）</div>
+            <table>
+              <thead><tr><th>種類</th><th>名前</th><th>何をするか</th></tr></thead>
+              <tbody>
+                <tr><td>skill</td><td><code>handoff</code></td><td>別のセッションや Codex へ作業を渡す引き継ぎ文書を 1 本書く</td></tr>
+                <tr><td>skill</td><td><code>advisor</code></td><td>節目（大きな判断の前・詰まったとき・完了の前）に別の強いモデルへ相談する。助言は参考で、最終判断は自分と利用者</td></tr>
+                <tr><td>skill</td><td><code>agent-ready</code></td><td>プロジェクトが AI エージェントで開発しやすいかを 100 点で採点する（対象は変更しない）</td></tr>
+                <tr><td>skill</td><td><code>ai-trend-research</code></td><td>AI・開発ツールの最新動向を公開情報だけで調べて整理する（読み取り専用）</td></tr>
+                <tr><td>skill</td><td><code>skill-guide</code></td><td>やりたいことから、使うスキル・コマンドを案内する（自分で呼んだときだけ動く）</td></tr>
+                <tr><td>command</td><td><code>/agent-ready</code></td><td>AI 開発のしやすさを採点する</td></tr>
+                <tr><td>command</td><td><code>/grill</code></td><td>作りたいものの要件を 1 問ずつ詰める（RFD の前）</td></tr>
+                <tr><td>command</td><td><code>/wait-what</code></td><td>直前の説明を、やさしい日本語で言い直す</td></tr>
+                <tr><td>command</td><td><code>/ralph</code></td><td>完了の合言葉が出るまで同じ依頼を回し直す（自分で始めたときだけ動く完了ループ）</td></tr>
+                <tr><td>command</td><td><code>/cancel-ralph</code></td><td>完了ループ（/ralph）を止める</td></tr>
+                <tr><td>agent</td><td><code>advisor</code></td><td>節目の相談を受けて、読み取りだけで事実を確かめて助言する（書き換えない）</td></tr>
+                <tr><td>hook</td><td><code>observe.py</code></td><td>ツールを使うたびに「何をしたか」の見出しを 1 行だけ記録する（圧縮・再開後の復元に使う）</td></tr>
+                <tr><td>hook</td><td><code>ralph-stop.py</code></td><td>/ralph が動いているときだけ、合言葉が出るまで終了を止めて回し直す</td></tr>
+                <tr><td>hook</td><td><code>statusline.sh</code></td><td>画面下の表示（ステータスライン）の本体。statusline.py が呼ぶ</td></tr>
+              </tbody>
+            </table>
           </div>
           <div class="chapter-nav">
             <a class="chapter-nav-prev" href="#lifecycle">← 前へ</a>

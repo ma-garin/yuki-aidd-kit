@@ -23,6 +23,7 @@
 - [03_ClaudeCode/agents/build-agent.md](03_ClaudeCode/agents/build-agent.md): 工程 4（実装＋デザイン。指示が無くても design-system を適用する）
 - [03_ClaudeCode/agents/verify-agent.md](03_ClaudeCode/agents/verify-agent.md): 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行）
 - [03_ClaudeCode/agents/gate-agent.md](03_ClaudeCode/agents/gate-agent.md): 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す）
+- [03_ClaudeCode/skills/advisor/SKILL.md](03_ClaudeCode/skills/advisor/SKILL.md): 節目の相談を受ける助言専用（読み取り専用で事実を確かめて助言）
 
 ## DAILY スキル
 
@@ -39,6 +40,7 @@
 - [03_ClaudeCode/skills/done-gate/SKILL.md](03_ClaudeCode/skills/done-gate/SKILL.md): 完了宣言前のDefinition of Doneチェック
 - [03_ClaudeCode/skills/uiux_review/SKILL.md](03_ClaudeCode/skills/uiux_review/SKILL.md): 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない
 - [03_ClaudeCode/skills/retro/SKILL.md](03_ClaudeCode/skills/retro/SKILL.md): AIDDの進め方の学びを lessons.md に蓄積しキットへ還流
+- [03_ClaudeCode/skills/handoff/SKILL.md](03_ClaudeCode/skills/handoff/SKILL.md): 作業を別セッション・別ハーネス（Claude ⇄ Codex）へ渡す引き継ぎ文書を 1 本書く。会話を読まずに続けられる形
 
 ## rules
 
@@ -46,6 +48,10 @@
 - [02_共通/rules/speed-harness.md](02_共通/rules/speed-harness.md): H-0〜H-10: 出力量・着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示・自己ウェイク禁止・往復と読み込みの規律
 - [02_共通/rules/model-routing.md](02_共通/rules/model-routing.md): Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage`
 - [02_共通/rules/functional-integrity.md](02_共通/rules/functional-integrity.md): UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。`paths` 付き＝コード/UI を触ったときだけ読み込み
+- [02_共通/rules/agent-intervention.md](02_共通/rules/agent-intervention.md): エージェントへの介入 3 段階（`docs/` を触ったときだけ読み込み）
+- [02_共通/rules/design-principles.md](02_共通/rules/design-principles.md): 設計原則の短い 5 つ（コード・文書を触ったときだけ読み込み）
+- [02_共通/rules/security-hygiene.md](02_共通/rules/security-hygiene.md): 秘密情報の取り扱い（実装ファイルを触ったときだけ読み込み）
+- [02_共通/rules/writing-style.md](02_共通/rules/writing-style.md): 文章規約・AI 臭さを消す書き方（`*.md` を触ったときだけ読み込み）
 
 ## Optional
 
@@ -57,6 +63,9 @@
 - [03_ClaudeCode/skills/single-html-tool/SKILL.md](03_ClaudeCode/skills/single-html-tool/SKILL.md): 単一HTMLツール（社内配布・PoC）の開発規約
 - [03_ClaudeCode/skills/personal-pwa/SKILL.md](03_ClaudeCode/skills/personal-pwa/SKILL.md): GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約
 - [03_ClaudeCode/skills/streamlit-rag-app/SKILL.md](03_ClaudeCode/skills/streamlit-rag-app/SKILL.md): Streamlit+RAG業務アプリ（特定プロジェクト前提）の開発規約
+- [03_ClaudeCode/skills/agent-ready/SKILL.md](03_ClaudeCode/skills/agent-ready/SKILL.md): プロジェクトが AI エージェントで開発しやすいかを 100 点で採点（対象は変更しない）
+- [03_ClaudeCode/skills/ai-trend-research/SKILL.md](03_ClaudeCode/skills/ai-trend-research/SKILL.md): AI・LLM・開発ツールの最新動向を公開 API・RSS・GitHub・Web から調べて整理（読み取り専用）
+- [03_ClaudeCode/skills/skill-guide/SKILL.md](03_ClaudeCode/skills/skill-guide/SKILL.md): やりたいことから使うスキル・コマンドを案内するルーター。人が呼ぶ専用（自動発火しない）
 - [03_ClaudeCode/commands/rfd.md](03_ClaudeCode/commands/rfd.md): RFD（提案・論点出し）を起票し、決定を人間に求める
 - [03_ClaudeCode/commands/lifecycle.md](03_ClaudeCode/commands/lifecycle.md): 指定工程の成果物を生成し入口/出口基準で判定（`status` で進捗確認）
 - [03_ClaudeCode/commands/trace.md](03_ClaudeCode/commands/trace.md): トレーサビリティの更新と `trace-check.sh` による機械検証
@@ -76,9 +85,14 @@
 - [03_ClaudeCode/commands/retro.md](03_ClaudeCode/commands/retro.md): レトロ実行と lessons.md 追記
 - [03_ClaudeCode/commands/token-check.md](03_ClaudeCode/commands/token-check.md): トークン使用量の確認と最適化提案
 - [03_ClaudeCode/commands/security-audit.md](03_ClaudeCode/commands/security-audit.md): 導入済みの無料走査器（依存・SAST・秘密）でセキュリティ監査。未検査は合格に数えない
+- [03_ClaudeCode/commands/agent-ready.md](03_ClaudeCode/commands/agent-ready.md): AI 開発のしやすさを 100 点で採点
+- [03_ClaudeCode/commands/grill.md](03_ClaudeCode/commands/grill.md): 要件を 1 問ずつ詰める（RFD の前）
+- [03_ClaudeCode/commands/wait-what.md](03_ClaudeCode/commands/wait-what.md): 直前の説明をやさしい日本語で言い直す
+- [03_ClaudeCode/commands/ralph.md](03_ClaudeCode/commands/ralph.md): 完了の合言葉が出るまで同じ依頼を回し直す（opt-in の完了ループ）
+- [03_ClaudeCode/commands/cancel-ralph.md](03_ClaudeCode/commands/cancel-ralph.md): 完了ループ（/ralph）を止める
 - [06_保守者向け/01_内部仕様/README.md](06_保守者向け/01_内部仕様/README.md): 読む順序・位置づけ・更新規約
 - [06_保守者向け/01_内部仕様/00_概要.md](06_保守者向け/01_内部仕様/00_概要.md): 目的・思想・配置の2層・規模・版歴
-- [06_保守者向け/01_内部仕様/01_構成品目目録.md](06_保守者向け/01_内部仕様/01_構成品目目録.md): 全 126 ファイルの目録（行数・役割）
+- [06_保守者向け/01_内部仕様/01_構成品目目録.md](06_保守者向け/01_内部仕様/01_構成品目目録.md): 全 327 ファイルの目録（行数・役割）
 - [06_保守者向け/01_内部仕様/02_アーキテクチャ.md](06_保守者向け/01_内部仕様/02_アーキテクチャ.md): 読み込み経路・真実源マップ・発火機構・依存
 - [06_保守者向け/01_内部仕様/03_スキル.md](06_保守者向け/01_内部仕様/03_スキル.md): 資産別の詳細（スキル/コマンド・hooks/スクリプト/テンプレート/rules・docs/品質ゲート）
 - [06_保守者向け/01_内部仕様/09_指摘事項.md](06_保守者向け/01_内部仕様/09_指摘事項.md): 現況の残課題（severity・evidence つき）
