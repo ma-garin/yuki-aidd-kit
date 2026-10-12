@@ -1,0 +1,165 @@
+<title>{{対象}} 作業報告</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* レイアウト: 1 段組の報告書。結論 → 仕組み → 手順の記録 → 確認結果 → 運用 → 残り */
+:root {
+  --bg: #f6f6f3; --surface: #ffffff; --fg: #1d1f24; --muted: #5d6270; --line: #e0ddd5;
+  --accent: #c2550f; --accent-soft: #fbeee4; --ok: #1d7a4a; --ok-soft: #e4f4ec; --warn: #9a5b00; --warn-soft: #fff3df;
+  --code-bg: #efede7;
+  --font-body: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14151a; --surface: #1c1e25; --fg: #e8e7e3; --muted: #a8a9b0; --line: #30323b;
+    --accent: #f08a45; --accent-soft: #3a2416; --ok: #6fd3a0; --ok-soft: #15301f; --warn: #f2b65c; --warn-soft: #33270f; --code-bg: #101116;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14151a; --surface: #1c1e25; --fg: #e8e7e3; --muted: #a8a9b0; --line: #30323b;
+  --accent: #f08a45; --accent-soft: #3a2416; --ok: #6fd3a0; --ok-soft: #15301f; --warn: #f2b65c; --warn-soft: #33270f; --code-bg: #101116;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.75; }
+.wrap { max-width: 800px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; gap: 32px; }
+h1, h2, h3 { margin: 0; line-height: 1.35; text-wrap: balance; }
+h1 { font-size: 1.7rem; }
+h2 { font-size: 1.2rem; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+p { margin: 0; }
+section { display: grid; gap: 14px; min-width: 0; }
+.meta { color: var(--muted); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 0.75rem; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; }
+ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.summary { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; }
+.path { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.node { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px; min-width: 0; }
+.node .k { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.04em; }
+.node .d { font-size: 0.85rem; color: var(--muted); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 600px; font-size: 0.9rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-top: 1px solid var(--line); }
+thead th { border-top: 0; background: var(--accent-soft); }
+td.time { font-family: var(--font-code); white-space: nowrap; color: var(--muted); }
+.st { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.st.ok { background: var(--ok-soft); color: var(--ok); }
+.st.warn { background: var(--warn-soft); color: var(--warn); }
+code { font-family: var(--font-code); font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.box { background: var(--warn-soft); border-radius: 10px; padding: 14px 18px; }
+dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; }
+dt { color: var(--muted); font-size: 0.9rem; }
+dd { margin: 0; min-width: 0; }
+@media (max-width: 480px) { dl { grid-template-columns: 1fr; } dt { margin-top: 6px; } }
+a { color: var(--accent); }
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; }
+.diagram pre { margin: 0; }
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+figure { margin: 0; display: grid; gap: 6px; min-width: 0; }
+figure img { width: 100%; height: auto; max-width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.shots img { max-height: 520px; object-fit: contain; object-position: top; }
+figcaption { font-size: 0.85rem; color: var(--muted); }
+</style>
+
+<main class="wrap">
+  <header style="display:grid;gap:6px">
+    <span class="eyebrow">{{プロジェクト名}} ／ {{範囲}} 作業報告</span>
+    <h1>{{何ができるようになったかを 1 文で}}</h1>
+    <p class="meta">{{YYYY-MM-DD（曜）HH:MM〜HH:MM}} ／ {{費用・PR 番号など一言}}</p>
+  </header>
+
+  <section>
+    <div class="summary">
+      <p><b>結論:</b> {{何をして、利用者に何が届いたか。確認済みかどうかも}}</p>
+      <p><b>{{初出の用語}}とは:</b> {{2 文以内の説明}}</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>どうつながっているか</h2>
+    <div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  A["{{起点}}"] -->|"{{何をする}}"| B["{{経由}}"]
+  B --> C["{{行き先}}"]
+  X["{{採らなかった経路}}"] -.->|"使わない<br/>{{理由}}"| C
+</pre>
+    </div>
+    <p class="meta">{{採らなかった経路の理由を 1 文}}</p>
+  </section>
+
+  <section>
+    <h2>{{動いたときの流れ}}</h2>
+    <div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as {{利用者}}
+  participant S as {{仕組み}}
+  U->>S: {{操作}}
+  S-->>U: {{結果}}
+</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>画面</h2>
+    <div class="shots">
+      <figure><img src="img/{{file}}.png" alt="{{何が写っているか}}"><figcaption>{{読者が見るべき点}}</figcaption></figure>
+    </div>
+    <figure class="wide"><img src="img/{{admin}}.jpg" alt="{{管理画面の説明}}"><figcaption>{{設定がどこに出ているか}}</figcaption></figure>
+  </section>
+
+  <section>
+    <h2>行ったことの記録</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>時刻</th><th>作業</th><th>結果</th></tr></thead>
+        <tbody>
+          <tr><td class="time">{{HH:MM}}</td><td>{{作業}}</td><td><span class="st ok">完了</span></td></tr>
+          <tr><td class="time">{{HH:MM}}</td><td>{{やめた作業も書く}}</td><td><span class="st warn">後で撤去</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>設定内容</h2>
+    <dl>
+      <dt>{{項目}}</dt><dd>{{値（秘密情報は書かない）}}</dd>
+    </dl>
+  </section>
+
+  <section>
+    <h2>確認の結果</h2>
+    <p>{{何をどう確かめたか 1 文}}</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>確かめたもの</th><th>結果</th></tr></thead>
+        <tbody>
+          <tr><td>{{対象}}</td><td><span class="st ok">{{実測値}}</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>これからの使い方</h2>
+    <ul>
+      <li><b>{{場面}}:</b> {{手順}}</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>注意と残り</h2>
+    <div class="box">
+      <ul>
+        <li><b>{{未確認・リスク}}:</b> {{内容と確かめ方}}</li>
+      </ul>
+    </div>
+  </section>
+</main>
+<!-- Codex など Artifact 以外で開くときだけ、次の行のコメントを外して図を描く（Artifact は自前で描くので不要） -->
+<!-- <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs"; mermaid.initialize({ startOnLoad: true, theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });</script> -->
