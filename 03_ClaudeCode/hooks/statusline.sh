@@ -18,11 +18,8 @@ oauth_token() {
 model=$(j '.model.display_name // "unknown"')
 dir=$(j '.workspace.current_dir // .cwd // ""')
 effort=$(j '.effort.level // empty')
-ctx=$(j '.context_window.used_percentage // 0' | cut -d. -f1)
-ctx_left=$(j '((.context_window.context_window_size // 0) * (.context_window.remaining_percentage // 0) / 100 / 1000) | floor')
-over200k=$(j '.exceeds_200k_tokens // false')
-five=$(j '.rate_limits.five_hour.used_percentage // 0' | cut -d. -f1)
-week=$(j '.rate_limits.seven_day.used_percentage // 0' | cut -d. -f1)
+five=$(j '.rate_limits.five_hour.used_percentage // empty' | cut -d. -f1)
+week=$(j '.rate_limits.seven_day.used_percentage // empty' | cut -d. -f1)
 five_reset=$(j '.rate_limits.five_hour.resets_at // empty')
 week_reset=$(j '.rate_limits.seven_day.resets_at // empty')
 cache_warm=$(j '.prompt_cache.warm // empty')
@@ -87,11 +84,13 @@ if [ "$cache_warm" = "true" ]; then
 elif [ "$cache_warm" = "false" ]; then
   cache="cache -"
 fi
-branch=$(git -C "$dir" branch --show-current 2>/dev/null); [ -z "$branch" ] && branch="-"
 
 line1="${model} ${effort:-?} | ${dir##*/}"
+[ -n "$cache" ] && line1="${line1} | ${cache}"
+# 状態（処理中・待機）は出さない（2026-10-06 保守者の指定）
 echo "$line1"
-echo "current $(bar "$five") ${five}% ↻$(fmt_time "$five_reset")"
-echo "weekly  $(bar "$week") ${week}% ↻$(fmt_time "$week_reset")"
+rate() { if [ -n "$2" ]; then echo "$1 $(bar "$2") ${2}% ↻$(fmt_time "$3")"; else echo "$1 (n/a)"; fi; }
+rate "current" "$five" "$five_reset"
+rate "weekly " "$week" "$week_reset"
 warn=""; [ "$effort" = "xhigh" ] && [ -n "$fable_pct" ] && [ "$fable_pct" -ge 80 ] && warn="   ⚠ effort=xhigh"
 if [ -n "$fable_pct" ]; then echo "fable   $(bar "$fable_pct") ${fable_pct}% ↻$(fmt_time "$fable_reset")${warn}"; else echo "fable   (n/a)"; fi
