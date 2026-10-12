@@ -184,7 +184,7 @@ def _token_part(stdin_raw: str) -> str:
             parts.append(f"sub {money(c['sub_usd'])}")
         detail = f"[{' '.join(parts)}] " if len(parts) > 1 else ""
         cost = f"API換算 {money(c['usd'])}{detail}直近+{money(c['last_usd'])}{mark}"
-        return f"Σ{_human(c['total'])} {c['n']}t ｜ {cost}"
+        return cost  # Σ・応答数は出さない（2026-10-06 保守者の指定）
     except (OSError, ValueError, TypeError, AttributeError):
         return ""  # 表示の失敗で従来表示を消さない
 
@@ -280,7 +280,10 @@ def main() -> int:
     stdin_raw = sys.stdin.read()
     lines = _fallback_part(stdin_raw).splitlines() or [""]
     # 1 行目: 進捗 ｜ model effort | dir ｜ トークン合計 ｜ API 換算料金 $（¥）直近（2 行目以降の従来表示はそのまま）
-    head = [p for p in (_progress_part(), lines[0], _token_part(stdin_raw)) if p]
+    # 区切りは「｜」に統一する（従来表示は半角「|」で出すため置き換える）。末尾に文脈・5h・7d の使用率（B76）
+    # 1 行目は改行せず 1 行で出す（保守者の指定）。区切りは「｜」に統一、末尾に文脈・5h・7d の使用率（B76）
+    # ctx・5h・7d は出さない（2026-10-06 保守者の指定）
+    head = [p for p in (_progress_part(), lines[0].replace(" | ", " ｜ "), _token_part(stdin_raw)) if p]
     print("\n".join([" ｜ ".join(head)] + lines[1:]))
     return 0
 
