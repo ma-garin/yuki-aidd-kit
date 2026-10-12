@@ -104,7 +104,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/log-instructions.py", "timeout": 5 } ] }
     ],
     "PostToolUse": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py post", "timeout": 5 } ] },
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py post", "timeout": 5 },
+                  { "type": "command", "command": "python3 .claude/hooks/observe.py", "timeout": 5 } ] },
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
@@ -122,7 +123,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       {
         "hooks": [
           { "type": "command", "command": "python3 .claude/hooks/reply-language.py", "timeout": 5 },
-          { "type": "command", "command": "bash .claude/hooks/session-summary.sh" }
+          { "type": "command", "command": "bash .claude/hooks/session-summary.sh" },
+          { "type": "command", "command": "python3 .claude/hooks/ralph-stop.py", "timeout": 5 }
         ]
       }
     ]
@@ -171,7 +173,7 @@ fi
 # テスト活動のゲートスクリプト（機能契約ハーネス・UI 検証マーカー。文書雛形は init-test-docs.sh で配置）
 # pre-commit（秘密情報スキャン）が抜けていた（2026-09-23。B-14 の検証で発覚）。
 # git hook 層は Codex でも効く唯一の強制層なので、配り漏れは致命的
-for s in pre-commit quality_harness.py ui-hash.py pre-commit-ui-gate.sh check_approval.py check-approval.sh phase-hash.py req-lint.py cite-check.py test_metrics.py test-metrics.sh md-section.py section_hash.py adr-to-rules.py security-scan.sh baseline.py test-weaken-check.py pw-spec-lint.py e2e_history.py; do
+for s in pre-commit quality_harness.py ui-hash.py pre-commit-ui-gate.sh check_approval.py check-approval.sh phase-hash.py req-lint.py cite-check.py test_metrics.py test-metrics.sh md-section.py section_hash.py adr-to-rules.py security-scan.sh baseline.py test-weaken-check.py pw-spec-lint.py e2e_history.py check-handoff.py pack-context.py; do
   if [ -e "$TARGET/scripts/$s" ]; then echo "↷ scripts/$s は既存のためスキップ"
   else cp "$KIT_DIR/02_共通/ツール/$s" "$TARGET/scripts/$s"; chmod +x "$TARGET/scripts/$s"; echo "✅ scripts/$s 同梱"; fi
 done

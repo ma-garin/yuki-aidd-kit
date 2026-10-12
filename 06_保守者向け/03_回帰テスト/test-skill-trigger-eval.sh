@@ -21,12 +21,12 @@ run() { python3 "$SCRIPT" "$@" 2>&1; }
 
 echo "=== skill_trigger_eval.py 回帰テスト ==="
 
-# ---------------------------------------------------------------- 実物の skill-triggers/（20 本）
+# ---------------------------------------------------------------- 実物の skill-triggers/（24 本）
 echo "[実物の skill-triggers/]"
 [ "$(command -v claude)" = "$KIT_DIR/06_保守者向け/03_回帰テスト/fixtures/stub-bin/claude" ] && ok "PATH の先頭が stub の claude" || ng "PATH の先頭が stub の claude" "$(command -v claude)"
 
 N_JSONL=$(ls "$KIT_DIR/06_保守者向け/03_回帰テスト/skill-triggers"/*.jsonl 2>/dev/null | wc -l | tr -d ' ')
-[ "$N_JSONL" -eq 20 ] && ok "skill-triggers/ に 20 本の jsonl がある" || ng "skill-triggers/ に 20 本の jsonl がある" "$N_JSONL 本"
+[ "$N_JSONL" -eq 24 ] && ok "skill-triggers/ に 24 本の jsonl がある" || ng "skill-triggers/ に 24 本の jsonl がある" "$N_JSONL 本"
 
 python3 - "$KIT_DIR/06_保守者向け/03_回帰テスト/skill-triggers" <<'PY'
 import json, sys
@@ -52,11 +52,11 @@ if bad:
     sys.exit(1)
 sys.exit(0)
 PY
-[ $? -eq 0 ] && ok "20 本すべて JSON として読め、expect が実在スキル名か none" || ng "20 本すべて JSON として読め、expect が実在スキル名か none" "壊れている行がある"
+[ $? -eq 0 ] && ok "24 本すべて JSON として読め、expect が実在スキル名か none" || ng "24 本すべて JSON として読め、expect が実在スキル名か none" "壊れている行がある"
 
 OUT=$(run --dry-run); RC=$?
 expect_exit "実物 --dry-run は exit 0" 0 "$RC"
-expect_out  "実物 --dry-run が 120 件（20×6）を数える" "件数: 120（20 スキル × 6 発話 × --runs 1）" "$OUT"
+expect_out  "実物 --dry-run が 144 件（24×6）を数える" "件数: 144（24 スキル × 6 発話 × --runs 1）" "$OUT"
 
 LOG="$TMP/called.log"
 SKILL_TRIGGER_CALLED_LOG="$LOG" run --dry-run >/dev/null

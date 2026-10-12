@@ -173,6 +173,11 @@
             "type": "command",
             "command": "python3 ~/.claude/hooks/tool-timer.py post",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/observe.py",
+            "timeout": 5
           }
         ]
       },
@@ -208,6 +213,11 @@
           {
             "type": "command",
             "command": "bash ~/.claude/hooks/session-summary.sh"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/ralph-stop.py",
+            "timeout": 5
           }
         ]
       }

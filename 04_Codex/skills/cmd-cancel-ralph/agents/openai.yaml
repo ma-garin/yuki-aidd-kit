@@ -1,0 +1,3 @@
+display_name: "/cancel-ralph"
+short_description: "/cancel-ralph — 完了ループ（/ralph）を止める"
+allow_implicit_invocation: true

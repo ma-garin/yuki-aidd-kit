@@ -1,0 +1,6 @@
+{"utterance": "AIエージェント関連で最近流行っているGitHubのOSSを調べて", "expect": "ai-trend-research", "note": "description の「GitHub で流行っている」"}
+{"utterance": "最新のLLMの動向をWebで調べて材料を集めて", "expect": "ai-trend-research", "note": "description の「AI の最新動向を調べて」"}
+{"utterance": "このブログのRSSの新着を確認して", "expect": "ai-trend-research", "note": "description の「このフィードの新着」"}
+{"utterance": "このリポジトリのコードでログイン処理がどこにあるか探して", "expect": "none", "note": "手元のコード検索は対象外"}
+{"utterance": "ありがとうございます、助かりました", "expect": "none", "note": "お礼のみ"}
+{"utterance": "この調査の結果を踏まえてレポート本文を清書して", "expect": "none", "note": "執筆は対象外（NOT for）"}

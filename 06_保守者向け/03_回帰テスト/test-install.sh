@@ -188,7 +188,7 @@ expect_count "commands $CMD_N 個（リポジトリ実体と同数）" "$CMD_N" 
 expect_count "agents $AGENT_N 個（リポジトリ実体と同数）" "$AGENT_N" "$(ls "$P"/.claude/agents/*.md | wc -l)"
 expect_nofile "export でもエージェントは .agents/skills/ へ配らない" "$P/.agents/skills/aidd-lead"
 expect_count "hooks $HOOK_N 個（リポジトリ実体と同数）" "$HOOK_N" "$(ls "$P"/.claude/hooks/*.sh "$P"/.claude/hooks/*.py | wc -l)"
-expect_count "rules 4 個（absolute / speed / model-routing / functional-integrity）" 4 "$(ls "$P"/.claude/rules/*.md | wc -l)"
+expect_count "rules 8 個（absolute / speed / model-routing / functional-integrity / writing-style / design-principles / agent-intervention / security-hygiene）" 8 "$(ls "$P"/.claude/rules/*.md | wc -l)"
 for f in .claude/INDEX.md .claude/settings.json .claude/templates/tokens.css .claude/templates/lifecycle/00-rfd.md AGENTS.md CLAUDE.md scripts/quality_harness.py scripts/ui-hash.py scripts/pre-commit-ui-gate.sh scripts/check_approval.py scripts/check-approval.sh scripts/phase-hash.py scripts/test_metrics.py scripts/test-metrics.sh scripts/md-section.py scripts/adr-to-rules.py scripts/security-scan.sh scripts/baseline.py; do
   expect_file "生成物: $f" "$P/$f"
 done

@@ -1,0 +1,6 @@
+{"utterance": "このリポジトリはAI開発しやすいか採点して", "expect": "agent-ready", "note": "description の「AI 開発しやすいか見て」"}
+{"utterance": "プロジェクトのエージェント対応度を見てほしい。起動と検証ループと文書の信頼性", "expect": "agent-ready", "note": "description の「エージェント対応度」"}
+{"utterance": "このコードのセキュリティを点検して", "expect": "none", "note": "セキュリティ点検は別スキル（security-audit）"}
+{"utterance": "ありがとうございます、助かりました", "expect": "none", "note": "お礼のみ"}
+{"utterance": "このボタンの色を青に変えて", "expect": "none", "note": "個別修正"}
+{"utterance": "テストを書いて実行して", "expect": "test-automation", "note": "テスト実行は test-automation"}

@@ -20,6 +20,12 @@
 - 絞られた出力で判断できないときだけ `FULL_OUTPUT=1 <cmd>`。800 行超のファイルは `offset` で続きを読む
 - 1 分超の作業は `progress.py start / step / done` を既存の bash に連結する（H-8）
 
+## PR の作法
+- 1 依頼 = 1 PR。本文は「問題 → 直し」の順
+- UI の変更は before/after の画像を付ける。証跡ファイルはコミットしない
+- PR 監視は**最後の push 以降**の動きだけ見る。bot の指摘は実物のソースで確かめてから直す。新しい動きが無ければ黙る
+- バージョンを上げるのは**明示的に頼まれたときだけ**（参照: t3code・text-to-cad AGENTS.md）
+
 ## トークン・モデル
 - 無関係なタスクへ移るときは `/clear`（1 時間超の再開は `context-guard.py` が警告する。続きなら要約から）
 - effort の既定は settings の `high`。設計判断のときだけ `/effort xhigh`、終わったら戻す。モデルの使い分けは `rules/model-routing.md`。`/usage` で消費の内訳、`/context` で載っているファイルを確認する

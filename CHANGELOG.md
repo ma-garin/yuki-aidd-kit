@@ -8,6 +8,11 @@
 - `block-protected.py` を撤去（保守者の指示。利用者の意図した設定変更まで止めていた）
 - `statusline.py` から 1 応答あたり出力（`出力…/t`）と連動する ⚠ を削除
 - **外部リポジトリ照合からの取り込み（t3code・openrig・mattpocock/skills）**: `block-destructive.py` が `pkill`・`killall`・`pgrep … | kill`・`kill $(pgrep …)` を deny（名前・パス一致は他セッションと自分自身を巻き込む。代替は記録した PID かポート）。`functional-integrity.md` に「入口をすべて踏む・足したら戻す手段も作る」、`work-order.md` に返却時の状態 4 行（状態／閉じる条件／次の担当／証跡）、`CURRENT_STATE.md` に「再開できるか」節、`context-compression` に区切りの決定木（続ける／clear／引き継ぎ／サブエージェント／compact）、`gate-agent.md` に各役のレビュー前提 5 行（確信度 60 未満は判定しない）。`test-hooks.sh` に 9 ケース追加
+- **外部リポジトリ照合からの取り込み 第2弾（動画の10リポジトリ全件）**: 照合済み4件の残りと未照合6件（hyperframes・openGym・Agent-Reach・AnyPS5・cursor/plugins・text-to-cad）から採用分を一括で取り込み。不採用分は `06_保守者向け/02_設計判断の根拠/out-of-scope/` に理由つきで記録
+  - hook: 観測1行の記録と圧縮・再開時の再注入（`observe.py`・`session-context.py`）、同一ファイル再読の警告（`pre-read-guard.py`）、完了条件まで反復する `ralph-stop.py`＋`/ralph`・`/cancel-ralph`、`session-summary.sh` の要約項目
+  - ツール: `check-handoff.py`・`pack-context.py`・`check-version.py`・`doctor.py`・skill 定義検査・`llms-txt.py`・`check-layers.py`、`build_codex_skills.py` の manifest 照合
+  - スキル・コマンド: handoff・skill-guide・ai-trend-research・advisor、`/grill`・`/wait-what`・`/agent-ready`、retro に「学び→編集先」の段
+  - 規則・ひな形: 根拠の出所・外部テキストは信頼しない・本番データは複製して試験・実物で確かめる・文章と文書の型・設計原則・介入の段階・レビューの釣り合いと証跡の基準・テスト規約・PR 規約・暫定スタブ一覧・用語集・トリアージ票・スコープ判断
 
 ## Ver.8.6.0（2026-09-24）— 文脈と記録・デザイン検査の a11y・テストの検出力（M30）
 

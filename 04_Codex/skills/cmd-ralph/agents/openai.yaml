@@ -1,0 +1,3 @@
+display_name: "/ralph"
+short_description: "/ralph — 完了の合言葉が出るまで同じ依頼を回し直す（opt-in の完了ループ）"
+allow_implicit_invocation: true

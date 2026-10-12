@@ -37,3 +37,7 @@ progress.json
 # hook の判定の記録（B12。*.log でも外れるが、記録先を明示する）
 .claude/hook-decisions.log
 .claude/injection-guard.log
+# 観測・読み直しの記録・完了ループの状態（G2。observe.py・pre-read-guard.py・ralph-stop.py の手元の作業ファイル）
+.claude/observations.jsonl
+.claude/read-seen.json
+.claude/ralph.json

@@ -30,6 +30,7 @@ description: "コンテキストウィンドウとトークンを推論に温存
 - 読む前に必ず自問する: 「この情報は grep 1回で取れないか？」
 - ディレクトリ構造の把握は `find`/glob の一覧で済ませ、中身は必要になったファイルだけ開く
 - 大きいファイルは行範囲指定で部分読みする（該当箇所を grep で特定してから）
+- 検索は 3 層で段階的に: **索引**（ID と 1 行の一覧）→ **時系列**（その前後の文脈）→ **詳細**（ID を指定して本文）。最初から詳細を取らない（参照: claude-mem README）
 
 ```bash
 # 悪い例: skills/ 配下を1ファイルずつ全部読む
@@ -66,7 +67,7 @@ hook が既に絞った出力（systemMessage に「絞りました」）？ ─
 上のどれでもなく文脈が重い？                  ── yes → /compact（PreCompact hook が引き継ぎを残す）
 ```
 
-参照: mattpocock/skills `skills/engineering/ask-matt/PHASE-BOUNDARIES.md`
+参照: mattpocock/skills skills/engineering/ask-matt/PHASE-BOUNDARIES.md（外部リポジトリ）
 
 ## 出力
 

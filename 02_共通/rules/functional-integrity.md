@@ -16,3 +16,5 @@ Critical / High リスクの機能で必ず確認する: happy path／failure pa
 - ゲート（テスト・verify-ui 等）の実行はユーザーが明示的に要求した時だけ（`rules/speed-harness.md` H-7）。要求が無ければ未実行の項目をすべて `未実行` / `未検証` と明記して提出し、1つでも未検証があれば `未確認` と書いて完了として提示しない
 - 実行経路の存在は人の注意力でなく機械で検証する: `quality/feature_contracts.yml`（機能ごとの UI/route/core・出力・永続化・failure_modes・required_tests）を `scripts/quality_harness.py` が検査する（`skills/test-strategy/references/feature-contracts.md`）
 - 開発プロセス上の失敗には名前のある RCA 枠組み（5 Whys / Fishbone / FMEA / CAPA / DoD 更新）を使う。枠組み名を持たない場当たりの原因分析は禁止
+- **実物で確かめる**: 代理指標（行数・カバレッジ・モックの緑・「型が通った」）を完了の根拠にしない。動かしたい実物を動かして出力を見る。確認手順は**再実行できる検証スクリプト**として渡す（口頭の手順だけで終えない）（参照: plugins/pstack principle-prove-it-works）
+- **根拠の出所**（挙動が曖昧なまま実装・断定するとき）: 実測も一次資料も無い挙動を事実として書かない。推測で埋めて通さない（参照: AnyPS5 CONTRIBUTING / docs/dev/HW_ORACLE.md）

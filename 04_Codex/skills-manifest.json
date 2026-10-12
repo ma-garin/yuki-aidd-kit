@@ -1,0 +1,206 @@
+{
+  "count": 50,
+  "generator": "04_Codex/build_codex_skills.py",
+  "skills": {
+    "advisor": {
+      "files": 3,
+      "sha256": "d4eee23b3550fe441a5835253015f8dd519a7e34d9e0d764ee04eeaddbd8a787"
+    },
+    "agent-eval": {
+      "files": 5,
+      "sha256": "71ad094015df50bf70a6a1a08eecb585a8aa6c26ebbd955de93f29f97e24b84c"
+    },
+    "agent-ready": {
+      "files": 3,
+      "sha256": "e21cd4cfafd037510a70f6fb816e9e90c53b07b3f777ac79081ec16cdda74241"
+    },
+    "ai-trend-research": {
+      "files": 5,
+      "sha256": "3f1ea1a1b6dd493c2a59c78c858b7ea51c7bc5b9db59ee851ae5f22b50c81683"
+    },
+    "atarimae-quality-audit": {
+      "files": 3,
+      "sha256": "fd072bce189fd59dd0b03cc0bce5dc0759fa3148a69e38b10d41f45c72545bb6"
+    },
+    "cmd-agent-ready": {
+      "files": 2,
+      "sha256": "93f3a72b36501738cb1f990026b480dedba28448ea5725fef8012a7e17aadd48"
+    },
+    "cmd-app-scan": {
+      "files": 2,
+      "sha256": "d557d2337fc1c0aae9e7c05d18d9f922289b48638d0f18d17c108789a00df7c6"
+    },
+    "cmd-cancel-ralph": {
+      "files": 2,
+      "sha256": "65225a22f264e5ed1e68981a58fec79d3636088e68287a03040e56aa5ba48d71"
+    },
+    "cmd-compact-work": {
+      "files": 2,
+      "sha256": "48549a06e98beda993bb8b7a581743b44c91da980bfc64d8319f38f8278fa769"
+    },
+    "cmd-doc-search": {
+      "files": 2,
+      "sha256": "8486cf9b6b2b7efe0109ad8dd717f8761671bf4db875d9ddca8083c882f9ddc5"
+    },
+    "cmd-e2e-cycle": {
+      "files": 2,
+      "sha256": "f0f892d1713d8d16ebd5706ae38a96497c6b484bcffed7139d8cfd948d183bea"
+    },
+    "cmd-ecc-daily": {
+      "files": 2,
+      "sha256": "cc969fb6f52d8ac19ba183efdeaf902f4507f264b1fd5cf12f6fa8c5e50629f2"
+    },
+    "cmd-eval": {
+      "files": 2,
+      "sha256": "8d08e7ec45d146a92b014c08ec95f3e7af855d99e351ee1141c71eb0f7eb0216"
+    },
+    "cmd-grill": {
+      "files": 2,
+      "sha256": "dd13951f1b9962161f3718958680db53d5698067d98885f8cca994dbc5dbb4f5"
+    },
+    "cmd-implement": {
+      "files": 2,
+      "sha256": "374e35af6ac5e525795a83de9cde5d7f0e0eb800523770f04398760a470d5b23"
+    },
+    "cmd-lifecycle": {
+      "files": 2,
+      "sha256": "ff34b23367a3bf2bca1f7fdb9f5e86e71baed80a8ad3f61dec30935c141b0ae3"
+    },
+    "cmd-new-pwa": {
+      "files": 2,
+      "sha256": "a6822106b754aea9b325605fde111904563ecf7939c65f7cf1de9a260c97ec6b"
+    },
+    "cmd-phase-review": {
+      "files": 2,
+      "sha256": "fa5dd25c40d303f772583b2bdced4ccabb3490730d7b893528047985579049b3"
+    },
+    "cmd-plan": {
+      "files": 2,
+      "sha256": "7e762f958863979c13785914668b4071586f8b15445540392dd766a38a43408e"
+    },
+    "cmd-qa-review": {
+      "files": 2,
+      "sha256": "bcf3ee90a82c1786ad010cde6dc75b2d366734a83a296a791c24f10d53a10811"
+    },
+    "cmd-ralph": {
+      "files": 2,
+      "sha256": "c531ff2f580a3f550a3b35737e6fb1d5050b9037943caebaa734f7d771353c0c"
+    },
+    "cmd-retro": {
+      "files": 2,
+      "sha256": "9d2348828ae73fe2ef2e11b4eb9404a36e347ca11c1aef47ebedeb35e695b910"
+    },
+    "cmd-rfd": {
+      "files": 2,
+      "sha256": "0ecf46d8a850cfea3752747d33fc8d64414759750bc595faa27c8c9f5fd24b1d"
+    },
+    "cmd-sdd-start": {
+      "files": 2,
+      "sha256": "f72951d92c6ae99683f4d03113eb8e658c8fc9ec49fb6c14d4fe58a36eb4c731"
+    },
+    "cmd-security-audit": {
+      "files": 2,
+      "sha256": "210e4da96fe77ad1cf219f2493ad6b2b4baf40576e773e7396fa52014b0c06b5"
+    },
+    "cmd-test-metrics": {
+      "files": 2,
+      "sha256": "a53a2796d1fe3353970794f70ceb5a4ec6747ad64cecce0be11e706eff7050bc"
+    },
+    "cmd-token-check": {
+      "files": 2,
+      "sha256": "c250da23ef8c7e4842a5c9ab07e325d4992351ab48d1f522faee738d9061f14a"
+    },
+    "cmd-trace": {
+      "files": 2,
+      "sha256": "6df709cf61c0cd7dd7e9dadc36898450746312b0486d7646849b03e777c931a7"
+    },
+    "cmd-wait-what": {
+      "files": 2,
+      "sha256": "58d402440152ad94fc254996e6d3e0c6a0355bd5683404990b2dc01cb5dd09e1"
+    },
+    "code-doc-search": {
+      "files": 2,
+      "sha256": "d062f3f958b9b0ecdb3ff5a1ad471a85b04d08ace22ae879782eace4fe6decd5"
+    },
+    "context-compression": {
+      "files": 2,
+      "sha256": "79884014fbc3e657fe236024901ee4198a17287df80ec1e8723f21b28f0f3101"
+    },
+    "design-system": {
+      "files": 5,
+      "sha256": "142b20ed7ca90d6d2ee3c09cb477a384e79a4997235112db31407e2b472ce3a3"
+    },
+    "dev-lifecycle": {
+      "files": 5,
+      "sha256": "1b6201d91de0f6e678870ac2b74396b970c1c548648b1571448272ad05bce34e"
+    },
+    "done-gate": {
+      "files": 2,
+      "sha256": "85cf44979464890dd5975e1b4dea1a76aacf3d5ef52f997dcefc4962bdd01388"
+    },
+    "e2e-cycle": {
+      "files": 5,
+      "sha256": "dcba8de6010355ab99f00b84ed8322a22fa5c6bd22b57e5aa8973f69665beef0"
+    },
+    "ecc-daily-router": {
+      "files": 2,
+      "sha256": "f739a0b4ce766b5ffc924832024c8924f0ab30e8f81b5d5ff661f7758ea489dd"
+    },
+    "handoff": {
+      "files": 2,
+      "sha256": "ed6d35a457f9bc268d19681ba78ede00a57c61fabf407f4988cb6eed5a001008"
+    },
+    "nfr-standards": {
+      "files": 3,
+      "sha256": "67cf7394e3a79b7e156aac8046ba711ec8dbc1ef69a772082e362d2dbfaf7d10"
+    },
+    "personal-pwa": {
+      "files": 2,
+      "sha256": "792fed3c99d8c6e6f8ecfa39bb6848962e40a099c60fddfbaf2ddc2f63c5dd38"
+    },
+    "phase-approval": {
+      "files": 2,
+      "sha256": "79d1403fdbecbc3120ce7ffd5291f0bb77c3c2c61dd9ba685a9088c95e32f1dc"
+    },
+    "qa-review-standards": {
+      "files": 4,
+      "sha256": "66a219d1b4fbaa8f66f658a5781e7fafdc6c22a42b4167d2a2ca69e7dbce42d0"
+    },
+    "retro": {
+      "files": 4,
+      "sha256": "a8c4fd860ae05d9c03d44c45e06185ca1bc229bc21039783bbddc37cfc4c785e"
+    },
+    "sdd-ecc-workflow": {
+      "files": 4,
+      "sha256": "9f2da7ef76f17185ae6d1771b42ecd4d7b88885684ccb7d0d422b645b44c622a"
+    },
+    "security-audit": {
+      "files": 6,
+      "sha256": "dd8adec1a79e2e0533f2a9615f746147fb14530a919c74635a6278462ecad37a"
+    },
+    "single-html-tool": {
+      "files": 2,
+      "sha256": "e4e50ab57b68401ceaab367bdcb6ad92ce283e6990b83c9232c73c04338165fd"
+    },
+    "skill-guide": {
+      "files": 2,
+      "sha256": "f385922df70211b7008f3f9d414974be14aeaf303cb78796bc904dfa3da64c9e"
+    },
+    "streamlit-rag-app": {
+      "files": 2,
+      "sha256": "b50b172bee1be030eb2a29ebaaa2fea50abbe5311df0d6a1f69906201ab90247"
+    },
+    "test-automation": {
+      "files": 4,
+      "sha256": "d29b07bd31a2a8f87a8badd580425a3b0994ab409a3c5e1a325217d09e1db50d"
+    },
+    "test-strategy": {
+      "files": 4,
+      "sha256": "0acb285bf6de771fda2fff3fe1601acf742b81e4daba302bfbd4d5b4fcb0c1fc"
+    },
+    "uiux_review": {
+      "files": 3,
+      "sha256": "d6a0195c698ed4c8d750e213f1ee35b82e6346aa1e696f34e8d0afa16a96916f"
+    }
+  }
+}
