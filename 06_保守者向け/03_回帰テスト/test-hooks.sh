@@ -14,6 +14,8 @@ trap 'rm -rf "$TMP"' EXIT
 export AIDD_TOOL_TIME="$TMP/tool-time.json"
 # hook の判定の記録（B12）も隔離する。既定のままだとテストの deny がキットの .claude/hook-decisions.log に積まれる
 export AIDD_HOOK_LOG="$TMP/hook-decisions.log"
+# G2 の作業ファイル（観測・読み直しの記録・完了ループの状態）も隔離する。既定のままだとキットの .claude/ に書く
+export AIDD_OBSERVATIONS="$TMP/observations.jsonl" AIDD_READ_SEEN="$TMP/read-seen.json" AIDD_RALPH_STATE="$TMP/ralph.json"
 PASS=0; FAIL=0
 
 json() { printf '{"tool_name":"Write","tool_input":{"file_path":"%s"}}' "$1"; }
@@ -1358,6 +1360,213 @@ if sys.argv[1].endswith(".sh"):
 d = json.loads(t)
 print(",".join(e.get("matcher", "") for e in d["hooks"].get("SessionStart", []) if any("session-context.py" in h["command"] for h in e["hooks"])))' "$F" 2>&1)
   expect_eq "配線: $(basename "$F") の SessionStart は matcher compact|resume" "compact|resume" "$M"
+done
+
+echo "[observe.py（G2: ツール呼び出しの観測）]"
+OB="$TMP/ob-proj"; mkdir -p "$OB/src"; OBF="$TMP/ob.jsonl"; rm -f "$OBF"
+# hook 入力を作る: ツール名, tool_input の JSON, tool_response の JSON, [session_id]
+obj() { python3 -c 'import json,sys;print(json.dumps({"session_id":sys.argv[4] if len(sys.argv)>4 else "sess-ob-0001","cwd":sys.argv[5] if len(sys.argv)>5 else "","tool_name":sys.argv[1],"tool_input":json.loads(sys.argv[2]),"tool_response":json.loads(sys.argv[3])},ensure_ascii=False))' "$@"; }
+ob() { AIDD_OBSERVATIONS="$OBF" CLAUDE_PROJECT_DIR="$OB" python3 "$HOOKS/observe.py"; }
+ob_n() { [ -f "$OBF" ] && wc -l < "$OBF" | tr -d ' ' || echo 0; }
+RJ_IN="{\"file_path\":\"$OB/src/a.py\"}"
+RJ_OUT='{"type":"text","file":{"filePath":"a.py","content":"CONTENT_MUST_NOT_BE_STORED","numLines":10,"startLine":1,"totalLines":10}}'
+OUT=$(obj Read "$RJ_IN" "$RJ_OUT" | ob); RC=$?
+expect_empty "observe: 何も出力せず exit 0" "$OUT" "$RC"
+expect_contains "observe: Read を 1 行（op・プロジェクト相対パス・行数の要約）" '"op": "read", "path": "src/a.py", "summary": "10行（1〜／全10行）"' "$(cat "$OBF")"
+expect_absent "observe: ファイルの中身は残さない" "CONTENT_MUST_NOT_BE_STORED" "$(cat "$OBF")"
+obj Read "$RJ_IN" "$RJ_OUT" | ob
+expect_eq "observe: 直近 20 行に同じ tool+path+summary があれば積まない" "1" "$(ob_n)"
+obj Edit "{\"file_path\":\"$OB/src/a.py\",\"old_string\":\"OLD_BODY\",\"new_string\":\"NEW_BODY\"}" '{"structuredPatch":[{},{}],"oldString":"OLD_BODY"}' | ob
+expect_contains "observe: Edit は箇所数だけ" '"op": "edit", "path": "src/a.py", "summary": "編集 2 箇所"' "$(tail -1 "$OBF")"
+expect_absent "observe: Edit の本文は残さない" "NEW_BODY" "$(cat "$OBF")"
+obj Write "{\"file_path\":\"$OB/src/b.py\",\"content\":\"x\"}" '{"type":"create"}' | ob
+expect_contains "observe: Write の新規作成" '"summary": "新規作成"' "$(tail -1 "$OBF")"
+obj Bash "$(python3 -c 'import json,sys;print(json.dumps({"command":"curl -H \"Authorization: Bearer "+sys.argv[1]+"\" https://x <<EOF\nHEREDOC_BODY\nEOF"}))' "$FAKE_GH")" '{"stdout":"a\nb\n","stderr":""}' | ob
+expect_contains "observe: Bash は出力の行数だけ" '"summary": "出力 2 行"' "$(tail -1 "$OBF")"
+expect_absent "observe: コマンド中の秘密値は伏字（Bearer）" "$FAKE_GH" "$(cat "$OBF")"
+expect_absent "observe: ヒアドキュメントの本文は残さない" "HEREDOC_BODY" "$(cat "$OBF")"
+obj Read "{\"file_path\":\"$OB/src/${FAKE_AWS}.txt\"}" '{"file":{"numLines":1}}' | ob
+expect_absent "observe: パス中の秘密値も伏字（AWS キー）" "$FAKE_AWS" "$(cat "$OBF")"
+N=$(ob_n); obj Bash '{"command":"<private>echo PRIVATE_ONLY</private>"}' '{"stdout":""}' | ob
+expect_eq "observe: 対象が丸ごと <private> なら 1 行も残さない" "$N" "$(ob_n)"
+obj Bash '{"command":"echo ok <private>PRIVATE_PART</private> done"}' '{"stdout":"ok"}' | ob
+expect_absent "observe: <private>…</private> の中は捨てる" "PRIVATE_PART" "$(cat "$OBF")"
+expect_contains "observe: <private> の外は残す" "echo ok done" "$(tail -1 "$OBF")"
+N=$(ob_n); obj TodoWrite '{}' '{}' | ob
+expect_eq "observe: TodoWrite 等の雑音は積まない" "$N" "$(ob_n)"
+N=$(ob_n); OUT=$(printf 'not json' | ob 2>&1); RC=$?
+expect_empty "observe: 入力が読めなくても無言で exit 0（fail-open）" "$OUT" "$RC"
+expect_eq "observe: 入力が読めなければ積まない" "$N" "$(ob_n)"
+OUT=$(obj Read "$RJ_IN" "$RJ_OUT" | AIDD_OBSERVATIONS="$TMP/no-such-dir/x/ob.jsonl" python3 "$HOOKS/observe.py" 2>&1; printf '%s' "$?")
+expect_eq "observe: 置き場を作れても作れなくても exit 0" "0" "$OUT"
+OBT="$TMP/ob-trim.jsonl"; rm -f "$OBT"
+for i in $(seq 1 12); do obj Read "{\"file_path\":\"$OB/src/f$i.py\"}" '{"file":{"numLines":1}}' | AIDD_OBSERVATIONS="$OBT" OBS_MAX_BYTES=300 OBS_KEEP=3 python3 "$HOOKS/observe.py"; done
+expect_eq "observe: 上限を超えたら直近 OBS_KEEP 行に切り詰める" "3" "$(wc -l < "$OBT" | tr -d ' ')"
+expect_contains "observe: 切り詰めても最新の行は残る" "src/f12.py" "$(tail -1 "$OBT")"
+mkdir -p "$TMP/ob-hide"; cp "$HOOKS/observe.py" "$TMP/ob-hide/"
+N=$(ob_n); obj Read "{\"file_path\":\"$OB/src/z.py\"}" '{"file":{"numLines":1}}' | AIDD_OBSERVATIONS="$OBF" python3 "$TMP/ob-hide/observe.py"; RC=$?
+expect_eq "observe: secret_patterns.py が無ければ伏字にできないので書かない（exit 0）" "$N:0" "$(ob_n):$RC"
+
+echo "[session-context.py（G2: 直近の変更の再注入）]"
+SO="$TMP/so-proj"; mkdir -p "$SO/.claude"; SOF="$SO/.claude/observations.jsonl"
+soj() { printf '{"hook_event_name":"SessionStart","source":"%s","cwd":"%s"}' "$1" "$SO"; }
+so() { AIDD_OBSERVATIONS="" CLAUDE_PROJECT_DIR="$SO" python3 "$HOOKS/session-context.py"; }
+python3 -c 'import json,sys
+f = open(sys.argv[1], "w", encoding="utf-8")
+for i in range(1, 11):
+    f.write(json.dumps({"time": f"2026-10-12T09:{i:02d}:00+0900", "sid": "s1", "tool": "Edit", "op": "edit", "path": f"src/e{i}.py", "summary": "編集 1 箇所"}, ensure_ascii=False) + "\n")
+f.write(json.dumps({"time": "2026-10-12T09:30:00+0900", "sid": "s1", "tool": "Read", "op": "read", "path": "src/READ_ONLY.py", "summary": "1行"}) + "\n")
+f.write(json.dumps({"time": "2026-10-12T09:31:00+0900", "sid": "s1", "tool": "Write", "op": "write", "path": "src/e10.py", "summary": "上書き"}, ensure_ascii=False) + "\n")
+f.write("broken line\n")' "$SOF"
+OUT=$(soj compact | so); RC=$?
+CTX=$(sc_ctx "$OUT")
+expect_contains "観測だけでも注入する（CURRENT_STATE.md 無し）" "[session-context] 直近の変更 8 件" "$CTX"
+expect_eq "直近の変更は最大 8 件（見出し 1 行＋8 行）" "9" "$(printf '%s\n' "$CTX" | wc -l | tr -d ' ')"
+expect_contains "注入量の概算トークン数を出す" "トークン＝字数÷4 の概算／上限 600" "$CTX"
+expect_absent "read の観測は入れない（変更だけ）" "READ_ONLY" "$CTX"
+expect_contains "同じパスは最新 1 件（e10 は上書き）" "09:31 write src/e10.py（上書き）" "$CTX"
+expect_eq "同じパスを重ねて出さない" "1" "$(printf '%s\n' "$CTX" | grep -c 'src/e10.py')"
+expect_absent "8 件を超えた古い変更は入れない" "src/e2.py" "$CTX"
+T=$(printf '%s' "$CTX" | python3 -c 'import re,sys;print(re.search(r"約 (\d+) トークン",sys.stdin.read()).group(1))')
+L=$(printf '%s' "$CTX" | python3 -c 'import sys;print(-(-len(sys.stdin.read())//4))')
+expect_eq "概算トークン数は注入全体の字数÷4（切り上げ）" "$L" "$T"
+CTX=$(sc_ctx "$(soj compact | SESSION_CONTEXT_TOKENS=80 so)")
+N=$(printf '%s\n' "$CTX" | grep -c '^- ')
+[ "$N" -ge 1 ] && [ "$N" -lt 8 ] && { echo "  ✅ 予算を超える分は古い観測から落とす（$N 件）"; PASS=$((PASS+1)); } || { echo "  ❌ 予算を超える分は古い観測から落とす（$N 件）"; FAIL=$((FAIL+1)); }
+expect_contains "予算で落としても最新の変更は残る" "src/e10.py" "$CTX"
+OUT=$(soj compact | SESSION_CONTEXT_TOKENS=10 so); RC=$?
+expect_empty "予算に 1 件も入らず CURRENT_STATE.md も無ければ無出力" "$OUT" "$RC"
+{ echo "# CURRENT_STATE"; echo "## 最終更新"; echo "$TODAY"; echo "## 現在の作業"
+  for i in 1 2 3 4 5 6; do echo "- 作業 $i"; done
+  echo "## 制約"; for i in 1 2 3 4 5 6; do echo "- 制約 $i"; done
+  echo "## 次の一手"; for i in 1 2 3 4 5 6; do echo "- 一手 $i"; done; } > "$SO/CURRENT_STATE.md"
+CTX=$(sc_ctx "$(soj resume | so)")
+expect_eq "CURRENT_STATE の 12 行は保ったまま後ろに観測を足す" "【次の一手】- 一手 1" "$(printf '%s\n' "$CTX" | grep -m1 '【次の一手】')"
+expect_contains "CURRENT_STATE の後ろの 13 行目が観測の見出し" "[session-context] 直近の変更" "$(printf '%s\n' "$CTX" | sed -n 13p)"
+for SRC in startup clear; do
+  OUT=$(soj "$SRC" | so); RC=$?
+  expect_empty "観測があっても $SRC では動かない" "$OUT" "$RC"
+done
+printf 'x\n' > "$SOF"
+CTX=$(sc_ctx "$(soj compact | so)")
+expect_absent "観測が壊れた行だけなら観測の見出しを出さない" "直近の変更" "$CTX"
+expect_contains "観測が使えなくても CURRENT_STATE は注入する" "【現在の作業】" "$CTX"
+
+echo "[pre-read-guard.py（G2: 同じセッションでの読み直し）]"
+RS="$TMP/rs-proj"; mkdir -p "$RS"; seq 1 50 > "$RS/a.txt"; seq 1 900 > "$RS/big.txt"; rm -f "$AIDD_READ_SEEN"
+rsj() { printf '{"session_id":"%s","tool_name":"Read","tool_input":{"file_path":"%s"%s}}' "$1" "$2" "${3:-}"; }
+rs_ctx() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d)["hookSpecificOutput"].get("additionalContext","") if d.strip() else "")' 2>/dev/null; }
+OUT=$(rsj S1 "$RS/a.txt" | rg); RC=$?
+expect_empty "読み直し: 1 回目は何も出さない" "$OUT" "$RC"
+OUT=$(rsj S1 "$RS/a.txt" | rg)
+expect_contains "読み直し: 同じセッションの 2 回目は警告（offset / grep を勧める）" "既に読んだ（2 回目" "$(rs_ctx "$OUT")"
+expect_contains "読み直し: 警告は grep -n を示す" "grep -n" "$(rs_ctx "$OUT")"
+expect_absent "読み直し: deny しない" '"deny"' "$OUT"
+expect_absent "読み直し: 入力を書き換えない" "updatedInput" "$OUT"
+OUT=$(rsj S1 "$RS/a.txt" ',"offset":10,"limit":5' | rg); RC=$?
+expect_empty "読み直し: offset / limit 付きなら警告しない" "$OUT" "$RC"
+OUT=$(rsj S2 "$RS/a.txt" | rg); RC=$?
+expect_empty "読み直し: 別のセッションなら警告しない" "$OUT" "$RC"
+sleep 1; seq 1 51 > "$RS/a.txt"
+OUT=$(rsj S2 "$RS/a.txt" | rg); RC=$?
+expect_empty "読み直し: 前回から中身が変わったら警告しない" "$OUT" "$RC"
+OUT=$(rj "$RS/a.txt" | rg); RC=$?
+expect_empty "読み直し: session_id の無い入力は記録も警告もしない（従来どおり）" "$OUT" "$RC"
+rsj S3 "$RS/big.txt" | rg >/dev/null
+OUT=$(rsj S3 "$RS/big.txt" | rg)
+expect_contains "読み直し: 大きいファイルは limit 300 の絞り込みを保つ" "300" "$(rg_limit "$OUT")"
+expect_contains "読み直し: 大きいファイルでも警告を添える" "既に読んだ" "$(rs_ctx "$OUT")"
+printf '{broken' > "$AIDD_READ_SEEN"
+OUT=$(rsj S4 "$RS/a.txt" | rg); RC=$?
+expect_empty "読み直し: 記録が壊れていても止めず 1 回目として扱う" "$OUT" "$RC"
+OUT=$(rsj S4 "$RS/.env" | rg)
+expect_contains "読み直し: 秘密ファイルの deny は従来どおり" '"permissionDecision": "deny"' "$OUT"
+
+echo "[session-summary.sh（G2: 要約の型）]"
+SS="$TMP/ss-proj"; mkdir -p "$SS"
+OUT=$(cd "$SS" && AIDD_OBSERVATIONS="$SS/none.jsonl" bash "$HOOKS/session-summary.sh"); RC=$?
+expect_eq "session-summary: 観測が無くても exit 0" "0" "$RC"
+for F in 依頼 調べた事 学び 完了 次手; do
+  expect_contains "session-summary: 型に「$F:」の欄" "$F: " "$OUT"
+done
+expect_eq "session-summary: 観測が無ければ完了の欄は空" "完了: " "$(printf '%s\n' "$OUT" | grep '^完了:')"
+python3 -c 'import json,sys
+f = open(sys.argv[1], "w", encoding="utf-8")
+rows = [("old", "edit", "src/OLD_SESSION.py"), ("new", "read", "src/r1.py"), ("new", "search", "src"), ("new", "edit", "src/x.py"), ("new", "write", "docs/y.md"), ("new", "edit", "src/x.py")]
+for sid, op, p in rows:
+    f.write(json.dumps({"time": "2026-10-12T10:00:00+0900", "sid": sid, "tool": "T", "op": op, "path": p, "summary": "s"}) + "\n")' "$SS/ob.jsonl"
+OUT=$(cd "$SS" && AIDD_OBSERVATIONS="$SS/ob.jsonl" bash "$HOOKS/session-summary.sh")
+expect_contains "session-summary: 調べた事に観測の件数（最新セッション分）" "調べた事: （観測: 読む・探す 2 件）" "$OUT"
+expect_contains "session-summary: 完了に変更したファイル（重複なし）" "完了: （観測: 変更 2 件: src/x.py、docs/y.md）" "$OUT"
+expect_absent "session-summary: 前のセッションの観測は入れない" "OLD_SESSION" "$OUT"
+
+echo "[ralph-stop.py（G2: opt-in の完了ループ）]"
+RF="$AIDD_RALPH_STATE"; rm -f "$RF"
+rsp() { python3 -c 'import json,sys;d={"hook_event_name":"Stop","session_id":sys.argv[2],"stop_hook_active":sys.argv[3]=="1"}
+if sys.argv[1] != "-": d["last_assistant_message"]=sys.argv[1]
+if len(sys.argv) > 4: d["transcript_path"]=sys.argv[4]
+print(json.dumps(d,ensure_ascii=False))' "$1" "${2:-R1}" "${3:-0}" "${4:-}" | python3 "$HOOKS/ralph-stop.py"; }
+rs_reason() { printf '%s' "$1" | python3 -c 'import json,sys;d=sys.stdin.read();print(json.loads(d).get("reason","") if d.strip() else "")' 2>/dev/null; }
+rs_it() { python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["iteration"])' "$RF" 2>/dev/null; }
+OUT=$(rsp "途中です"); RC=$?
+expect_empty "ralph: 状態ファイルが無ければ何もしない（no-op）" "$OUT" "$RC"
+printf '{"prompt":"テストを全部緑にする","iteration":0}' > "$RF"
+OUT=$(rsp "まだ途中")
+expect_contains "ralph: 合言葉が無ければ block" '"decision": "block"' "$OUT"
+expect_contains "ralph: reason で依頼文を渡し直す" "テストを全部緑にする" "$(rs_reason "$OUT")"
+expect_contains "ralph: reason に回数（既定 max 5）" "1/5 回目" "$(rs_reason "$OUT")"
+expect_eq "ralph: iteration を 1 増やす" "1" "$(rs_it)"
+expect_contains "ralph: 最初の Stop でセッションに結び付ける" '"session_id": "R1"' "$(cat "$RF")"
+OUT=$(rsp "まだ途中" R1 1)
+expect_contains "ralph: stop_hook_active でも回す（上限は max）" '"decision": "block"' "$OUT"
+OUT=$(rsp "まだ途中" OTHER); RC=$?
+expect_empty "ralph: 別のセッションの Stop では何もしない" "$OUT" "$RC"
+expect_eq "ralph: 別のセッションでは iteration を変えない" "2" "$(rs_it)"
+OUT=$(rsp "全部終わった。RALPH_DONE")
+expect_absent "ralph: 合言葉があれば止めてよい" '"decision": "block"' "$OUT"
+expect_contains "ralph: 終了を systemMessage で知らせる" "完了の合言葉（RALPH_DONE）を確認" "$OUT"
+[ ! -f "$RF" ] && { echo "  ✅ ralph: 完了したら状態ファイルを消す"; PASS=$((PASS+1)); } || { echo "  ❌ ralph: 完了したら状態ファイルを消す"; FAIL=$((FAIL+1)); }
+printf '{"prompt":"p","iteration":0,"max":2,"done_phrase":"<promise>OK</promise>"}' > "$RF"
+B=0; for i in 1 2 3; do rsp "x" | grep -qF '"decision": "block"' && B=$((B+1)); done
+expect_eq "ralph: max 2 なら block は 2 回まで" "2" "$B"
+[ ! -f "$RF" ] && { echo "  ✅ ralph: 上限に達したら状態ファイルを消す"; PASS=$((PASS+1)); } || { echo "  ❌ ralph: 上限に達したら状態ファイルを消す"; FAIL=$((FAIL+1)); }
+printf '{"prompt":"p","iteration":0,"done_phrase":"<promise>OK</promise>"}' > "$RF"
+OUT=$(rsp "途中。OK だけでは足りない")
+expect_contains "ralph: done_phrase を差し替えられる（部分一致では抜けない）" '"decision": "block"' "$OUT"
+OUT=$(rsp "<promise>OK</promise>")
+expect_absent "ralph: 差し替えた done_phrase で止まる" '"decision": "block"' "$OUT"
+for BAD in '{broken' '{"prompt":"","iteration":0}' '{"prompt":"p","iteration":"x"}' '["p"]' '{"iteration":0}'; do
+  printf '%s' "$BAD" > "$RF"
+  OUT=$(rsp "途中"); RC=$?
+  expect_absent "ralph: 壊れた状態（$BAD）では block しない" '"decision": "block"' "$OUT"
+  expect_contains "ralph: 壊れた状態（$BAD）は警告だけ" "壊れているのでループしない" "$OUT"
+  expect_eq "ralph: 壊れた状態（$BAD）は消さない" "$BAD" "$(cat "$RF")"
+done
+printf '{"prompt":"p","iteration":0}' > "$RF"
+RT="$TMP/ralph-transcript.jsonl"; a_text "終わった RALPH_DONE" > "$RT"
+OUT=$(rsp - R9 0 "$RT")
+expect_absent "ralph: last_assistant_message が無ければ transcript の最後の応答を見る" '"decision": "block"' "$OUT"
+printf '{"prompt":"p","iteration":0,"max":99}' > "$RF"
+OUT=$(rsp "途中")
+expect_contains "ralph: max は 20 に丸める" "1/20 回目" "$(rs_reason "$OUT")"
+rm -f "$RF"
+OUT=$(printf 'not json' | python3 "$HOOKS/ralph-stop.py"); RC=$?
+expect_empty "ralph: 入力が読めなくても無言で exit 0" "$OUT" "$RC"
+
+echo "[G2 の配線（settings.json・export-project.sh）]"
+for F in "$HOOKS/settings.json" "$KIT_DIR/00_導入/02_プロジェクト配布/export-project.sh"; do
+  M=$(python3 -c 'import json,re,sys
+t = open(sys.argv[1], encoding="utf-8").read()
+if sys.argv[1].endswith(".sh"):
+    t = re.search(r"cat > \"\$TARGET/\.claude/settings\.json\" <<\s*.(\w+).\n(.*?)\n\1\n", t, re.S).group(2)
+d = json.loads(t)
+def has(ev, name, matcher=None):
+    return any(name in h["command"] and (matcher is None or e.get("matcher", "") == matcher) for e in d["hooks"].get(ev, []) for h in e["hooks"])
+print(has("PostToolUse", "observe.py", ""), has("Stop", "ralph-stop.py"))' "$F" 2>&1)
+  expect_eq "配線: $(basename "$F") の PostToolUse（全ツール）に observe.py・Stop に ralph-stop.py" "True True" "$M"
+done
+for C in ralph cancel-ralph; do
+  expect_contains "commands/$C.md に Codex 非対応を明記" "Codex では使えない" "$(cat "$KIT_DIR/03_ClaudeCode/commands/$C.md")"
 done
 
 echo "[statusline.py 文脈量と使用枠（B76）]"

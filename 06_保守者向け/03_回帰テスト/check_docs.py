@@ -68,7 +68,7 @@ LOCAL_JUNK_PREFIXES = (".playwright-mcp/", ".claude/settings.local.json")
 # `.git` は git worktree で作業しているときだけ、リポジトリ本体を指すポインタファイル（`gitdir: ...`）として
 # 実体を持つ（通常のチェックアウトではディレクトリで is_file() が False になり、そもそも対象に入らない）
 LOCAL_JUNK_PARTS = (".DS_Store", "__pycache__", "tool-time.json", "progress.json", ".git",
-                    "hook-decisions.log", "e2e-history.jsonl")
+                    "hook-decisions.log", "e2e-history.jsonl", "observations.jsonl", "read-seen.json", "ralph.json")
 
 
 def is_local_junk(rel: str) -> bool:
