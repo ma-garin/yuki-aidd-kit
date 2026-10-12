@@ -261,6 +261,15 @@ EOF" "cat .env" "head -n 5 ~/.aws/credentials" "grep -A 3 KEY .env.local" "sourc
          "git push origin +HEAD:main" "git checkout --force main"; do
   expect_contains "deny: $(printf '%s' "$c" | tr '\n' ' ')" '"permissionDecision": "deny"' "$(bd "$c")"
 done
+# 参照: t3code AGENTS.md。名前・パス一致の kill は他セッションと自分自身を巻き込む
+for c in "pkill -f vite" "sudo killall node" "pgrep -f server.py | xargs kill" 'kill $(pgrep -f node)'; do
+  expect_contains "deny（名前一致の kill）: $c" '"permissionDecision": "deny"' "$(bd "$c")"
+done
+for c in "kill 1234" 'kill $(lsof -ti:5173)' "pgrep -f vite" "grep -rn pkill docs/"; do
+  OUT=$(bd "$c"); RC=$?
+  expect_empty "許可（PID・ポート指定の kill）: $c" "$OUT" "$RC"
+done
+expect_contains "名前一致 kill の deny 理由は記録した PID を示す" "自分が起動して記録した PID" "$(bd_reason "$(bd 'pkill -f vite')")"
 expect_contains "docker run --env-file の deny 理由は compose か保守者を示す" "docker compose --env-file" "$(bd_reason "$(bd 'docker run --env-file .env alpine env')")"
 # 誤検知しない: メッセージ・検索語の値（-m・--title・--grep・grep の検索語）は パスとして見ない。: で割るのは -v / --mount の値だけ
 for c in 'git commit -m "chore: ignore .env"' 'git tag -a v1 --message="add .env.example"' 'gh pr create --title "ignore .env" --body "x .env"' \
