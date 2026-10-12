@@ -366,7 +366,7 @@ cd yuki-aidd-kit</code></pre>
 ✅ KIT_VERSION: 6.3.0 xxxxxxx 2026-09-17
 
 Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または cp）</code></pre>
-            <p class="why">スキル・コマンド・hooks・規律・共通の約束事を <code>~/.claude/</code> にコピーしています。<strong>すでにあった自分の <code>CLAUDE.md</code> は消さず <code>CLAUDE.md.bak</code> に退避</strong>します。<code>settings.json</code> がすでにあると「手動でマージしてください」と出ます（<a href="#trouble">困ったとき</a>参照）。Codex 用のスキル 40 本（Claude Code のスキル 26 本 ＋ コマンド 24 本を <code>cmd-&lt;名前&gt;</code> に変換したもの）は <code>~/.agents/skills/</code> に、この利用ガイドなどの資料は <code>~/.claude/docs/aidd-kit/</code> にも配られます。</p>
+            <p class="why">スキル・コマンド・hooks・規律・共通の約束事を <code>~/.claude/</code> にコピーしています。<strong>すでにあった自分の <code>CLAUDE.md</code> は消さず <code>CLAUDE.md.bak</code> に退避</strong>します。<code>settings.json</code> がすでにあると「手動でマージしてください」と出ます（<a href="#trouble">困ったとき</a>参照）。Codex 用のスキル 50 本（Claude Code のスキル 26 本 ＋ コマンド 24 本を <code>cmd-&lt;名前&gt;</code> に変換したもの）は <code>~/.agents/skills/</code> に、この利用ガイドなどの資料は <code>~/.claude/docs/aidd-kit/</code> にも配られます。</p>
           </li>
           <li><strong>ちゃんと入ったか確認する</strong>
             <pre><code>./00_導入/01_インストール/verify.sh</code></pre>
@@ -493,7 +493,7 @@ Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または c
 次にやること:
 1. AGENTS.md と CLAUDE.md 内の残りの &lt;...&gt; プレースホルダを埋める
 2. git add .claude AGENTS.md CLAUDE.md scripts/ &amp;&amp; git commit</code></pre>
-            <p class="why">プロジェクト直下に <code>.claude/</code>（A で <code>~/.claude/</code> に入ったものと同じ中身）と <code>AGENTS.md</code> / <code>CLAUDE.md</code> を作ります。すでに同名ファイルがあれば <code>.bak</code> に退避します。Codex 用スキル 38 本は <code>&lt;対象&gt;/.agents/skills/</code> に、資料は <code>&lt;対象&gt;/.claude/docs/</code> にも配られます。</p>
+            <p class="why">プロジェクト直下に <code>.claude/</code>（A で <code>~/.claude/</code> に入ったものと同じ中身）と <code>AGENTS.md</code> / <code>CLAUDE.md</code> を作ります。すでに同名ファイルがあれば <code>.bak</code> に退避します。Codex 用スキル 50 本は <code>&lt;対象&gt;/.agents/skills/</code> に、資料は <code>&lt;対象&gt;/.claude/docs/</code> にも配られます。</p>
           </li>
           <li><strong>プロジェクト固有のことを書き足す</strong>
             <p>生成された <code>AGENTS.md</code> の末尾に「プロジェクト別追記欄」があります。ここに、起動コマンド、テストの実行方法、触ってはいけないフォルダ、などを書きます。<code>.claude/rules/speed-harness.md</code> の H-2「環境チートシート」も、そのプロジェクトのコマンドで埋めてください。</p>

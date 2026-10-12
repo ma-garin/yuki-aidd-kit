@@ -16,7 +16,7 @@ Claude Code を毎日使っていると、同じ種類の困りごとに何度�
 この記事では、キットの考え方と全体像を中心に説明します。導入手順や1日の使い方は別の記事で扱います。
 
 - リポジトリ: https://github.com/ma-garin/yuki-aidd-kit
-- 記事執筆時点の版: 8.0.0（2026-09-21）
+- 記事執筆時点の版: 8.6.0（2026-10-12 に内容を更新）
 - 対象: Claude Code（または Codex）をすでに使っていて、規約・hooks・スキルをこれから整えたい方
 
 ---
@@ -55,11 +55,11 @@ Claude Code を毎日使っていると、同じ種類の困りごとに何度�
 
 *hooks・スキル・コマンド・rulesの4種類の部品からなるキットの構成*
 
-キットは大きく 4 種類の部品でできています。ポイントは、**規約の本体は `AGENTS.md` に 1 つだけ**置くことです。Claude Code は `CLAUDE.md` の `@AGENTS.md` で、Codex は `AGENTS.md` を直接読むので、両方のエージェントが同じ規約で動きます。
+キットは大きく 4 種類の部品（hooks・スキル・コマンド・rules）でできています。このほかに、工程を自走させる agents 層(Claude Code のみ)があります。ポイントは、**規約の本体は `AGENTS.md` に 1 つだけ**置くことです。Claude Code は `CLAUDE.md` の `@AGENTS.md` で、Codex は `AGENTS.md` を直接読むので、両方のエージェントが同じ規約で動きます。
 
 ### hooks（機械的に強制するもの）
 
-hooks は Claude Code の設定ファイルに配線しておくと、決まったタイミングで自動的に発火する小さなプログラムです。「何を・いつ・どう」で 1 本ずつ見ていきます。
+hooks は Claude Code の設定ファイルに配線しておくと、決まったタイミングで自動的に発火する小さなプログラムです。ここでは主なものを「何を・いつ・どう」で見ていきます。破壊操作の deny(`block-destructive.py`)、プロンプトインジェクションの検知(`injection-guard.py`)など、ほかの hook を含む全体は `INDEX.md` にあります。
 
 - **`instruction-guard.py`**: 何を — 保守者（ユーザー）の発言に日本語で応答したかどうかを見る。いつ — 全ツールの呼び出し前（PreToolUse）。どう — 未応答の指示があれば、それを AI の文脈へ通知として差し込む。以前は全ツールを deny していたが、誤作動があったため 2026-09-21 に「止める」から「通知する」方式へ変更した
 - **`reply-language.py`**: 何を — 直前の応答に日本語が含まれているか、指示に応答済みかを見る。いつ — 応答を終えて止まろうとするとき（Stop）。どう — 日本語が無い、または指示に未応答のまま終わろうとしていたら、続行させて書き直させる
@@ -81,9 +81,9 @@ hooks は Claude Code の設定ファイルに配線しておくと、決まっ�
 
 ### スキル(場面ごとの手順書)
 
-20 本のスキルを同梱しています。どのプロジェクトでも使う **DAILY**(13 本)と、特定の種別でだけ使う **LIBRARY** の 2 層に分けています。
+26 本のスキルを同梱しています。どのプロジェクトでも使う **DAILY** と、特定の種別でだけ使う **LIBRARY** の 2 層に分けています。全一覧は `INDEX.md` にあります。
 
-DAILY の 13 本を、1 行要約で並べます。
+DAILY の代表的な 13 本を、1 行要約で並べます。
 
 - `dev-lifecycle`: RFD → 要件定義 → 基本/詳細設計 → 実装 → 単体/結合/システム/受け入れテスト → 保守運用。工程ゲートとトレーサビリティ
 - `context-compression`: 出力の3層要約・grep/glob優先・決定論的作業のスクリプト化でトークンを推論に温存
@@ -99,7 +99,7 @@ DAILY の 13 本を、1 行要約で並べます。
 - `uiux_review`: 画面を実際に開いて全状態(通常/実行中/失敗/0件/狭い画面/モーダル)を確認する。「作った」を「効いている」と報告しない
 - `retro`: AIDD の進め方の学びを `lessons.md` に蓄積しキットへ還流する
 
-LIBRARY はプロジェクトの種別に合わせて選ぶスキル群です。代表的なものを挙げます。
+LIBRARY はプロジェクトの種別や場面に合わせて選ぶスキル群です。代表的なものを挙げます。
 
 - `design-system`: トークン(CSS変数の真実源)と画面の作り方(骨格・操作フィードバック・直値禁止)
 - `nfr-standards`: PWA/単一HTML/Streamlit別の非機能要件のデフォルト値
@@ -107,10 +107,23 @@ LIBRARY はプロジェクトの種別に合わせて選ぶスキル群です。
 - `single-html-tool`: 単一HTMLツール(社内配布・PoC)の開発規約
 - `personal-pwa`: GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約
 - `streamlit-rag-app`: Streamlit+RAG業務アプリの開発規約
+- `security-audit`: セキュリティ監査の手順
+- `handoff`: 作業を別セッション・別ハーネス(Claude Code と Codex)へ渡す引き継ぎ文書を書く
+
+### agents(工程を自走させる役)
+
+`03_ClaudeCode/agents/` に 6 体のエージェントを置いています。「図書管理システムを作って」のように成果物ごと頼むと `aidd-lead` が受け、どのスキルを使うか・デザインをどうするか・次にどの工程へ進むかを人間に聞かずに進めます。人間が入るのは**要件定義の合意**と**受け入れ判定**の 2 点だけで、その間の工程は他のエージェントが回し、各工程の出口で `gate-agent` が差し戻します。AI は承認欄(`approver`)を埋めません。
+
+- `aidd-lead`: 成果物レベルの依頼（「〇〇を作って」）を受け、種別の判定・進め方の選択・工程の駆動をする統括。人間に聞くのは要件定義の合意と受け入れ判定だけ
+- `spec-agent`: 承認済みの要件から基本設計・詳細設計を作る（工程 2・3）
+- `build-agent`: 詳細設計から実装と画面を作り、デザイン検査と実行経路の確認まで回す（工程 4）
+- `verify-agent`: 単体・結合・システムテストを設計・生成・実行し、落ちた分を分析して再実行する（工程 5〜7）
+- `gate-agent`: 工程の出口で機械判定と 3 役レビューを回し、次へ進めてよいかを判定して差し戻す
+- `advisor`: 節目（大きな判断の前・詰まったとき・完了の前）に相談する、読み取り専用の助言役
 
 ### スラッシュコマンド
 
-スキルを起動する入口として、18 本のスラッシュコマンドを用意しています。それぞれの役割です。
+スキルを起動する入口として、24 本のスラッシュコマンドを用意しています。主なものの役割です。
 
 - `/rfd`: RFD(提案・論点出し)を起票し、決定を人間に求める
 - `/lifecycle`: 指定工程の成果物を生成し入口/出口基準で判定する
@@ -130,6 +143,12 @@ LIBRARY はプロジェクトの種別に合わせて選ぶスキル群です。
 - `/doc-search`: 技術ドキュメント特化の検索を行う
 - `/retro`: レトロを実行し `lessons.md` に追記する
 - `/token-check`: トークン使用量の確認と最適化提案を行う
+- `/agent-ready`: AI 開発のしやすさを採点する
+- `/grill`: 要件を 1 問ずつ詰める（RFD の前）
+- `/security-audit`: セキュリティ監査を実行する
+- `/ralph`: 完了の合言葉が出るまで同じ依頼を回し直す
+- `/cancel-ralph`: /ralph の完了ループを止める
+- `/wait-what`: 直前の説明をやさしい日本語で言い直す
 
 ### rules(規律)と検査スクリプト
 
@@ -188,7 +207,7 @@ cd yuki-aidd-kit
 ./00_導入/01_インストール/install.sh
 ```
 
-**何が起きるか**: `~/.claude` の下に `skills/` `commands/` `hooks/` rules/aidd-kit/ `scripts/` docs/aidd-kit/ を作り、キット本体のファイルをコピーします。CLAUDE.md と AGENTS.md はテンプレートから配置され（既存があれば前述の通り `.bak` に退避）、settings.json は既存が無い場合だけ新規作成されます。あわせて Codex 用に変換したスキルが `~/.agents/skills/` にも配布されます。実行中は「✅ スキル: n個」のようにコピーした件数が種類ごとに表示されます。
+**何が起きるか**: `~/.claude` の下に `skills/` `commands/` `agents/` `hooks/` rules/aidd-kit/ `scripts/` docs/aidd-kit/ を作り、キット本体のファイルをコピーします。CLAUDE.md と AGENTS.md はテンプレートから配置され（既存があれば前述の通り `.bak` に退避）、settings.json は既存が無い場合だけ新規作成されます。あわせて Codex 用に変換したスキルが `~/.agents/skills/` にも配布されます。実行中は「✅ スキル: n個」のようにコピーした件数が種類ごとに表示されます。
 
 ![install.sh 実行後のターミナル出力](05_install.png)
 
@@ -250,7 +269,7 @@ git add .claude AGENTS.md CLAUDE.md scripts
 git commit -m "chore: add AIDD Kit"
 ```
 
-**何が起きるか**: 対象プロジェクト直下に `.claude/skills` `.claude/commands` `.claude/hooks` `.claude/rules` `.agents/skills` を作り、キットのスキル・コマンド・hooks を**フルコピー**します（グローバル導入のような DAILY/LIBRARY の絞り込みはせず、どのスキルを使うかは各エージェントが `INDEX.md` を見て判断する設計です）。
+**何が起きるか**: 対象プロジェクト直下に `.claude/skills` `.claude/commands` `.claude/agents` `.claude/hooks` `.claude/rules` `.agents/skills` を作り、キットのスキル・コマンド・エージェント・hooks を**フルコピー**します（グローバル導入のような DAILY/LIBRARY の絞り込みはせず、どのスキルを使うかは各エージェントが `INDEX.md` を見て判断する設計です）。
 
 ![export-project.sh 実行後のターミナル出力](12_export.png)
 
@@ -261,6 +280,14 @@ git commit -m "chore: add AIDD Kit"
 - 引数の対象ディレクトリが存在しないと使い方だけ表示して終了します。あらかじめ `mkdir -p` で作成しておいてください
 - 生成された `.claude/settings.json` の hooks はプロジェクト相対パスを前提にしています。Claude Code のプロジェクトスコープ hooks がプロジェクトルート以外を作業ディレクトリにする環境では、パスの解決に失敗する可能性があります（スクリプト内のコメントでも要検証と明記されています）
 - コミットしておけば、そのリポジトリを clone した人は install なしで同じ規約・hooks・スキルを使えます。Codex では `$done-gate` や `$cmd-trace` のように `$名前` でスキルを呼び出します
+
+### git hook を配線する(Codex でも効く強制層)
+
+```bash
+./00_導入/02_プロジェクト配布/install-git-hooks.sh ~/dev/my-app
+```
+
+Claude Code の hook は Codex では動きません。両方で効くのは git hook とスクリプトだけです。このスクリプトは、秘密情報のスキャンと UI 検証マーカー(`.ui-verified`)のゲートを、対象の `.git/hooks/pre-commit` に配線します。`export-project.sh` が配る `scripts/pre-commit` などを前提にしており、既存の pre-commit は `.bak` に退避します。戻すときは `--uninstall` を付けます。**配線しないと、コミット時の検査は効きません**。プロジェクト配布のあとに必ず実行してください。
 
 ### 新規プロジェクトを雛形から作る
 
@@ -371,11 +398,11 @@ git commit -m "chore: add AIDD Kit"
 
 ## 11. Codex でも同じ規約で動かす
 
-キットは Claude Code 専用ではなく、Codex でも同じ規約で動くように作られています。仕組みの中心は `04_Codex/build_codex_skills.py` です。このスクリプトは `03_ClaudeCode/skills/` と `commands/` を読み込み、Codex の仕様（`<名前>/SKILL.md` に frontmatter の name・description が必須、任意で `agents/openai.yaml`）に合わせて `04_Codex/skills/` を生成します。Claude Code のスラッシュコマンドも同じ扱いでスキルに変換されるため、`/trace` のようなコマンドは Codex 側では `$cmd-trace` のような名前で呼び出せます。生成本数は現時点で 38 本です。`--check` オプションを付けて実行すると、生成物が最新かどうかを差分で検査し、ずれていれば exit 1 で終わります。つまり Claude Code 側のスキルを直接書き換えても、Codex 側の生成物が古いままにならないよう機械で検査できる形になっています。
+キットは Claude Code 専用ではなく、Codex でも同じ規約で動くように作られています。仕組みの中心は `04_Codex/build_codex_skills.py` です。このスクリプトは `03_ClaudeCode/skills/` と `commands/` を読み込み、Codex の仕様（`<名前>/SKILL.md` に frontmatter の name・description が必須、任意で `agents/openai.yaml`）に合わせて `04_Codex/skills/` を生成します。Claude Code のスラッシュコマンドも同じ扱いでスキルに変換されるため、`/trace` のようなコマンドは Codex 側では `$cmd-trace` のような名前で呼び出せます。生成本数は現時点で 50 本です。`--check` オプションを付けて実行すると、生成物が最新かどうかを差分で検査し、ずれていれば exit 1 で終わります。つまり Claude Code 側のスキルを直接書き換えても、Codex 側の生成物が古いままにならないよう機械で検査できる形になっています。
 
 規約の本体を 1 か所にまとめているのも同じ狙いからです。`AGENTS.md` に規約を書き、Claude Code は `CLAUDE.md` の `@AGENTS.md` インポートでこれを読み込み、Codex は `AGENTS.md` を直接読みます。私が実際に困ったのは、最初のうちは Claude Code 用の CLAUDE.md と Codex 用の設定を別々に育ててしまい、気づいたら内容がずれていたことでした。規約を 1 本化してからは、エージェントを切り替えるたびに文言を合わせ直す作業がなくなりました。
 
-Codex にはフックの仕組みが無いため、`block-gates.py` や `filter-output.py` のような「機械的に止める・絞る」層はそのままでは持ち込めません。プロジェクト配布（`export-project.sh`）で書き出した `.claude/` や `scripts/` はあくまで Claude Code 向けで、Codex 側は AGENTS.md の規約とスキルの手順書に沿って動く形になります。この違いは把握した上で使う必要があります。
+Codex にはフックの仕組みが無いため、`block-gates.py` や `filter-output.py` のような「機械的に止める・絞る」層はそのままでは持ち込めません。プロジェクト配布（`export-project.sh`）で書き出した `.claude/` や `scripts/` はあくまで Claude Code 向けで、Codex 側は AGENTS.md の規約とスキルの手順書に沿って動く形になります。Codex でも効くのは git hook 層（`install-git-hooks.sh`）とスクリプト層だけです。この違いは把握した上で使う必要があります。
 
 ## 12. 作ってみて分かったこと
 
@@ -398,7 +425,7 @@ CHANGELOG.md を振り返ると、キットは Ver.6.1 の速度ハーネス・�
 
 ```bash
 open 01_利用者向け資料/01_利用ガイド.html       # 概要と導入（初めての方向け）
-open 01_利用者向け資料/02_操作マニュアル.html   # 取り扱い説明書（13 章）
+open 01_利用者向け資料/02_操作マニュアル.html   # 取り扱い説明書
 ```
 
 ## 14. 注意点
@@ -407,7 +434,7 @@ open 01_利用者向け資料/02_操作マニュアル.html   # 取り扱い説�
 - hook は Claude Code 全体に効きます。グローバル導入する前に、まず 1 つのプロジェクトでプロジェクト配布方式を試すという順番でも構いません
 - 「キット自身のテストが通ること」と「配布先で使えること」は別問題です。プロジェクト配布のあとは、そのプロジェクトで一度 `check-design.sh` や `verify.sh` を回してから使い始めることをおすすめします
 - Codex 側の生成物（`04_Codex/skills/`）は `build_codex_skills.py` が自動生成するもので、直接編集する対象ではありません。変更するのは常に `03_ClaudeCode/skills/` や `commands/` 側です
-- 版は `VERSION` と git tag で管理しており、変更内容は `CHANGELOG.md` にまとめています。8.0.0 時点では Claude Code 用（`03_ClaudeCode/`）と Codex 用（`04_Codex/`）を分ける構成管理になっています
+- 版は `VERSION` と git tag で管理しており、変更内容は `CHANGELOG.md` にまとめています。現在の版は 8.6.0 で、Claude Code 用（`03_ClaudeCode/`）と Codex 用（`04_Codex/`）を分ける構成管理になっています
 
 ## おわりに
 
