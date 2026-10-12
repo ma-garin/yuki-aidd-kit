@@ -152,11 +152,13 @@
   let lastPointer = null;
   document.addEventListener('pointerdown', (event) => {
     const el = event.target instanceof Element ? event.target.closest('button, a, [role="button"]') : null;
-    lastPointer = el ? el.getBoundingClientRect() : null;
+    lastPointer = el;   // 座標でなく要素を覚える。押した後に画面が切り替わると座標が古くなり、無関係な場所に出るため
   }, true);
   function placeNearLastAction(h) {
-    const rect = lastPointer;
-    if (!rect) { h.removeAttribute('style'); return; }
+    const el = lastPointer;
+    // 押した要素が消えた・隠れた（画面が切り替わった）ときは既定の位置（上部中央）に出す
+    const rect = el && el.isConnected && el.getClientRects().length ? el.getBoundingClientRect() : null;
+    if (!rect || rect.width === 0) { h.removeAttribute('style'); return; }
     const width = Math.min(360, window.innerWidth - 32);
     let left = rect.left + rect.width / 2 - width / 2;
     left = Math.max(16, Math.min(left, window.innerWidth - width - 16));
