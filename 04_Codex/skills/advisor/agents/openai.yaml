@@ -1,0 +1,3 @@
+display_name: "advisor"
+short_description: "節目で、別のモデル（より強いモデル）に相談して助言をもらうスキル"
+allow_implicit_invocation: true
