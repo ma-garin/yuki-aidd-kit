@@ -6,12 +6,21 @@ Codex の仕様（出典: https://learn.chatgpt.com/codex/build-skills）:
   - スキルはスラッシュメニューに並び、`$名前` で明示的に呼び出せる
 カスタムプロンプトの置き場所は公式ドキュメントで確認できないため、commands/ もスキルに変換する。
 
-使い方: python3 04_Codex/build_codex_skills.py          # 生成
-        python3 04_Codex/build_codex_skills.py --check  # 生成物が最新か検査（差分があれば exit 1）
+`disable-model-invocation: true` のスキルは agents/openai.yaml の allow_implicit_invocation を false にする（明示呼び出しだけ）。
+
+生成と同時に 04_Codex/skills-manifest.json を書く: スキルごとのファイル数と sha256。
+sha256 はスキル配下の全ファイルを相対パス（/ 区切り）の昇順に並べ、各ファイルについて
+「相対パス（UTF-8）＋NUL＋中身＋NUL」を連結したものの sha256（改名・追加・削除も版に入る）。
+版管理の無い Codex 環境でも、受け取ったスキル一式が生成時と同じかを --check で確かめられる。
+
+使い方: python3 04_Codex/build_codex_skills.py          # 生成（skills/ と skills-manifest.json）
+        python3 04_Codex/build_codex_skills.py --check  # 生成物とマニフェストが最新か検査（差分があれば exit 1）
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 import shutil
 import sys
@@ -22,6 +31,7 @@ KIT = Path(__file__).resolve().parents[1]
 SRC_SKILLS = KIT / "03_ClaudeCode" / "skills"
 SRC_COMMANDS = KIT / "03_ClaudeCode" / "commands"
 OUT = KIT / "04_Codex" / "skills"
+MANIFEST = KIT / "04_Codex" / "skills-manifest.json"
 FM_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 HEADER = "<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->\n"
 
@@ -47,14 +57,14 @@ def short(desc: str, limit: int = 60) -> str:
     return first if len(first) <= limit else first[: limit - 1] + "…"
 
 
-def write_skill(dst: Path, name: str, desc: str, body: str, display: str) -> None:
+def write_skill(dst: Path, name: str, desc: str, body: str, display: str, implicit: bool = True) -> None:
     dst.mkdir(parents=True, exist_ok=True)
     (dst / "SKILL.md").write_text(
         f"---\nname: {name}\ndescription: {yaml_str(desc)}\n---\n{HEADER}{body.lstrip()}", encoding="utf-8")
     (dst / "agents").mkdir(exist_ok=True)
     (dst / "agents" / "openai.yaml").write_text(
         f"display_name: {yaml_str(display)}\nshort_description: {yaml_str(short(desc))}\n"
-        "allow_implicit_invocation: true\n", encoding="utf-8")
+        f"allow_implicit_invocation: {'true' if implicit else 'false'}\n", encoding="utf-8")
 
 
 def build(out: Path) -> int:
@@ -65,7 +75,8 @@ def build(out: Path) -> int:
         fm, body = frontmatter((src / "SKILL.md").read_text(encoding="utf-8"))
         name = fm.get("name", src.name)
         dst = out / src.name
-        write_skill(dst, name, fm.get("description", ""), body, name)
+        implicit = fm.get("disable-model-invocation", "").lower() != "true"
+        write_skill(dst, name, fm.get("description", ""), body, name, implicit)
         for sub in sorted(src.iterdir()):  # references/・scripts/ などはそのまま写す
             if sub.name == "SKILL.md" or sub.name.startswith(".") or sub.name == "__pycache__":
                 continue
@@ -85,12 +96,60 @@ def build(out: Path) -> int:
     return n
 
 
+def skill_files(skills: Path) -> dict[str, dict[str, bytes]]:
+    """スキル名 → {相対パス: 中身}。.DS_Store・__pycache__ は数えない。"""
+    out: dict[str, dict[str, bytes]] = {}
+    for d in sorted(p for p in skills.iterdir() if p.is_dir()):
+        files = {}
+        for f in sorted(d.rglob("*")):
+            if f.is_file() and f.name != ".DS_Store" and "__pycache__" not in f.parts:
+                files[f.relative_to(d).as_posix()] = f.read_bytes()
+        out[d.name] = files
+    return out
+
+
+def manifest(skills: Path) -> dict:
+    entries = {}
+    for name, files in skill_files(skills).items():
+        h = hashlib.sha256()
+        for rel in sorted(files):
+            h.update(rel.encode("utf-8") + b"\0" + files[rel] + b"\0")
+        entries[name] = {"files": len(files), "sha256": h.hexdigest()}
+    return {"generator": "04_Codex/build_codex_skills.py", "count": len(entries), "skills": entries}
+
+
+def write_manifest(skills: Path, path: Path) -> None:
+    with open(path, "w", encoding="utf-8", newline="\n") as fp:
+        json.dump(manifest(skills), fp, ensure_ascii=False, indent=2, sort_keys=True)
+        fp.write("\n")
+
+
+def check_manifest(skills: Path, path: Path) -> list[str]:
+    """生成し直したスキル一式とマニフェストが食い違うスキル名を返す（読めなければその旨）。"""
+    try:
+        saved = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return [f"skills-manifest.json を読めない（{type(e).__name__}）"]
+    want = manifest(skills)["skills"]
+    got = saved.get("skills", {}) if isinstance(saved, dict) else {}
+    return sorted(k for k in want.keys() | got.keys() if want.get(k) != got.get(k))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
     if not a.check:
-        print(f"生成: {build(OUT)} 件 → {OUT.relative_to(KIT)}")
+        n = build(OUT)
+        write_manifest(OUT, MANIFEST)
+        print(f"生成: {n} 件 → {OUT.relative_to(KIT)}（マニフェスト {MANIFEST.relative_to(KIT)}）")
+        return 0
+    mdiff = check_manifest(OUT, MANIFEST) if OUT.is_dir() else ["04_Codex/skills が無い"]
+    if not SRC_SKILLS.is_dir():  # 生成元の無い配布先（Codex）: 手元の skills/ とマニフェストの照合だけ
+        if mdiff:
+            print(f"NG: 04_Codex/skills がマニフェストと食い違う（{len(mdiff)} 件）: " + ", ".join(mdiff[:5]))
+            return 1
+        print("OK: 04_Codex/skills はマニフェストと一致（生成元が無いので再生成との比較はしていない）")
         return 0
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t) / "skills"
@@ -101,7 +160,11 @@ def main() -> int:
     if diff:
         print(f"NG: 04_Codex/skills が古い（{len(diff)} 件）。python3 04_Codex/build_codex_skills.py で再生成: " + ", ".join(diff[:5]))
         return 1
-    print(f"OK: 04_Codex/skills は最新（{len(a_files)} ファイル）")
+    if mdiff:
+        print(f"NG: 04_Codex/skills-manifest.json が生成物と食い違う（{len(mdiff)} 件）。"
+              "python3 04_Codex/build_codex_skills.py で再生成: " + ", ".join(mdiff[:5]))
+        return 1
+    print(f"OK: 04_Codex/skills は最新（{len(a_files)} ファイル・マニフェスト一致）")
     return 0
 
 
