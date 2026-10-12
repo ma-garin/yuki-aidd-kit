@@ -14,7 +14,11 @@
   - 古さ: 「最終更新」節（または `最終更新: YYYY-MM-DD` の行）の日付、無ければファイルの更新時刻から
     30 日を超えていたら先頭に「古い（YYYY-MM-DD）」を付ける（古い引継ぎを今の状態と取り違えない）。
     存在しない日付（2026-13-45 等）は古さを判定せず、本文だけを注入する
-  - ファイルが無い・3 節とも中身が無い・入力が読めない → 何も出さない（fail-open。常に exit 0）
+  - 直近の変更（G2）: observe.py が積む `.claude/observations.jsonl` から write・edit の観測を、同じパスは最新 1 件に
+    まとめて**最大 8 件**、古い順に足す（CURRENT_STATE.md の 12 行の後ろ。12 行の規則は変えない）。
+    注入全体の量を「字数÷4」で概算し、SESSION_CONTEXT_TOKENS（既定 600）を超える分は古い観測から落とす。
+    観測の見出し行に概算トークン数を出す。CURRENT_STATE.md が無くても観測があれば観測だけ出す
+  - ファイルが無い・3 節とも中身が無い・観測も無い・入力が読めない → 何も出さない（fail-open。常に exit 0）
 
 限界: 要約に何が残ったかは見ない（transcript の要約本文は版によって取れない）。CURRENT_STATE.md の更新は人と
 AI の手作業のまま（context-compression スキル・pre-compact.py の指示で促す）。
@@ -30,6 +34,10 @@ MAX_LINES = 12
 STALE_DAYS = 30
 LINE_MAX = 120
 SOURCES = frozenset({"compact", "resume"})
+OBS_MAX = 8
+OBS_FILE = "observations.jsonl"
+CHANGE_OPS = frozenset({"write", "edit"})
+TOKEN_BUDGET = int(os.environ.get("SESSION_CONTEXT_TOKENS", "600"))
 SECTIONS = (
     ("現在の作業", ("現在の作業", "現在のフェーズ", "フェーズ")),
     ("制約", ("制約", "決まっていること")),
@@ -134,15 +142,74 @@ def build(path: Path, today: datetime.date) -> str:
     return "\n".join(lines[:MAX_LINES])
 
 
+def find_obs(data: dict) -> Path | None:
+    explicit = os.environ.get("AIDD_OBSERVATIONS")
+    if explicit:
+        return Path(explicit) if Path(explicit).is_file() else None
+    for base in (os.environ.get("CLAUDE_PROJECT_DIR"), data.get("cwd")):
+        if isinstance(base, str) and base:
+            p = Path(base) / ".claude" / OBS_FILE
+            if p.is_file():
+                return p
+    return None
+
+
+def recent_changes(path: Path) -> list[str]:
+    """直近の変更（write・edit）を、同じパスは最新 1 件にして古い順で最大 OBS_MAX 行。"""
+    with path.open("rb") as f:
+        f.seek(0, os.SEEK_END)
+        f.seek(max(0, f.tell() - 128 * 1024))
+        raw = f.read().decode("utf-8", "replace").splitlines()
+    seen: set[str] = set()
+    picked: list[str] = []
+    for line in reversed(raw):
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(d, dict) or d.get("op") not in CHANGE_OPS:
+            continue
+        target = str(d.get("path") or "")
+        if not target or target in seen:
+            continue
+        seen.add(target)
+        m = re.search(r"T(\d{2}:\d{2})", str(d.get("time") or ""))
+        s = f"- {m.group(1) if m else '--:--'} {d.get('op')} {target}（{str(d.get('summary') or '')[:60]}）"
+        picked.append(s if len(s) <= LINE_MAX else s[:LINE_MAX - 1] + "…")
+        if len(picked) >= OBS_MAX:
+            break
+    return picked[::-1]
+
+
+def tokens(text: str) -> int:
+    return -(-len(text) // 4)      # 字数÷4 の切り上げ（概算。日本語では少なめに出る）
+
+
+def with_observations(ctx: str, changes: list[str]) -> str:
+    """CURRENT_STATE の要点の後ろに観測を足す。予算を超える分は古い観測から落とす。"""
+    while changes:
+        head = f"[session-context] 直近の変更 {len(changes)} 件（.claude/{OBS_FILE}。注入量 約 \x00 トークン＝字数÷4 の概算／上限 {TOKEN_BUDGET}）"
+        text = "\n".join(([ctx] if ctx else []) + [head] + changes)
+        t = tokens(text)
+        if t <= TOKEN_BUDGET:
+            return text.replace("\x00", str(t), 1)
+        changes = changes[1:]
+    return ctx
+
+
 def main() -> int:
     try:
         data = json.load(sys.stdin)
         if not isinstance(data, dict) or data.get("source") not in SOURCES:
             return 0
         path = find_state(data)
-        if path is None:
-            return 0
-        ctx = build(path, datetime.date.today())
+        ctx = build(path, datetime.date.today()) if path is not None else ""
+        obs = find_obs(data)
+        if obs is not None:
+            try:
+                ctx = with_observations(ctx, recent_changes(obs))
+            except (OSError, ValueError):   # 観測は付け足し。読めなければ CURRENT_STATE だけ出す
+                pass
         if ctx:
             print(json.dumps({"hookSpecificOutput": {
                 "hookEventName": "SessionStart", "additionalContext": ctx}}, ensure_ascii=False))

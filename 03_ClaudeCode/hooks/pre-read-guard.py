@@ -11,6 +11,11 @@
           （読んでも判断材料にならない。必要なら grep で該当行だけ取る）
   - 切り詰め: READ_GUARD_MAX_LINES（既定 800）行超のファイルを offset も limit も無しに読む
           → updatedInput で limit=READ_GUARD_LIMIT（既定 300）。systemMessage で全体の行数と続きの読み方を伝える
+  - 読み直しの警告（G2。止めない）: 同じセッション（入力の session_id）で同じファイルを offset も limit も無しに
+          もう一度読むとき、中身が前回から変わっていなければ additionalContext と systemMessage で
+          「offset / limit で範囲を絞るか grep -n で該当行を取る」を返す。記録は `.claude/read-seen.json`
+          （AIDD_READ_SEEN で差し替え可。別セッションの記録は捨てる。300 件まで）。session_id が無い入力では記録しない。
+          記録・判定に失敗しても読み取りは止めない
   - それ以外・バイナリ（画像/PDF は Read が自前で扱う）は素通り
 
 逃がし口は offset / limit の明示（既に Read が持っている）。環境変数のバイパスは作らない。
@@ -48,6 +53,8 @@ GENERATED_SUFFIX = (".min.js", ".min.css", ".map", ".bundle.js")
 GENERATED_DIRS = {"node_modules", "dist", "build", ".git", "__pycache__", ".venv", "venv", "coverage", ".next"}
 REPORT_RE = re.compile(r"^(?:check-[a-z-]+|trace-check|token-audit|test-metrics)-report\.md$")
 MAX_LINES = int(os.environ.get("READ_GUARD_MAX_LINES", "800"))
+SEEN_MAX = 300
+SEEN_NAME = "read-seen.json"
 LIMIT = int(os.environ.get("READ_GUARD_LIMIT", "300"))
 
 
@@ -83,6 +90,48 @@ def secret_target(tool: str, tool_input: dict, cwd: str | None) -> str | None:
         if isinstance(g, str) and is_secret_glob(g, cwd):
             return g
     return None
+
+
+def seen_path(cwd: str | None) -> Path | None:
+    explicit = os.environ.get("AIDD_READ_SEEN")
+    if explicit:
+        return Path(explicit)
+    for base in (os.environ.get("CLAUDE_PROJECT_DIR"), cwd):
+        if base and Path(base).is_dir():
+            return Path(base) / ".claude" / SEEN_NAME
+    return None
+
+
+def reread(data: dict, p: Path, partial: bool) -> str | None:
+    """同じセッションで中身の変わらないファイルを読み直すなら警告文を返す。今回の読み取りも記録する。"""
+    try:
+        sid = data.get("session_id")
+        if not isinstance(sid, str) or not sid:
+            return None
+        store = seen_path(_CTX.get("cwd"))
+        if store is None:
+            return None
+        try:
+            state = json.loads(store.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            state = {}
+        if not isinstance(state, dict) or state.get("sid") != sid or not isinstance(state.get("files"), dict):
+            state = {"sid": sid, "files": {}}
+        key = str(p.resolve())
+        mtime = p.stat().st_mtime_ns
+        prev = state["files"].pop(key, None)
+        count = prev[1] + 1 if isinstance(prev, list) and len(prev) == 2 and prev[0] == mtime and isinstance(prev[1], int) else 1
+        state["files"][key] = [mtime, count]
+        while len(state["files"]) > SEEN_MAX:
+            state["files"].pop(next(iter(state["files"])))
+        store.parent.mkdir(parents=True, exist_ok=True)
+        store.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+        if count < 2 or partial:
+            return None
+        return (f"{p.name} はこのセッションで既に読んだ（{count} 回目。前回から中身は変わっていない）。"
+                "要る所だけ offset / limit で範囲を指定するか、`grep -n` で該当行を取る（pre-read-guard.py。警告のみ）")
+    except Exception:   # 読み直しの警告は付け足し。記録できなくても読み取りは止めない
+        return None
 
 
 def main() -> int:
@@ -125,7 +174,9 @@ def _main() -> int:
     if reason:
         return deny(reason + "（pre-read-guard.py）")
 
-    if tool_input.get("offset") is not None or tool_input.get("limit") is not None:
+    partial = tool_input.get("offset") is not None or tool_input.get("limit") is not None
+    warn = reread(data, p, partial) if p.is_file() else None
+    if partial:
         return 0
     if not p.is_file():
         return 0
@@ -136,11 +187,11 @@ def _main() -> int:
                 return 0                    # バイナリ（画像・PDF 等）は Read に任せる
             n = head.count(b"\n") + sum(chunk.count(b"\n") for chunk in iter(lambda: f.read(1 << 20), b""))
     except OSError:
-        return 0
+        return warn_only(warn)
     if n <= MAX_LINES:
-        return 0
+        return warn_only(warn)
 
-    print(json.dumps({
+    out = {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "permissionDecision": "allow",
@@ -151,7 +202,21 @@ def _main() -> int:
             f"続きは offset={LIMIT + 1} を指定する。全部が要ることは稀なので、先に `grep -n` で当たりを付けてから"
             "範囲指定で読むのが安い。"
         ),
-    }, ensure_ascii=False))
+    }
+    if warn:
+        out["hookSpecificOutput"]["additionalContext"] = warn
+        out["systemMessage"] += warn
+        log_decision("pre-read-guard", "warn", "読み直し", _CTX.get("tool", ""), _CTX.get("summary", ""), _CTX.get("cwd"))
+    print(json.dumps(out, ensure_ascii=False))
+    return 0
+
+
+def warn_only(warn: str | None) -> int:
+    """読み直しの警告だけを返す（deny しない・入力も変えない）。"""
+    if warn:
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": warn},
+                          "systemMessage": warn}, ensure_ascii=False))
+        log_decision("pre-read-guard", "warn", "読み直し", _CTX.get("tool", ""), _CTX.get("summary", ""), _CTX.get("cwd"))
     return 0
 
 

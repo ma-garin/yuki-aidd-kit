@@ -104,7 +104,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/log-instructions.py", "timeout": 5 } ] }
     ],
     "PostToolUse": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py post", "timeout": 5 } ] },
+      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py post", "timeout": 5 },
+                  { "type": "command", "command": "python3 .claude/hooks/observe.py", "timeout": 5 } ] },
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
@@ -122,7 +123,8 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
       {
         "hooks": [
           { "type": "command", "command": "python3 .claude/hooks/reply-language.py", "timeout": 5 },
-          { "type": "command", "command": "bash .claude/hooks/session-summary.sh" }
+          { "type": "command", "command": "bash .claude/hooks/session-summary.sh" },
+          { "type": "command", "command": "python3 .claude/hooks/ralph-stop.py", "timeout": 5 }
         ]
       }
     ]
