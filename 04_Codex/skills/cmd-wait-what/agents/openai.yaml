@@ -1,0 +1,3 @@
+display_name: "/wait-what"
+short_description: "/wait-what — 直前の説明を、やさしい日本語で言い直す"
+allow_implicit_invocation: true

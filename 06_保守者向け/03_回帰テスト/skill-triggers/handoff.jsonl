@@ -1,0 +1,6 @@
+{"utterance": "ここまでの作業をCodexに引き継ぎたいので、引き継ぎ文書を書いて", "expect": "handoff", "note": "description の「Codex に渡したい」「引き継ぎを書いて」"}
+{"utterance": "別のセッションで続きをやるから、handoffを作っておいて", "expect": "handoff", "note": "description の「別セッションで続ける」「handoff」"}
+{"utterance": "この実装をCodexに任せたい。Windowsでgitなしで動く形で渡して", "expect": "handoff", "note": "Codex 前提の引き継ぎ"}
+{"utterance": "プロジェクトが一段落したので振り返りをしたい", "expect": "retro", "note": "振り返りは retro"}
+{"utterance": "ありがとうございます、助かりました", "expect": "none", "note": "お礼のみ"}
+{"utterance": "引き継ぎではなく、今日の作業をそのまま続けて進めて", "expect": "none", "note": "同一セッションの継続は対象外"}

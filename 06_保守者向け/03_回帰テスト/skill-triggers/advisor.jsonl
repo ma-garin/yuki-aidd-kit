@@ -1,0 +1,6 @@
+{"utterance": "同じエラーが3回続いて詰まった。別のモデルにセカンドオピニオンをもらいたい", "expect": "advisor", "note": "description の「詰まった」「セカンドオピニオン」"}
+{"utterance": "認証方式を決める大きな設計判断の前に、advisorに相談して", "expect": "advisor", "note": "description の「大きな設計判断の前」「advisor に相談」"}
+{"utterance": "完了と言う前に別の目で確認してもらいたい", "expect": "advisor", "note": "description の「完了と言う前」"}
+{"utterance": "この関数名をわかりやすく変えて", "expect": "none", "note": "些細な作業"}
+{"utterance": "READMEの誤字を直して", "expect": "none", "note": "些細な作業"}
+{"utterance": "テスト結果の最後の行を教えて", "expect": "none", "note": "事実の確認のみ"}

@@ -1,0 +1,3 @@
+display_name: "/grill"
+short_description: "/grill — 要件を 1 問ずつ詰める（RFD の前）"
+allow_implicit_invocation: true
