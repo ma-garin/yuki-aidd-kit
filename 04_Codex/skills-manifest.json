@@ -1,5 +1,5 @@
 {
-  "count": 50,
+  "count": 51,
   "generator": "04_Codex/build_codex_skills.py",
   "skills": {
     "advisor": {
@@ -201,6 +201,10 @@
     "uiux_review": {
       "files": 3,
       "sha256": "d6a0195c698ed4c8d750e213f1ee35b82e6346aa1e696f34e8d0afa16a96916f"
+    },
+    "work-report-html": {
+      "files": 3,
+      "sha256": "fb7efe2ba9cb156aec18e15575babd652d54b7c610a7aed0c4893ce48c30b112"
     }
   }
 }
