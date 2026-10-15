@@ -62,6 +62,35 @@ def is_filler_only(msg: str) -> bool:
     """相槌と記号を取り除いて何も残らないか。"""
     return NOISE_RE.sub("", FILLER_RE.sub("", msg)) == ""
 
+# 表のセルが長いとターミナル（約 100 桁）で表が崩れ「キー: 値＋区切り線」に化ける（2026-10-15 保守者指摘）。
+# セルは半角 36 桁（全角 18 字）以内・列は 4 つ以内・行全体は 100 桁以内。補足は表の外に箇条書きで書く。
+TABLE_CELL_MAX = 36
+TABLE_COLS_MAX = 4
+TABLE_ROW_MAX = 100
+
+
+def _display_width(text: str) -> int:
+    import unicodedata
+    return sum(2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1 for ch in text)
+
+
+def wide_table(msg: str) -> str | None:
+    """崩れる表があれば、その理由を 1 文で返す。無ければ None。"""
+    for line in msg.splitlines():
+        t = line.strip()
+        if not (t.startswith("|") and t.endswith("|")) or set(t) <= set("|-: "):
+            continue
+        cells = [c.strip() for c in t.strip("|").split("|")]
+        if len(cells) > TABLE_COLS_MAX:
+            return f"列が {len(cells)} 個ある（上限 {TABLE_COLS_MAX}）"
+        widths = [_display_width(c) for c in cells]
+        if max(widths) > TABLE_CELL_MAX:
+            return f"セル「{cells[widths.index(max(widths))][:16]}…」が半角 {max(widths)} 桁（上限 {TABLE_CELL_MAX}）"
+        if sum(widths) + 3 * len(cells) + 1 > TABLE_ROW_MAX:
+            return f"行全体が半角 {sum(widths) + 3 * len(cells) + 1} 桁（上限 {TABLE_ROW_MAX}）"
+    return None
+
+
 
 _TIMER = Path(__file__).resolve().parent / "tool-timer.py"
 ACTUAL_RE = re.compile(r"実測[:：]")
@@ -390,6 +419,13 @@ def _main() -> int:
     if is_filler_only(msg):
         reason = ("[reply-language] 相槌だけで終わっている。相槌・謝辞・待機表明は情報を渡さない（H-0）。"
                   "問いに答える・結果を渡す・動作する のどれかに出し直す")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+        return 0
+    wt = wide_table(msg)
+    if wt is not None:
+        reason = (f"[reply-language] 表がターミナルで崩れる: {wt}。"
+                  f"セルは全角 {TABLE_CELL_MAX // 2} 字以内・列は {TABLE_COLS_MAX} つ以内にし、"
+                  "括弧書き・複数項目・補足は表の外に箇条書きで出し直す（2026-10-15 保守者指示）")
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     g = load_guard()
