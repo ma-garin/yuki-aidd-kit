@@ -84,6 +84,7 @@ python3 scripts/test-weaken-check.py --base main  # テストの弱体化検査�
 | `verify-agent` | 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行） | Critical/High 残ゼロ・`test-metrics.sh --gate` exit 0 | 69行 |
 | `gate-agent` | 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す） | 差し戻し 0 件。**承認欄は空のまま人間へ** | 61行 |
 | `advisor`（8.7.0〜） | 節目の相談を受ける助言専用（読み取り専用で事実を確かめて助言） | 助言が返る（最終判断は呼び出し側） | 60行 |
+| `work-metering`（8.7.0〜） | 見積・中間・完了の計測行 3 書式と予実の記録・校正係数。Claude Code は hook、Codex は `scripts/metering.py` で同じ 3 行を出す | #process #estimate | 60行 |
 
 AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない線）。中間工程は「AI 検証完了・承認待ち」として積み、受け入れ時に人間がまとめて判定する。
 
