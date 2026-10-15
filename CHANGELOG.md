@@ -5,6 +5,7 @@
 
 ## 未リリース
 
+- `work-metering` スキルを追加（03_ClaudeCode・04_Codex）。見積・中間・完了の計測行と予実の校正を Codex でも同じ書式で出す。`scripts/metering.py` は tool-timer.py の履歴を共有
 - `block-protected.py` を撤去（保守者の指示。利用者の意図した設定変更まで止めていた）
 - `statusline.py` から 1 応答あたり出力（`出力…/t`）と連動する ⚠ を削除
 - **外部リポジトリ照合からの取り込み（t3code・openrig・mattpocock/skills）**: `block-destructive.py` が `pkill`・`killall`・`pgrep … | kill`・`kill $(pgrep …)` を deny（名前・パス一致は他セッションと自分自身を巻き込む。代替は記録した PID かポート）。`functional-integrity.md` に「入口をすべて踏む・足したら戻す手段も作る」、`work-order.md` に返却時の状態 4 行（状態／閉じる条件／次の担当／証跡）、`CURRENT_STATE.md` に「再開できるか」節、`context-compression` に区切りの決定木（続ける／clear／引き継ぎ／サブエージェント／compact）、`gate-agent.md` に各役のレビュー前提 5 行（確信度 60 未満は判定しない）。`test-hooks.sh` に 9 ケース追加
