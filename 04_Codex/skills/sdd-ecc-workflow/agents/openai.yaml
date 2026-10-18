@@ -1,3 +1,5 @@
-display_name: "sdd-ecc-workflow"
-short_description: "仕様駆動開発（SDD: Spec-Driven Development）でプロジェクトを進めるためのスキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "sdd-ecc-workflow"
+  short_description: "仕様駆動開発（SDD: Spec-Driven Development）でプロジェクトを進めるためのスキル"
+policy:
+  allow_implicit_invocation: true

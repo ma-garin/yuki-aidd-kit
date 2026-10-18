@@ -1,3 +1,5 @@
-display_name: "work-metering"
-short_description: "コーディングを含む作業の見積・中間・完了を計測し、予実を記録する"
-allow_implicit_invocation: true
+interface:
+  display_name: "work-metering"
+  short_description: "コーディングを含む作業の見積・中間・完了を計測し、予実を記録する"
+policy:
+  allow_implicit_invocation: true

@@ -1,3 +1,5 @@
-display_name: "design-system"
-short_description: "AIDDツール群に一貫したビジュアルデザインを適用するスキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "design-system"
+  short_description: "AIDDツール群に一貫したビジュアルデザインを適用するスキル"
+policy:
+  allow_implicit_invocation: true

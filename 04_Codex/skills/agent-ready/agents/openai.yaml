@@ -1,3 +1,5 @@
-display_name: "agent-ready"
-short_description: "利用者のプロジェクトが「AI エージェントで開発しやすいか」を 100 点で採点するスキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "agent-ready"
+  short_description: "利用者のプロジェクトが「AI エージェントで開発しやすいか」を 100 点で採点するスキル"
+policy:
+  allow_implicit_invocation: true

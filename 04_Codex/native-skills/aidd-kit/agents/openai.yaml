@@ -1,0 +1,5 @@
+interface:
+  display_name: "AIDD Kit for Codex"
+  short_description: "kit の原本を保持し、必要な工程・スキル・検証へ Codex を案内する"
+policy:
+  allow_implicit_invocation: true

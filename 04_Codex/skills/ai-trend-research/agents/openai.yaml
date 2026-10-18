@@ -1,3 +1,5 @@
-display_name: "ai-trend-research"
-short_description: "AI・LLM・開発ツールの最新動向を、公開 API・RSS・GitHub・Web だけで調べて整理するスキル（読み取り…"
-allow_implicit_invocation: true
+interface:
+  display_name: "ai-trend-research"
+  short_description: "AI・LLM・開発ツールの最新動向を、公開 API・RSS・GitHub・Web だけで調べて整理するスキル（読み取り…"
+policy:
+  allow_implicit_invocation: true

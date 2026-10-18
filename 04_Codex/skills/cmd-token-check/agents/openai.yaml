@@ -1,3 +1,5 @@
-display_name: "/token-check"
-short_description: "/token-check — トークン節約の仕組みが効いているかを点検する"
-allow_implicit_invocation: true
+interface:
+  display_name: "/token-check"
+  short_description: "/token-check — トークン節約の仕組みが効いているかを点検する"
+policy:
+  allow_implicit_invocation: true

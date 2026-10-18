@@ -1,3 +1,5 @@
-display_name: "streamlit-rag-app"
-short_description: "Streamlit + RAGベースの業務アプリ（業務支援エージェント、VeriRAG連携アプリ、社内ナレッジツール）…"
-allow_implicit_invocation: true
+interface:
+  display_name: "streamlit-rag-app"
+  short_description: "Streamlit + RAGベースの業務アプリ（業務支援エージェント、VeriRAG連携アプリ、社内ナレッジツール）…"
+policy:
+  allow_implicit_invocation: true

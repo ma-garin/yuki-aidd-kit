@@ -1,3 +1,5 @@
-display_name: "/e2e-cycle"
-short_description: "/e2e-cycle — 段階停止型 E2E テスト＆不具合修整ワークフロー"
-allow_implicit_invocation: true
+interface:
+  display_name: "/e2e-cycle"
+  short_description: "/e2e-cycle — 段階停止型 E2E テスト＆不具合修整ワークフロー"
+policy:
+  allow_implicit_invocation: true

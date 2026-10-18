@@ -1,3 +1,5 @@
-display_name: "code-doc-search"
-short_description: "技術ドキュメント・OSSコード・APIリファレンスの検索を最適化するスキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "code-doc-search"
+  short_description: "技術ドキュメント・OSSコード・APIリファレンスの検索を最適化するスキル"
+policy:
+  allow_implicit_invocation: true

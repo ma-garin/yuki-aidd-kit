@@ -1,3 +1,5 @@
-display_name: "handoff"
-short_description: "作業を別のセッション・別のハーネス（Claude ⇄ Codex）に引き継ぐための引き継ぎ文書を書くスキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "handoff"
+  short_description: "作業を別のセッション・別のハーネス（Claude ⇄ Codex）に引き継ぐための引き継ぎ文書を書くスキル"
+policy:
+  allow_implicit_invocation: true

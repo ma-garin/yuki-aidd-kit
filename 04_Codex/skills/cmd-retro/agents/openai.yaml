@@ -1,3 +1,5 @@
-display_name: "/retro"
-short_description: "/retro — レトロと学びの蓄積"
-allow_implicit_invocation: true
+interface:
+  display_name: "/retro"
+  short_description: "/retro — レトロと学びの蓄積"
+policy:
+  allow_implicit_invocation: true

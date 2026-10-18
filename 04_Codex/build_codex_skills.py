@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""03_ClaudeCode の skills/ と commands/ から Codex 用スキル（04_Codex/skills/）を生成する。
+"""Claude Code の skills/・commands/ と Codex native-skills/ から配布用スキルを生成する。
 
 Codex の仕様（出典: https://learn.chatgpt.com/codex/build-skills）:
   - `<名前>/SKILL.md`（frontmatter の name・description が必須）、任意で `agents/openai.yaml`
@@ -30,6 +30,7 @@ from pathlib import Path
 KIT = Path(__file__).resolve().parents[1]
 SRC_SKILLS = KIT / "03_ClaudeCode" / "skills"
 SRC_COMMANDS = KIT / "03_ClaudeCode" / "commands"
+NATIVE_SKILLS = KIT / "04_Codex" / "native-skills"
 OUT = KIT / "04_Codex" / "skills"
 MANIFEST = KIT / "04_Codex" / "skills-manifest.json"
 FM_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
@@ -63,15 +64,22 @@ def write_skill(dst: Path, name: str, desc: str, body: str, display: str, implic
         f"---\nname: {name}\ndescription: {yaml_str(desc)}\n---\n{HEADER}{body.lstrip()}", encoding="utf-8")
     (dst / "agents").mkdir(exist_ok=True)
     (dst / "agents" / "openai.yaml").write_text(
-        f"display_name: {yaml_str(display)}\nshort_description: {yaml_str(short(desc))}\n"
-        f"allow_implicit_invocation: {'true' if implicit else 'false'}\n", encoding="utf-8")
+        f"interface:\n  display_name: {yaml_str(display)}\n  short_description: {yaml_str(short(desc))}\n"
+        f"policy:\n  allow_implicit_invocation: {'true' if implicit else 'false'}\n", encoding="utf-8")
 
 
 def build(out: Path) -> int:
+    native = sorted(p for p in NATIVE_SKILLS.iterdir() if p.is_dir() and (p / "SKILL.md").is_file()) if NATIVE_SKILLS.is_dir() else []
+    sources = sorted(p for p in SRC_SKILLS.iterdir() if (p / "SKILL.md").is_file())
+    commands = sorted(SRC_COMMANDS.glob("*.md"))
+    generated_names = {p.name for p in sources} | {f"cmd-{p.stem}" for p in commands}
+    collisions = sorted(p.name for p in native if p.name in generated_names)
+    if collisions:
+        raise ValueError("native-skills と生成スキルの名前が衝突: " + ", ".join(collisions))
     if out.exists():
         shutil.rmtree(out)
     n = 0
-    for src in sorted(p for p in SRC_SKILLS.iterdir() if (p / "SKILL.md").is_file()):
+    for src in sources:
         fm, body = frontmatter((src / "SKILL.md").read_text(encoding="utf-8"))
         name = fm.get("name", src.name)
         dst = out / src.name
@@ -85,13 +93,16 @@ def build(out: Path) -> int:
             else:
                 shutil.copy2(sub, dst / sub.name)
         n += 1
-    for cmd in sorted(SRC_COMMANDS.glob("*.md")):
+    for cmd in commands:
         text = cmd.read_text(encoding="utf-8")
         fm, body = frontmatter(text)
         title = next((l.lstrip("# ").strip() for l in body.splitlines() if l.startswith("#")), cmd.stem)
         desc = fm.get("description") or title
         body = ("コマンド `/" + cmd.stem + "` の Codex 版。引数は、呼び出し時にユーザーが続けて書いた文を `$ARGUMENTS` として読む。\n\n" + body)
         write_skill(out / f"cmd-{cmd.stem}", f"cmd-{cmd.stem}", desc if desc.startswith("/") else f"/{cmd.stem} 相当: {desc}", body, f"/{cmd.stem}")
+        n += 1
+    for src in native:
+        shutil.copytree(src, out / src.name, ignore=shutil.ignore_patterns(".DS_Store", "__pycache__"))
         n += 1
     return n
 

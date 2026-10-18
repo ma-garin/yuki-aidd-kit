@@ -1,3 +1,5 @@
-display_name: "atarimae-quality-audit"
-short_description: "「当たり前品質(Kano must-be)」を発見者として徹底監査するスキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "atarimae-quality-audit"
+  short_description: "「当たり前品質(Kano must-be)」を発見者として徹底監査するスキル"
+policy:
+  allow_implicit_invocation: true

@@ -1,3 +1,5 @@
-display_name: "/lifecycle"
-short_description: "/lifecycle — 開発工程の実行（RFD〜保守運用）"
-allow_implicit_invocation: true
+interface:
+  display_name: "/lifecycle"
+  short_description: "/lifecycle — 開発工程の実行（RFD〜保守運用）"
+policy:
+  allow_implicit_invocation: true

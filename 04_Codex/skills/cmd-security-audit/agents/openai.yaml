@@ -1,3 +1,5 @@
-display_name: "/security-audit"
-short_description: "/security-audit — セキュリティ監査（security-audit スキルを呼ぶ）"
-allow_implicit_invocation: true
+interface:
+  display_name: "/security-audit"
+  short_description: "/security-audit — セキュリティ監査（security-audit スキルを呼ぶ）"
+policy:
+  allow_implicit_invocation: true
