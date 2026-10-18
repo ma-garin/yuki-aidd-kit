@@ -1,3 +1,5 @@
-display_name: "/app-scan"
-short_description: "/app-scan — appワークスペースの軽量棚卸し"
-allow_implicit_invocation: true
+interface:
+  display_name: "/app-scan"
+  short_description: "/app-scan — appワークスペースの軽量棚卸し"
+policy:
+  allow_implicit_invocation: true

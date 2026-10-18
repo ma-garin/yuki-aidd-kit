@@ -1,3 +1,5 @@
-display_name: "security-audit"
-short_description: "キットで作るアプリ（単一HTML・PWA／Streamlit／Python Web／Node Web）のセキュリティ監…"
-allow_implicit_invocation: true
+interface:
+  display_name: "security-audit"
+  short_description: "キットで作るアプリ（単一HTML・PWA／Streamlit／Python Web／Node Web）のセキュリティ監…"
+policy:
+  allow_implicit_invocation: true

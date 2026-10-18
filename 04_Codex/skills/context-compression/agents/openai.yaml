@@ -1,3 +1,5 @@
-display_name: "context-compression"
-short_description: "コンテキストウィンドウとトークンを推論に温存するための圧縮・スクリプト化スキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "context-compression"
+  short_description: "コンテキストウィンドウとトークンを推論に温存するための圧縮・スクリプト化スキル"
+policy:
+  allow_implicit_invocation: true

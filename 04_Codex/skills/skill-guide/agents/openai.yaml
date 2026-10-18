@@ -1,3 +1,5 @@
-display_name: "skill-guide"
-short_description: "やりたいことから、キットのどのスキル・コマンドを使えばよいかを案内するルーター"
-allow_implicit_invocation: false
+interface:
+  display_name: "skill-guide"
+  short_description: "やりたいことから、キットのどのスキル・コマンドを使えばよいかを案内するルーター"
+policy:
+  allow_implicit_invocation: false

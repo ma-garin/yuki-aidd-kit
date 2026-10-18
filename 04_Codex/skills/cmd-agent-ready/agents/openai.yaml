@@ -1,3 +1,5 @@
-display_name: "/agent-ready"
-short_description: "/agent-ready — AI 開発のしやすさを採点する"
-allow_implicit_invocation: true
+interface:
+  display_name: "/agent-ready"
+  short_description: "/agent-ready — AI 開発のしやすさを採点する"
+policy:
+  allow_implicit_invocation: true

@@ -1,3 +1,5 @@
-display_name: "done-gate"
-short_description: "タスクや機能を「完了」と判定する前の最終チェックを行うスキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "done-gate"
+  short_description: "タスクや機能を「完了」と判定する前の最終チェックを行うスキル"
+policy:
+  allow_implicit_invocation: true

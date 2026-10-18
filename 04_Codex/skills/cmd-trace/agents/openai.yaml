@@ -1,3 +1,5 @@
-display_name: "/trace"
-short_description: "/trace — トレーサビリティの更新と検証"
-allow_implicit_invocation: true
+interface:
+  display_name: "/trace"
+  short_description: "/trace — トレーサビリティの更新と検証"
+policy:
+  allow_implicit_invocation: true

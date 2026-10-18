@@ -1,3 +1,5 @@
-display_name: "work-report-html"
-short_description: "終えた作業を、構成図・流れの図・実物のスクリーンショット・時系列・確認結果つきの HTML レポートにまとめて Art…"
-allow_implicit_invocation: true
+interface:
+  display_name: "work-report-html"
+  short_description: "終えた作業を、構成図・流れの図・実物のスクリーンショット・時系列・確認結果つきの HTML レポートにまとめて Art…"
+policy:
+  allow_implicit_invocation: true

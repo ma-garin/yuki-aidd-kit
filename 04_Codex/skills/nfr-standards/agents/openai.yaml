@@ -1,3 +1,5 @@
-display_name: "nfr-standards"
-short_description: "AIDDプロジェクト向けの非機能要件（NFR）定義スキル"
-allow_implicit_invocation: true
+interface:
+  display_name: "nfr-standards"
+  short_description: "AIDDプロジェクト向けの非機能要件（NFR）定義スキル"
+policy:
+  allow_implicit_invocation: true

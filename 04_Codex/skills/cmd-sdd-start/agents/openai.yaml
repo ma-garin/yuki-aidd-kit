@@ -1,3 +1,5 @@
-display_name: "/sdd-start"
-short_description: "/sdd-start — SDD 10ステップの起動"
-allow_implicit_invocation: true
+interface:
+  display_name: "/sdd-start"
+  short_description: "/sdd-start — SDD 10ステップの起動"
+policy:
+  allow_implicit_invocation: true
