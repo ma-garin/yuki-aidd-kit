@@ -2,7 +2,7 @@
 name: qa-review-standards
 description: "AIによるレビュー・テスト・品質評価に国際規格を組み込むスキル。UXレビュー、コードレビュー、テスト設計、AIレビュープロンプトの作成、severity分類、品質スコアリングの依頼があった場合は必ずこのスキルを使用すること。「品質観点で見て」「レビューして」「テスト観点を出して」「ISO準拠で」「ISTQB準拠で」という依頼、およびQA系ツール（UX audit tool / QA Lens等）へのレビューロジック実装にも適用する。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # QAレビュー規格セット
 
 第三者検証の品質基準をAIレビューに注入する。判定は常にevidence-only（根拠を提示できない指摘は出力しない）。

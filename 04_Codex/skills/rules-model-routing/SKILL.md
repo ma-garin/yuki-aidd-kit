@@ -1,0 +1,25 @@
+---
+name: rules-model-routing
+description: "モデル／effort ルーティング（Pro ＋ Sonnet 基盤の規律）。Claude Code のrules（規約） `model-routing` の Codex 版"
+---
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
+Claude Code のrules（規約） `model-routing` の Codex 版。全作業に適用する。Claude Code 専用の hook・コマンドは、Codex で対応機能を確認できた場合だけ適用する。
+
+# モデル／effort ルーティング（Pro ＋ Sonnet 基盤の規律）
+
+既定は Sonnet。「上げる・下げる・切る・分ける」の判断だけをここに置く。根拠（5時間窓・週次窓・キャッシュ寿命1時間・Agent teams ≒ 7倍）: `06_保守者向け/02_設計判断の根拠/model-routing.md`（毎回は読まない）。
+
+| 場面 | 決め |
+|---|---|
+| 既定 | Sonnet。effort は既定のまま |
+| Opus へ上げる | 次の3条件のいずれかだけ: ①複数モジュールにまたがる設計判断 ②多段の推論が要る不具合の切り分け ③Sonnet が H-3 の2周で収束しない。上げる前に「何を Opus に判断させるか」を1行書き、終わったら戻す |
+| 5時間制限が近い（残り20%未満） | 検証を切り上げ、同期・commit まで進めて途中状態を worktree に残す |
+| Opus の使いどころ（委譲） | hook・検査スクリプト・複数モジュールの設計だけに使う。散文・同期・件数合わせは Sonnet |
+| effort | **既定は `high`**（settings.json の `effortLevel`。Claude Code 素の既定 xhigh から 1 段下げ）。上げるのは Opus の3条件と同じ場面だけ: `/effort xhigh` → 終わったら `/effort high`。定型・整形・要約は `medium` まで下げてよい |
+| `/clear` | 無関係なタスクへ移るとき。1時間以上離れて再開するときは要約から始める（キャッシュが切れて全履歴を再処理する）。**55 分超の再開と 4 MB 超の会話は `context-guard.py` が警告する**。圧縮の残す・捨てるは `pre-compact.py` が注入 |
+| 委譲・サブエージェント | **独立に分けられる単位（章・画像群・ファイル群・原因）が 2 つ以上あれば、着手時に並列で委譲する（上限 30 本）**。本線は分割・結合・検証だけ。自分でやるのは単位が 1 つで、1〜2 ファイル・50 行以内・調査不要のときだけ。設計判断そのものは本線に残す。並列の本数は `rules/speed-harness.md` H-4 の分解（依存・原因・ベースライン）で決め、トークンだけで 1 本に寄せない。Agent teams は使わない |
+| 上限に当たったとき | 「セッション上限」「週次上限」は全モデル共有＝ `/model` では回復しない。待つか、要約して再開する。「Opus 上限」「Sonnet 上限」は系列別＝ `/model` で別系列に切り替えて続行。まず `/usage` で内訳を見る |
+| 絞る | テスト・install・build・`git log/diff` の出力は `filter-output.py` が読む前に絞る（全量は `FULL_OUTPUT=1`）。800 行超のファイルは `pre-read-guard.py` が先頭 300 行に（続きは `offset`）。仕組みの点検は `./00_導入/03_点検/token-audit.sh` |
+| 測る | 週1回 `/usage` の内訳（スキル・MCP・サブエージェント・長コンテキスト・キャッシュミス）を `docs/lessons.md` に1行残す。Opus の3条件は実測を見て見直す |
+
+Codex には `/model` `/effort` `/usage` が無い。同じ判断をモデル選択の設定で行い、委譲の規律と `/clear` 相当（新しい会話で始める）だけを守る。

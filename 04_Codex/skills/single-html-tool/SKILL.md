@@ -2,7 +2,7 @@
 name: single-html-tool
 description: "自己完結型の単一HTMLファイルツール（QAツール、レビューツール、デモ、社内配布用アプリ）を作成・改修するスキル。ユーザーが「単一HTML」「ブラウザで開くだけ」「社内共有用デモ」「QA Lens」「UX audit tool」「業務支援エージェントのデモ」等に言及した場合、またはHTMLツールの新規作成・バージョンアップ（v3→v4等）を依頼した場合は必ずこのスキルを使用すること。HTMLファイルの修正依頼でも適用する。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # 単一HTMLツール開発規約
 
 社内配布・デモ・PoC用ツールの標準形式。npm/ビルド不要、ファイル1つで完結させる。

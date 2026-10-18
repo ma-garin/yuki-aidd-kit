@@ -1,0 +1,5 @@
+interface:
+  display_name: "agent: build-agent"
+  short_description: "詳細設計から実装と画面を作り、デザイン検査と実行経路の確認が通るまで自分で回す実装エージェント"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+interface:
+  display_name: "agent: advisor"
+  short_description: "作業中のエージェントが節目（大きな判断の前・詰まったとき・完了の前）で相談する、助言専用のエージェント"
+policy:
+  allow_implicit_invocation: false

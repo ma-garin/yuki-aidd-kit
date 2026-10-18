@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: speed-harness"
+  short_description: "開発速度ハーネス（H-1〜H-8）"
+policy:
+  allow_implicit_invocation: true

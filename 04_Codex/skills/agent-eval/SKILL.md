@@ -2,7 +2,7 @@
 name: agent-eval
 description: "自作のAIエージェント・LLMシステム（business_agent、multi-agent research system多層エージェント、RAGチャット等）の品質をトレース・データセット・スコアラーで継続評価するスキル。「evalしたい」「精度を測りたい」「ハルシネーションを検出」「エスカレーション判定の正確性」「プロンプト変更の回帰」「Weaveみたいなことをしたい」「LLM出力の品質を見たい」への言及があれば必ずこのスキルを使うこと。test-automationが「コードが動くか」を見るのに対し、こちらは「AIの出力が良いか」を非決定性前提で評価する。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # AIエージェント eval（Weave相当を自前・無料で）
 
 LLM出力は非決定性なので pass/fail の単体テストでは測れない。トレース（何が起きたか）＋データセット（正解例）＋スコアラー（採点）＋回帰ゲート（劣化検知）の4点で評価する。Weave/LangSmithの中核機能を無料スタックで再現する。

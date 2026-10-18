@@ -2,7 +2,7 @@
 name: handoff
 description: "作業を別のセッション・別のハーネス（Claude ⇄ Codex）に引き継ぐための引き継ぎ文書を書くスキル。「引き継ぎを書いて」「Codex に渡したい」「別セッションで続ける」「handoff」「作業指示書にして渡す」という依頼で使う。Codex は Windows・git なし・bash なしで、成果を zip で返す前提で書く。進捗は CURRENT_STATE.md、他モデルへの作業依頼は work-order.md の型に寄せ、中身を二重に書かない。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # 引き継ぎ（handoff）
 
 次に作業する側（別セッションの Claude、または Codex）が**この会話を読まずに**続けられる文書を 1 本書く。

@@ -1,0 +1,5 @@
+interface:
+  display_name: "agent: spec-agent"
+  short_description: "承認済みの要件から基本設計・詳細設計を作り、トレーサビリティが通るまで自分で回す設計エージェント"
+policy:
+  allow_implicit_invocation: false

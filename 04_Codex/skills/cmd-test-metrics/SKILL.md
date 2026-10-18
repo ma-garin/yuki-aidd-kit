@@ -2,7 +2,7 @@
 name: cmd-test-metrics
 description: "/test-metrics — テスト工程の進捗と品質を数字で出す"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 コマンド `/test-metrics` の Codex 版。引数は、呼び出し時にユーザーが続けて書いた文を `$ARGUMENTS` として読む。
 
 # /test-metrics — テスト工程の進捗と品質を数字で出す

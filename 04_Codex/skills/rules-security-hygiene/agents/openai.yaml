@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: security-hygiene"
+  short_description: "秘密情報の取り扱い（実装側の規約）"
+policy:
+  allow_implicit_invocation: false

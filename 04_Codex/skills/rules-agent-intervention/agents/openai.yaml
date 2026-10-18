@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: agent-intervention"
+  short_description: "エージェントへの介入（3 段階）"
+policy:
+  allow_implicit_invocation: false

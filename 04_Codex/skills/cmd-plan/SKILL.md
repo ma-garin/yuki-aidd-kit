@@ -2,7 +2,7 @@
 name: cmd-plan
 description: "/plan — 方針の確定（実装モード解除・探索許可）"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 コマンド `/plan` の Codex 版。引数は、呼び出し時にユーザーが続けて書いた文を `$ARGUMENTS` として読む。
 
 # /plan — 方針の確定（実装モード解除・探索許可）

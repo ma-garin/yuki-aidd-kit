@@ -2,7 +2,7 @@
 name: cmd-qa-review
 description: "/qa-review — ISO 25010 + ISTQB準拠のAIレビュー実行"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 コマンド `/qa-review` の Codex 版。引数は、呼び出し時にユーザーが続けて書いた文を `$ARGUMENTS` として読む。
 
 # /qa-review — ISO 25010 + ISTQB準拠のAIレビュー実行

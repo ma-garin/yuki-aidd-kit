@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: design-principles"
+  short_description: "設計原則（短い 5 つ）"
+policy:
+  allow_implicit_invocation: false

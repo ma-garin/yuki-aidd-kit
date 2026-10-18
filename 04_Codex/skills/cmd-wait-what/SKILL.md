@@ -2,7 +2,7 @@
 name: cmd-wait-what
 description: "/wait-what — 直前の説明を、やさしい日本語で言い直す"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 コマンド `/wait-what` の Codex 版。引数は、呼び出し時にユーザーが続けて書いた文を `$ARGUMENTS` として読む。
 
 # /wait-what — 直前の説明を、やさしい日本語で言い直す

@@ -2,7 +2,7 @@
 name: design-system
 description: "AIDDツール群に一貫したビジュアルデザインを適用するスキル。HTMLツール・PWA・Streamlitアプリのデザインを決める際、「デザインどうする」「色は」「レイアウトは」「Material Design」「UIを作る」「コンポーネントを実装する」「画面の骨格」「文言」「トースト」「空状態」「アイコン」「デザイントークン」「React / Tailwind / Streamlit でどう当てるか」という言及があれば必ずこのスキルを使うこと。値の実物は templates/tokens.css、部品は templates/ui/components.css、骨格は templates/ui/layout.css。値の決めの理由は references/tokens.md、部品の使い分けと落とし穴は references/components.md、フレームワーク別の適用と他スキルとの分担は references/frameworks.md。UX audit tool・QA Lens・業務支援エージェント・personal accounting PWA等の既存ツールと統一感を保つためにも必ず参照する。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # AIDD Design System（MD3 Light ベース）
 
 過去ツール群（UX audit tool v3〜v5 / QA Lens / personal accounting PWA / Harness ToDo / UX_Auto_Reviewer / WebSpec2Doc）から抽出した統一デザイン言語。
