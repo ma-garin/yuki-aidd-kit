@@ -1,0 +1,5 @@
+interface:
+  display_name: "style: quick"
+  short_description: "擬似 /fast"
+policy:
+  allow_implicit_invocation: false

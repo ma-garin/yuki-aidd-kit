@@ -1,5 +1,5 @@
 {
-  "count": 67,
+  "count": 69,
   "generator": "04_Codex/build_codex_skills.py",
   "skills": {
     "advisor": {
@@ -249,6 +249,14 @@
     "streamlit-rag-app": {
       "files": 2,
       "sha256": "bcff6ec62f43518e599ad897f8635b1cdff96ad7a32b616519055d506075b9ec"
+    },
+    "style-quick": {
+      "files": 2,
+      "sha256": "437e0365fee5fa3957524096ed0f814cf9e96db38f78a646374665b2bdd71ad0"
+    },
+    "style-structured-report": {
+      "files": 2,
+      "sha256": "b060739664d98848e61aca192610f4b91a721bf9efa3ca9cdb5e8ec5f2f28cdf"
     },
     "test-automation": {
       "files": 4,
