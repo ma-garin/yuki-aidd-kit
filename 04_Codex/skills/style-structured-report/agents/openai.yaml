@@ -1,0 +1,5 @@
+interface:
+  display_name: "style: structured-report"
+  short_description: "状況・原因・複数案を区分の見える形で書き、作業より先に返答する"
+policy:
+  allow_implicit_invocation: false
