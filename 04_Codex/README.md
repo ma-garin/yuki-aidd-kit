@@ -11,3 +11,4 @@
 - スキル: Codex は `$REPO_ROOT/.agents/skills/<名前>/SKILL.md` と `$HOME/.agents/skills/` を読む（出典: https://learn.chatgpt.com/codex/build-skills）。形式は `03_ClaudeCode/skills/` と同じ。export で `<対象>/.agents/skills/`、install で `~/.agents/skills/` に配る
 - 未確認: カスタムプロンプトと `config.toml` の配置・項目。公式ドキュメントで確認してから、ここに置く
 - **スキル（Codex 用）**: `skills/` は `build_codex_skills.py` が `03_ClaudeCode/skills/`、`commands/`（`cmd-<名前>` として）、`native-skills/` から生成する。各スキルに `agents/openai.yaml` の `interface`（display_name・short_description）と `policy`（allow_implicit_invocation）を付ける。`$名前` で呼び出せる。直接編集せず、元を直して再生成する。同期は回帰テスト（test-install）で検査。`skills-manifest.json` にスキルごとのファイル数と sha256 を書き、`--check` が照合する（生成元の無い配布先ではマニフェストとの照合だけ）。`disable-model-invocation: true` のスキルは `policy.allow_implicit_invocation: false`。
+- **hooks（Codex 用）**: [hooks/README.md](hooks/README.md)。破壊操作・ゲートの無断実行・実装モード中の再探索を Codex hook で止める（`hooks/install.sh`）

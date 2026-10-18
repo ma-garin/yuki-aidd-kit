@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {"type": "command", "command": "python3 __ADAPTER__ pretool __HOOKS__/block-destructive.py", "timeout": 15},
+          {"type": "command", "command": "python3 __ADAPTER__ pretool __HOOKS__/block-gates.py", "timeout": 15},
+          {"type": "command", "command": "python3 __ADAPTER__ pretool __HOOKS__/block-ci.py", "timeout": 15},
+          {"type": "command", "command": "python3 __ADAPTER__ pretool __HOOKS__/block-explore.sh --explore", "timeout": 15}
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {"type": "command", "command": "python3 __ADAPTER__ passthrough __HOOKS__/prompt-priority.py", "timeout": 15}
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {"type": "command", "command": "python3 __ADAPTER__ passthrough __HOOKS__/subagent-context.py", "timeout": 15}
+        ]
+      }
+    ]
+  }
+}
