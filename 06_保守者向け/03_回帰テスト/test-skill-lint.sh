@@ -104,6 +104,7 @@ expect_exit "実物のキットは NG なし（exit 0）" 0 "$RC"
 echo "[マニフェスト]"
 K="$TMP/kit"; mkdir -p "$K"
 cp -R "$KIT_DIR/03_ClaudeCode" "$KIT_DIR/04_Codex" "$K/"
+mkdir -p "$K/02_共通" && cp -R "$KIT_DIR/02_共通/rules" "$K/02_共通/"  # rules-* スキルの生成元
 B="$K/04_Codex/build_codex_skills.py"; M="$K/04_Codex/skills-manifest.json"
 OUT=$(python3 "$B" --check 2>&1); RC=$?
 expect_exit "コミット済みの生成物とマニフェストは最新（--check exit 0）" 0 "$RC"

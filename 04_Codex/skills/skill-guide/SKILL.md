@@ -2,7 +2,7 @@
 name: skill-guide
 description: "やりたいことから、キットのどのスキル・コマンドを使えばよいかを案内するルーター。人が呼び出す専用（「どのスキルを使えばいい？」「何から始めればいい？」「skill-guide」）。自動では発火しない。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # スキル案内（skill-guide）
 
 覚えていなくてよい。やりたいことを言えば、使うものを 1〜2 個に絞って答える。

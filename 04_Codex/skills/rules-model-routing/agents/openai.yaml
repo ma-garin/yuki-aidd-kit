@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: model-routing"
+  short_description: "モデル／effort ルーティング（Pro ＋ Sonnet 基盤の規律）"
+policy:
+  allow_implicit_invocation: false

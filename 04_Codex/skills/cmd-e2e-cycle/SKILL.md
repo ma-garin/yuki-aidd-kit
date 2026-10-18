@@ -2,7 +2,7 @@
 name: cmd-e2e-cycle
 description: "/e2e-cycle — 段階停止型 E2E テスト＆不具合修整ワークフロー"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 コマンド `/e2e-cycle` の Codex 版。引数は、呼び出し時にユーザーが続けて書いた文を `$ARGUMENTS` として読む。
 
 # /e2e-cycle — 段階停止型 E2E テスト＆不具合修整ワークフロー

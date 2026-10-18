@@ -2,7 +2,7 @@
 name: cmd-agent-ready
 description: "/agent-ready — AI 開発のしやすさを採点する"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 コマンド `/agent-ready` の Codex 版。引数は、呼び出し時にユーザーが続けて書いた文を `$ARGUMENTS` として読む。
 
 # /agent-ready — AI 開発のしやすさを採点する

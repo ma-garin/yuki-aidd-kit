@@ -2,7 +2,7 @@
 name: phase-approval
 description: "工程の出口で人間が承認する前に、AI が 3 役を順次で回して指摘を出し切るスキル。「工程承認」「承認ゲート」「フェーズレビュー」「phase-review」「前工程の承認」「差し戻し」「承認が失効」「未承認のまま進めない」への言及、または /phase-review 実行時に必ずこのスキルを使うこと。AI は承認しない。判定基準の真実源は dev-lifecycle の phase-gates.md、承認記録の形式は templates/lifecycle/approvals/。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # 工程承認レビュー（人間が判子を押す前に指摘を出し切る）
 
 AIDD の手戻りは「成果物が全部出てきてから誤りが見つかる」ときに最大になる。

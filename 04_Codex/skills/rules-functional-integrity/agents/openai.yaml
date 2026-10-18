@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: functional-integrity"
+  short_description: "Functional Integrity Rule（機能完全性）"
+policy:
+  allow_implicit_invocation: false

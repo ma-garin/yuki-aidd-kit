@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: absolute-rules"
+  short_description: "絶対遵守ルール（A-1〜A-14）"
+policy:
+  allow_implicit_invocation: true

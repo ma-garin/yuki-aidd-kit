@@ -2,7 +2,7 @@
 name: uiux_review
 description: "画面のUI/UXを、実際に開いて全状態を確認しながらレビューする。「作った」を「効いている」として報告する失敗を防ぐ手順つき。UIを直したとき、画面を実装したとき、レビューを頼まれたとき、完了報告をする前に使う。フロントエンド・Web画面・管理画面・ダッシュボードが対象。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # UI/UXレビュー
 
 ## いつ使うか

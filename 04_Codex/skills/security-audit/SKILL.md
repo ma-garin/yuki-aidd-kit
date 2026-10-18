@@ -2,7 +2,7 @@
 name: security-audit
 description: "キットで作るアプリ（単一HTML・PWA／Streamlit／Python Web／Node Web）のセキュリティ監査を、走査器の結果とスタック別の OWASP 観点表で行うスキル。「セキュリティ監査」「脆弱性」「OWASP」「リリース前のセキュリティ確認」と明示に依頼された時と /security-audit で使う。範囲を決め、security-scan.sh を流し、未検査を一覧にし、該当スタックの references だけを読んで手動の観点を足し、file:line の根拠付きで security-report.md に追記する。使わない場面は、通常のコードレビュー（qa-review-standards）と設計・NFR の相談（nfr-standards）。ecc-daily-router からは自動で振らない。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # セキュリティ監査（security-audit）
 
 走査器で機械的に取れるもの（依存の既知脆弱性・危険なコードの形・秘密の混入）は走査器に任せ、取れないもの

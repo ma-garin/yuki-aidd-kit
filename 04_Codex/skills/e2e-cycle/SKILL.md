@@ -2,7 +2,7 @@
 name: e2e-cycle
 description: "段階停止型のE2Eテスト＆不具合修整ワークフロー。テスト設計→Playwrightスクリプト生成→テスト実行→ODC分析・修整→ドキュメント同期とコミットの5フェーズに分割し、1回の起動で1フェーズだけ実行して必ず停止する。「E2Eワークフロー」「システムテストを設計から回したい」「テスト→修整のサイクル」の依頼で使う。引数はフェーズ番号1〜5（省略時は成果物の有無から次フェーズを自動判定する）。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # 汎用AIエージェント型E2Eテスト＆不具合修整ワークフロー
 
 出所: 個人運用の `~/.claude/skills/e2e-cycle`（2026-08）。テスト戦略全体は `skills/test-strategy`、テストケース CSV の列は `02_共通/ひな形/test/system_test_cases.csv`（ツアー観点・severity 付き）に合わせる。

@@ -2,7 +2,7 @@
 name: ecc-daily-router
 description: "各プロジェクトに対して、ECCのskills/rules/agentsをDAILYとLIBRARYに分類して使うためのルーティングスキル。QA document generator、UX audit tool、React finance PWA、QA portal、QA repository research tool、PWA、Playwright、Python、React、Django、E2E、「QAレビュー」「ECC活用」への言及があればこのスキルを使う。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # ECC Daily Router
 
 ECC を全部読むのではなく、対象プロジェクトに合う資産だけを選ぶ。

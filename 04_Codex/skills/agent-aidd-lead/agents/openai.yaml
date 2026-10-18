@@ -1,0 +1,5 @@
+interface:
+  display_name: "agent: aidd-lead"
+  short_description: "「〇〇システムを作って」「〇〇を開発したい」のような成果物レベルの依頼を受け、要件定義から受け入れテストまでを自走で進…"
+policy:
+  allow_implicit_invocation: true

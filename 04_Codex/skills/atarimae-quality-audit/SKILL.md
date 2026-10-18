@@ -2,7 +2,7 @@
 name: atarimae-quality-audit
 description: "「当たり前品質(Kano must-be)」を発見者として徹底監査するスキル。ユーザーが「徹底的に」「洗い出して」「品質を上げて」「似たようなものが大量にある」「まだ○○がおかしい」「exhaustive review」「quality audit」等を求めたとき、または画面・機能の当たり前(表示崩れ/ラベル欠落/確認ダイアログ/二重送信/ページネーション/内部表現の露出 等)を点検・修正するときに必ず使う。反応的な逐次修正ではなく、症状の裏の欠陥クラスを先に全列挙し、実機で描画を目視して系統的に直す。qa-review-standards(基準)・test-automation(自動化)・done-gate(完了判定)と対になる\"探索的発見\"の手順。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # 当たり前品質 徹底監査
 
 「当たり前品質(Kano の must-be)」= **満たされても満足は生まれないが、欠けると強い不満・怒りを生む**要素。

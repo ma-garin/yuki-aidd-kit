@@ -2,7 +2,7 @@
 name: test-strategy
 description: "プロジェクトのテスト活動全体（テストレベル L1〜L4、ゲート基準、テスト種類、完了基準、ゲートの実行タイミング、ISO/IEC/IEEE 29119 文書、機能契約ハーネス、UI 検証マーカー）を設計・運用するスキル。「テスト戦略」「テスト計画」「テストレベル」「E2E をいつ回すか」「カバレッジ基準」「29119」「テスト完了報告」「インシデントレポート」「品質ゲート」「pre-commit で何を止めるか」「テストが陳腐化した」への言及があれば必ずこのスキルを使うこと。test-automation（テストコードの書き方）・done-gate（完了判定）・dev-lifecycle（工程）・e2e-cycle（E2E の回し方）と対になる「テスト活動の設計」の真実源。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # テスト戦略（Test Strategy）
 
 出所: WebSpec2Doc での運用実測（2026-06〜08。テスト資産 17 件が 1 週間陳腐化した事故と、その是正を含む）。

@@ -1,0 +1,5 @@
+interface:
+  display_name: "agent: verify-agent"
+  short_description: "単体・結合・システムテストを設計し、テストコードを生成・実行し、落ちた分を分析して修整し、再実行するところまで自分で回…"
+policy:
+  allow_implicit_invocation: false

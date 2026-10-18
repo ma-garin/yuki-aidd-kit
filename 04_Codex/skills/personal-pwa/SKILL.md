@@ -2,7 +2,7 @@
 name: personal-pwa
 description: "個人用PWA（家計簿・キャッシュフロー・日記・スケジュール管理等）の開発スキル。GitHub Pages（<GITHUB_OWNER>）へのデプロイ、localStorage永続化、無料枠APIの利用、スマホ向けUIの作成が絡む場合は必ずこのスキルを使用すること。「PWAにしたい」「スマホで使えるアプリ」「personal PWA」「personal accounting PWA」「家計簿」「スケジュール管理」等への言及にも適用する。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # 個人PWA開発規約
 
 ゼロランニングコストが大前提。サーバレス・無料枠のみで構成する。

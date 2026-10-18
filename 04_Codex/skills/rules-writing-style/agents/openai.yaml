@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: writing-style"
+  short_description: "文章規約（AI 臭さを消す・文書の書き方）"
+policy:
+  allow_implicit_invocation: false

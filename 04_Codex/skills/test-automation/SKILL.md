@@ -2,7 +2,7 @@
 name: test-automation
 description: "成果物に対する実際のテストコードを生成・実行するスキル。「動作確認」「テストを書いて」「スモークテスト」「E2E」「pytest」「Playwright」「回帰テスト」への言及、done-gateで「動作確認した」を人力でなくCI判定に置き換えたい場合は必ずこのスキルを使うこと。PWA/HTMLツールはPlaywright、Streamlit/Pythonはpytestをベースにこのキットの規約で生成する。"
 ---
-<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->
+<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # テスト自動化
 
 「動いた」を主観でなくテスト実行で判定する。種別ごとに最小構成を用意し、done-gateとpre-commitに接続する。

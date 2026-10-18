@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Claude Code の skills/・commands/ と Codex native-skills/ から配布用スキルを生成する。
+"""Claude Code の skills/・commands/・agents/、02_共通/rules/、出力スタイル、Codex native-skills/ から配布用スキルを生成する。
 
 Codex の仕様（出典: https://learn.chatgpt.com/codex/build-skills）:
   - `<名前>/SKILL.md`（frontmatter の name・description が必須）、任意で `agents/openai.yaml`
   - スキルはスラッシュメニューに並び、`$名前` で明示的に呼び出せる
 カスタムプロンプトの置き場所は公式ドキュメントで確認できないため、commands/ もスキルに変換する。
+
+agents/*.md は `agent-<名前>`、02_共通/rules/*.md は `rules-<名前>`、output-styles/*.md は `style-<名前>` として生成する
+（tools・model・paths などの Claude 専用 frontmatter は落とす）。生成名は native-skills を含めて重複を検査する。
 
 `disable-model-invocation: true` のスキルは agents/openai.yaml の allow_implicit_invocation を false にする（明示呼び出しだけ）。
 
@@ -31,10 +34,15 @@ KIT = Path(__file__).resolve().parents[1]
 SRC_SKILLS = KIT / "03_ClaudeCode" / "skills"
 SRC_COMMANDS = KIT / "03_ClaudeCode" / "commands"
 NATIVE_SKILLS = KIT / "04_Codex" / "native-skills"
+SRC_AGENTS = KIT / "03_ClaudeCode" / "agents"
+SRC_RULES = KIT / "02_共通" / "rules"
+SRC_STYLES = KIT / "03_ClaudeCode" / "output-styles"  # リポジトリに無ければ生成しない
+IMPLICIT_RULES = {"absolute-rules", "speed-harness"}  # 常時効かせる規約だけ暗黙呼び出しを許す
+IMPLICIT_AGENTS = {"aidd-lead"}  # 成果物レベルの依頼の入口だけ暗黙呼び出しを許す
 OUT = KIT / "04_Codex" / "skills"
 MANIFEST = KIT / "04_Codex" / "skills-manifest.json"
 FM_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
-HEADER = "<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/ から生成する。直接編集しない -->\n"
+HEADER = "<!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->\n"
 
 
 def frontmatter(text: str) -> tuple[dict[str, str], str]:
@@ -68,12 +76,53 @@ def write_skill(dst: Path, name: str, desc: str, body: str, display: str, implic
         f"policy:\n  allow_implicit_invocation: {'true' if implicit else 'false'}\n", encoding="utf-8")
 
 
+def md_files(d: Path) -> list[Path]:
+    return sorted(d.glob("*.md")) if d.is_dir() else []
+
+
+def first_heading(body: str, default: str) -> str:
+    return next((l.lstrip("# ").strip() for l in body.splitlines() if l.startswith("#")), default)
+
+
+def agent_skill(src: Path, agent_names: list[str]) -> tuple[str, str, str]:
+    """サブエージェント定義 → (名前, description, 本文)。tools・model は落とす。"""
+    fm, body = frontmatter(src.read_text(encoding="utf-8"))
+    name = fm.get("name", src.stem)
+    others = "、".join(f"`{a}` → `$agent-{a}`" for a in agent_names if a != name)
+    intro = (f"Claude Code のサブエージェント定義 `{name}` の Codex 版。Codex ではこの役割を自分で演じる、"
+             "またはサブエージェントに渡す指示書として使う。Claude 専用の tools・model 指定は無視する。\n\n"
+             "本文で他のエージェントを起動・委譲する箇所（Task で X を起動する等）は、Codex では対応するスキルを"
+             f"呼び出す（自分で演じるか、その SKILL.md をサブエージェントに渡す）と読み替える: {others}。\n\n")
+    return name, fm.get("description") or first_heading(body, name), intro + body.lstrip()
+
+
+def doc_skill(src: Path, kind: str) -> tuple[str, str]:
+    """rules・出力スタイル → (description, 本文)。paths は本文の適用範囲の注記に移す。"""
+    text = src.read_text(encoding="utf-8")
+    fm, body = frontmatter(text)
+    m = FM_RE.match(text)
+    paths = re.findall(r'^\s*-\s*"?([^"\n]+?)"?\s*$', m.group(1), re.M) if m else []
+    title = first_heading(body, src.stem)
+    label = "rules（規約）" if kind == "rules" else "出力スタイル"
+    desc = fm.get("description") or f"{title}。Claude Code の{label} `{src.stem}` の Codex 版"
+    scope = ("対象ファイルの範囲（Claude Code の paths）: " + ", ".join(f"`{p}`" for p in paths)
+             + "。該当するファイルを扱うときに従う。") if paths else "全作業に適用する。"
+    intro = (f"Claude Code の{label} `{src.stem}` の Codex 版。{scope}"
+             "Claude Code 専用の hook・コマンドは、Codex で対応機能を確認できた場合だけ適用する。\n\n")
+    return desc, intro + body.lstrip()
+
+
 def build(out: Path) -> int:
     native = sorted(p for p in NATIVE_SKILLS.iterdir() if p.is_dir() and (p / "SKILL.md").is_file()) if NATIVE_SKILLS.is_dir() else []
     sources = sorted(p for p in SRC_SKILLS.iterdir() if (p / "SKILL.md").is_file())
     commands = sorted(SRC_COMMANDS.glob("*.md"))
-    generated_names = {p.name for p in sources} | {f"cmd-{p.stem}" for p in commands}
-    collisions = sorted(p.name for p in native if p.name in generated_names)
+    agents, rules, styles = md_files(SRC_AGENTS), md_files(SRC_RULES), md_files(SRC_STYLES)
+    generated = ([p.name for p in sources] + [f"cmd-{p.stem}" for p in commands] + [f"agent-{p.stem}" for p in agents]
+                 + [f"rules-{p.stem}" for p in rules] + [f"style-{p.stem}" for p in styles])
+    dup = sorted({n for n in generated if generated.count(n) > 1})
+    if dup:
+        raise ValueError("生成スキルの名前が重複: " + ", ".join(dup))
+    collisions = sorted(p.name for p in native if p.name in set(generated))
     if collisions:
         raise ValueError("native-skills と生成スキルの名前が衝突: " + ", ".join(collisions))
     if out.exists():
@@ -100,6 +149,19 @@ def build(out: Path) -> int:
         desc = fm.get("description") or title
         body = ("コマンド `/" + cmd.stem + "` の Codex 版。引数は、呼び出し時にユーザーが続けて書いた文を `$ARGUMENTS` として読む。\n\n" + body)
         write_skill(out / f"cmd-{cmd.stem}", f"cmd-{cmd.stem}", desc if desc.startswith("/") else f"/{cmd.stem} 相当: {desc}", body, f"/{cmd.stem}")
+        n += 1
+    agent_names = [frontmatter(p.read_text(encoding="utf-8"))[0].get("name", p.stem) for p in agents]
+    for src in agents:
+        name, desc, body = agent_skill(src, agent_names)
+        write_skill(out / f"agent-{src.stem}", f"agent-{src.stem}", desc, body, f"agent: {name}", src.stem in IMPLICIT_AGENTS)
+        n += 1
+    for src in rules:
+        desc, body = doc_skill(src, "rules")
+        write_skill(out / f"rules-{src.stem}", f"rules-{src.stem}", desc, body, f"rules: {src.stem}", src.stem in IMPLICIT_RULES)
+        n += 1
+    for src in styles:
+        desc, body = doc_skill(src, "style")
+        write_skill(out / f"style-{src.stem}", f"style-{src.stem}", desc, body, f"style: {src.stem}", False)
         n += 1
     for src in native:
         shutil.copytree(src, out / src.name, ignore=shutil.ignore_patterns(".DS_Store", "__pycache__"))

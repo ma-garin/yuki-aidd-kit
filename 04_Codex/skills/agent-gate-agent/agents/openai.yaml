@@ -1,0 +1,5 @@
+interface:
+  display_name: "agent: gate-agent"
+  short_description: "工程の出口で機械判定と 3 役レビューを回し、次工程へ進めてよいかを判定するゲートエージェント"
+policy:
+  allow_implicit_invocation: false
