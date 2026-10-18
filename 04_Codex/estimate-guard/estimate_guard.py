@@ -106,11 +106,12 @@ def classify(name, value):
     if not tokens:
         return 'coding'
     binary = Path(tokens[0]).name
-    if binary in {'cat', 'rg', 'grep', 'head', 'tail', 'wc', 'ls', 'pwd', 'find', 'stat', 'file', 'date'} \
+    if binary in {'cat', 'rg', 'grep', 'head', 'tail', 'wc', 'ls', 'pwd', 'find', 'stat', 'date'} \
             and not any('>' in t for t in tokens) \
-            and not any(t.startswith(('--pre', '-exec', '-ok', '-delete', '--files-with-matches=')) for t in tokens):
+            and not any(t.startswith(('--pre', '-exec', '-ok', '-delete', '-fprint', '-fprintf', '-fls')) for t in tokens):
         return 'read'
-    if binary == 'git' and len(tokens) > 1 and tokens[1] in {'status', 'diff', 'show', 'log', 'ls-files', 'rev-parse'}:
+    if binary == 'git' and len(tokens) > 1 and tokens[1] in {'status', 'diff', 'show', 'log', 'ls-files', 'rev-parse'} \
+            and not any(t.startswith(('--output', '--ext-diff', '--textconv')) for t in tokens):
         return 'read'
     # Only simple explicit shell redirections receive the document exemption.
     if binary in {'echo', 'printf', 'cat'} and re.search(r'\s>{1,2}\s*[^\s]+\s*$', command):

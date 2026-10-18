@@ -59,6 +59,14 @@ class EstimateGuard(unittest.TestCase):
         self.assertTrue(self.denied(None))
         self.assertFalse(guard.has_estimate('/tmp/.env'))
 
+    def test_tail_without_user_boundary_fails_closed(self):
+        path = self.transcript([message('user', '修正'), message('assistant', 'x' * (guard.LIMIT + 100)), message('assistant', '見積：2分', 'commentary')])
+        self.assertTrue(self.denied(path))
+
+    def test_read_named_commands_with_write_options_are_coding(self):
+        self.assertEqual(guard.classify('Bash', {'command': 'find . -fprint app.py'}), 'coding')
+        self.assertEqual(guard.classify('Bash', {'command': 'git diff --output=app.py'}), 'coding')
+
 
 if __name__ == '__main__':
     unittest.main()
