@@ -29,6 +29,19 @@ echo "リポジトリの版: $(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknow
 echo "[グローバル設定]"
 check "CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
 check "AGENTS.md（CLAUDE.md が @AGENTS.md で import）" "$CLAUDE_DIR/AGENTS.md"
+if python3 - "$HOME" <<'PY'
+import sys
+from pathlib import Path
+home = Path(sys.argv[1])
+target = home / ".codex/AGENTS.md"
+source = home / ".claude/AGENTS.md"
+raise SystemExit(0 if target.is_symlink() and source.is_file() and target.resolve() == source.resolve() else 1)
+PY
+then
+  echo "  ✅ Codex と Claude Code が共通規約を共有"; OK=$((OK+1))
+else
+  echo "  ❌ Codex の規約が未共有（sync-agent-rules.py を実行）"; NG=$((NG+1))
+fi
 check "settings.json" "$CLAUDE_DIR/settings.json"
 
 echo "[スキル]"

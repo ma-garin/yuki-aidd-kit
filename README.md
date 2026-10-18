@@ -17,6 +17,8 @@ cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./00_導入/01_インストール/verify.sh           # 配置確認（リストは自動導出。NG>0 で exit 1）
 ```
 
+Claude Code と Codex のグローバル規約は `~/.claude/AGENTS.md` に統一します。install は既存の `~/.codex/AGENTS.md` を日時付きで退避し、共通規約へのシンボリックリンクを作ります。既存環境で規約の共有だけを設定する場合は `python3 00_導入/01_インストール/sync-agent-rules.py` を実行します。所要時間だけを理由とする確認待ちは設けず、追加費用・依頼範囲外の変更・取り返しのつかない操作は事前に確認します。Codex は共通規約に従って該当する rules を読みます。Claude Code 専用のモデル・hooks は個別に扱います。
+
 **② プロジェクト配布** — Codex・リモート/エフェメラルな Claude Code 環境・teammate の clone 先など、`~/.claude` へのグローバル導入が効かない/望ましくない環境向け。対象プロジェクト直下に `.claude/` と `AGENTS.md`・`CLAUDE.md`、道具を `scripts/` に書き出し、そのプロジェクトの git にコミットして持ち運ぶ。
 
 ```bash
