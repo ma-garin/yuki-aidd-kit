@@ -153,7 +153,7 @@ class Usage:
                     self.last_cost = None
                     return
                 inp, cached, write, output = (delta[k] for k in keys)
-                self.cache = f"cache read {int(last.get('cached_input_tokens', 0)):,}t"
+                self.cache = f"cache {int(last.get('cached_input_tokens', 0)) / 1000:,.1f}k"
                 price = PRICES.get(self.model)
                 # 推測の単価を適用しない。不明な処理ティアも未換算にする。
                 if price is None or self.tier not in (None, "default", "standard", "priority", "fast"):
@@ -172,7 +172,7 @@ class Usage:
                 self.cost += self.last_cost
 
     def lines(self):
-        cost = f"API換算概算 {money(self.cost)}"
+        cost = f"API換算 {money(self.cost)}"
         if self.unknown:
             cost += "＋未換算あり"
         if self.last_cost is not None:
@@ -189,7 +189,7 @@ class Usage:
             except (OSError, ValueError, KeyError, TypeError):
                 pass
         five, week = windows(self.limits)
-        return [clean(" ｜ ".join(head)), rate_line("current", five), rate_line("weekly", week), clean(self.agents_line)]
+        return [clean(" | ".join(head)), rate_line("current", five), rate_line("weekly", week), clean(self.agents_line)]
 
 
 def initial_usage(args):
@@ -628,11 +628,11 @@ def launch(args):
             tmux("set-option", "-t", "codex", "remain-on-exit", "on")
             tmux("set-option", "-t", "codex", "status", "4")
             tmux("set-option", "-t", "codex", "status-interval", "2")
-            tmux("set-option", "-t", "codex", "status-style", "bg=default,fg=default")
+            tmux("set-option", "-t", "codex", "status-style", "bg=default,fg=colour245")
             tmux("set-option", "-t", "codex", "mouse", "on")
             for index in range(4):
                 render = shlex.join([sys.executable, str(Path(__file__).resolve()), "--internal-line", str(root / "lines.json"), str(index)])
-                tmux("set-option", "-t", "codex", f"status-format[{index}]", "#(" + render + ")")
+                tmux("set-option", "-t", "codex", f"status-format[{index}]", "  #(" + render + ")")
             # pane終了時にattachも終了させ、呼び出し元へ戻る。
             tmux("set-hook", "-t", "codex", "pane-died", "detach-client -s codex")
             tmux("attach-session", "-t", "codex")

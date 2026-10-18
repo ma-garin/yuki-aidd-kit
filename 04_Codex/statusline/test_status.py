@@ -33,18 +33,18 @@ class StatusTest(unittest.TestCase):
                 process.return_value.poll.side_effect = [None, 0, 0]
                 process.return_value.wait.return_value = 0
                 codex_status.run_child(temp)
-                self.assertEqual(save.call_args.args[1].lines()[0].split(" ｜ ")[2], "Full Access")
+                self.assertEqual(save.call_args.args[1].lines()[0].split(" | ")[2], "Full Access")
 
     def test_access_mode_is_third_and_updates_from_context(self):
         u = Usage()
         u.access_settings = {"approval_policy": "on-request"}
-        self.assertEqual(u.lines()[0].split(" ｜ ")[2], "手動承認")
+        self.assertEqual(u.lines()[0].split(" | ")[2], "手動承認")
         u.feed({"type": "turn_context", "payload": {"approval_policy": "never", "sandbox_policy": {"type": "danger-full-access"}}})
-        self.assertEqual(u.lines()[0].split(" ｜ ")[2], "Full Access")
+        self.assertEqual(u.lines()[0].split(" | ")[2], "Full Access")
         u.feed({"type": "turn_context", "payload": {"approval_policy": "on-request", "approvals_reviewer": "guardian", "sandbox_policy": {"type": "workspace-write"}}})
-        self.assertEqual(u.lines()[0].split(" ｜ ")[2], "代理承認")
+        self.assertEqual(u.lines()[0].split(" | ")[2], "代理承認")
         u.feed({"type": "turn_context", "payload": {"approvals_reviewer": "auto_review"}})
-        self.assertEqual(u.lines()[0].split(" ｜ ")[2], "代理承認")
+        self.assertEqual(u.lines()[0].split(" | ")[2], "代理承認")
 
     def test_duplicate_usage_is_not_billed_twice(self):
         u = Usage()
@@ -122,7 +122,7 @@ class StatusTest(unittest.TestCase):
                 usage = codex_status.initial_usage(args)
                 self.assertEqual(usage.access_settings["approval_policy"], "never")
                 self.assertEqual(usage.access_settings["sandbox_mode"], "danger-full-access")
-                self.assertEqual(usage.lines()[0].split(" ｜ ")[2], "Full Access")
+                self.assertEqual(usage.lines()[0].split(" | ")[2], "Full Access")
 
 
 class SubagentTest(unittest.TestCase):
