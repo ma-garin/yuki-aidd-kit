@@ -41,6 +41,7 @@ if [ -f "$CLAUDE_DIR/AGENTS.md" ]; then
   echo "⚠ 既存のAGENTS.mdを AGENTS.md.bak に退避（手動マージ推奨）"
 fi
 cp "$KIT_DIR/04_Codex/AGENTS.md.template" "$CLAUDE_DIR/AGENTS.md"
+python3 "$KIT_DIR/00_導入/01_インストール/sync-agent-rules.py" --home "$HOME"
 
 # スキル
 cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$CLAUDE_DIR/skills/"
@@ -101,7 +102,7 @@ echo "✅ KIT_VERSION: $KIT_VERSION"
 
 # Codex用
 echo ""
-echo "Codexを使う場合: ln -s ~/.claude/AGENTS.md ~/.codex/AGENTS.md（または cp）。CLAUDE.md と同じ本体を読ませる"
+echo "Codex: ~/.codex/AGENTS.md は ~/.claude/AGENTS.md へのリンク（共通規約を共有）"
 echo ""
 echo "=== 完了 ==="
 echo "確認: ./00_導入/01_インストール/verify.sh"

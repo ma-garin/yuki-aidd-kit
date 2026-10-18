@@ -7,7 +7,12 @@
 - 取り返しのつかない操作を自分で打たない: `git reset --hard` / `clean -fd` / `stash drop` / `checkout --` / `push --force` / `add -A` / `rm -rf`。退避は削除でなく `mv`（Claude Code では `block-destructive.py` が deny する）
 - 一言で答えられる質問・完了報告は3行以内の散文。状況説明・原因・複数案・計画は見出し・箇条書き・表（行数制限なし）。削るのは冗長さであって構造ではない
 - 50行を超える出力は会話に載せずファイルに書き、必要な範囲だけ読む。独立した操作は1回にまとめる。`git add -A` を使わない
-- 既定値で進めて結果を1行で報告する。ただし **100行超のファイル作成・2分超の処理・削除/上書き/外部送信** の前は、質問だけ書いて止まる（git のコミット・push・PR・マージは除く。下の「git の既定」）
+- 依頼された範囲は既定値で進め、所要時間だけを理由に確認待ちで止まらない。見積超過時は進捗と再見積を報告する。追加費用・依頼範囲外の変更・取り返しのつかない操作は実行前に確認する。承認済みの作業について再承認を求めない
+
+## CLI 間の共通規約
+- グローバル規約の本体は `~/.claude/AGENTS.md`。Claude Code は `CLAUDE.md` から import し、Codex は `~/.codex/AGENTS.md` のシンボリックリンクを通して同じ本体を読む
+- Codex は Claude Code の rules を自動で読み込む前提にしない。共通ルールはプロジェクトの `.claude/rules/` と `~/.claude/rules/` から、`paths` の指定がなければ共通規約、指定があれば今回扱うファイルに該当するものを読む。プロジェクト固有の指示を優先する
+- Claude Code 専用のモデル名・委譲先・hooks・`/clear` などは、Codex で対応機能を確認できた場合にだけ適用する。hook が有効であると断定しない
 
 ## 必須プロセス（`rules/absolute-rules.md` A-1〜A-13）
 - **保守者の発言は進行中の作業より優先**。作業の途中で届いても、次のツール呼び出しより先に日本語で応答する（A-13。Claude Code では `instruction-guard.py` が止める）
@@ -107,3 +112,14 @@ git hook 層は `./00_導入/02_プロジェクト配布/install-git-hooks.sh <�
 
 ## 現在のタスク（tasks.mdを参照）
 -->
+
+<!-- RTK-SAFE:START -->
+## RTKの安全な限定運用
+
+- 長い定型出力を削減する場合のみ `rtk-safe` を使う。
+- 対象: `git status`、`git log`、`npm run test|build|lint|typecheck|check`、`cargo test|build|check|clippy`、`go test`、`pytest`、`ruff check`。
+- `git diff`、`git show`、ファイル読み取り、検索、セキュリティ検査、認証、クラウド、DB、デプロイ、秘密情報・環境変数関連にはRTKを使わない。
+- `rtk`を直接呼ばず、対象コマンドだけ `rtk-safe <command...>` で実行する。
+- 圧縮結果が不足する場合、同じコマンドをRTKなしで一度だけ再実行する。
+- リポジトリ内の `.rtk/filters.toml` は信頼・有効化しない。
+<!-- RTK-SAFE:END -->
