@@ -10,6 +10,7 @@
   est.py ext-begin / ext-end        CI・委譲など、外部待ちの開始と終了
   est.py reest <予定X> [外部待ち秒]   再見積（1回のみ）。完了予定 = 現在 + (再見積 − 経過) + 20秒
   est.py now                        経過・進捗%・70%到達
+  est.py quote <種別> <X> [外部待ち秒]  選択肢比較用の試算（状態は変えない）。応答に書く時間見積は plan/reest/quote の値だけ（est-guard フックが照合）
   est.py pause / resume             ターン末に pause、次ターンの最初に resume（pause を忘れた場合、resume が前回の記録以降を返答待ちとして除外）
   est.py end / abort [--same]       完了 / 未完。T1 の呼び出しを1往復に数える（直前の tick と同じ呼び出しなら --same）。実測 = 作業区間 − ユーザー待ち（外部待ちは実測に含め、別列に記録）
   est.py stats                      往復単価（種別別）・往復数補正・直近10件の系統判定（Σ実測/Σ見積）・未完率
@@ -20,6 +21,17 @@ from datetime import datetime, timedelta, timezone
 JST = timezone(timedelta(hours=9))
 D = os.path.dirname(os.path.abspath(__file__))
 ST, LOG = os.path.join(D, "state.json"), os.path.join(D, "log.csv")
+
+# 見積行の表示義務（est-guard フックと連携）: plan/reest の結果を「未表示」として書き出す。
+# フックは、この行が SendUserMessage か最終応答に出るまで、次のツール呼び出しと終了を止める。
+PENDING = os.environ.get("EST_PENDING", os.path.expanduser("~/.claude/est-pending.json"))
+QUOTES = os.environ.get("EST_QUOTES", os.path.expanduser("~/.claude/est-quotes.json"))
+def announce(line):
+    try:
+        os.makedirs(os.path.dirname(PENDING), exist_ok=True)
+        with open(PENDING, "w", encoding="utf-8") as f: json.dump({"line": line, "at": int(time.time())}, f, ensure_ascii=False)
+    except OSError: pass
+    print(f"表示義務: 次のツール呼び出しの前に、この行をそのまま応答に出す → {line}")
 COLS = ["t0", "t1", "kind", "plan_x", "unit_s", "xcorr", "ext_plan_s", "gen_s", "margin_s", "est_s", "reest_s", "actual_x",
         "user_wait_s", "ext_wait_s", "long_gap_s", "actual_s", "ratio", "result", "unfinished"]
 INIT_UNIT = {k: 10.2 for k in ("UI改修", "UI新規", "コード+CI", "調査", "文書・回答", "ブラウザ操作", "外部投稿")}  # 13件の交差検証で全件範囲内（比の中央値0.98）
@@ -128,6 +140,19 @@ if cmd == "stats":
     for k in sorted({r["kind"] for r in fin}):
         u, c, src, _ = unit_and_corr(k); print(f"  {k}: 往復単価={u:.1f}s（{src}） 往復数補正={c:.2f}")
     sys.exit()
+if cmd == "quote":
+    if len(args) < 2: die("quote <種別> <予定X> [外部待ち秒]  … 選択肢比較用。状態は変えない")
+    kind, x, ext = args[0], int(args[1]), int(args[2]) if len(args) > 2 else 0
+    if kind not in KINDS: die(f"種別は {'/'.join(sorted(KINDS))} のいずれか")
+    est, *_ = compute_est(kind, x, ext); m = max(1, round(est / 60))
+    try:
+        qs = json.load(open(QUOTES, encoding="utf-8")) if os.path.exists(QUOTES) else []
+    except (OSError, ValueError): qs = []
+    qs = [v for v in qs if time.time() - v.get("at", 0) < 6 * 3600] + [{"min": m, "at": int(time.time())}]
+    try:
+        os.makedirs(os.path.dirname(QUOTES), exist_ok=True); json.dump(qs, open(QUOTES, "w", encoding="utf-8"))
+    except OSError: pass
+    print(f"試算={m}分（{est}s）  ※応答では「{m}分」と書く（「約」は付けない）"); sys.exit()
 if cmd == "t0":
     if s:
         die("前の作業が残っています。resume してから end（完了）か abort（未完）を実行してください")
@@ -155,6 +180,7 @@ if cmd in ("plan", "reest"):
         s.update(est=est, kind=kind, x=x, unit=round(unit, 1), corr=round(corr, 2), extp=ext, margin=margin, gen=gen); save(s)
         print(f"見積={max(1, round(est / 60))}分（{est}s = X{x}×補正{corr:.2f}×単価{unit:.1f}s[{src}]＋外部待ち{ext}s＋生成{gen}s＋余裕{margin}s） "
               f"完了予定={hms(s['t0'] + est + gen + REPORT_S)[:5]}")
+        announce(f"見積: {max(1, round(est / 60))}分（{hms(s['t0'] + est + gen + REPORT_S)[:5]} 完了予定）")
     else:
         if not s["est"]: die("plan の前に再見積はできません")
         if s["reest"]: die("再見積は1回のみです")
@@ -163,6 +189,7 @@ if cmd in ("plan", "reest"):
         est, *_ = compute_est(s["kind"], x, ext); est += s.get("margin", 0); a, _, _ = measure(s)
         s["reest"] = est; save(s)
         print(f"再見積={max(1, round(est / 60))}分（{est}s） 完了予定={hms(now + max(0, est - a) + s.get("gen", 0) + REPORT_S)[:5]}")
+        announce(f"再見積: {max(1, round(est / 60))}分（{hms(now + max(0, est - a) + s.get("gen", 0) + REPORT_S)[:5]} 完了予定）")
 elif cmd == "tick":
     if s["open"] is None: die("中断中です。resume してください")
     gap = now - s["last"]
