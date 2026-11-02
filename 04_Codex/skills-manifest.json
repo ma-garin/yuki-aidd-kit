@@ -216,7 +216,7 @@
     },
     "rules-evidence-citation": {
       "files": 2,
-      "sha256": "9af624f7cf7ff44434ddeef6176d23429ed929376e2aa4adfe274fd1ce1f0b21"
+      "sha256": "b15f5d0a3c9a955f940a5b1c0381dbd5a1b4ddedce179f7c00ea619af33125fa"
     },
     "rules-functional-integrity": {
       "files": 2,
@@ -228,7 +228,7 @@
     },
     "rules-quality-decision": {
       "files": 2,
-      "sha256": "9a1a2c8022d5e55d1b885c923626ffcc055bfc9c955723c72e6995a0fbd86e2e"
+      "sha256": "67a9cefe95ffe07034458829677f9215a43985d51d15ae9785a2ec6a619ab024"
     },
     "rules-security-hygiene": {
       "files": 2,
@@ -236,7 +236,7 @@
     },
     "rules-speed-harness": {
       "files": 2,
-      "sha256": "414badba368d39c714936100a283c18c31d2b2c495f72312c5cfe025bc269b9c"
+      "sha256": "0a442fd36a4ce55434c4bc3bb446971d5d41358af69603343b5b9fc7e1b34c2c"
     },
     "rules-writing-style": {
       "files": 2,
@@ -284,11 +284,11 @@
     },
     "work-metering": {
       "files": 3,
-      "sha256": "b7c3871c07ec05614c683e26c3e4f636603213216405ff077d094581c53ef585"
+      "sha256": "cd6d8ccca7c26008236d69cf1bf6d6159725dd8ec16bf8aaf92ffcf0bbeeb24f"
     },
     "work-report-html": {
       "files": 3,
-      "sha256": "6ae1015b84931f7a307fda2608d12a0c7dde97668fb3f19017b964eb0c9d21b2"
+      "sha256": "5c7c79e278c0b6a874d8fe8f7fed479e3ea3c7bf556c0b1f27ad23a550be49c0"
     }
   }
 }

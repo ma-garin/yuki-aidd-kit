@@ -42,7 +42,7 @@ open 01_利用者向け資料/01_利用ガイド.html                      # ユ
 open 01_利用者向け資料/02_操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（06_保守者向け/ は配布しない）
-./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（836ケース）
+./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（856ケース）
 ./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（206ケース）
 ./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（92ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（94ケース）
@@ -89,7 +89,7 @@ python3 scripts/estimate/est.py weekly 7           # 直近 7 日の見積が外
 | `verify-agent` | 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行） | Critical/High 残ゼロ・`test-metrics.sh --gate` exit 0 | 69行 |
 | `gate-agent` | 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す） | 差し戻し 0 件。**承認欄は空のまま人間へ** | 61行 |
 | `advisor`（8.7.0〜） | 節目の相談を受ける助言専用（読み取り専用で事実を確かめて助言） | 助言が返る（最終判断は呼び出し側） | 60行 |
-| `work-metering`（8.7.0〜） | 見積・中間・完了の計測行 3 書式と予実の記録・校正係数。Claude Code は hook、Codex は `scripts/metering.py` で同じ 3 行を出す | #process #estimate | 60行 |
+| `work-metering`（8.7.0〜） | 見積・中間・完了の計測行 3 書式と予実の記録・校正係数。Claude Code は hook、Codex は `03_ClaudeCode/skills/work-metering/scripts/metering.py` で同じ 3 行を出す | #process #estimate | 60行 |
 
 AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない線）。中間工程は「AI 検証完了・承認待ち」として積み、受け入れ時に人間がまとめて判定する。
 
@@ -108,7 +108,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `e2e-cycle` | E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す | #qa #e2e | 112行 |
 | `phase-approval` | 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る | #lifecycle #qa #process | 98行 |
 | `done-gate` | 完了宣言前のDefinition of Doneチェック | #qa #process | 67行 |
-| `work-report-html` | 終えた作業を図・実物スクショ・時系列・確認結果つきの HTML レポートにして公開 | #report #artifact | 55行 |
+| `work-report-html` | 終えた作業を図・実物スクショ・時系列・確認結果つきの HTML レポートにして公開 | #report #artifact | 68行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 200行 |
 | `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 66行 |
 | `handoff`（8.7.0〜） | 作業を別セッション・別ハーネス（Claude ⇄ Codex）へ渡す引き継ぎ文書を 1 本書く。会話を読まずに続けられる形 | #process #handoff | 82行 |
@@ -135,7 +135,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | ルール | 1行要約 | タグ | コスト |
 |---|---|---|---|
 | `absolute-rules` | A-1〜A-10 を「発動 / 出力 / 要点」の表で。目的1行・予実の実測・残課題・未検証を断定しない・放置しない | #process #must | 24行 |
-| `speed-harness` | H-0〜H-10: 出力量・着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示・自己ウェイク禁止・往復と読み込みの規律 | #speed #process #token | 63行 |
+| `speed-harness` | H-0〜H-10: 出力量・着手前4行（目的・終了条件・見積・検証）・環境チートシート・バッチ検証（上限2周）・委譲・見積の既定・ゲートは要求時のみ・進捗の逐次提示・自己ウェイク禁止・往復と読み込みの規律 | #speed #process #token | 49行 |
 | `model-routing` | Pro＋Sonnet の規律: 既定 Sonnet・Opus へ上げる3条件・effort・`/clear`・委譲は隔離目的のみ・上限時の手順・週1で `/usage` | #speed #token | 18行 |
 | `functional-integrity` | UI→API→backend→出力→永続化→エラー→証跡 の実行経路を確認するまで完了と言わない。**`paths` 付き＝コード/UI を触ったときだけ読み込み** | #qa #done | 20行 |
 | `agent-intervention` | エージェントへの介入 3 段階（`docs/` を触ったときだけ読み込み） | #process | 22行 |
@@ -213,7 +213,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 
 ## ECC 連携
 
-ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け資料/05_ECC資産対応表.md`（148行）が唯一の真実源**。ここには複製しない。
+ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け資料/05_ECC資産対応表.md`（165行）が唯一の真実源**。ここには複製しない。
 
 ## 06_保守者向け/内部仕様/（キット現況の仕様書。配布しない）— 本体を触る前にここ
 
@@ -239,8 +239,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け
 | `01_利用者向け資料/01_利用ガイド.html` | 初学者向けユーザーガイド。たとえ話→言葉 8 つ→中身→導入 A/B（期待出力付き）→はじめての会話（対話例）→3 つの約束→ハンズオン（事例を通しで）→1 日の流れ→言い方表→品質チェック（手動）→**V字・W字との対応（SVG 図 2 枚・工程別の機械検証表・対外説明の 3 文）**→Pro/Sonnet→見た目→困ったとき→用語集（読み物。デザイン適用除外ジャンル） | 1379行 |
 | `01_利用者向け資料/02_操作マニュアル.html` | 初心者向けHTML取説（読み物。デザイン適用除外ジャンル）。冒頭から `01_利用ガイド.html`・事例・V字章へ導線 | 1937行 |
 | `01_利用者向け資料/03_ClaudeProjects設定手順.md` | claude.ai Projects「AIDDラボ」のセットアップ手順（Project Instructions とナレッジ） | 58行 |
-| `01_利用者向け資料/04_運用モード.md` | 日常の標準作業モード | 106行 |
-| `01_利用者向け資料/05_ECC資産対応表.md` | ECCプロジェクト別対応表（真実源） | 148行 |
+| `01_利用者向け資料/04_運用モード.md` | 日常の標準作業モード | 115行 |
+| `01_利用者向け資料/05_ECC資産対応表.md` | ECCプロジェクト別対応表（真実源） | 165行 |
 
 `01_利用者向け資料/90_サンプル/図書貸出/`（7本）: 事例「貸出管理を Excel から Web へ。HTML でモック」。依頼 1 行 → 単一 HTML モック（完成品 `library-loan.html`・`app.css` `app.js`・`build.py`・`spec.md`・`CURRENT_STATE.md`・README）。ハンズオン教材（`01_利用者向け資料/01_利用ガイド.html`）。
 
@@ -260,6 +260,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け
 `06_保守者向け/01_内部仕様/`（14本）: 現況仕様。上記「internal/spec/」節。
 
 templates/: `design-system.md`（視覚的指示書。チェックリストは機械/目視の別付き）/ `tokens.css`（デザイントークンの実物。**値の唯一の真実源**。ライト＋ダーク）/ `ui/`（`components.css` 部品 / `layout.css` 骨格 / `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `README.md` FW 別1枚表）/ `components/`（`feedback.js` `icons.js` `demo.html` `demo-shell.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md`（決まっていること・未検証の確かめ方・最初の 5 分つき）/ `ADR-template.md`（判断基準を規格名で・捨てた案）/ `lessons.md` / `implement-profile.md`（止まる条件つき）/ `work-order.md`（別モデルへ渡す作業指示書: 守ること表・Step 完了条件・止まる条件・質問節）
+
+## 02_共通/ひな形/環境チートシート.md — speed-harness H-2 の本体（起動・疎通・停止・反映条件・片付け/git/複数編集の標準）。プロジェクトごとに `.claude/` へ写して埋める（8.7.0〜。常時読込を 100 行以内に戻すため rules から分離）
 
 ## 02_共通/ひな形/品質判断カード.md — 変更ごとの9項目（変更・守るもの・失敗・要求・確認範囲・証跡・停止条件・担当・再開条件）。`/quality-card` が埋める（8.7.0〜）
 

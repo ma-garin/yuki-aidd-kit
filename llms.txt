@@ -24,7 +24,7 @@
 - [03_ClaudeCode/agents/verify-agent.md](03_ClaudeCode/agents/verify-agent.md): 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行）
 - [03_ClaudeCode/agents/gate-agent.md](03_ClaudeCode/agents/gate-agent.md): 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す）
 - [03_ClaudeCode/skills/advisor/SKILL.md](03_ClaudeCode/skills/advisor/SKILL.md): 節目の相談を受ける助言専用（読み取り専用で事実を確かめて助言）
-- [03_ClaudeCode/skills/work-metering/SKILL.md](03_ClaudeCode/skills/work-metering/SKILL.md): 見積・中間・完了の計測行 3 書式と予実の記録・校正係数。Claude Code は hook、Codex は `scripts/metering.py` で同じ 3 行を出す
+- [03_ClaudeCode/skills/work-metering/SKILL.md](03_ClaudeCode/skills/work-metering/SKILL.md): 見積・中間・完了の計測行 3 書式と予実の記録・校正係数。Claude Code は hook、Codex は `03_ClaudeCode/skills/work-metering/scripts/metering.py` で同じ 3 …
 
 ## DAILY スキル
 

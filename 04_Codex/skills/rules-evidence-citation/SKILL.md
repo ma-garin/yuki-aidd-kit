@@ -3,7 +3,7 @@ name: rules-evidence-citation
 description: "根拠の引用（何が言えて、何が言えないか）。Claude Code のrules（規約） `evidence-citation` の Codex 版"
 ---
 <!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
-Claude Code のrules（規約） `evidence-citation` の Codex 版。全作業に適用する。Claude Code 専用の hook・コマンドは、Codex で対応機能を確認できた場合だけ適用する。
+Claude Code のrules（規約） `evidence-citation` の Codex 版。対象ファイルの範囲（Claude Code の paths）: `**/*.md`, `**/*.html`。該当するファイルを扱うときに従う。Claude Code 専用の hook・コマンドは、Codex で対応機能を確認できた場合だけ適用する。
 
 # 根拠の引用（何が言えて、何が言えないか）
 

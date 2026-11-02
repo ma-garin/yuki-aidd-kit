@@ -3,7 +3,7 @@ name: rules-quality-decision
 description: "品質判断（何を守り、いつ止め、いつ戻すか）。Claude Code のrules（規約） `quality-decision` の Codex 版"
 ---
 <!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
-Claude Code のrules（規約） `quality-decision` の Codex 版。全作業に適用する。Claude Code 専用の hook・コマンドは、Codex で対応機能を確認できた場合だけ適用する。
+Claude Code のrules（規約） `quality-decision` の Codex 版。対象ファイルの範囲（Claude Code の paths）: `**/*test*`, `**/tests/**`, `**/*spec*`, `**/docs/**`, `**/*.md`。該当するファイルを扱うときに従う。Claude Code 専用の hook・コマンドは、Codex で対応機能を確認できた場合だけ適用する。
 
 # 品質判断（何を守り、いつ止め、いつ戻すか）
 

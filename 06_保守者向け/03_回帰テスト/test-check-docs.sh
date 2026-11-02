@@ -16,7 +16,8 @@ expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出�
 expect_noout(){ printf '%s' "$3" | grep -qF -- "$2" && ng "$1" "出力に '$2' が出た" || ok "$1"; }
 
 # テスト実行の代替（各検査の突合に集中するため、実テストの再実行はしない）
-export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=918,test-trace-check.sh=94,test-quality-harness.sh=11,test-install.sh=210,test-agents.sh=83,test-git-gates.sh=27,test-skill-trigger-eval.sh=29"
+# 代替の総数は実測に合わせる（2026-11-03: hooks 918→856 は statusline 7 ケースの置換と B76 整理、install 210→206、agents 83→92）
+export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=856,test-trace-check.sh=94,test-quality-harness.sh=11,test-install.sh=206,test-agents.sh=92,test-git-gates.sh=27,test-skill-trigger-eval.sh=29"
 
 fresh() { # 複製を作り直してパスを返す
   rm -rf "$TMP/copy"; mkdir -p "$TMP/copy"
