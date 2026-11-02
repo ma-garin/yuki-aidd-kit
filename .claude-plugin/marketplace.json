@@ -1,0 +1,14 @@
+{
+  "name": "yuki-aidd-kit",
+  "owner": {
+    "name": "ma-garin"
+  },
+  "description": "yuki-aidd-kit の配布用マーケットプレイス",
+  "plugins": [
+    {
+      "name": "yuki-aidd-kit",
+      "source": "./",
+      "description": "AI駆動開発（AIDD）のための skills・commands・agents・hooks 一式"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "count": 69,
+  "count": 72,
   "generator": "04_Codex/build_codex_skills.py",
   "skills": {
     "advisor": {
@@ -110,6 +110,10 @@
       "files": 2,
       "sha256": "b027a91e5ca6b7bd420780a6e1bb5690a02a8d66d1d73053cdc26be969a4a750"
     },
+    "cmd-quality-card": {
+      "files": 2,
+      "sha256": "e09e9ec55c94d81aaaa892399c183f2eccc2188b3f8150ffdd8eb6722a880145"
+    },
     "cmd-ralph": {
       "files": 2,
       "sha256": "76c45327637438aca8b4a519d6a8c86a1af36c779b7fc936d97854c5d41cd262"
@@ -210,6 +214,10 @@
       "files": 2,
       "sha256": "ba4e5c42173e1d9d556911dcb58bc67ca661700a060bf5bed1a579b1fb2b4be0"
     },
+    "rules-evidence-citation": {
+      "files": 2,
+      "sha256": "b15f5d0a3c9a955f940a5b1c0381dbd5a1b4ddedce179f7c00ea619af33125fa"
+    },
     "rules-functional-integrity": {
       "files": 2,
       "sha256": "719fbc5ee5bb011097d39ad85ffdb8c861de1792f9938c40e5b2d7ec9236a78b"
@@ -218,13 +226,17 @@
       "files": 2,
       "sha256": "02757d2d7c2b14bb0336dd60642cb1067d9dcde2e6e9a5c4aa8d106e51e24170"
     },
+    "rules-quality-decision": {
+      "files": 2,
+      "sha256": "67a9cefe95ffe07034458829677f9215a43985d51d15ae9785a2ec6a619ab024"
+    },
     "rules-security-hygiene": {
       "files": 2,
       "sha256": "38e77532905992ca4844f05f5316397e47da8e86bdbc582d8c0f71c3bf5f1913"
     },
     "rules-speed-harness": {
       "files": 2,
-      "sha256": "414badba368d39c714936100a283c18c31d2b2c495f72312c5cfe025bc269b9c"
+      "sha256": "0a442fd36a4ce55434c4bc3bb446971d5d41358af69603343b5b9fc7e1b34c2c"
     },
     "rules-writing-style": {
       "files": 2,
@@ -272,11 +284,11 @@
     },
     "work-metering": {
       "files": 3,
-      "sha256": "b7c3871c07ec05614c683e26c3e4f636603213216405ff077d094581c53ef585"
+      "sha256": "cd6d8ccca7c26008236d69cf1bf6d6159725dd8ec16bf8aaf92ffcf0bbeeb24f"
     },
     "work-report-html": {
       "files": 3,
-      "sha256": "6ae1015b84931f7a307fda2608d12a0c7dde97668fb3f19017b964eb0c9d21b2"
+      "sha256": "5c7c79e278c0b6a874d8fe8f7fed479e3ea3c7bf556c0b1f27ad23a550be49c0"
     }
   }
 }

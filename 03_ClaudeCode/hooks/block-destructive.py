@@ -13,7 +13,7 @@ B-19（2026-09-24）: `bash -c '…'`・`sudo`・`env`・`xargs`・`$( )` 越し
 - 履歴を壊す push（--force・`+<refspec>`。`--force-with-lease` は他人の作業を消さないので許可）・未マージのブランチ削除（branch -D）
 - 再帰削除（`rm -rf` / `rm -r -f` / `--recursive --force`。対象を問わずすべて。`find -exec rm -rf` も）
 - `git add -A` / `git add .`（意図しないファイルの混入。H-2 はパス明示を要求する）
-- git hook・設定の迂回（commit/push の `--no-verify`、commit の `-n`、`-c core.hooksPath=…`、`git config core.hooksPath …`、
+- git hook・設定の迂回（commit/push の `--no-verify`、commit の `-n`、`-c core.hooksPath=…`、`git config core.hooksPath …`、`.git/config`・`.git/hooks/` へのリダイレクト・tee での直書き、
   `-c alias.<名前>=…`・`git config … alias.<名前> …`（別名で偽装できるので値を問わず）、
   前置きの `GIT_CONFIG_*=`・`GIT_DIR=`・`GIT_WORK_TREE=`）
 - シェルへ流す形（入口を問わず `… | sh`・`sh <<< …`・`sh -s`・`source <(…)`・`bash <(…)`。`curl … | python` 等も）
@@ -430,6 +430,17 @@ def git_override(toks: list[str]) -> str | None:
     return None
 
 
+_GIT_CTRL = re.compile(r"(?:^|/)\.git/(?:config|hooks(?:/|$))")
+
+
+def git_ctrl_write(toks: list[str]) -> bool:
+    """`.git/config`・`.git/hooks/` を出力リダイレクトか tee で直接書き換える断片か（hooksPath・alias を書き込める）。"""
+    for k, t in enumerate(toks):
+        if t in _REDIRECT_OUT and k + 1 < len(toks) and _GIT_CTRL.search(toks[k + 1]):
+            return True
+    return bool(toks) and _base(toks[0]) == "tee" and any(_GIT_CTRL.search(t) for t in toks[1:] if not t.startswith("-"))
+
+
 def _stop(why: str, alt: str) -> str:
     return f"取り返しのつかない操作を止めた: {why}。代わりに: {alt}。どうしても必要なら保守者に依頼して実行してもらう（H-2）"
 
@@ -451,6 +462,9 @@ def check(cmd: str, cwd: str | None = None) -> str | None:
         why = git_override(toks)
         if why:
             return _stop(why, "hook が止めた原因を直す")
+        if git_ctrl_write(toks):
+            return _stop("`.git/config`・`.git/hooks/` を直接書き換える（hooksPath・alias を書き込んで hook を迂回できる）",
+                         "hook が止めた原因を直す")
         if docker_run_env(toks, cwd):
             return ("秘密ファイルを `docker run --env-file` に渡すと、image の後ろのコマンドで値を表示できるので止めた。"
                     "代わりに: `docker compose --env-file <file> up` を使うか、保守者が打つ")
@@ -479,6 +493,7 @@ def deny(reason: str) -> int:
 def _main() -> int:
     try:
         data = json.load(sys.stdin)
+        _ensure_json_depth(data)
         if not isinstance(data, dict):
             raise ValueError("JSON の最上位がオブジェクトでない")
         ti = data.get("tool_input") or {}
@@ -499,6 +514,24 @@ def _main() -> int:
     cwd = data.get("cwd") if isinstance(data.get("cwd"), str) else None
     reason = check(cmd, cwd)
     return deny(reason) if reason else 0
+
+
+
+# 深い入れ子の JSON は判定不能として RecursionError にする。Python 3.13 以降の json は 3000 段程度なら例外を出さずに
+# 読めてしまい、版によって fail-closed の挙動が変わるため、版に依らず段数で明示的に止める（反復で数え、自分は再帰しない）
+_MAX_JSON_DEPTH = 200
+
+
+def _ensure_json_depth(obj, limit: int = _MAX_JSON_DEPTH) -> None:
+    stack = [(obj, 1)]
+    while stack:
+        o, d = stack.pop()
+        if d > limit:
+            raise RecursionError(f"JSON の入れ子が {limit} 段を超える")
+        if isinstance(o, dict):
+            stack.extend((v, d + 1) for v in o.values())
+        elif isinstance(o, list):
+            stack.extend((v, d + 1) for v in o)
 
 
 def main() -> int:

@@ -134,6 +134,24 @@ def reread(data: dict, p: Path, partial: bool) -> str | None:
         return None
 
 
+
+# 深い入れ子の JSON は判定不能として RecursionError にする。Python 3.13 以降の json は 3000 段程度なら例外を出さずに
+# 読めてしまい、版によって fail-closed の挙動が変わるため、版に依らず段数で明示的に止める（反復で数え、自分は再帰しない）
+_MAX_JSON_DEPTH = 200
+
+
+def _ensure_json_depth(obj, limit: int = _MAX_JSON_DEPTH) -> None:
+    stack = [(obj, 1)]
+    while stack:
+        o, d = stack.pop()
+        if d > limit:
+            raise RecursionError(f"JSON の入れ子が {limit} 段を超える")
+        if isinstance(o, dict):
+            stack.extend((v, d + 1) for v in o.values())
+        elif isinstance(o, list):
+            stack.extend((v, d + 1) for v in o)
+
+
 def main() -> int:
     try:
         return _main()
@@ -144,6 +162,7 @@ def main() -> int:
 def _main() -> int:
     try:
         data = json.load(sys.stdin)
+        _ensure_json_depth(data)
         if not isinstance(data, dict):
             raise ValueError("JSON の最上位がオブジェクトでない")
         tool_input = data.get("tool_input") or {}

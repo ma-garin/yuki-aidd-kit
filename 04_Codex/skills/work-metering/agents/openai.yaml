@@ -1,5 +1,5 @@
 interface:
   display_name: "work-metering"
-  short_description: "コーディングを含む作業の見積・中間・完了を計測し、予実を記録する"
+  short_description: "「見積」「予実」「計測」「実測」— コーディングを含む作業の見積・中間・完了を計測し、予実を記録する"
 policy:
   allow_implicit_invocation: true

@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: evidence-citation"
+  short_description: "根拠の引用（何が言えて、何が言えないか）"
+policy:
+  allow_implicit_invocation: false

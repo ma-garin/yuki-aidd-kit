@@ -14,6 +14,16 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/block-deps.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "hooks": [
           {
             "type": "command",
@@ -101,6 +111,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 ~/.claude/hooks/config-snapshot.py snapshot",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "python3 ~/.claude/hooks/tool-timer.py reset",
             "timeout": 5
           }
@@ -150,6 +169,15 @@
           {
             "type": "command",
             "command": "python3 ~/.claude/hooks/session-context.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/config-snapshot.py snapshot",
             "timeout": 5
           }
         ]

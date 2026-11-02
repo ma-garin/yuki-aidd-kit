@@ -32,7 +32,8 @@ echo "[pre-commit（秘密情報）]"
 stage config.py "api_key = \"sk-""abcdefghijklmnopqrstuvwxyz\""   # 偽値は連結で作る（このファイルを pre-write-check.sh の本文検査に掛けないため。B-19）
 OUT=$(run_precommit 2>&1); RC=$?
 expect_exit "API キーらしき文字列で exit 1" 1 "$RC"
-expect_out  "検出メッセージを出す" "秘密情報らしき文字列を検出" "$OUT"
+# pre-commit の文言は KNOWN/ASSIGN 化（#103 前）で「秘密情報らしき値: <file>:<行>」に変わった。行番号つきの新文言を正とする
+expect_out  "検出メッセージを出す（ファイル:行 つき）" "秘密情報らしき値: config.py:1" "$OUT"
 unstage_all
 stage app.js "const v = localStorage.getItem('api_key');"
 OUT=$(run_precommit 2>&1); RC=$?

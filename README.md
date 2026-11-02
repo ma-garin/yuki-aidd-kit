@@ -1,6 +1,32 @@
 # AIDD Kit
 
-AI 駆動開発を、QA・E2E・仕様駆動・個人PWA・ローカル業務ツールに最適化するための個人用キットです。
+**AI 駆動開発に、第三者検証の QA エンジニアが使う品質ゲートを持ち込む Claude Code / Codex 用キット。**
+
+規約を散文で頼むのではなく、hook とスクリプトで機械的に止め、測る。他の Claude Code 設定集に無い4点:
+
+1. **見積の予実校正** — `tool-timer.py` / `est.py` が実測を時計で取り、予実の履歴から校正係数（実測/見積 の中央値）を育てて次の見積に注入する
+2. **工程承認ゲート** — `check-approval` と `phase-hash` で承認記録を成果物のハッシュに縛り、承認なし・承認後の改変では次工程へ書き込めない（`block-phase.py`）
+3. **デザイン検査 `check_design.py`** — 直値・未定義トークン・a11y（alt・ラベル・lang・コントラスト比）・AI 既定意匠（装飾グラデーション・絵文字アイコン）を機械検査
+4. **hook 判定ログ** — deny/warn を `.claude/hook-decisions.log` に記録し、`token_report.py --hooks` で解除回数＝誤検知の目安を集計できる
+
+### 30秒で試す
+
+Claude Code のプラグインとして（skills・commands・agents・hooks が入る）:
+
+```
+/plugin marketplace add ma-garin/yuki-aidd-kit
+/plugin install yuki-aidd-kit@yuki-aidd-kit
+```
+
+スクリプト一式（statusline・rules・工程承認の判定スクリプト）まで入れるなら clone して:
+
+```bash
+git clone https://github.com/ma-garin/yuki-aidd-kit && cd yuki-aidd-kit
+./00_導入/01_インストール/install.sh   # ~/.claude へ配置
+./00_導入/01_インストール/verify.sh    # 配置確認（NG>0 で exit 1）
+```
+
+詳しい導入方式（グローバル／プロジェクト配布）は下の「導入」を参照。
 
 **全資産の入口は `INDEX.md`**（DAILY／LIBRARY の2層＋タグ＋参照コスト）。エージェントにも人間にも、まず INDEX.md から読むことを推奨します。使い方は `01_利用者向け資料/01_利用ガイド.html`（初学者向け）と `01_利用者向け資料/02_操作マニュアル.html`。キット自体の目的・要求・作業台帳は `06_保守者向け/`（保守者専用。配布しない）にあります。
 

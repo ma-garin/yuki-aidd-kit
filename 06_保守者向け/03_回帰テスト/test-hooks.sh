@@ -823,7 +823,9 @@ OUT=$(python3 "$HOOKS/secret_patterns.py" --check-consistency "$CC"); RC=$?
 expect_eq "init-project.sh に未知の拡張子（*.bogus）を足すと不一致 exit 1" "1" "$RC"
 expect_contains "不一致の箇所と名前を出す" "init-project.sh: \`*.bogus\`" "$OUT"
 cp "$KIT_DIR/00_導入/02_プロジェクト配布/init-project.sh" "$CC/00_導入/02_プロジェクト配布/init-project.sh"
-sedi -e 's/|AKfycb|/|AKfycb|foo_word|/' "$CC/02_共通/ツール/pre-commit"
+# 旧形 PATTERNS='(…|AKfycb|…)'・現行形 KNOWN='…|AKfycb[…]{20,}|…' のどちらでも語を差し込む
+sedi -e 's/|AKfycb|/|AKfycb|foo_word|/' -e 's/|AKfycb\[/|foo_word|AKfycb[/' "$CC/02_共通/ツール/pre-commit"
+grep -q 'foo_word' "$CC/02_共通/ツール/pre-commit" || echo "  ⚠ pre-commit に foo_word を差し込めなかった（形が変わった）"
 OUT=$(python3 "$HOOKS/secret_patterns.py" --check-consistency "$CC"); RC=$?
 expect_eq "pre-commit に未知の本文規則（foo_word）を足すと不一致 exit 1" "1" "$RC"
 expect_contains "不一致の語を出す" "foo_word" "$OUT"
@@ -891,15 +893,19 @@ expect_empty "無関係なツールは素通り" "$OUT" "$RC"
 expect_contains "配布用 settings.json に block-ci.py が配線されている" "block-ci.py" "$(cat "$HOOKS/settings.json")"
 
 echo "[statusline.py トークン表示]"
+# 同じディレクトリの statusline.sh（従来表示）が出す内容に左右されないよう、statusline.py 単体を隔離して検査する
+SLP="$TMP/sl-only/statusline.py"; mkdir -p "$TMP/sl-only"; cp "$HOOKS/statusline.py" "$SLP"
 TJ="$TMP/t.jsonl"
 printf '%s\n' '{"type":"assistant","message":{"id":"m1","usage":{"input_tokens":10,"cache_read_input_tokens":1000,"output_tokens":200}}}' \
   '{"type":"assistant","message":{"id":"m1","usage":{"input_tokens":10,"cache_read_input_tokens":1000,"output_tokens":200}}}' \
   '{"type":"assistant","message":{"id":"m2","usage":{"cache_read_input_tokens":2000,"output_tokens":400}}}' > "$TJ"
-OUT=$(printf '{"transcript_path":"%s"}' "$TJ" | HOME="$TMP" python3 "$HOOKS/statusline.py")
-expect_contains "同一 id を 1 回と数え累計・応答数を出す" "Σ4k 2t" "$OUT"
+OUT=$(printf '{"transcript_path":"%s"}' "$TJ" | HOME="$TMP" python3 "$SLP")
+# weaken-ok: 2026-10-06 保守者指定により非表示へ変更。B76 の期待値を反転
+expect_absent "累計・応答数（Σ）は出さない" "Σ" "$OUT"
 printf '%s\n' '{"type":"assistant","message":{"id":"m3","usage":{"output_tokens":2600}}}' >> "$TJ"
-OUT=$(printf '{"transcript_path":"%s"}' "$TJ" | HOME="$TMP" python3 "$HOOKS/statusline.py")
-expect_contains "差分だけ読み足す" "Σ6k 3t" "$OUT"
+OUT=$(printf '{"transcript_path":"%s"}' "$TJ" | HOME="$TMP" python3 "$SLP")
+# weaken-ok: 2026-10-06 保守者指定により非表示へ変更。B76 の期待値を反転
+expect_absent "差分読みの後も Σ は出さない" "Σ" "$OUT"
 expect_absent "1 応答あたり出力は出さない" "出力" "$OUT"
 OUT=$(python3 "$KIT_DIR/00_導入/03_点検/token_report.py" "$TJ")
 expect_contains "token_report.py が区分別の表を出す" "| cache_read | 3,000 |" "$OUT"
@@ -1571,28 +1577,34 @@ done
 
 echo "[statusline.py 文脈量と使用枠（B76）]"
 SLH="$TMP/sl-home"; mkdir -p "$SLH"
+SLP="$TMP/sl-only/statusline.py"; mkdir -p "$TMP/sl-only"; cp "$HOOKS/statusline.py" "$SLP"  # 隣の statusline.sh の出力に左右されない
 R5=$(python3 -c 'import time;print(int(time.time())+3600)')
-OUT=$(printf '{"context_window":{"used_percentage":38.2},"rate_limits":{"five_hour":{"used_percentage":72,"resets_at":%s},"seven_day":{"used_percentage":40,"resets_at":%s}}}' "$R5" "$((R5+3*86400))" | HOME="$SLH" AIDD_TZ=UTC python3 "$HOOKS/statusline.py")
+OUT=$(printf '{"context_window":{"used_percentage":38.2},"rate_limits":{"five_hour":{"used_percentage":72,"resets_at":%s},"seven_day":{"used_percentage":40,"resets_at":%s}}}' "$R5" "$((R5+3*86400))" | HOME="$SLH" AIDD_TZ=UTC python3 "$SLP")
 W5=$(python3 -c 'import sys,time;print(time.strftime("%H:%M",time.gmtime(int(sys.argv[1]))))' "$R5")
-expect_contains "フィールドあり: 末尾に ctx と 5h（戻る時刻）" "ctx 38% 5h 72%（$W5）" "$OUT"
-expect_contains "フィールドあり: 7d は日付つき" " 7d 40%（" "$OUT"
+# weaken-ok: 2026-10-06 保守者指定により非表示へ変更。B76 の期待値を反転
+expect_absent "フィールドあり: ctx・5h は出さない" "ctx 38% 5h 72%（$W5）" "$OUT"
+# weaken-ok: 2026-10-06 保守者指定により非表示へ変更。B76 の期待値を反転
+expect_absent "フィールドあり: 7d は出さない" " 7d 40%（" "$OUT"
 expect_absent "80% 未満は ⚠ を付けない" "⚠" "$OUT"
-OUT=$(printf '{"context_window":{"context_window_size":200000,"current_usage":{"input_tokens":1000,"cache_creation_input_tokens":4000,"cache_read_input_tokens":95000,"output_tokens":50}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py")
-expect_contains "used_percentage が無ければ current_usage（input＋cache）÷ 窓の大きさ" "ctx 50%" "$OUT"
-OUT=$(printf '{"rate_limits":{"five_hour":{"used_percentage":80}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py")
-expect_contains "5h が 80% 以上なら ⚠（止めない）" "⚠ 5h 80%" "$OUT"
-OUT=$(printf '{"rate_limits":{"five_hour":{"used_percentage":79.4}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py")
+OUT=$(printf '{"context_window":{"context_window_size":200000,"current_usage":{"input_tokens":1000,"cache_creation_input_tokens":4000,"cache_read_input_tokens":95000,"output_tokens":50}}}' | HOME="$SLH" python3 "$SLP")
+# weaken-ok: 2026-10-06 保守者指定により非表示へ変更。B76 の期待値を反転
+expect_absent "current_usage があっても ctx は出さない" "ctx 50%" "$OUT"
+OUT=$(printf '{"rate_limits":{"five_hour":{"used_percentage":80}}}' | HOME="$SLH" python3 "$SLP")
+# weaken-ok: 2026-10-06 保守者指定により非表示へ変更。B76 の期待値を反転
+expect_absent "5h が 80% 以上でも ⚠ 5h は出さない" "⚠ 5h 80%" "$OUT"
+OUT=$(printf '{"rate_limits":{"five_hour":{"used_percentage":79.4}}}' | HOME="$SLH" python3 "$SLP")
 expect_absent "5h が 79% なら ⚠ を付けない" "⚠" "$OUT"
-OUT=$(printf '{"model":{"id":"x"},"context_window":{"current_usage":null,"context_window_size":200000},"rate_limits":{}}' | HOME="$SLH" python3 "$HOOKS/statusline.py")
+OUT=$(printf '{"model":{"id":"x"},"context_window":{"current_usage":null,"context_window_size":200000},"rate_limits":{}}' | HOME="$SLH" python3 "$SLP")
 expect_absent "フィールドなし: ctx を合成しない" "ctx" "$OUT"
 expect_absent "フィールドなし: 5h を合成しない" "5h" "$OUT"
 expect_absent "フィールドなし: 区切りも足さない" "｜" "$OUT"
-OUT=$(printf '%s' '{"context_window":{"used_percentage":NaN}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1); RC=$?
+OUT=$(printf '%s' '{"context_window":{"used_percentage":NaN}}' | HOME="$SLH" python3 "$SLP" 2>&1); RC=$?
 expect_eq "nan の使用率は何も足さない（exit 0）" "0:$(basename "$PWD")" "$RC:$OUT"
-OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":-5,"resets_at":Infinity},"seven_day":{"used_percentage":130}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1); RC=$?
+OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":-5,"resets_at":Infinity},"seven_day":{"used_percentage":130}}}' | HOME="$SLH" python3 "$SLP" 2>&1); RC=$?
 expect_eq "負値・100 超の使用率は何も足さない（exit 0）" "0:$(basename "$PWD")" "$RC:$OUT"
-OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":90,"resets_at":1e400}}}' | HOME="$SLH" python3 "$HOOKS/statusline.py" 2>&1)
-expect_contains "戻る時刻が inf でも使用率は出す（時刻だけ落とす）" "⚠ 5h 90%" "$OUT"
+OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":90,"resets_at":1e400}}}' | HOME="$SLH" python3 "$SLP" 2>&1)
+# weaken-ok: 2026-10-06 保守者指定により非表示へ変更。B76 の期待値を反転
+expect_absent "戻る時刻が inf でも使用率は出さない" "⚠ 5h 90%" "$OUT"
 expect_absent "戻る時刻が inf でも Traceback を出さない" "Traceback" "$OUT"
 
 

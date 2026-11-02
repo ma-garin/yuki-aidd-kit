@@ -1,6 +1,6 @@
 ---
 name: work-metering
-description: コーディングを含む作業の見積・中間・完了を計測し、予実を記録する。質問・説明・相談・確認・指示の記録・文書や設定だけの更新では、計測表示を出さず、表示のためだけに本スキルを実行しない。
+description: 「見積」「予実」「計測」「実測」— コーディングを含む作業の見積・中間・完了を計測し、予実を記録する。質問・説明・相談・確認・指示の記録・文書や設定だけの更新では、計測表示を出さず、表示のためだけに本スキルを実行しない。
 ---
 
 ## 応答と計測表示（2026-10-18 利用者指示・旧書式より優先）
@@ -66,5 +66,8 @@ python3 $M note "待ち受けの中間応答に見積行を再掲した"   # 乖
 ## 出所・関連
 
 - 規約: `02_共通/rules/absolute-rules.md` A-2・A-2a（2026-10-10 保守者指示）、`speed-harness.md` H-1・H-6
-- 実装: `03_ClaudeCode/hooks/prompt-priority.py`・`reply-language.py`・`tool-timer.py`（Claude Code）、`scripts/metering.py`（Codex・手動）
+- 実装: `03_ClaudeCode/hooks/prompt-priority.py`・`reply-language.py`・`tool-timer.py`（Claude Code）、`skills/work-metering/scripts/metering.py`（Codex・手動）
 - 隣接スキル: `handoff`（区切りの引き継ぎ）、`retro`（予実の学びを lessons へ）
+
+**使わない場面**: 質問への回答・説明・相談・確認・指示の記録・文書や設定だけの更新（計測表示を出さない。冒頭の節のとおり）。
+**次に渡す先**: 乖離の原因は `retro`（学び→編集先）。区切りの引き継ぎは `handoff`。校正係数の集計は `02_共通/ツール/evidence.py`。

@@ -227,7 +227,9 @@ def check_case_counts(root: Path, r: Result, totals: dict[str, int]) -> None:
                 for j, w in enumerate(window):
                     nums = [int(x) for x in CASE_RE.findall(w)] + [int(x) for x in PASS_RE.findall(w)]
                     # 同じ窓に別スクリプト名があれば、その行以降は別スクリプトの数値
-                    if j > 0 and any(o in w for o in totals if o != name):
+                    # （totals に無い test-*.sh も「別スクリプト」。総数の代替指定が一部だけのとき、
+                    #   隣の行の件数を別名に紐づけて誤検知していた。2026-11-03）
+                    if j > 0 and any(o != name for o in re.findall(r"test-[\w-]+\.sh", w)):
                         break
                     for n in nums:
                         if n != total:
