@@ -48,6 +48,7 @@ jobs:
           bash 06_保守者向け/03_回帰テスト/test-oracle-tools.sh
           bash 06_保守者向け/03_回帰テスト/test-config-deps.sh
           bash 06_保守者向け/03_回帰テスト/test-plugin-manifest.sh
+          bash 06_保守者向け/03_回帰テスト/test-constitution-gate.sh
       - name: check-docs の回帰テスト
         run: bash 06_保守者向け/03_回帰テスト/test-check-docs.sh
       - name: check-design の回帰テスト

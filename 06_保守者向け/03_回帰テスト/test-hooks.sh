@@ -627,10 +627,14 @@ export AIDD_TOOL_TIME="$TMP/tool-time.json"   # 以降のテストのために�
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"中間報告をしなさい。今すぐに。"}' | python3 "$HOOKS/prompt-priority.py")
 expect_contains "UserPromptSubmit: 「今すぐ」「報告」を含む発言に優先の注入" "作業より優先" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | python3 "$HOOKS/prompt-priority.py"); RC=$?
-expect_contains "UserPromptSubmit: 通常の発言にも見積もりの提示を注入（A-2 例外なし）" "見積: N分" "$(cg_ctx "$OUT")"
+# weaken-ok: 2026-11-03 保守者指示で見積書式を A-2（B）に統一。注入文は `見積：N分`（全角コロン）と対象の線引きを含む
+expect_contains "UserPromptSubmit: 通常の発言にも見積もりの提示を注入（A-2。書式は B）" "見積：N分" "$(cg_ctx "$OUT")"
+expect_contains "UserPromptSubmit: 注入文に対象の線引き（コーディングを含む作業）" "コーディングを含む作業" "$(cg_ctx "$OUT")"
+expect_absent "UserPromptSubmit: 旧書式（完了予定）を注入しない" "完了予定" "$(cg_ctx "$OUT")"
 expect_contains "UserPromptSubmit: 見積もりの注入は保守者の時計（既定 Asia/Tokyo）で現在時刻を同梱する" "現在 $(TZ=Asia/Tokyo date '+%H:%M')（Asia/Tokyo）" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | AIDD_TZ=Bad/Zone python3 "$HOOKS/prompt-priority.py")
-expect_contains "UserPromptSubmit: タイムゾーンが解決できなければ時刻を書かず取得を促す" "先に時刻を取得してから書き" "$(cg_ctx "$OUT")"
+# weaken-ok: 2026-11-03 B 書式では完了予定を書かないため、時刻の注意は「date の出力を転記」に統一
+expect_contains "UserPromptSubmit: 時刻は date の出力を転記し推測で書かない" "推測で書かない" "$(cg_ctx "$OUT")"
 { u_text "構成を直して"; a_text "直します。"; a_tool; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "応答に見積もり行が無いままツールを呼んだら通知（A-2）" "見積もりが無い" "$(ig_reason "$OUT")"

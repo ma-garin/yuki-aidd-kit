@@ -1,0 +1,167 @@
+#!/bin/bash
+# test-constitution-gate.sh — constitution-gate.py（憲法ゲート: 見積・中間報告・番の終わり方）の回帰テスト
+#
+# transcript は mktemp に JSONL を自作し、時刻は AIDD_NOW_EPOCH で偽装する。各ケースは独立したプロジェクト
+# ディレクトリ（停止 file・状態 file・学んだこと.md）で走らせ、稼働中セッションの .claude/ には触れない。
+KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+HOOK="$KIT_DIR/03_ClaudeCode/hooks/constitution-gate.py"
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+PASS=0; FAIL=0
+ok() { echo "  ✅ $1"; PASS=$((PASS+1)); }
+ng() { echo "  ❌ $1（$2）"; FAIL=$((FAIL+1)); }
+expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出力に '$2' が無い: ${3:0:160}"; }
+expect_empty(){ [ -z "$2" ] && ok "$1" || ng "$1" "出力が空でない: ${2:0:160}"; }
+expect_file() { [ -e "$2" ] && ok "$1" || ng "$1" "$2 が無い"; }
+expect_nofile(){ [ -e "$2" ] && ng "$1" "$2 がある" || ok "$1"; }
+
+unset AIDD_STOP_FILE CLAUDE_PROJECT_DIR AIDD_REPORT_INTERVAL_SEC
+export AIDD_HOOK_LOG="$TMP/hook-decisions.log" AIDD_TOOL_TIME="$TMP/tool-time.json" AIDD_TRANSCRIPT_FLUSH_SEC=0
+NOW=1790000000
+
+js() { python3 -c 'import json,sys;print(json.dumps(sys.argv[1],ensure_ascii=False))' "$1"; }
+user() { echo "{\"type\":\"user\",\"uuid\":\"$1\",\"message\":{\"role\":\"user\",\"content\":$(js "$2")}}"; }
+asst() { echo "{\"type\":\"assistant\",\"uuid\":\"$1\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":$(js "$2")}]}}"; }
+agent() { echo "{\"type\":\"assistant\",\"uuid\":\"$1\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"$2\",\"name\":\"Agent\",\"input\":{\"prompt\":\"x\",\"run_in_background\":$3}}]}}"; }
+result() { echo "{\"type\":\"user\",\"uuid\":\"$1\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"$2\",\"content\":$(js "$3")}]}}"; }
+
+# newproj <名前>: プロジェクトを作り、学んだこと.md を NOW-1日 の mtime で置く。$P と $T（transcript）を設定
+newproj() {
+  P="$TMP/$1"; T="$P/transcript.jsonl"
+  mkdir -p "$P/.claude" "$P/06_保守者向け"; : > "$T"
+  echo "# 学んだこと" > "$P/06_保守者向け/学んだこと.md"; touch -d "@$((NOW - 86400))" "$P/06_保守者向け/学んだこと.md"
+}
+# pre <tool> <tool_input JSON> <epoch> [追加フィールド]
+pre() {
+  printf '{"hook_event_name":"PreToolUse","tool_name":"%s","tool_input":%s,"transcript_path":"%s","cwd":"%s"%s}' \
+    "$1" "$2" "$T" "$P" "${4:-}" | (cd "$P" && AIDD_NOW_EPOCH="$3" python3 "$HOOK" pre 2>&1)
+}
+stop() { printf '{"hook_event_name":"Stop","transcript_path":"%s","cwd":"%s"%s}' "$T" "$P" "${1:-}" \
+           | (cd "$P" && AIDD_NOW_EPOCH="$NOW" python3 "$HOOK" stop 2>&1); }
+RD='{"file_path":"/x/a.py"}'
+WR='{"file_path":"/x/a.py","content":"x"}'
+
+echo "■ (a) 停止 file"
+newproj a; user u1 "README を読んで" >> "$T"
+echo "2026-11-03T10:00:00+09:00	見積欠落	Write" > "$P/.claude/constitution-stop"
+OUT=$(pre Read "$RD" $NOW)
+expect_out "1. 停止 file があれば Read も deny" '"permissionDecision": "deny"' "$OUT"
+expect_out "2. 理由に再開条件" "停止 file" "$OUT"
+
+echo "■ (c) 見積ゲート"
+newproj c; user u1 "constitution-gate.py を実装して" >> "$T"
+for i in 1 2 3; do
+  OUT=$(pre Read "$RD" $NOW); expect_empty "3.$i 見積なしでも読み取り $i 回目は許可" "$OUT"
+done
+OUT=$(pre Read "$RD" $NOW)
+expect_out "4. 読み取り 4 回目は deny" "見積欠落" "$OUT"
+expect_file "5. 違反で停止 file を即生成" "$P/.claude/constitution-stop"
+expect_file "6. .last も生成" "$P/.claude/constitution-stop.last"
+expect_out "7. 違反 JSONL に記録" '"kind": "見積欠落"' "$(cat "$P/.claude/constitution-violations.jsonl" 2>/dev/null)"
+expect_out "8. hook-decisions.log に stop" '"hook": "constitution-gate", "decision": "stop"' "$(cat "$AIDD_HOOK_LOG")"
+
+newproj c2; user u1 "バグを直して" >> "$T"
+OUT=$(pre Write "$WR" $NOW)
+expect_out "9. 見積なしの Write は 1 回目から deny" "見積欠落" "$OUT"
+
+newproj c3; user u1 "a.py を修正して" >> "$T"; asst a1 "見積：5分
+着手します" >> "$T"
+OUT=$(pre Write "$WR" $NOW); expect_empty "10. 見積行があれば Write を許可" "$OUT"
+newproj c4; user u1 "a.py を修正して" >> "$T"; asst a1 "見積: 5分" >> "$T"
+OUT=$(pre Write "$WR" $NOW); expect_empty "11. 半角コロンの見積行も受理" "$OUT"
+newproj c5; user u1 "今日の進捗を教えて" >> "$T"
+OUT=$(pre Write "$WR" $NOW); expect_empty "12. コーディングを含まない指示は見積ゲートの対象外" "$OUT"
+
+echo "■ (d) 報告ゲート"
+newproj d; user u1 "テストを追加して" >> "$T"; asst a1 "見積：10分" >> "$T"
+OUT=$(pre Write "$WR" $NOW); expect_empty "13. 見積行を確認（起点）" "$OUT"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 170))); expect_empty "14. 170 秒は許可" "$OUT"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 181)))
+expect_out "15. 180 秒超は deny" "無報告" "$OUT"
+expect_out "16. 理由に中間行の書式" "中間行【進捗" "$OUT"
+expect_file "17. 180 秒超で停止 file 生成" "$P/.claude/constitution-stop"
+
+newproj d2; user u1 "テストを追加して" >> "$T"; asst a1 "見積：10分" >> "$T"
+pre Write "$WR" $NOW >/dev/null
+asst a2 "【進捗:順調 | 経過時間：2分 | 終了:10:10 | タスク数:1/3】" >> "$T"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 120))); expect_empty "18. 中間行を出した時点で許可" "$OUT"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 250))); expect_empty "19. 中間行から 130 秒なので許可（見積行からは 250 秒）" "$OUT"
+expect_nofile "20. 停止 file は無い" "$P/.claude/constitution-stop"
+
+newproj d3; user u1 "テストを追加して" >> "$T"; asst a1 "見積：10分" >> "$T"
+pre Write "$WR" $NOW >/dev/null
+asst a2 "完了。残作業はなし
+【見積:10分 | 実測:8分 | 開始:10:00 | 終了:10:08 | 作業時間記録:成功】" >> "$T"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 1000))); expect_empty "21. 完了行の後は判定外" "$OUT"
+
+newproj d4; user u1 "テストを追加して" >> "$T"; asst a1 "見積：10分" >> "$T"
+user n1 "<task-notification><task-id>x</task-id><status>completed</status></task-notification>" >> "$T"
+OUT=$(pre Write "$WR" $NOW); expect_empty "22. 機械の通知ではターンを区切らない（見積は有効）" "$OUT"
+
+echo "■ (C) 停止 file の保護"
+newproj p; user u1 "README を読んで" >> "$T"
+OUT=$(pre Bash '{"command":"rm -f .claude/constitution-stop"}' $NOW)
+expect_out "23. 停止 file への rm を deny" "停止 file の改ざん" "$OUT"
+newproj p2; user u1 "README を読んで" >> "$T"
+OUT=$(pre Write "{\"file_path\":\"$P/.claude/constitution-stop.last\",\"content\":\"\"}" $NOW)
+expect_out "24. Write で .last を deny" "停止 file の改ざん" "$OUT"
+newproj p3; user u1 "README を読んで" >> "$T"
+OUT=$(pre Edit '{"file_path":".claude/constitution-state.json","old_string":"a","new_string":"b"}' $NOW)
+expect_out "25. Edit で状態 file（相対 path）を deny" "停止 file の改ざん" "$OUT"
+newproj p4; user u1 "README を読んで" >> "$T"
+OUT=$(pre Bash '{"command":"cat .claude/constitution-stop.last"}' $NOW); expect_empty "26. 停止 file の読み取りは許可" "$OUT"
+
+echo "■ (b) 事後分析の必須化"
+newproj b; user u1 "README を読んで" >> "$T"
+printf '%s\t2026-11-03T10:00:00+09:00\t見積欠落\n' "$NOW" > "$P/.claude/constitution-stop.last"
+OUT=$(pre Read "$RD" $((NOW + 60)))
+expect_out "27. .last より古い学んだこと.md なら deny" "インシデント記録が無い" "$OUT"
+expect_nofile "28. 事後分析待ちでは停止 file を書かない" "$P/.claude/constitution-stop"
+touch -d "@$((NOW + 30))" "$P/06_保守者向け/学んだこと.md"
+OUT=$(pre Read "$RD" $((NOW + 60))); expect_empty "29. 新しい学んだこと.md なら許可" "$OUT"
+rm "$P/06_保守者向け/学んだこと.md"; mkdir -p "$P/docs"; echo x > "$P/docs/lessons.md"; touch -d "@$((NOW + 30))" "$P/docs/lessons.md"
+OUT=$(pre Read "$RD" $((NOW + 60))); expect_empty "30. docs/lessons.md へのフォールバック" "$OUT"
+
+echo "■ B. Stop"
+newproj s; user u1 "調べて" >> "$T"; agent a1 t1 false >> "$T"
+OUT=$(stop); expect_out "31. Agent 走行中（結果なし）は block" '"decision": "block"' "$OUT"
+newproj s2; user u1 "調べて" >> "$T"; agent a1 t1 true >> "$T"
+result r1 t1 "Async agent launched successfully. agentId: ag-1" >> "$T"
+OUT=$(stop); expect_out "32. 背景 Agent の完了通知なしは block" "委譲先が走行中" "$OUT"
+user n1 "<task-notification><task-id>ag-1</task-id><status>completed</status></task-notification>" >> "$T"
+OUT=$(stop); expect_empty "33. 完了通知が届けば通す" "$OUT"
+newproj s3; user u1 "a.py を修正して" >> "$T"; asst a1 "見積：5分" >> "$T"
+OUT=$(stop); expect_out "34. 完了行なしは block" "計測区間が未了" "$OUT"
+asst a2 "完了。残作業はなし
+【見積:5分 | 実測:4分 | 開始:10:00 | 終了:10:04 | 作業時間記録:成功】" >> "$T"
+OUT=$(stop); expect_empty "35. 完了行があれば通す" "$OUT"
+newproj s4; user u1 "a.py を修正して" >> "$T"; asst a1 "見積：5分" >> "$T"
+OUT=$(stop ',"stop_hook_active":true'); expect_empty "36. stop_hook_active は無言" "$OUT"
+
+echo "■ D. fail-closed"
+newproj f
+OUT=$(cd "$P" && echo '{壊れた' | python3 "$HOOK" pre 2>&1)
+expect_out "37. 壊れた JSON は deny" "hook 内部エラー" "$OUT"
+OUT=$(cd "$P" && echo '{壊れた' | python3 "$HOOK" stop 2>&1)
+expect_out "38. Stop でも壊れた JSON は block" '"decision": "block"' "$OUT"
+T="$P/none.jsonl"; OUT=$(pre Read "$RD" $NOW)
+expect_out "39. transcript が読めなければ deny（原因を理由に）" "transcript が読めない" "$OUT"
+expect_out "40. 読み取り系の deny には注記" "読み取り系も止まる" "$OUT"
+
+echo "■ その他"
+newproj o; user u1 "a.py を修正して" >> "$T"
+OUT=$(pre Write "$WR" $NOW ',"agent_id":"sub-1"'); expect_empty "41. 委譲先の中では見積ゲートを掛けない" "$OUT"
+echo "x	見積欠落	Write" > "$P/.claude/constitution-stop"
+OUT=$(pre Read "$RD" $NOW ',"agent_id":"sub-1"'); expect_out "42. 委譲先でも停止中は deny" "停止中" "$OUT"
+OUT=$(cd "$P" && python3 "$HOOK" report 2>&1)
+expect_out "43. report に停止中の内容" "| 停止中 | x 見積欠落 Write |" "$OUT"
+expect_out "44. report に hook-decisions.log の件数" "| hook-decisions.log |" "$OUT"
+expect_out "45. AIDD_NOW_EPOCH の使用を log に残す" '"decision": "test-clock"' "$(cat "$AIDD_HOOK_LOG")"
+
+echo ""
+echo "結果: PASS=$PASS / FAIL=$FAIL"
+if [ "$FAIL" -eq 0 ]; then
+  echo "✅ 全て正常"; exit 0
+else
+  echo "⚠ 失敗あり。03_ClaudeCode/hooks/constitution-gate.py を確認してください"; exit 1
+fi

@@ -276,7 +276,7 @@ def missing_actual(msg: str) -> str | None:
 # 【見積：N分 | 開始:… | タスク数：k】は作業全体の計測行。このターンの見積ではないので比較に使わない（2026-10-10 に 11 回誤判定）
 EST_RE = re.compile(r"(?<!【)見積[:：]\s*(\d+)\s*分")
 # 応答の最後の行の `見積: N分 / 実測: M分` はこのターンの予実。あれば最優先で比較に使う
-FINAL_EST_RE = re.compile(r"見積[:：]\s*(\d+)\s*分\s*/\s*実測[:：]")
+FINAL_EST_RE = re.compile(r"【?見積[:：]\s*(\d+)\s*分\s*(?:/|\|)\s*実測[:：]")  # B 書式【見積:N分 | 実測:M分 | …】と旧 `見積: N分 / 実測: M分` の両方
 OVERALL_RE = re.compile(r"【見積[:：]\s*(\d+)\s*分[^】]*\|[^】]*】")
 SHORT_TURN_SEC = 60  # 経過がこれ未満のターンは実測行も予実乖離も求めない（2026-10-11 保守者「ただの会話にいる?」）
 
@@ -424,7 +424,7 @@ def _main() -> int:
         return 0
     missing = missing_actual(msg)
     if missing is not None:
-        reason = (f"[reply-language] 応答の最後に実測が無い。`見積: N分 / {missing}` の形で1行だけ足す（A-2）")
+        reason = (f"[reply-language] 応答の最後に実測が無い。末尾に【見積:N分 | {missing} | 開始:HH:MM | 終了:HH:MM | 作業時間記録:成功/失敗】を1行だけ足す（A-2）")
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     n = too_long(msg)
