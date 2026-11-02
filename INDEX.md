@@ -252,7 +252,7 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け
 | `06_保守者向け/保守者の傾向.md` | 保守者の指摘・要望の傾向 30 項目（第 1 回 14: 言葉の規約／第 2 回 16: 実装者に課す手順の型。複数リポジトリの記録から原文つきで抽出）と反映先。同じ指摘を 2 回受けたら行を足す | 106行 |
 | `05_プロジェクト管理/構想.md` | キットの目的・到達点・Non-Goals | 47行 |
 | `05_プロジェクト管理/要求仕様.md` | FR/NFR（Claude Code と他エージェント双方で動作、が最重要NFR） | 86行 |
-| `06_保守者向け/学んだこと.md` | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。数値は実測だけ） | 215行 |
+| `06_保守者向け/学んだこと.md` | キット自身の AIDD プロセス改善ログ（Keep / Problem / Try。数値は実測だけ） | 233行 |
 | `06_保守者向け/04_監査記録/AUDIT-2026-07.md` | 2026-07 資産監査の記録と適用済み修正 | 114行 |
 | `06_保守者向け/04_監査記録/PROJECT-FIT-REPORT.md` | 実プロジェクト群への適合レポート（2026-06 時点） | 48行 |
 
@@ -292,7 +292,7 @@ CI は `02_共通/ひな形/github/workflows/lifecycle-check.yml`（手動起動
 - 工程分割が要る案件（他者へ納品/引き継ぐ・要件合意が要る・保守が続く）は `dev-lifecycle`、個人PWA/単一HTML/PoC は軽量な `sdd-ecc-workflow`。判断表は `skills/dev-lifecycle/SKILL.md` 冒頭
 - 全量導入より、対象プロジェクトに合う DAILY だけを読む。LIBRARY は削除せず必要時に検索・参照
 - ファイルを読む前に grep/glob で絞る（`context-compression` 参照）
-- 着手前に `目的:` `終了条件:` `見積:` `検証:` の4行を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒
+- 着手前にコーディングを含む作業なら 1 行目 `見積：N分`（A-2）、続けて `目的:` `終了条件:` `検証:` を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒
 - UI変更は `uiux_review` で全状態を実機で開いて確認する。実行経路の検証なしに「完了」と言わない（`rules/functional-integrity.md`）
 - AI出力品質は `agent-eval`、コード動作は `test-automation`、完了判定は `done-gate` で分ける
 - セッション終了時は `CURRENT_STATE.md` と `lessons.md` を更新する

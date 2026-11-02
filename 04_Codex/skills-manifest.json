@@ -236,7 +236,7 @@
     },
     "rules-speed-harness": {
       "files": 2,
-      "sha256": "0a442fd36a4ce55434c4bc3bb446971d5d41358af69603343b5b9fc7e1b34c2c"
+      "sha256": "ba738b21f0fd56a95e52a2bc3d08ce9fb042323c0bb89b1f95320daf582afa4f"
     },
     "rules-writing-style": {
       "files": 2,
@@ -284,7 +284,7 @@
     },
     "work-metering": {
       "files": 3,
-      "sha256": "cd6d8ccca7c26008236d69cf1bf6d6159725dd8ec16bf8aaf92ffcf0bbeeb24f"
+      "sha256": "963d84d781592dec5daba291b53b6bb07c661215b831e360c6460dabd080855c"
     },
     "work-report-html": {
       "files": 3,

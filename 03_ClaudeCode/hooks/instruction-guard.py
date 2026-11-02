@@ -239,10 +239,10 @@ def main() -> int:
     head = " ".join(inst.split())[:80]
     if kind == "unanswered":
         return notify(f"[instruction-guard] 未応答の指示: 「{head}」。まだ答えていなければ日本語で答え、"
-                      "作業するなら 1 行目を `見積: N分（HH:MM 完了予定）` にする（A-13・A-2）")
+                      "コーディングを含む作業なら 1 行目を `見積：N分` にする（A-13・A-2）")
     if kind == "estimate":
         return notify(f"[instruction-guard] 指示「{head}」への応答に見積もりが無い。"
-                      "作業を続ける前に `見積: N分（HH:MM 完了予定）` を出す（A-2。例外なし）")
+                      "作業を続ける前に 1 行目 `見積：N分` を出す（A-2。短い指示でも例外なし）")
     if kind == "awaiting":
         return notify("[instruction-guard] 自分で選択肢・可否を問うた直後に着手しようとしている。"
                       f"直近の応答の末尾: 「…{head}」。**答えを待つ**（保守者の傾向 #39。"
