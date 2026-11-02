@@ -12,13 +12,14 @@
   est.py now                        経過・進捗%・70%到達
   est.py pause / resume             ターン末に pause、次ターンの最初に resume（pause を忘れた場合、resume が前回の記録以降を返答待ちとして除外）
   est.py end / abort [--same]       完了 / 未完。T1 の呼び出しを1往復に数える（直前の tick と同じ呼び出しなら --same）。実測 = 作業区間 − ユーザー待ち（外部待ちは実測に含め、別列に記録）
+  est.py weekly [日数]              直近N日（既定7）の種別別 件数・比の中央値・範囲外件数と、範囲外の件（日時・種別・見積・実測・比）
   est.py stats                      往復単価（種別別）・往復数補正・直近10件の系統判定（Σ実測/Σ見積）・未完率
 """
 import csv, fcntl, json, os, shutil, statistics as stt, sys, time
 from datetime import datetime, timedelta, timezone
 
 JST = timezone(timedelta(hours=9))
-D = os.path.dirname(os.path.abspath(__file__))
+D = os.environ.get("AIDD_EST_DIR") or os.path.dirname(os.path.abspath(__file__))  # 回帰テスト用に差し替え可
 ST, LOG = os.path.join(D, "state.json"), os.path.join(D, "log.csv")
 COLS = ["t0", "t1", "kind", "plan_x", "unit_s", "xcorr", "ext_plan_s", "gen_s", "margin_s", "est_s", "reest_s", "actual_x",
         "user_wait_s", "ext_wait_s", "long_gap_s", "actual_s", "ratio", "result", "unfinished"]
@@ -127,6 +128,25 @@ if cmd == "stats":
               + ("合格" if 0.9 <= sr <= 1.1 and (len(last) - len(lf)) / len(last) <= 0.2 else "不合格"))
     for k in sorted({r["kind"] for r in fin}):
         u, c, src, _ = unit_and_corr(k); print(f"  {k}: 往復単価={u:.1f}s（{src}） 往復数補正={c:.2f}")
+    sys.exit()
+if cmd == "weekly":
+    days = int(args[0]) if args and args[0].isdigit() else 7
+    since = now - days * 86400
+    fin = [r for r in rows() if r["unfinished"] == "0" and int(r["t0"] or 0) >= since and int(r["est_s"] or 0) > 0]
+    def ok(r):
+        a, e = int(r["actual_s"]), int(r["est_s"])
+        return abs(a - e) <= 60 if a < 300 else 0.67 <= a / e <= 1.5
+    print(f"直近{days}日: 完了{len(fin)}件・範囲外{sum(not ok(r) for r in fin)}件（判定は §0 と同じ）")
+    for k in sorted({r["kind"] for r in fin}):
+        ks = [r for r in fin if r["kind"] == k]
+        med = stt.median(int(r["actual_s"]) / int(r["est_s"]) for r in ks)
+        print(f"  {k}: {len(ks)}件 比の中央値={med:.2f} 範囲外={sum(not ok(r) for r in ks)}件")
+    for r in fin:
+        if not ok(r):
+            a, e = int(r["actual_s"]), int(r["est_s"])
+            d = datetime.fromtimestamp(int(r["t0"]), JST).strftime("%m-%d %H:%M")
+            print(f"  範囲外 {d} {r['kind']} 見積{e // 60}分{e % 60:02d}秒 実測{a // 60}分{a % 60:02d}秒 比{a / e:.2f}"
+                  + ("（過大見積）" if a < e else "（過小見積）"))
     sys.exit()
 if cmd == "t0":
     if s:

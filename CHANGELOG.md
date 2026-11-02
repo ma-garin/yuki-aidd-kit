@@ -5,6 +5,8 @@
 
 ## 未リリース
 
+- **応答ルール検査 `hooks/reply_rules.py` を追加**（保守者の応答規約の機械判定）: R1 判定調の締め（構いません・十分です・大丈夫です等）／R2 結論・要約ラベル／R3 開いた質問（どうしますか等）／R4 Before/After 表の無い変更報告／R5 タメ口。コードブロック・引用は対象外。`reply-language.py` が Stop で R1・R2・R3・R5 を差し戻す（R4 は完了報告での誤検知が多いため既定は集計のみ。`AIDD_REPLY_LINT_RULES` で変更、`AIDD_REPLY_LINT_OK=1` で解除し hook-decisions.log に残す）。`reply_rules.py stats <transcript.jsonl>…` で規則別の違反率を集計（QA4AI の評価素材）。`test-hooks.sh` に 12 ケース
+- **`est.py weekly [日数]` を追加**: 直近N日（既定7）の種別別 件数・比の中央値・範囲外件数と、範囲外の各件（日時・種別・見積・実測・比・過大/過小）を出す。判定は spec §0 と同じ（5分以上は 0.67〜1.5、5分未満は ±1分）。`AIDD_EST_DIR` で記録先を差し替え可（回帰テスト用）。`test-hooks.sh` に 4 ケース
 - `work-metering` スキルを追加（03_ClaudeCode・04_Codex）。見積・中間・完了の計測行と予実の校正を Codex でも同じ書式で出す。`scripts/metering.py` は tool-timer.py の履歴を共有
 - `block-protected.py` を撤去（保守者の指示。利用者の意図した設定変更まで止めていた）
 - `statusline.py` から 1 応答あたり出力（`出力…/t`）と連動する ⚠ を削除

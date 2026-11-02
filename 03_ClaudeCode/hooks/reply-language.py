@@ -353,6 +353,24 @@ def gap_note(est: int, elapsed: float) -> str | None:
     return None
 
 
+def reply_rule_violations(msg: str, cwd=None) -> list[tuple[str, str]]:
+    """reply_rules.py の規則違反。読み込めない・解除指定（AIDD_REPLY_LINT_OK=1）なら空（fail-open）。"""
+    import os
+    if os.environ.get("AIDD_REPLY_LINT_OK") == "1":
+        log_decision("reply-language", "override", "AIDD_REPLY_LINT_OK=1", "Stop", "", cwd, "AIDD_REPLY_LINT_OK")
+        return []
+    try:
+        spec = importlib.util.spec_from_file_location("reply_rules", Path(__file__).resolve().parent / "reply_rules.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        v = mod.check(msg, mod.hook_rules())
+    except Exception:
+        return []
+    if v:
+        log_decision("reply-language", "block", "応答ルール違反 " + ",".join(i for i, _ in v), "Stop", v[0][1], cwd)
+    return v
+
+
 def load_guard():
     p = Path(__file__).resolve().parent / "instruction-guard.py"
     spec = importlib.util.spec_from_file_location("instruction_guard", p)
@@ -419,6 +437,12 @@ def _main() -> int:
     if is_filler_only(msg):
         reason = ("[reply-language] 相槌だけで終わっている。相槌・謝辞・待機表明は情報を渡さない（H-0）。"
                   "問いに答える・結果を渡す・動作する のどれかに出し直す")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+        return 0
+    rv = reply_rule_violations(msg, data.get("cwd"))
+    if rv:
+        reason = ("[reply-language] 応答ルール違反（reply_rules.py）: " + " / ".join(f"{i} {d}" for i, d in rv)
+                  + "。該当箇所だけ直して出し直す。誤検知なら AIDD_REPLY_LINT_OK=1")
         print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0
     wt = wide_table(msg)

@@ -1605,6 +1605,44 @@ OUT=$(printf '%s' '{"context_window":{"used_percentage":Infinity}}' | python3 "$
 expect_eq "[検証] statusline: used_percentage が Infinity でも exit 0" "0" "$RC"
 expect_absent "[検証] statusline: Traceback を出さない" "Traceback" "$OUT"
 
+
+echo "[reply_rules.py / est.py weekly]"
+TMPD_RR=$(mktemp -d)
+RR="$HOOKS/reply_rules.py"
+rr() { printf '%b' "$1" | python3 "$RR" check 2>&1; }
+expect_contains "reply_rules: 判定調の締め → R1" "R1" "$(rr '方針はA案です。\nこの構成で十分です。')"
+expect_contains "reply_rules: 結論ラベル → R2" "R2" "$(rr '**結論**: A案')"
+expect_contains "reply_rules: 開いた質問 → R3" "R3" "$(rr 'A案とB案があります。どうしますか')"
+expect_contains "reply_rules: 表なしの変更報告 → R4" "R4" "$(rr '設定を変更しました。')"
+expect_empty "reply_rules: Before/After 表つきの変更報告は通す" "$(rr '| 項目 | Before | After |\n|---|---|---|\n| 閾値 | 1 | 2 |\n閾値を変更しました。')" "0"
+expect_contains "reply_rules: タメ口 → R5" "R5" "$(rr 'あとでやっとくね')"
+expect_empty "reply_rules: です・ます調の終助詞は通す" "$(rr '件数は3件ありますね。')" "0"
+expect_empty "reply_rules: コードブロック内の文面案は検査しない" "$(rr '案1です。\n```\nどうしますか？大丈夫です\n```')" "0"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"A案を推奨します。\\nこれで大丈夫です。"}' | AIDD_TOOL_TIME="$TMPD_RR/t.json" python3 "$HOOKS/reply-language.py" 2>/dev/null)
+expect_contains "reply-language: 応答ルール違反を Stop で差し戻す" "応答ルール違反" "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"設定を変更しました。"}' | AIDD_TOOL_TIME="$TMPD_RR/t.json" python3 "$HOOKS/reply-language.py" 2>/dev/null)
+expect_absent "reply-language: R4 は既定では差し戻さない（集計のみ）" "R4" "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"設定を変更しました。"}' | AIDD_REPLY_LINT_RULES=R4 AIDD_TOOL_TIME="$TMPD_RR/t.json" python3 "$HOOKS/reply-language.py" 2>/dev/null)
+expect_contains "reply-language: AIDD_REPLY_LINT_RULES=R4 で R4 も差し戻す" "R4" "$OUT"
+OUT=$(printf '{"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"A案を推奨します。\\nこれで大丈夫です。"}' | AIDD_REPLY_LINT_OK=1 AIDD_TOOL_TIME="$TMPD_RR/t.json" python3 "$HOOKS/reply-language.py" 2>/dev/null)
+expect_absent "reply-language: AIDD_REPLY_LINT_OK=1 で解除" "応答ルール違反" "$OUT"
+EST_D=$(mktemp -d)
+python3 - "$EST_D" <<'PYEOF'
+import csv, sys, time
+d, now = sys.argv[1], int(time.time())
+cols = ["t0","t1","kind","plan_x","unit_s","xcorr","ext_plan_s","gen_s","margin_s","est_s","reest_s","actual_x",
+        "user_wait_s","ext_wait_s","long_gap_s","actual_s","ratio","result","unfinished"]
+w = csv.DictWriter(open(d + "/log.csv", "w"), cols); w.writeheader()
+for i, (k, e, a) in enumerate([("調査", 600, 620), ("調査", 600, 1200), ("コード+CI", 900, 400), ("文書・回答", 120, 150)]):
+    w.writerow({c: 0 for c in cols} | {"t0": now - 3600 * (i + 1), "kind": k, "est_s": e, "actual_s": a, "unfinished": 0})
+w.writerow({c: 0 for c in cols} | {"t0": now - 86400 * 10, "kind": "調査", "est_s": 60, "actual_s": 600, "unfinished": 0})
+PYEOF
+OUT=$(AIDD_EST_DIR="$EST_D" python3 "$KIT_DIR/02_共通/ツール/estimate/est.py" weekly)
+expect_contains "est.py weekly: 7日より古い件を除いて範囲外を数える" "完了4件・範囲外2件" "$OUT"
+expect_contains "est.py weekly: 過小見積を明示" "比2.00（過小見積）" "$OUT"
+expect_contains "est.py weekly: 過大見積を明示" "比0.44（過大見積）" "$OUT"
+expect_contains "est.py weekly: 5分未満は±1分で判定" "文書・回答: 1件 比の中央値=1.25 範囲外=0件" "$OUT"
+rm -rf "$EST_D"
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"
 if [ "$FAIL" -eq 0 ]; then
