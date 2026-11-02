@@ -31,7 +31,7 @@ pre-commit・文書）に散って食い違っていた。判定はここだけ�
         （END が無ければ BEGIN 以降を全部）・`password=…` 形の値・base64 らしき 40 字以上の連なりを `***`）。
         書けなくても例外を出さない（記録のために止めない。deny の動作は変えない）。集計は `token_report.py --hooks`
       一致検査は片方向（4 か所に書かれた名前 ⊂ (a)）。pre-write-check.sh に独自の拡張子一覧が残っていれば
-      `=~ \.(env|pem|…)$` の形だけを読む（別の書き方にすると検査から漏れる）
+      `=~ \\.(env|pem|…)$` の形だけを読む（別の書き方にすると検査から漏れる）
 
 標準ライブラリのみ。
 """
@@ -629,6 +629,23 @@ def unwrap_command(cmd: str, depth: int = MAX_DEPTH) -> list[str]:
     return analyze_command(cmd, depth).strings
 
 
+# 深い入れ子の JSON は判定不能として RecursionError にする。Python 3.13 以降の json は 3000 段程度なら例外を出さずに
+# 読めてしまい、版によって fail-closed の挙動が変わるため、版に依らず段数で明示的に止める（反復で数え、自分は再帰しない）
+_MAX_JSON_DEPTH = 200
+
+
+def _ensure_json_depth(obj, limit: int = _MAX_JSON_DEPTH) -> None:
+    stack = [(obj, 1)]
+    while stack:
+        o, d = stack.pop()
+        if d > limit:
+            raise RecursionError(f"JSON の入れ子が {limit} 段を超える")
+        if isinstance(o, dict):
+            stack.extend((v, d + 1) for v in o.values())
+        elif isinstance(o, list):
+            stack.extend((v, d + 1) for v in o)
+
+
 # ---------------------------------------------------------------- pre-write（pre-write-check.sh から呼ぶ）
 def _write_texts(tool_input: dict) -> list[tuple[str, str]]:
     out = []
@@ -646,6 +663,7 @@ def pre_write(stdin_text: str) -> int:
     """deny なら hook の JSON を 1 つだけ出す。警告なら 1 行ずつ出す。何も無ければ無言。入力が読めなければ exit 3。"""
     try:
         data = json.loads(stdin_text)
+        _ensure_json_depth(data)
         if not isinstance(data, dict):
             raise ValueError("JSON の最上位がオブジェクトでない")
         ti = data.get("tool_input") or {}
@@ -722,6 +740,19 @@ def _literal_prefix(rx: str) -> str:
     return m.group(0) if m else ""
 
 
+def _fixed_head(rx: str) -> str:
+    """最初の量指定（{ * + ?）の直前の原子を落とした頭部（`xox[baprs]-[A-Za-z0-9-]{10,}` → `xox[baprs]-`）。"""
+    m = re.match(r"((?:\\.|\[[^\]]*\]|[^\[\](){}?*+.|^$\\])*?)(\\.|\[[^\]]*\]|[^\[\](){}?*+.|^$\\])[{*+?]", rx)
+    return m.group(1) if m else ""
+
+
+def _fullmatch_ci(head: str, word: str) -> bool:
+    try:
+        return re.fullmatch(head, word, re.IGNORECASE) is not None
+    except re.error:
+        return False
+
+
 def _check_names(label: str, names: list[str], ng: list[str]) -> None:
     if not names:
         ng.append(f"{label}: 秘密ファイルの規則が見つからない（判定不能は不一致として扱う）")
@@ -766,14 +797,20 @@ def check_consistency(root: Path) -> list[str]:
     # 4. pre-commit: 本文規則 PATTERNS の各語が (b) の接頭辞か既知の汎用語
     f = root / "02_共通/ツール/pre-commit"
     try:
-        m = re.search(r"PATTERNS=(['\"])\((.*)\)\1", f.read_text(encoding="utf-8"))
+        # 旧形 PATTERNS='(…)'・現行形 KNOWN='…'（値の形の正規表現の | 連結）のどちらも読む
+        txt = f.read_text(encoding="utf-8")
+        m = (re.search(r"PATTERNS=(['\"])\((.*)\)\1", txt)
+             or re.search(r"^\s*KNOWN=(['\"])()(.*)\1\s*$", txt, re.MULTILINE))
         if not m:
-            ng.append(f"{f.name}: PATTERNS が見つからない（判定不能は不一致として扱う）")
+            ng.append(f"{f.name}: PATTERNS／KNOWN が見つからない（判定不能は不一致として扱う）")
         else:
             kws = [k.lower() for _n, ks, _m, _r in SECRET_VALUE_PATTERNS for k in ks]
-            for alt in _alternatives(m.group(2)):
+            body = m.group(2) or m.group(3)
+            for alt in _alternatives(body):
                 lit = _literal_prefix(alt).lower()
-                if alt.lower() in KNOWN_BODY_WORDS or (lit and any(lit.startswith(k) for k in kws)):
+                head = _fixed_head(alt)
+                if alt.lower() in KNOWN_BODY_WORDS or (lit and any(lit.startswith(k) for k in kws)) \
+                        or (head and any(_fullmatch_ci(head, k) for k in kws)):
                     continue
                 ng.append(f"{f.name}: 本文規則の語 `{alt}` が SECRET_VALUE_PATTERNS にも既知語にも無い")
     except OSError as e:

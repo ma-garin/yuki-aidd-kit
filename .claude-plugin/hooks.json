@@ -1,0 +1,214 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/tool-timer.py pre",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/block-ci.py",
+            "timeout": 5,
+            "statusMessage": "自己ウェイク・CI 待ちでないか確認中"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/instruction-guard.py",
+            "timeout": 5,
+            "statusMessage": "保守者の指示に応答済みか確認中"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/pre-write-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/block-phase.py",
+            "timeout": 25,
+            "statusMessage": "前工程の承認を確認中"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/pre-read-guard.py",
+            "timeout": 5,
+            "statusMessage": "読む価値とサイズを確認中"
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/block-explore.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/block-destructive.py",
+            "timeout": 5,
+            "statusMessage": "取り返しのつかない操作でないか確認中"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/block-gates.py",
+            "timeout": 10,
+            "statusMessage": "ゲート実行の要否を確認中"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/filter-output.py",
+            "timeout": 5,
+            "statusMessage": "冗長な出力を絞る書き換えを確認中"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/tool-timer.py reset",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/prompt-priority.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/context-guard.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/subagent-context.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/pre-compact.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/session-context.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/log-instructions.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/tool-timer.py post",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/observe.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/post-write-html.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "WebFetch|WebSearch|mcp__.*|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/injection-guard.py",
+            "timeout": 5,
+            "statusMessage": "取得内容に埋め込まれた指示を確認中"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/reply-language.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/session-summary.sh"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/ralph-stop.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

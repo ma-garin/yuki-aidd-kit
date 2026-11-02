@@ -68,6 +68,11 @@ python3 scripts/md-section.py search <語>     # Markdown 文書を見出し単�
 python3 scripts/req-lint.py <要件の文書>      # 要件の検査（EARS 型・曖昧語・数値の無い非機能目標・列挙数・ID 重複）。check_approval.py --gate 2 が隣のこれを呼ぶ
 python3 scripts/pw-spec-lint.py tests        # Playwright テストの静的検査（固定待ち・.only・理由の無い skip・旧 API。NG=0 が合格）
 python3 scripts/test-weaken-check.py --base main  # テストの弱体化検査（assert 削除・skip/only 追加・retries 増・toBeTruthy 置換。正当なものは weaken-ok: <理由>）
+python3 scripts/oracle-lint.py tests/            # AI が書いたテストの期待値の出所検査（NG: SUT を呼んで期待値を作る／WARN: 要求ID無し・境界値±1無し）（8.7.0〜）
+python3 scripts/mutate-quick.py src/loan.py --test "pytest -q"   # 簡易ミューテーション（境界・定数±1・==/!=・条件反転）。見逃し>0 で exit 1（8.7.0〜）
+python3 scripts/passk.py -k 5 -- pytest -q         # 同じコマンドを k 回。pass@k / pass^k と揺れたテストの一覧（8.7.0〜）
+python3 scripts/evidence.py --since 30             # 効果の証拠レポート（見積校正・est.py 精度・hook 判定・E2E）。`--acceptance --base main` で検収証跡3点（8.7.0〜）
+python3 scripts/estimate/est.py weekly 7           # 直近 7 日の見積が外れた件を種別ごとに一覧（8.7.0〜）
 ```
 
 ## エージェント（自走する実行主体。install で `~/.claude/agents/`、export で `.claude/agents/` へ）
@@ -137,6 +142,8 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `design-principles` | 設計原則の短い 5 つ（コード・文書を触ったときだけ読み込み） | #design #process | 11行 |
 | `security-hygiene` | 秘密情報の取り扱い（実装ファイルを触ったときだけ読み込み） | #security | 13行 |
 | `writing-style` | 文章規約・AI 臭さを消す書き方（`*.md` を触ったときだけ読み込み） | #docs #process | 28行 |
+| `quality-decision`（8.7.0〜） | 品質制御ループ6段階・停止/再開条件を対で書く・保留条件・AI の報告への3質問・自律レベル L0〜L5 と止め方・指示と制御の使い分け（AIDD×QA メモ 2/5・4/5・5/5） | #qa #process #must | 57行 |
+| `evidence-citation`（8.7.0〜） | 根拠3種類（規格・研究・製品文書）で言えること／引用前の4確認（誰を・何と・何を・どこまで確認）／数字は条件ごと引用（AIDD×QA メモ 3/5） | #docs #process | 24行 |
 
 ## 03_ClaudeCode/hooks/（settings.json で配線）
 
@@ -167,6 +174,9 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `session-summary.sh` | Stop | セッション終了サマリ |
 | `observe.py`（8.7.0〜） | PostToolUse | ツール呼び出しごとに 1 行の観測を `.claude/observations.jsonl` に積む（圧縮・再開後の再注入用。中身は残さない） |
 | `ralph-stop.py`（8.7.0〜） | Stop | `/ralph` が `.claude/ralph.json` を作ったときだけ、合言葉が出るまで同じ依頼を回し直す opt-in の完了ループ（無ければ no-op） |
+| `reply_rules.py`（8.7.0〜） | Stop（`reply-language.py` から呼ぶ） | 応答ルール R1 判定調の締め／R2 結論ラベル／R3 開いた質問／R4 Before/After 表なし変更報告（既定は集計のみ）／R5 タメ口。`stats <transcript>` で違反率 |
+| `config-snapshot.py`（8.7.0〜） | SessionStart / UserPromptSubmit（配線は保守者が `settings-patch-config-deps.md` を当てる） | CLAUDE.md・AGENTS.md・settings・rules・モデルの構成を `.claude/ai-config-log.jsonl` に記録し、前回と変わったときだけ「構成が変わった。確認セットを通し直す」を注入。`report` で検収用の変更履歴 |
+| `block-deps.py`（8.7.0〜） | PreToolUse Bash / Write / Edit（同上） | 新規依存の追加（pip/uv/poetry/npm/pnpm/yarn/cargo/go、requirements・pyproject・package.json への追記）を deny。実在・配布元・版の確認と承認後に `AIDD_DEPS_OK=1`。ロックファイルに無い初出名は WARN |
 | `.claude/hook-decisions.log` | （hook ではなく記録。deny・override を JSONL で 1 行ずつ） | `secret_patterns.log_decision` が書く判定の記録。`token_report.py --hooks` の入力（B12） |
 
 回帰テスト: `./06_保守者向け/03_回帰テスト/test-hooks.sh`
@@ -175,6 +185,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 
 | コマンド | 1行要約 | タグ | コスト |
 |---|---|---|---|
+| `/quality-card`（8.7.0〜） | 変更の品質判断カード（変更・守るもの・失敗・要求・確認範囲・証跡・停止条件・担当・再開条件）を出す。埋まらない項目＝次の作業 | #qa #lifecycle | 19行 |
 | `/rfd` | RFD（提案・論点出し）を起票し、決定を人間に求める | #lifecycle | 24行 |
 | `/lifecycle` | 指定工程の成果物を生成し入口/出口基準で判定（`status` で進捗確認） | #lifecycle | 33行 |
 | `/trace` | トレーサビリティの更新と `trace-check.sh` による機械検証 | #lifecycle #qa | 25行 |
@@ -249,6 +260,8 @@ ECC 資産のプロジェクト別 DAILY/LIBRARY 対応は **`01_利用者向け
 `06_保守者向け/01_内部仕様/`（14本）: 現況仕様。上記「internal/spec/」節。
 
 templates/: `design-system.md`（視覚的指示書。チェックリストは機械/目視の別付き）/ `tokens.css`（デザイントークンの実物。**値の唯一の真実源**。ライト＋ダーク）/ `ui/`（`components.css` 部品 / `layout.css` 骨格 / `tailwind.config.js` / `streamlit-config.toml` / `streamlit_theme.py` / `README.md` FW 別1枚表）/ `components/`（`feedback.js` `icons.js` `demo.html` `demo-shell.html`）/ `settings.sandbox.json`（sandbox・denyRead・network allowlist・permissions の雛形）/ `CURRENT_STATE.md`（決まっていること・未検証の確かめ方・最初の 5 分つき）/ `ADR-template.md`（判断基準を規格名で・捨てた案）/ `lessons.md` / `implement-profile.md`（止まる条件つき）/ `work-order.md`（別モデルへ渡す作業指示書: 守ること表・Step 完了条件・止まる条件・質問節）
+
+## 02_共通/ひな形/品質判断カード.md — 変更ごとの9項目（変更・守るもの・失敗・要求・確認範囲・証跡・停止条件・担当・再開条件）。`/quality-card` が埋める（8.7.0〜）
 
 ## 02_共通/ひな形/lifecycle/ — 工程成果物の雛形（`dev-lifecycle` 用）
 

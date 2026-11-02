@@ -1,0 +1,32 @@
+{
+  "name": "yuki-aidd-kit",
+  "version": "8.6.0",
+  "description": "AI駆動開発（AIDD）のための skills・commands・agents・hooks 一式",
+  "author": {
+    "name": "ma-garin"
+  },
+  "repository": "https://github.com/ma-garin/yuki-aidd-kit",
+  "license": "MIT",
+  "keywords": [
+    "aidd",
+    "qa",
+    "sdd",
+    "hooks"
+  ],
+  "skills": [
+    "./03_ClaudeCode/skills/"
+  ],
+  "commands": [
+    "./03_ClaudeCode/commands/"
+  ],
+  "agents": [
+    "./03_ClaudeCode/agents/advisor.md",
+    "./03_ClaudeCode/agents/aidd-lead.md",
+    "./03_ClaudeCode/agents/build-agent.md",
+    "./03_ClaudeCode/agents/gate-agent.md",
+    "./03_ClaudeCode/agents/spec-agent.md",
+    "./03_ClaudeCode/agents/verify-agent.md"
+  ],
+  "hooks": "./.claude-plugin/hooks.json",
+  "outputStyles": "./03_ClaudeCode/output-styles/"
+}

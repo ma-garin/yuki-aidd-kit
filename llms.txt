@@ -24,6 +24,7 @@
 - [03_ClaudeCode/agents/verify-agent.md](03_ClaudeCode/agents/verify-agent.md): 工程 5〜7（単体・結合・システムテスト。生成→実行→ODC 分析→修整→再実行）
 - [03_ClaudeCode/agents/gate-agent.md](03_ClaudeCode/agents/gate-agent.md): 各工程の出口（機械判定＋3 役レビュー。差し戻し事項を該当エージェントへ返す）
 - [03_ClaudeCode/skills/advisor/SKILL.md](03_ClaudeCode/skills/advisor/SKILL.md): 節目の相談を受ける助言専用（読み取り専用で事実を確かめて助言）
+- [03_ClaudeCode/skills/work-metering/SKILL.md](03_ClaudeCode/skills/work-metering/SKILL.md): 見積・中間・完了の計測行 3 書式と予実の記録・校正係数。Claude Code は hook、Codex は `scripts/metering.py` で同じ 3 行を出す
 
 ## DAILY スキル
 
@@ -38,6 +39,7 @@
 - [03_ClaudeCode/skills/e2e-cycle/SKILL.md](03_ClaudeCode/skills/e2e-cycle/SKILL.md): E2E を設計→Playwright 生成→実行→ODC 分析・修整→コミットの 5 フェーズで段階停止しながら回す
 - [03_ClaudeCode/skills/phase-approval/SKILL.md](03_ClaudeCode/skills/phase-approval/SKILL.md): 工程の出口で AI 3 役を順次レビューし人間の承認に渡す。AI は承認しない。承認は成果物の版に縛る
 - [03_ClaudeCode/skills/done-gate/SKILL.md](03_ClaudeCode/skills/done-gate/SKILL.md): 完了宣言前のDefinition of Doneチェック
+- [03_ClaudeCode/skills/work-report-html/SKILL.md](03_ClaudeCode/skills/work-report-html/SKILL.md): 終えた作業を図・実物スクショ・時系列・確認結果つきの HTML レポートにして公開
 - [03_ClaudeCode/skills/uiux_review/SKILL.md](03_ClaudeCode/skills/uiux_review/SKILL.md): 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない
 - [03_ClaudeCode/skills/retro/SKILL.md](03_ClaudeCode/skills/retro/SKILL.md): AIDDの進め方の学びを lessons.md に蓄積しキットへ還流
 - [03_ClaudeCode/skills/handoff/SKILL.md](03_ClaudeCode/skills/handoff/SKILL.md): 作業を別セッション・別ハーネス（Claude ⇄ Codex）へ渡す引き継ぎ文書を 1 本書く。会話を読まずに続けられる形
@@ -52,6 +54,8 @@
 - [02_共通/rules/design-principles.md](02_共通/rules/design-principles.md): 設計原則の短い 5 つ（コード・文書を触ったときだけ読み込み）
 - [02_共通/rules/security-hygiene.md](02_共通/rules/security-hygiene.md): 秘密情報の取り扱い（実装ファイルを触ったときだけ読み込み）
 - [02_共通/rules/writing-style.md](02_共通/rules/writing-style.md): 文章規約・AI 臭さを消す書き方（`*.md` を触ったときだけ読み込み）
+- [02_共通/rules/quality-decision.md](02_共通/rules/quality-decision.md): 品質制御ループ6段階・停止/再開条件を対で書く・保留条件・AI の報告への3質問・自律レベル L0〜L5 と止め方・指示と制御の使い分け（AIDD×QA メモ 2/5・4/5・5/5）
+- [02_共通/rules/evidence-citation.md](02_共通/rules/evidence-citation.md): 根拠3種類（規格・研究・製品文書）で言えること／引用前の4確認（誰を・何と・何を・どこまで確認）／数字は条件ごと引用（AIDD×QA メモ 3/5）
 
 ## Optional
 
@@ -66,6 +70,7 @@
 - [03_ClaudeCode/skills/agent-ready/SKILL.md](03_ClaudeCode/skills/agent-ready/SKILL.md): プロジェクトが AI エージェントで開発しやすいかを 100 点で採点（対象は変更しない）
 - [03_ClaudeCode/skills/ai-trend-research/SKILL.md](03_ClaudeCode/skills/ai-trend-research/SKILL.md): AI・LLM・開発ツールの最新動向を公開 API・RSS・GitHub・Web から調べて整理（読み取り専用）
 - [03_ClaudeCode/skills/skill-guide/SKILL.md](03_ClaudeCode/skills/skill-guide/SKILL.md): やりたいことから使うスキル・コマンドを案内するルーター。人が呼ぶ専用（自動発火しない）
+- [03_ClaudeCode/commands/quality-card.md](03_ClaudeCode/commands/quality-card.md): 変更の品質判断カード（変更・守るもの・失敗・要求・確認範囲・証跡・停止条件・担当・再開条件）を出す。埋まらない項目＝次の作業
 - [03_ClaudeCode/commands/rfd.md](03_ClaudeCode/commands/rfd.md): RFD（提案・論点出し）を起票し、決定を人間に求める
 - [03_ClaudeCode/commands/lifecycle.md](03_ClaudeCode/commands/lifecycle.md): 指定工程の成果物を生成し入口/出口基準で判定（`status` で進捗確認）
 - [03_ClaudeCode/commands/trace.md](03_ClaudeCode/commands/trace.md): トレーサビリティの更新と `trace-check.sh` による機械検証

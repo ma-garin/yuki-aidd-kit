@@ -1,0 +1,5 @@
+interface:
+  display_name: "rules: quality-decision"
+  short_description: "品質判断（何を守り、いつ止め、いつ戻すか）"
+policy:
+  allow_implicit_invocation: false

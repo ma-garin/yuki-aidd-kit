@@ -1,0 +1,5 @@
+interface:
+  display_name: "/quality-card"
+  short_description: "/quality-card — 変更の品質判断カードを作る"
+policy:
+  allow_implicit_invocation: true

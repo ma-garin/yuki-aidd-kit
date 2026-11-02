@@ -1,5 +1,5 @@
 {
-  "count": 69,
+  "count": 72,
   "generator": "04_Codex/build_codex_skills.py",
   "skills": {
     "advisor": {
@@ -110,6 +110,10 @@
       "files": 2,
       "sha256": "b027a91e5ca6b7bd420780a6e1bb5690a02a8d66d1d73053cdc26be969a4a750"
     },
+    "cmd-quality-card": {
+      "files": 2,
+      "sha256": "e09e9ec55c94d81aaaa892399c183f2eccc2188b3f8150ffdd8eb6722a880145"
+    },
     "cmd-ralph": {
       "files": 2,
       "sha256": "76c45327637438aca8b4a519d6a8c86a1af36c779b7fc936d97854c5d41cd262"
@@ -210,6 +214,10 @@
       "files": 2,
       "sha256": "ba4e5c42173e1d9d556911dcb58bc67ca661700a060bf5bed1a579b1fb2b4be0"
     },
+    "rules-evidence-citation": {
+      "files": 2,
+      "sha256": "9af624f7cf7ff44434ddeef6176d23429ed929376e2aa4adfe274fd1ce1f0b21"
+    },
     "rules-functional-integrity": {
       "files": 2,
       "sha256": "719fbc5ee5bb011097d39ad85ffdb8c861de1792f9938c40e5b2d7ec9236a78b"
@@ -217,6 +225,10 @@
     "rules-model-routing": {
       "files": 2,
       "sha256": "02757d2d7c2b14bb0336dd60642cb1067d9dcde2e6e9a5c4aa8d106e51e24170"
+    },
+    "rules-quality-decision": {
+      "files": 2,
+      "sha256": "9a1a2c8022d5e55d1b885c923626ffcc055bfc9c955723c72e6995a0fbd86e2e"
     },
     "rules-security-hygiene": {
       "files": 2,
