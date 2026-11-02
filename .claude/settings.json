@@ -34,6 +34,16 @@
             "statusMessage": "読む価値とサイズを確認中"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/block-deps.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -81,6 +91,15 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/config-snapshot.py\"; [ -f \"$f\" ] && exec python3 \"$f\" snapshot || exit 0'",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "SubagentStart": [
@@ -117,6 +136,15 @@
           {
             "type": "command",
             "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/session-context.py\"; [ -f \"$f\" ] && exec python3 \"$f\" || exit 0'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=\"$CLAUDE_PROJECT_DIR/03_ClaudeCode/hooks/config-snapshot.py\"; [ -f \"$f\" ] && exec python3 \"$f\" snapshot || exit 0'",
             "timeout": 5
           }
         ]
