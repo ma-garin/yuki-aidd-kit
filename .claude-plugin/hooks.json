@@ -82,6 +82,16 @@
             "statusMessage": "冗長な出力を絞る書き換えを確認中"
           }
         ]
+      },
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/block-deps.py",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -104,6 +114,15 @@
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/context-guard.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/config-snapshot.py snapshot",
             "timeout": 5
           }
         ]
@@ -138,6 +157,15 @@
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/session-context.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/config-snapshot.py snapshot",
             "timeout": 5
           }
         ]
