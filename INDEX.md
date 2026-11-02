@@ -42,7 +42,7 @@ open 01_利用者向け資料/01_利用ガイド.html                      # ユ
 open 01_利用者向け資料/02_操作マニュアル.html                  # HTML版の取り扱い説明書（13 章）
 
 # 保守者だけ（06_保守者向け/ は配布しない）
-./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（856ケース）
+./06_保守者向け/03_回帰テスト/test-hooks.sh                            # hooks の回帰テスト（861ケース）
 ./06_保守者向け/03_回帰テスト/test-install.sh                          # 導入・配布・初期化の回帰テスト（206ケース）
 ./06_保守者向け/03_回帰テスト/test-agents.sh                           # エージェント定義の回帰テスト（92ケース）
 ./06_保守者向け/03_回帰テスト/test-trace-check.sh                      # トレーサビリティ検査の回帰テスト（94ケース）
@@ -174,6 +174,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `session-summary.sh` | Stop | セッション終了サマリ |
 | `observe.py`（8.7.0〜） | PostToolUse | ツール呼び出しごとに 1 行の観測を `.claude/observations.jsonl` に積む（圧縮・再開後の再注入用。中身は残さない） |
 | `ralph-stop.py`（8.7.0〜） | Stop | `/ralph` が `.claude/ralph.json` を作ったときだけ、合言葉が出るまで同じ依頼を回し直す opt-in の完了ループ（無ければ no-op） |
+| `constitution-gate.py`（8.7.0〜） | PreToolUse 全ツール（配列の先頭）／Stop | **憲法ゲート**: 見積行なし・3 分超の無報告・委譲中の離席を deny/block。違反 1 回で `.claude/constitution-stop` を書き全ツール停止。解除は保守者の端末で file 削除＋学んだこと.md への記録のみ。解除の環境変数は無い |
 | `reply_rules.py`（8.7.0〜） | Stop（`reply-language.py` から呼ぶ） | 応答ルール R1 判定調の締め／R2 結論ラベル／R3 開いた質問／R4 Before/After 表なし変更報告（既定は集計のみ）／R5 タメ口。`stats <transcript>` で違反率 |
 | `config-snapshot.py`（8.7.0〜） | SessionStart / UserPromptSubmit（配線は保守者が `settings-patch-config-deps.md` を当てる） | CLAUDE.md・AGENTS.md・settings・rules・モデルの構成を `.claude/ai-config-log.jsonl` に記録し、前回と変わったときだけ「構成が変わった。確認セットを通し直す」を注入。`report` で検収用の変更履歴 |
 | `block-deps.py`（8.7.0〜） | PreToolUse Bash / Write / Edit（同上） | 新規依存の追加（pip/uv/poetry/npm/pnpm/yarn/cargo/go、requirements・pyproject・package.json への追記）を deny。実在・配布元・版の確認と承認後に `AIDD_DEPS_OK=1`。ロックファイルに無い初出名は WARN |

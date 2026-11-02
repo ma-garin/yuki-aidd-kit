@@ -5,6 +5,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/constitution-gate.py pre",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/tool-timer.py pre",
             "timeout": 5
           }
@@ -219,6 +228,15 @@
       }
     ],
     "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}\"/03_ClaudeCode/hooks/constitution-gate.py stop",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "hooks": [
           {
