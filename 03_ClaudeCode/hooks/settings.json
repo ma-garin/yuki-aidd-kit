@@ -23,16 +23,6 @@
         ]
       },
       {
-        "matcher": "Bash|Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/block-deps.py",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "hooks": [
           {
             "type": "command",
@@ -113,18 +103,19 @@
             "statusMessage": "冗長な出力を絞る書き換えを確認中"
           }
         ]
-      }
-    ],
-    "UserPromptSubmit": [
+      },
       {
+        "matcher": "Bash|Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/config-snapshot.py snapshot",
+            "command": "python3 ~/.claude/hooks/block-deps.py",
             "timeout": 5
           }
         ]
-      },
+      }
+    ],
+    "UserPromptSubmit": [
       {
         "hooks": [
           {
@@ -144,6 +135,15 @@
           {
             "type": "command",
             "command": "python3 ~/.claude/hooks/context-guard.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/config-snapshot.py snapshot",
             "timeout": 5
           }
         ]
