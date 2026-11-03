@@ -94,3 +94,15 @@ python3 codex_status.py --internal-agents <親セッションID> <現在のス�
 ```
 
 レンダラー呼出時だけ動作し、子ログの読取位置と状態をJSONキャッシュへ保存する。次回は追記だけを読み、キャッシュ破損時はログから再構築する。並行呼出はファイルロックで直列化し、一意な一時ファイルから原子的に保存する。親セッションIDと保存先は現在のtmuxセッションに対応するものを指定する。
+
+## Windows
+
+Windows Terminal・Python 3.11以降で動く。tmux の代わりに下部の分割ペインへ同じ4行を描く。集計は `codex_status.py` をそのまま使い、置き換えるのは表示枠（split-pane）・rollout の特定（lsof の代わりに起動時刻と cwd）・App Server の読み取り（select の代わりにスレッド）・起動口（PowerShell の `codex` 関数）だけ。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File 04_Codex/statusline/install-win.ps1
+```
+
+- 新しいタブで `codex`。Windows Terminal の外では Codex 標準の表示で起動する。標準表示に戻すなら環境変数 CODEX_STATUS_DISABLE=1
+- 同じフォルダで同時に 2 つ起動すると、新しい方の rollout を両方が表示する（macOS 版は lsof で区別する。Windows 版で唯一の差）
+- `install-win.ps1` は UTF-8 BOM 付きで保存する（PowerShell 5.1 は BOM 無しを Shift-JIS として読み、日本語の文字列で構文エラーになる）
