@@ -29,6 +29,7 @@ AI 駆動開発を高速・高品質にするための統合キット。Claude C
 # キットの checkout で実行（導入・配布・保守）
 cd <YOUR_WORKSPACE>/yuki-aidd-kit
 ./00_導入/01_インストール/install.sh && ./00_導入/01_インストール/verify.sh   # グローバル導入と確認（自分のPC・複数プロジェクト横断）
+# 新規マシンで手元と同じ挙動にする手順: 00_導入/01_インストール/新規マシン導入手順.md（gen-wiring.py・doctor.py D9〜D12・05_プロジェクト管理/personal-config/）
 ./00_導入/01_インストール/install-guard.sh                    # 指示優先の 3 hook だけを ~/.claude に導入（既存 settings.json に merge・冪等。Claude Code 全体に効く）
 ./00_導入/02_プロジェクト配布/export-project.sh <target>          # プロジェクト配布（Codex・エフェメラル環境・teammate向け）。道具は <target>/scripts/ へ
 ./00_導入/02_プロジェクト配布/install-git-hooks.sh <target>      # 秘密情報と UI 検証の git hook を配線（Codex でも効く唯一の強制層。--uninstall で復元）
@@ -49,7 +50,8 @@ open 01_利用者向け資料/02_操作マニュアル.html                  # H
 ./06_保守者向け/03_回帰テスト/test-git-gates.sh                        # git ゲート（秘密情報・.ui-verified・UI hash）の回帰テスト（27ケース）
 ./06_保守者向け/03_回帰テスト/test-skill-trigger-eval.sh                # skill_trigger_eval.py（スキル発火判定）の回帰テスト（29ケース。B-25）
 ./06_保守者向け/03_回帰テスト/test-handoff-pack.sh                     # pack-context.py（引き継ぎ素材の収集）の回帰テスト（54ケース）
-./06_保守者向け/03_回帰テスト/test-kit-checks.sh                       # キット検査ツール（check-layers / check-version / check-handoff 等）の回帰テスト（67ケース）
+./06_保守者向け/03_回帰テスト/test-kit-checks.sh                       # キット検査ツール（check-layers / check-version / check-handoff 等）と doctor D9〜D12 の回帰テスト（98ケース）
+./06_保守者向け/03_回帰テスト/test-wiring.sh                           # gen-wiring.py（hook 配線の生成・照合）の回帰テスト（15ケース）
 ./06_保守者向け/03_回帰テスト/test-skill-lint.sh                       # skill-lint.py（スキル定義の静的検査）の回帰テスト（46ケース）
 ./06_保守者向け/03_回帰テスト/check-docs.sh                            # 文書整合の機械検査（INDEX 参照コスト・掲載漏れ・ケース数・参照切れ・目録同期。NG=0 が合格）
 ```

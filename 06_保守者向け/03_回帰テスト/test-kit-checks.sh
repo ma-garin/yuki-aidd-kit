@@ -195,6 +195,10 @@ cp -R "$KIT_DIR/00_導入" "$KIT_DIR/02_共通" "$KIT_DIR/03_ClaudeCode" "$KIT_D
 # D10・D12 は HOME と環境変数を読む。テストでは隔離した HOME と期待値どおりの環境変数で走らせる（値は偽）
 export HOME="$TMP/home" TZ=Asia/Tokyo CLAUDE_CODE_GOAL_CHECKIN_MINUTES=0 GH_TOKEN=dummy-for-test
 mkdir -p "$HOME"
+# gh のスタブ: GH_TOKEN が good-token のときだけ auth status 成功（実ネットに出ない）
+STUB="$TMP/stubbin"; mkdir -p "$STUB"
+printf '#!/bin/sh\n[ "$1 $2" = "auth status" ] && [ "$GH_TOKEN" = "good-token" ] && exit 0\nexit 1\n' > "$STUB/gh"; chmod +x "$STUB/gh"
+export PATH="$STUB:$PATH" GH_TOKEN=good-token
 find "$K" -name __pycache__ -type d -prune -exec rm -rf {} +
 # 写しの全パス・サイズ・mtime を前後で比べる（sleep で時刻を待たない）
 snap() { python3 -c 'import os,sys
@@ -243,7 +247,12 @@ expect_out  "D10 settings が無ければ SKIP" "| SKIP | D10 hook 配線 |" "$O
 expect_out  "D11 (i) 見積なしは deny" "(i) 見積なしの Write → deny・停止 file" "$OUT"
 expect_out  "D11 (ii) 見積行の後は通過" "(ii) 見積行の後の Write → 通過" "$OUT"
 expect_out  "D12 TZ 一致" "| OK | D12 必須環境変数 | TZ | 有・期待値一致 |" "$OUT"
-expect_noout "D12 は値を出さない" "dummy-for-test" "$OUT"
+expect_out  "D12 gh auth status 成功で OK" "| OK | D12 必須環境変数 | GH_TOKEN / gh auth status | GH_TOKEN 有・gh auth status 成功 |" "$OUT"
+expect_noout "D12 はトークンの値を出さない" "good-token" "$OUT"
+OUT=$(GH_TOKEN=invalid-token python3 "$DOCTOR" --root "$K" 2>&1); RC=$?
+expect_exit "D12 無効なトークン（gh auth status 失敗）で exit 1" 1 "$RC"
+expect_out  "D12 無効なトークンは NG（有でも OK にしない）" "| NG | D12 必須環境変数 | GH_TOKEN / gh auth status | GH_TOKEN 有・gh auth status 失敗 |" "$OUT"
+expect_noout "D12 無効なトークンの値を出さない" "invalid-token" "$OUT"
 # D9 異常系: 台帳改ざん
 cp "$K/00_導入/03_点検/rules-manifest.json" "$TMP/mf.bak"
 sed -i 's/"[0-9a-f]\{64\}"/"0000000000000000000000000000000000000000000000000000000000000000"/' "$K/00_導入/03_点検/rules-manifest.json"
@@ -296,7 +305,7 @@ expect_out  "D11 (i) 期待外を出す" "| NG | D11 A-2 発火 |" "$OUT"
 OUT=$(env -u GH_TOKEN TZ=UTC PATH=/nonexistent "$(command -v python3)" "$DOCTOR" --root "$K" 2>&1); RC=$?
 expect_exit "D12 TZ 不一致で exit 1" 1 "$RC"
 expect_out  "D12 期待値と不一致を出す（値は出さない）" "| NG | D12 必須環境変数 | TZ | 有・期待値と不一致 |" "$OUT"
-expect_out  "D12 GH_TOKEN 無し・gh 無し" "無・gh が無い" "$OUT"
+expect_out  "D12 gh が無ければ SKIP" "| SKIP | D12 必須環境変数 | GH_TOKEN / gh auth status | GH_TOKEN 無・gh が無い |" "$OUT"
 OUT=$(python3 "$DOCTOR" --root "$K" --json 2>&1); RC=$?
 printf '%s' "$OUT" | python3 -m json.tool >/dev/null && ok "--json は D9〜D12 込みで JSON として妥当" || ng "--json の妥当性" "$(printf '%s' "$OUT" | head -c 200)"
 

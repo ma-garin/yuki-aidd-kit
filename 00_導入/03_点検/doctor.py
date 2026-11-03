@@ -23,7 +23,7 @@ verify.sh は導入先の配置を見る。こちらは導入の前・Codex（Wi
                    を検査（NG）。キットの hook が 1 本も無い settings は「未導入」の WARN、読む対象が無ければ SKIP
   D11 A-2 発火      一時プロジェクトで constitution-gate.py に (i) 見積なしの Write → deny と停止 file、
                    (ii) `見積：5分` の後の Write → 出力空、を与えて確かめる（NG）。一時ディレクトリは消す
-  D12 必須環境変数   REQUIRED_ENV の値と一致するか・GH_TOKEN か `gh auth status` 成功か（NG）。**値は出さない**
+  D12 必須環境変数   REQUIRED_ENV の値と一致するか・`gh auth status` 成功か（NG。gh が無ければ SKIP）。**値は出さない**
 
 使い方: python3 00_導入/03_点検/doctor.py [--root DIR] [--json] [--home [DIR]] [--settings PATH ...]
        python3 00_導入/03_点検/doctor.py --write-manifest   （保守者用: rules-manifest.json を書き直す）
@@ -60,7 +60,7 @@ REQUIRED_ENV = {
     "TZ": "Asia/Tokyo",
     "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0",  # 03_ClaudeCode/hooks/settings.json の env と同じ値
 }
-GH_ENV = "GH_TOKEN"  # これが有るか `gh auth status` が成功すれば OK
+GH_ENV = "GH_TOKEN"  # 判定は `gh auth status` の rc（GH_TOKEN は有無だけ表示）。gh が無ければ SKIP
 MANIFEST = Path("00_導入/03_点検/rules-manifest.json")
 
 
@@ -350,13 +350,15 @@ def check_env(r: Report, root: Path) -> None:
             r.add("D12 必須環境変数", "NG", k, "有・期待値と不一致")
         else:
             r.add("D12 必須環境変数", "OK", k, "有・期待値一致" if want is not None else "有")
-    if os.environ.get(GH_ENV):
-        r.add("D12 必須環境変数", "OK", GH_ENV, "有")
-        return
+    # GitHub 認証は値の有無でなく `gh auth status` の rc で判定する（無効なトークンを OK にしない）。値は出さない
+    tok = "有" if os.environ.get(GH_ENV) else "無"
     gh = shutil.which("gh")
-    rc = run([gh, "auth", "status"], root)[0] if gh else 127
+    if not gh:
+        r.add("D12 必須環境変数", "SKIP", f"{GH_ENV} / gh auth status", f"{GH_ENV} {tok}・gh が無い")
+        return
+    rc = run([gh, "auth", "status"], root)[0]
     r.add("D12 必須環境変数", "OK" if rc == 0 else "NG", f"{GH_ENV} / gh auth status",
-          "gh auth status 成功" if rc == 0 else ("無・gh auth status 失敗" if gh else "無・gh が無い"))
+          f"{GH_ENV} {tok}・gh auth status " + ("成功" if rc == 0 else "失敗"))
 
 
 def main() -> int:
