@@ -1,0 +1,14 @@
+{
+  "02_共通/rules/absolute-rules.md": "ff6e250b48c48e98f27c4dfc47f72cf45e656300e47db680f504744bc900f6c2",
+  "02_共通/rules/agent-intervention.md": "c2493a767e670d6f965ade6a8972d6115c263363b83d14673877059b658dd1d5",
+  "02_共通/rules/design-principles.md": "e0e6185b97e1350d9a2e5e186028240357802306389bb2766fcbd4a20064dfe4",
+  "02_共通/rules/evidence-citation.md": "5ba8020c2767c7e662a0fa788e187f8154bdbe2f80c2a347fcdb6147fcae6ec8",
+  "02_共通/rules/functional-integrity.md": "ab139270c7a3a97245deb3ae408d033d968559bc8f787d9189913f0e4de1fcf7",
+  "02_共通/rules/model-routing.md": "17af0f154d78194a7dc9c9a072feb1f725140b98fbca77c57a3e51c0702d1725",
+  "02_共通/rules/quality-decision.md": "d57c22e1b6a7e4c1101654ebd1f1e9e577ed6970c8957057a8667783005ce3c1",
+  "02_共通/rules/security-hygiene.md": "a6d8e5c12e2f96e252ad2aad27e94ccf54f7d33fc3de72784cfca4cf70d83aac",
+  "02_共通/rules/speed-harness.md": "7e97395c5cbf5f8c38436720a61e8d89e5159f69336dc11a87e950ffd5dd6d62",
+  "02_共通/rules/writing-style.md": "8217e9fe415f53cd22f14a1dd449a1c0af38047ec0dc5b848c78bdffa8f23495",
+  "03_ClaudeCode/CLAUDE.md.template": "925cc5140d87bb2bae591fa3db5590f30549903fa20f0219732fdbfb16481133",
+  "CLAUDE.md": "00a553184db1c9325daf9b066be65c58138b7dd76b0d3841e78b38b579fc19b5"
+}

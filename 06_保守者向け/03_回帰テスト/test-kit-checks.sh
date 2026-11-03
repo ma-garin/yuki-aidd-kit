@@ -191,7 +191,14 @@ expect_exit "実物のキットの llms.txt は最新（--check exit 0）" 0 "$R
 
 echo "[doctor]"
 K="$TMP/kit"; mkdir -p "$K"
-cp -R "$KIT_DIR/00_導入" "$KIT_DIR/02_共通" "$KIT_DIR/03_ClaudeCode" "$KIT_DIR/04_Codex" "$KIT_DIR/VERSION" "$K/"
+cp -R "$KIT_DIR/00_導入" "$KIT_DIR/02_共通" "$KIT_DIR/03_ClaudeCode" "$KIT_DIR/04_Codex" "$KIT_DIR/VERSION" "$KIT_DIR/CLAUDE.md" "$KIT_DIR/.claude-plugin" "$K/"
+# D10・D12 は HOME と環境変数を読む。テストでは隔離した HOME と期待値どおりの環境変数で走らせる（値は偽）
+export HOME="$TMP/home" TZ=Asia/Tokyo CLAUDE_CODE_GOAL_CHECKIN_MINUTES=0 GH_TOKEN=dummy-for-test
+mkdir -p "$HOME"
+# gh のスタブ: GH_TOKEN が good-token のときだけ auth status 成功（実ネットに出ない）
+STUB="$TMP/stubbin"; mkdir -p "$STUB"
+printf '#!/bin/sh\n[ "$1 $2" = "auth status" ] && [ "$GH_TOKEN" = "good-token" ] && exit 0\nexit 1\n' > "$STUB/gh"; chmod +x "$STUB/gh"
+export PATH="$STUB:$PATH" GH_TOKEN=good-token
 find "$K" -name __pycache__ -type d -prune -exec rm -rf {} +
 # 写しの全パス・サイズ・mtime を前後で比べる（sleep で時刻を待たない）
 snap() { python3 -c 'import os,sys
@@ -229,6 +236,78 @@ expect_out  "D2 で VERSION の形の誤りを出す" "NG   D2 VERSION" "$OUT"
 OUT=$(PATH=/nonexistent "$(command -v python3)" "$DOCTOR" --root "$KIT_DIR" 2>&1); RC=$?
 expect_out  "git・bash が無い環境（Codex 相当）は D8 WARN" "WARN D8 外部コマンド  git" "$OUT"
 expect_out  "bash が無ければ .sh は SKIP（止めない）" "SKIP D4 hook の構文" "$OUT"
+
+echo "[doctor D9〜D12]"
+cp "$KIT_DIR/VERSION" "$K/VERSION"; cp "$KIT_DIR/03_ClaudeCode/hooks/block-ci.py" "$K/03_ClaudeCode/hooks/"; cp "$KIT_DIR/02_共通/ツール/pack-context.py" "$K/02_共通/ツール/"
+OUT=$(python3 "$DOCTOR" --root "$K" 2>&1); RC=$?
+expect_exit "D9〜D12 込みで揃った写しは exit 0" 0 "$RC"
+expect_out  "最終行が全緑" "全緑" "$OUT"
+expect_out  "D9 台帳と一致" "| OK | D9 規則ハッシュ |" "$OUT"
+expect_out  "D10 settings が無ければ SKIP" "| SKIP | D10 hook 配線 |" "$OUT"
+expect_out  "D11 (i) 見積なしは deny" "(i) 見積なしの Write → deny・停止 file" "$OUT"
+expect_out  "D11 (ii) 見積行の後は通過" "(ii) 見積行の後の Write → 通過" "$OUT"
+expect_out  "D12 TZ 一致" "| OK | D12 必須環境変数 | TZ | 有・期待値一致 |" "$OUT"
+expect_out  "D12 gh auth status 成功で OK" "| OK | D12 必須環境変数 | GH_TOKEN / gh auth status | GH_TOKEN 有・gh auth status 成功 |" "$OUT"
+expect_noout "D12 はトークンの値を出さない" "good-token" "$OUT"
+OUT=$(GH_TOKEN=invalid-token python3 "$DOCTOR" --root "$K" 2>&1); RC=$?
+expect_exit "D12 無効なトークン（gh auth status 失敗）で exit 1" 1 "$RC"
+expect_out  "D12 無効なトークンは NG（有でも OK にしない）" "| NG | D12 必須環境変数 | GH_TOKEN / gh auth status | GH_TOKEN 有・gh auth status 失敗 |" "$OUT"
+expect_noout "D12 無効なトークンの値を出さない" "invalid-token" "$OUT"
+# D9 異常系: 台帳改ざん
+cp "$K/00_導入/03_点検/rules-manifest.json" "$TMP/mf.bak"
+sed -i 's/"[0-9a-f]\{64\}"/"0000000000000000000000000000000000000000000000000000000000000000"/' "$K/00_導入/03_点検/rules-manifest.json"
+OUT=$(python3 "$DOCTOR" --root "$K" 2>&1); RC=$?
+expect_exit "D9 台帳改ざんで exit 1" 1 "$RC"
+expect_out  "D9 不一致を出す" "| NG | D9 規則ハッシュ |" "$OUT"
+expect_out  "最終行が赤" "赤（NG=" "$OUT"
+cp "$TMP/mf.bak" "$K/00_導入/03_点検/rules-manifest.json"
+# D9 --home: 導入先が無ければ SKIP、あれば比較
+OUT=$(python3 "$DOCTOR" --root "$K" --home "$HOME" 2>&1)
+expect_out  "D9 --home で導入先が無ければ SKIP" "| SKIP | D9 規則ハッシュ |" "$OUT"
+mkdir -p "$HOME/.claude/rules/aidd-kit"; cp "$K/02_共通/rules/"*.md "$HOME/.claude/rules/aidd-kit/"
+echo "改変" >> "$HOME/.claude/rules/aidd-kit/absolute-rules.md"
+OUT=$(python3 "$DOCTOR" --root "$K" --home "$HOME" 2>&1); RC=$?
+expect_exit "D9 導入先の規則が違えば exit 1" 1 "$RC"
+expect_out  "D9 導入先の違うファイルを出す" "台帳と違う: absolute-rules.md" "$OUT"
+rm -rf "$HOME/.claude/rules"
+# D10 正常系: plugin の hooks.json（写しのもの）
+OUT=$(python3 "$DOCTOR" --root "$K" --settings "$K/.claude-plugin/hooks.json" 2>&1); RC=$?
+expect_exit "D10 plugin の hooks.json は exit 0" 0 "$RC"
+expect_out  "D10 (d) 先頭が constitution-gate pre" "(d) constitution-gate pre が PreToolUse の先頭" "$OUT"
+# D10 異常系: 配線欠落・先頭の入れ替え
+python3 - "$K/.claude-plugin/hooks.json" "$TMP/broken.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+d["hooks"]["PreToolUse"] = d["hooks"]["PreToolUse"][1:] + d["hooks"]["PreToolUse"][:1]
+d["hooks"]["PreCompact"] = []
+json.dump(d, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False)
+PY
+cp "$TMP/broken.json" "$K/.claude-plugin/broken.json"
+OUT=$(python3 "$DOCTOR" --root "$K" --settings "$K/.claude-plugin/broken.json" 2>&1); RC=$?
+rm "$K/.claude-plugin/broken.json"
+expect_exit "D10 配線欠落で exit 1" 1 "$RC"
+expect_out  "D10 (a) 未登録を出す" "(a) 未登録: pre-compact.py" "$OUT"
+expect_out  "D10 (d) 先頭でないことを出す" "(d) PreToolUse の先頭が constitution-gate pre でない" "$OUT"
+# D10 異常系: 実行権限なし
+chmod -x "$K/03_ClaudeCode/hooks/session-summary.sh"
+OUT=$(python3 "$DOCTOR" --root "$K" --settings "$K/.claude-plugin/hooks.json" 2>&1); RC=$?
+chmod +x "$K/03_ClaudeCode/hooks/session-summary.sh"
+expect_exit "D10 実行権限なしで exit 1" 1 "$RC"
+expect_out  "D10 (c) 実行権限なしを出す" "(c) 実行権限なし session-summary.sh" "$OUT"
+# D11 異常系: 見積なしでも止めないゲート（偽物に差し替え）
+cp "$K/03_ClaudeCode/hooks/constitution-gate.py" "$TMP/gate.bak"
+printf 'import sys\nsys.stdin.read()\n' > "$K/03_ClaudeCode/hooks/constitution-gate.py"
+OUT=$(python3 "$DOCTOR" --root "$K" 2>&1); RC=$?
+cp "$TMP/gate.bak" "$K/03_ClaudeCode/hooks/constitution-gate.py"
+expect_exit "D11 見積なしを止めないゲートで exit 1" 1 "$RC"
+expect_out  "D11 (i) 期待外を出す" "| NG | D11 A-2 発火 |" "$OUT"
+# D12 異常系: TZ 不一致・GH 無し
+OUT=$(env -u GH_TOKEN TZ=UTC PATH=/nonexistent "$(command -v python3)" "$DOCTOR" --root "$K" 2>&1); RC=$?
+expect_exit "D12 TZ 不一致で exit 1" 1 "$RC"
+expect_out  "D12 期待値と不一致を出す（値は出さない）" "| NG | D12 必須環境変数 | TZ | 有・期待値と不一致 |" "$OUT"
+expect_out  "D12 gh が無ければ SKIP" "| SKIP | D12 必須環境変数 | GH_TOKEN / gh auth status | GH_TOKEN 無・gh が無い |" "$OUT"
+OUT=$(python3 "$DOCTOR" --root "$K" --json 2>&1); RC=$?
+printf '%s' "$OUT" | python3 -m json.tool >/dev/null && ok "--json は D9〜D12 込みで JSON として妥当" || ng "--json の妥当性" "$(printf '%s' "$OUT" | head -c 200)"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

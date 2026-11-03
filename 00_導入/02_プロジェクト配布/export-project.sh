@@ -56,75 +56,269 @@ cat > "$TARGET/.claude/settings.json" << 'JSON'
   "effortLevel": "high",
   "autoCompactWindow": "200k",
   "bashOutputMaxChars": 12000,
-  "env": { "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0", "TZ": "Asia/Tokyo" },
-  "statusLine": { "type": "command", "command": "python3 .claude/hooks/statusline.py", "padding": 2 },
+  "env": {
+    "CLAUDE_CODE_GOAL_CHECKIN_MINUTES": "0",
+    "TZ": "Asia/Tokyo"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 .claude/hooks/statusline.py",
+    "padding": 2
+  },
   "hooks": {
     "PreToolUse": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py pre", "timeout": 5 } ] },
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/instruction-guard.py", "timeout": 5, "statusMessage": "保守者の指示に応答済みか確認中" } ] },
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/block-ci.py", "timeout": 5, "statusMessage": "自己ウェイク・CI 待ちでないか確認中" } ] },
       {
-        "matcher": "Read|Grep|Glob",
         "hooks": [
-          { "type": "command", "command": "python3 .claude/hooks/pre-read-guard.py", "timeout": 5, "statusMessage": "読む価値とサイズを確認中" },
-          { "type": "command", "command": "bash .claude/hooks/block-explore.sh", "timeout": 5, "statusMessage": "実装モードの再探索を確認中" }
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/constitution-gate.py pre",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/tool-timer.py pre",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/block-ci.py",
+            "timeout": 5,
+            "statusMessage": "自己ウェイク・CI 待ちでないか確認中"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/instruction-guard.py",
+            "timeout": 5,
+            "statusMessage": "保守者の指示に応答済みか確認中"
+          }
         ]
       },
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "bash .claude/hooks/pre-write-check.sh" },
-          { "type": "command", "command": "python3 .claude/hooks/block-phase.py", "timeout": 25, "statusMessage": "前工程の承認を確認中" }
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-write-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/block-phase.py",
+            "timeout": 25,
+            "statusMessage": "前工程の承認を確認中"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/pre-read-guard.py",
+            "timeout": 5,
+            "statusMessage": "読む価値とサイズを確認中"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-explore.sh"
+          }
         ]
       },
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 .claude/hooks/block-destructive.py", "timeout": 5, "statusMessage": "取り返しのつかない操作でないか確認中" },
-          { "type": "command", "command": "python3 .claude/hooks/block-gates.py", "timeout": 10, "statusMessage": "ゲート実行の要否を確認中" },
-          { "type": "command", "command": "python3 .claude/hooks/filter-output.py", "timeout": 5, "statusMessage": "冗長な出力を絞る書き換えを確認中" }
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/block-destructive.py",
+            "timeout": 5,
+            "statusMessage": "取り返しのつかない操作でないか確認中"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/block-gates.py",
+            "timeout": 10,
+            "statusMessage": "ゲート実行の要否を確認中"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/filter-output.py",
+            "timeout": 5,
+            "statusMessage": "冗長な出力を絞る書き換えを確認中"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/block-deps.py",
+            "timeout": 5
+          }
         ]
       }
     ],
     "UserPromptSubmit": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py reset", "timeout": 5 } ] },
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/prompt-priority.py", "timeout": 5 },
-                  { "type": "command", "command": "python3 .claude/hooks/context-guard.py", "timeout": 5 } ] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/tool-timer.py reset",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/prompt-priority.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/context-guard.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/config-snapshot.py snapshot",
+            "timeout": 5
+          }
+        ]
+      }
     ],
     "SubagentStart": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/subagent-context.py", "timeout": 5 } ] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/subagent-context.py",
+            "timeout": 5
+          }
+        ]
+      }
     ],
     "PreCompact": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/pre-compact.py", "timeout": 5 } ] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/pre-compact.py",
+            "timeout": 5
+          }
+        ]
+      }
     ],
     "SessionStart": [
-      { "matcher": "compact|resume", "hooks": [ { "type": "command", "command": "python3 .claude/hooks/session-context.py", "timeout": 5 } ] }
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/session-context.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/config-snapshot.py snapshot",
+            "timeout": 5
+          }
+        ]
+      }
     ],
     "InstructionsLoaded": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/log-instructions.py", "timeout": 5 } ] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/log-instructions.py",
+            "timeout": 5
+          }
+        ]
+      }
     ],
     "PostToolUse": [
-      { "hooks": [ { "type": "command", "command": "python3 .claude/hooks/tool-timer.py post", "timeout": 5 },
-                  { "type": "command", "command": "python3 .claude/hooks/observe.py", "timeout": 5 } ] },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/tool-timer.py post",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/observe.py",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "bash .claude/hooks/post-write-html.sh" }
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-write-html.sh"
+          }
         ]
       },
       {
         "matcher": "WebFetch|WebSearch|mcp__.*|Read",
         "hooks": [
-          { "type": "command", "command": "python3 .claude/hooks/injection-guard.py", "timeout": 5, "statusMessage": "取得内容に埋め込まれた指示を確認中" }
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/injection-guard.py",
+            "timeout": 5,
+            "statusMessage": "取得内容に埋め込まれた指示を確認中"
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "python3 .claude/hooks/reply-language.py", "timeout": 5 },
-          { "type": "command", "command": "bash .claude/hooks/session-summary.sh" },
-          { "type": "command", "command": "python3 .claude/hooks/ralph-stop.py", "timeout": 5 }
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/constitution-gate.py stop",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/reply-language.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-summary.sh"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/ralph-stop.py",
+            "timeout": 5
+          }
         ]
       }
     ]
