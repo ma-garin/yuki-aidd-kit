@@ -1,96 +1,66 @@
 #!/usr/bin/env bash
 # Claude Code ステータスライン（macOS / Linux / Windows Git Bash 共通）
+# 外部コマンドは jq 1 回（＋60 秒に 1 回の curl）に絞る。Windows はプロセス起動が 1 回 100〜300ms かかり、
+# 項目ごとに jq を呼ぶ旧版は 7 秒を超えて statusline.py の 5 秒制限で 2〜4 行目が消えた（2026-11-03 実測）
 input=$(cat)
-j() { echo "$input" | jq -r "$1"; }
+printf -v now '%(%s)T' -1
+T="${TMPDIR:-/tmp}"
+EMPTY="$T/claude-sl-empty"; [ -f "$EMPTY" ] || : > "$EMPTY"
 
-case "$(uname -s)" in Darwin) OS=mac ;; *) OS=other ;; esac
-mtime() { if [ "$OS" = mac ]; then stat -f %m "$1"; else stat -c %Y "$1"; fi; }
-fmt_epoch() { if [ "$OS" = mac ]; then date -r "$1" "+%m/%d %H:%M"; else date -d "@$1" "+%m/%d %H:%M"; fi; }
-iso_to_epoch() { if [ "$OS" = mac ]; then TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%S" "${1%%.*}" +%s 2>/dev/null; else date -d "$1" +%s 2>/dev/null; fi; }
 oauth_token() {
-  if [ "$OS" = mac ]; then
+  if [[ $OSTYPE == darwin* ]]; then
     security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null | jq -r '.claudeAiOauth.accessToken // empty'
   else
-    jq -r '.claudeAiOauth.accessToken // empty' "$HOME/.claude/.credentials.json" 2>/dev/null
+    local cred re='"accessToken"[[:space:]]*:[[:space:]]*"([^"]+)"'
+    [ -f "$HOME/.claude/.credentials.json" ] || return
+    IFS= read -r -d '' cred < "$HOME/.claude/.credentials.json"
+    [[ $cred =~ $re ]] && printf '%s' "${BASH_REMATCH[1]}"
   fi
 }
 
-model=$(j '.model.display_name // "unknown"')
-dir=$(j '.workspace.current_dir // .cwd // ""')
-effort=$(j '.effort.level // empty')
-five=$(j '.rate_limits.five_hour.used_percentage // empty' | cut -d. -f1)
-week=$(j '.rate_limits.seven_day.used_percentage // empty' | cut -d. -f1)
-five_reset=$(j '.rate_limits.five_hour.resets_at // empty')
-week_reset=$(j '.rate_limits.seven_day.resets_at // empty')
-cache_warm=$(j '.prompt_cache.warm // empty')
-cache_exp=$(j '.prompt_cache.expires_at // empty')
-tpath=$(j '.transcript_path // empty')
-
-bar() {
-  pct=${1:-0}; filled=$((pct / 10)); out=""
-  i=0; while [ $i -lt 10 ]; do if [ $i -lt $filled ]; then out="${out}●"; else out="${out}○"; fi; i=$((i+1)); done
-  echo "$out"
-}
-fmt_time() { if [ -z "$1" ] || [ "$1" = "null" ]; then echo "-"; else fmt_epoch "$1"; fi; }
-
-# 処理中 / 待機（会話ログの最後の応答が end_turn なら待機）
-state="待機"
-if [ -n "$tpath" ] && [ -f "$tpath" ]; then
-  age=$(( $(date +%s) - $(mtime "$tpath") ))
-  last=$(tail -n 200 "$tpath" | jq -R -r 'fromjson? | select(.type=="assistant" or .type=="user") | [.type, (.message.stop_reason // "")] | join(":")' 2>/dev/null | tail -1)
-  case "$last" in
-    assistant:end_turn|assistant:stop_sequence) ;;
-    *) [ "$age" -lt 600 ] && state="処理中" ;;
-  esac
-  if [ "$state" = "処理中" ]; then
-    uts=$(tail -n 400 "$tpath" | jq -R -r 'fromjson? | select(.type=="user") | select((.message.content|type)=="string" or ((.message.content|type)=="array" and (.message.content[0].type? // "")=="text")) | .timestamp' 2>/dev/null | tail -1)
-    ue=$(iso_to_epoch "$uts")
-    if [ -n "$ue" ]; then
-      el=$(( $(date +%s) - ue ))
-      if [ "$el" -ge 60 ]; then state="処理中 $((el/60))m$((el%60))s"; else state="処理中 ${el}s"; fi
+# Fable 専用枠（OAuth usage API、60 秒キャッシュ）。取得は裏で走らせ、描画は手元のキャッシュで即返す
+# （取得の待ちで描画が止まらない。最新値は次の描画で出る）。取得時刻は stat を使わず別ファイルに持つ
+FABLE_CACHE="$T/claude-fable-usage.json"; FABLE_TS="$FABLE_CACHE.ts"
+last=0; [ -f "$FABLE_TS" ] && read -r last < "$FABLE_TS"
+if [ $((now - ${last:-0})) -ge 60 ]; then
+  printf '%s\n' "$now" > "$FABLE_TS"
+  (
+    tok=$(oauth_token)
+    if [ -n "$tok" ] && curl -s -m 3 -H "Authorization: Bearer $tok" -H "anthropic-beta: oauth-2025-04-20" \
+         https://api.anthropic.com/api/oauth/usage -o "$FABLE_CACHE.tmp"; then
+      IFS= read -r -d '' body < "$FABLE_CACHE.tmp"
+      if [[ $body == *'"limits"'* ]]; then mv -f "$FABLE_CACHE.tmp" "$FABLE_CACHE"; else rm -f "$FABLE_CACHE.tmp"; fi
     fi
-  fi
+  ) </dev/null >/dev/null 2>&1 &
+  disown 2>/dev/null
 fi
+fcf=$FABLE_CACHE; [ -f "$FABLE_CACHE" ] || fcf=$EMPTY
 
-# Fable 専用枠（OAuth usage API、60 秒キャッシュ）
-FABLE_CACHE="${TMPDIR:-/tmp}/claude-fable-usage.json"
-fable_fetch() {
-  now=$(date +%s)
-  if [ -f "$FABLE_CACHE" ] && [ $((now - $(mtime "$FABLE_CACHE"))) -lt 60 ]; then return; fi
-  tok=$(oauth_token); [ -z "$tok" ] && return
-  tmp=$(mktemp)
-  if curl -s -m 3 -H "Authorization: Bearer $tok" -H "anthropic-beta: oauth-2025-04-20" \
-       https://api.anthropic.com/api/oauth/usage -o "$tmp" && jq -e '.limits' "$tmp" >/dev/null 2>&1; then
-    mv "$tmp" "$FABLE_CACHE"
-  else
-    rm -f "$tmp"
-  fi
-}
-fable_fetch
-fable_pct=""; fable_reset=""
-if [ -f "$FABLE_CACHE" ]; then
-  fable_pct=$(jq -r '[.limits[]? | select(.scope.model.display_name=="Fable")][0].percent // empty' "$FABLE_CACHE" | cut -d. -f1)
-  iso=$(jq -r '[.limits[]? | select(.scope.model.display_name=="Fable")][0].resets_at // empty' "$FABLE_CACHE")
-  [ -n "$iso" ] && fable_reset=$(iso_to_epoch "$iso")
-fi
-
-cache=""
-if [ "$cache_warm" = "true" ]; then
-  left=""
-  if [ -n "$cache_exp" ] && [ "$cache_exp" != "null" ]; then
-    secs=$((cache_exp - $(date +%s))); [ "$secs" -gt 0 ] && left=" $((secs/60))m"
-  fi
-  cache="cache${left:- on}"
-elif [ "$cache_warm" = "false" ]; then
-  cache="cache -"
-fi
-
-line1="${model} ${effort:-?} | ${dir##*/}"
-[ -n "$cache" ] && line1="${line1} | ${cache}"
-# 状態（処理中・待機）は出さない（2026-10-06 保守者の指定）
-echo "$line1"
-rate() { if [ -n "$2" ]; then echo "$1 $(bar "$2") ${2}% ↻$(fmt_time "$3")"; else echo "$1 (n/a)"; fi; }
-rate "current" "$five" "$five_reset"
-rate "weekly " "$week" "$week_reset"
-warn=""; [ "$effort" = "xhigh" ] && [ -n "$fable_pct" ] && [ "$fable_pct" -ge 80 ] && warn="   ⚠ effort=xhigh"
-if [ -n "$fable_pct" ]; then echo "fable   $(bar "$fable_pct") ${fable_pct}% ↻$(fmt_time "$fable_reset")${warn}"; else echo "fable   (n/a)"; fi
+# 状態（処理中・待機）は出さない（2026-10-06 保守者の指定）ので計算もしない
+read -r -d '' PROG <<'JQ'
+def bar: ((. // 0) | floor) as $p | [range(10) | if . < ($p / 10 | floor) then "●" else "○" end] | join("");
+def toe: if type == "number" then . elif type == "string" then (sub("\\.[0-9]+"; "") | sub("(Z|[+-]00:?00)$"; "") + "Z" | fromdateiso8601) else null end;
+def ft: (toe? // null) as $e | if $e == null then "-" else ($e | strflocaltime("%m/%d %H:%M")) end;
+def rate($label; $w): if ($w.used_percentage // null) == null then "\($label) (n/a)"
+  else "\($label) \($w.used_percentage | bar) \($w.used_percentage | floor)% ↻\($w.resets_at | ft)" end;
+($now | tonumber) as $now
+| ($fc | try fromjson catch null) as $fcj
+| ([$fcj.limits[]? | select(.scope.model.display_name == "Fable")] | first) as $fb
+| (.effort.level // "") as $effort
+| (if .prompt_cache.warm == true then
+     ((.prompt_cache.expires_at | toe?) // null) as $e
+     | if $e != null and $e > $now then "cache \(($e - $now) / 60 | floor)m" else "cache on" end
+   elif .prompt_cache.warm == false then "cache -"
+   else "" end) as $cache
+| ((.workspace.current_dir // .cwd // "") | gsub("\\\\"; "/") | split("/") | last // "") as $dirname
+| "\(.model.display_name // "unknown") \(if $effort == "" then "?" else $effort end) | \($dirname)\(if $cache != "" then " | \($cache)" else "" end)",
+  rate("current"; .rate_limits.five_hour // {}),
+  rate("weekly "; .rate_limits.seven_day // {}),
+  (if $fb.percent != null
+   then "fable   \($fb.percent | bar) \($fb.percent | floor)% ↻\($fb.resets_at | ft)\(if $effort == "xhigh" and $fb.percent >= 80 then "   ⚠ effort=xhigh" else "" end)"
+   else "fable   (n/a)" end)
+JQ
+# プログラムは引数でなくファイルで渡す（Windows ネイティブ jq への非 ASCII 引数の化けを避ける）
+PF="$T/claude-sl.jq"; printf '%s' "$PROG" > "$PF"
+jqopt=(-r); [[ $OSTYPE == msys* || $OSTYPE == cygwin* ]] && jqopt+=(-b)
+jq "${jqopt[@]}" --arg now "$now" --rawfile fc "$fcf" -f "$PF" <<<"$input"
