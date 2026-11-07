@@ -67,12 +67,14 @@ def _fmt(sec: float) -> str:
     return f"{sec // 60}:{sec % 60:02d}"
 
 
-def _progress_part() -> str:
-    """進行中タスクの進捗文字列。無ければ空文字。"""
-    if not _FILE.exists():
+def _progress_part(session_id: str = "") -> str:
+    """進行中タスクの進捗文字列。無ければ空文字。他セッションの進捗は出さない（2026-11-07 残骸の混入）。"""
+    if not _FILE.exists() or not session_id:
         return ""
     try:
         d = json.loads(_FILE.read_text(encoding="utf-8"))
+        if d.get("session") != session_id:
+            return ""
         elapsed = time.time() - d["started"]
         est = d["estimate_sec"]
         remain = est - elapsed
@@ -283,7 +285,11 @@ def main() -> int:
     # 区切りは「｜」に統一する（従来表示は半角「|」で出すため置き換える）。末尾に文脈・5h・7d の使用率（B76）
     # 1 行目は改行せず 1 行で出す（保守者の指定）。区切りは「｜」に統一、末尾に文脈・5h・7d の使用率（B76）
     # ctx・5h・7d は出さない（2026-10-06 保守者の指定）
-    head = [p for p in (_progress_part(), lines[0].replace(" | ", " ｜ "), _token_part(stdin_raw)) if p]
+    try:
+        sid = str(json.loads(stdin_raw or "{}").get("session_id") or "")
+    except (ValueError, AttributeError):
+        sid = ""
+    head = [p for p in (_progress_part(sid), lines[0].replace(" | ", " ｜ "), _token_part(stdin_raw)) if p]
     print("\n".join([" ｜ ".join(head)] + lines[1:]))
     return 0
 

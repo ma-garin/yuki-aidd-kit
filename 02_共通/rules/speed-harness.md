@@ -42,6 +42,7 @@
 - 見積（`rules/absolute-rules.md` A-2・A-2a。対象はコーディングを含む作業）を出した 1 分超の作業は、同じ bash に `python3 <hooks>/progress.py start "<タスク名>" <見積秒>` を連結する
 - ステップ境界で `progress.py step "<n/m 名称>"` を既存コマンドへ連結する（専用の往復を作らない）
 - **完了時に必ず `progress.py done`**（消し忘れは偽の「実行中」表示になる）
+- **進捗は書いたセッションにだけ出る**（2026-11-07 他セッションの残骸が ⏱ に混入）: `progress.py start` が `CLAUDE_CODE_SESSION_ID` を記録し、statusline は入力の `session_id` と一致するときだけ出す。それでも `done` は必ず呼ぶ
 ## H-9. 自己ウェイク・CI 待ちの禁止
 - ScheduleWakeup / CronCreate / RemoteTrigger / send_later / create_trigger / subscribe_pr_activity / watch_url / `/loop` / `/schedule` を使わない。CI を起動・待機しない（`gh run watch` 等）。起き直す1回ごとに文脈全量を読み直す。Claude Code では `block-ci.py` が deny する。CI はユーザーが求めたときだけ `CI_REQUESTED=1` を付ける
 ## H-10. 往復と読み込みの規律
