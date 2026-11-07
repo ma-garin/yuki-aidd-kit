@@ -7,6 +7,7 @@
   python3 .claude/hooks/progress.py done
 """
 import json
+import os
 import pathlib
 import sys
 import time
@@ -25,6 +26,8 @@ def main() -> int:
             "started": time.time(),
             "step": "開始",
             "updated": time.time(),
+            # 書いたセッション。statusline は自分のセッションの進捗だけを出す（2026-11-07 他セッションの残骸が混入）
+            "session": os.environ.get("CLAUDE_CODE_SESSION_ID", ""),
         }
         _FILE.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     elif cmd == "step":

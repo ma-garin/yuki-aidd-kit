@@ -772,14 +772,16 @@ expect_empty "Bash 以外は素通り" "$OUT" "$RC"
 
 echo "[progress.py / statusline.py]"
 PH="$TMP/proj-prog/.claude/hooks"; mkdir -p "$PH"; cp "$HOOKS/progress.py" "$HOOKS/statusline.py" "$PH/"
-python3 "$PH/progress.py" start "テスト" 120 && python3 "$PH/progress.py" step "2/3 配線"
+CLAUDE_CODE_SESSION_ID=S1 python3 "$PH/progress.py" start "テスト" 120 && python3 "$PH/progress.py" step "2/3 配線"
 if [ -f "$TMP/proj-prog/.claude/progress.json" ] && grep -qF '2/3' "$TMP/proj-prog/.claude/progress.json"; then
   echo "  ✅ start/step で progress.json を更新"; PASS=$((PASS+1))
 else
   echo "  ❌ start/step で progress.json を更新"; FAIL=$((FAIL+1))
 fi
-OUT=$(printf '{}' | python3 "$PH/statusline.py")
+OUT=$(printf '{"session_id":"S1"}' | python3 "$PH/statusline.py")
 expect_contains "進行中はステータスラインに ⏱ と経過/見積を表示" "⏱ テスト [2/3 配線]" "$OUT"
+OUT=$(printf '{"session_id":"S2"}' | python3 "$PH/statusline.py")
+expect_absent "他セッションの進捗はステータスラインに出さない" "⏱" "$OUT"
 python3 "$PH/progress.py" done
 if [ ! -e "$TMP/proj-prog/.claude/progress.json" ]; then
   echo "  ✅ done で progress.json を削除"; PASS=$((PASS+1))
