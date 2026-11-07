@@ -5,6 +5,7 @@
 
 ## 未リリース
 
+- **fix: 完了予定の無い見積を instruction-guard が deny**（2026-11-07）: `見積：N分` だけの応答では作業を止める。`見積：N分（完了予定 HH:MM）`／`見積: N分（HH:MM 完了予定）` のみ通す。従来の notify（注入のみ）では守られなかったため deny に変更
 - **fix: ステータスラインに他セッションの進捗が混入する**（2026-11-07）: `progress.json` が全セッション共有のため、`done` を呼ばずに終わった作業の ⏱ が無関係なセッションに出続けた。`progress.py start` が `session` を記録し、`statusline.py` は入力の `session_id` と一致するときだけ進捗を出す。speed-harness H-8・04_コマンドとフック.md を更新
 - **憲法ゲート `hooks/constitution-gate.py`**（2026-11-03 の最悪インシデント: 見積欠落 3 回・無報告 7〜11 分 2 回への恒久対策。「指示」でなく「制御」）: PreToolUse（配列の先頭）で、コーディング指示後に `見積：N分` 行が無い／最後の報告から 180 秒超／停止 file への操作 を deny し、違反 1 回で `.claude/constitution-stop` を書いて全ツール停止。Stop で委譲先の走行中・区間未了の離席を block。解除は保守者が端末で file を消し `学んだこと.md` に記録するまで不可（解除の環境変数は無い）。時刻は hook の壁時計、入力不正・例外は deny。回帰テスト 47 ケース（ミューテーション 6 種検出）。リポジトリ直下に `CLAUDE.md`（憲法と hook 未導入環境の規約）。ADR: `06_保守者向け/02_設計判断の根拠/constitution-gate.md`
 - **見積・計測表示の規約を A-2/A-2a に一本化**（保守者が B 書式を選択 2026-11-03）: 3 系統あった書式（`見積: N分（HH:MM 完了予定）`／`見積：N分`＋【見積|実測|開始|終了|記録】／計測 3 行）のうち B を真実源にし、speed-harness・AGENTS.md.template・work-metering・運用モード・INDEX・hook 3 本（prompt-priority・instruction-guard・reply-language）を参照に置換。H-0 の「途中報告しない」を A-2a（中間行で 3 分以上の無報告を作らない）に合わせた。ADR: `06_保守者向け/02_設計判断の根拠/estimate-format-single-source.md`

@@ -33,7 +33,9 @@ from pathlib import Path
 
 TAIL_KB = int(os.environ.get("INSTRUCTION_GUARD_TAIL_KB", "512"))
 JA_RE = re.compile(r"[぀-ヿ一-鿿]")
-ESTIMATE_RE = re.compile(r"見積[:：]")
+# 見積は完了予定の時刻まで必須（2026-11-07 保守者「見積もりとは、こう出すのではないのか」）。
+# `見積：N分（完了予定 HH:MM）` と `見積: N分（HH:MM 完了予定）` の両方を受ける
+ESTIMATE_RE = re.compile(r"見積[:：]\s*(?:残り)?\s*\d+\s*分\s*[（(]\s*(?:完了予定\s*\d{1,2}:\d{2}|\d{1,2}:\d{2}\s*完了予定)\s*[）)]")
 # 自分が選択肢・可否を問うたまま、答えを待たずに着手したことを検出する（保守者の傾向 #39）。
 # 2026-09-22: A か B かを尋ねた直後に A を実装し、「いつ作業をして良いと許可をした」と指摘された。
 # A-7 は設計文書の承認しか扱っておらず、「直せ」を実装の許可と解釈する余地が残っていた。
@@ -199,6 +201,15 @@ def notify(context: str) -> int:
     return 0
 
 
+def deny(reason: str) -> int:
+    """ツールを止める（完了予定の無い見積）。"""
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse", "permissionDecision": "deny",
+        "permissionDecisionReason": reason,
+    }}, ensure_ascii=False))
+    return 0
+
+
 def already_denied(session_id: str, inst: str) -> bool:
     """同じ指示で既に deny していれば True。初回は記録して False。"""
     if not session_id:
@@ -234,6 +245,10 @@ def main() -> int:
     if verdict is None:
         return 0
     kind, inst = verdict
+    if kind == "estimate":
+        # 完了予定つきの見積を出すまで毎回止める（notify では守られなかった。2026-11-07）
+        return deny(f"[instruction-guard] 指示「{' '.join(inst.split())[:80]}」への応答に完了予定つきの見積が無い。"
+                    "本文に `見積：N分（完了予定 HH:MM）` を出してから進む（A-2。例外なし）")
     if already_denied(data.get("session_id", ""), f"{kind}:{inst}"):
         return 0
     head = " ".join(inst.split())[:80]
