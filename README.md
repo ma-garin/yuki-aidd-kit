@@ -89,6 +89,15 @@ Codex は `AGENTS.md`（export で `<対象>/AGENTS.md`、グローバルは `~/
 これらは `00_導入/01_インストール/install-guard.sh` だけでも入る（既存の `settings.json` に merge。冪等）。
 止めずに警告だけ出すものもある（`pre-write-check.sh` が秘密情報ファイルと CSS/JS 分割、`post-write-html.sh` が保存した HTML の所見、`session-summary.sh` が終了時のまとめ）。裏方として、`prompt-priority.py` が「今すぐ・報告」を含む発言に優先を注入し、`block-ci.py` が自己ウェイクと CI 待ちを止め、`subagent-context.py` が親への注入の届かないサブエージェントに委譲先の規約と保守者の時計を渡し、`statusline.py` が進捗を表示し、`log-instructions.py` がどの指示ファイルが読み込まれたかを記録する。）
 
+8.7.0 で足したもの。
+- `constitution-gate.py`: 見積行なし・3 分超の無報告・委譲中の離席を止める憲法ゲート。違反 1 回で全ツールが停止し、解除は保守者の端末での操作だけ。
+- `reply_rules.py`: 応答ルール（判定調の締め・結論ラベル・開いた質問・Before/After 表なしの変更報告・タメ口）を Stop で判定する（`reply-language.py` から呼ぶ）。
+- `config-snapshot.py`: CLAUDE.md・settings・rules・モデルの構成を記録し、前回から変わったときだけ知らせる。配線は保守者が設定パッチを当てる。
+- `block-deps.py`: 新規依存の追加（pip・npm・cargo 等）を止める。実在・配布元・版を確かめ、承認後に `AIDD_DEPS_OK=1` で通す。
+- `work-metering` スキル: 見積・中間・完了の計測行 3 書式と予実の記録・校正係数。
+- `work-report-html` スキル: 終えた作業を図・スクショ・時系列つきの HTML レポートにして公開する。
+- `/quality-card`: 変更の品質判断カード（変更・守るもの・失敗・要求・確認範囲・証跡・停止条件・担当・再開条件）を出す。
+
 ## 取り扱い説明書
 
 HTML 版のガイドを 2 冊同梱しています。**初めて導入するなら `01_利用者向け資料/01_利用ガイド.html`**（概要・導入手順・最初のセッション・毎日の流れ・品質チェック・Pro/Sonnet のコツ）、使い始めてからは `01_利用者向け資料/02_操作マニュアル.html`（スキルの選び方・コマンド一覧・ECC との関係・プロジェクト別の使い分け・困った時）。

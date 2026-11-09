@@ -1,6 +1,6 @@
 {
   "name": "yuki-aidd-kit",
-  "version": "8.6.0",
+  "version": "8.7.0",
   "description": "AI駆動開発（AIDD）のための skills・commands・agents・hooks 一式",
   "author": {
     "name": "ma-garin"
