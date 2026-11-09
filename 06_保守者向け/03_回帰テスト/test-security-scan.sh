@@ -132,7 +132,7 @@ OUT=$(PATH="$BROKEN:/usr/bin:/bin" bash "$SCAN" "$D" -o "$TMP/report.md" 2>&1); 
 # 期待: pip-audit/gitleaks は「導入済みだが解析失敗」として未検査扱いになり、指摘0を安全と断定しない。
 expect_rgrep "期待: 解析失敗をpip-auditについて明示" "pip-audit"
 expect_rgrep "期待: 解析失敗をgitleaksについて明示" "gitleaks"
-[ "$RC" -eq 2 ] && ok "期待: 壊れたJSONは判定不能(exit2)として扱う" || ng "期待: 壊れたJSONは判定不能(exit2)として扱う" "実際 exit=$RC（指摘0のexit0で通ってしまう＝黙って見逃す）"
+[ "$RC" -eq 2 ] && ok "期待: 壊れたJSONは判定不能(exit2)として扱う" || ng "期待: 壊れたJSONは判定不能(exit2)として扱う" "実際 exit=${RC}（指摘0のexit0で通ってしまう＝黙って見逃す）"
 
 echo "[基準線（--baseline。B15）: 既知は exit 0・新規は exit 1・増える更新は拒否・理由と期限]"
 D="$TMP/proj9"; mkdir -p "$D"

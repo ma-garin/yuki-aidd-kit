@@ -177,7 +177,7 @@ OPT=$(sed -n '/^## Optional/,$p' "$X/llms.txt")
 expect_out  "LIBRARY は Optional に入る" "skills/beta/SKILL.md" "$OPT"
 OUT=$(lt --check); RC=$?
 expect_exit "生成直後の --check は exit 0" 0 "$RC"
-sed -i 's/アルファの要約/アルファの新しい要約/' "$X/INDEX.md"
+sed 's/アルファの要約/アルファの新しい要約/' "$X/INDEX.md" > "$X/INDEX.md.new" && mv "$X/INDEX.md.new" "$X/INDEX.md"
 OUT=$(lt --check); RC=$?
 expect_exit "INDEX を変えて再生成し忘れると --check は exit 1" 1 "$RC"
 expect_noout "--check は書き込まない" "新しい要約" "$(cat "$X/llms.txt")"

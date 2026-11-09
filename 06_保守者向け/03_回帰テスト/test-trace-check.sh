@@ -230,7 +230,7 @@ NEW=$(ver "$V" REQ-F-001)
 OUT=$(run_v "$V"); RC=$?
 expect_exit "上流の要件を変えると exit 1" 1 "$RC"
 expect_report_has "C7 の対象は追跡表の file:line" "| C7 suspect | $V/traceability-matrix.md:4 |" "$V.report.md"
-expect_report_has "内容は「上流 ID が変わった（記録 → 現在）」" "上流 REQ-F-001 が変わった（記録 $OLD → 現在 $NEW）" "$V.report.md"
+expect_report_has "内容は「上流 ID が変わった（記録 → 現在）」" "上流 REQ-F-001 が変わった（記録 $OLD → 現在 ${NEW}）" "$V.report.md"
 expect_report_lacks "@ の無い REQ-N-001 は suspect にしない" "上流 REQ-N-001" "$V.report.md"
 W="$TMP/ver2/docs/lifecycle"; mkv "$W"
 sedi 's/| REQ-N-001 | 初回ロード | Must | RFD-001 | 3G相当で3秒以内 |/| REQ-N-001 | 初回ロード | Must | RFD-001 | 4G相当で1秒以内 |/' "$W/01-requirements.md"
@@ -257,7 +257,7 @@ echo "[ケース7: --impact（下流の連鎖）]"
 OUT=$(bash "$CHECK" "$V" --impact REQ-F-001 2>&1); RC=$?
 expect_exit "--impact は exit 0" 0 "$RC"
 for id in BD-001 DD-001 DD-002 T-001 UT-001 UT-002 IT-001 UAT-001; do
-  printf '%s\n' "$OUT" | grep -q "$id（" && ok "--impact REQ-F-001 に $id" || ng "--impact REQ-F-001 に $id" "$(printf '%s' "$OUT" | tr '\n' ' ')"
+  printf '%s\n' "$OUT" | grep -q "${id}（" && ok "--impact REQ-F-001 に $id" || ng "--impact REQ-F-001 に $id" "$(printf '%s' "$OUT" | tr '\n' ' ')"
 done
 printf '%s\n' "$OUT" | grep -q '^    DD-001（' && ok "連鎖で出す（DD-001 は BD-001 の下）" || ng "連鎖で出す（DD-001 は BD-001 の下）" "$(printf '%s' "$OUT" | tr '\n' '/')"
 printf '%s\n' "$OUT" | grep -q '^      UT-001（' && ok "連鎖で出す（UT-001 は DD-001 の下）" || ng "連鎖で出す（UT-001 は DD-001 の下）" "$(printf '%s' "$OUT" | tr '\n' '/')"
