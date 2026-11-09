@@ -29,13 +29,27 @@ import os
 import re
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 TAIL_KB = int(os.environ.get("INSTRUCTION_GUARD_TAIL_KB", "512"))
+# 見積なしで deny する前に本文の書き込み遅れを待つ上限（合計 1.5 秒・0.25 秒ごとに読み直し）。2026-11-10
+SETTLE_S = 1.5
+STEP_S = 0.25
 JA_RE = re.compile(r"[぀-ヿ一-鿿]")
 # 見積は完了予定の時刻まで必須（2026-11-07 保守者「見積もりとは、こう出すのではないのか」）。
 # `見積：N分（完了予定 HH:MM）` と `見積: N分（HH:MM 完了予定）` の両方を受ける
 ESTIMATE_RE = re.compile(r"見積[:：]\s*(?:残り)?\s*\d+\s*分\s*[（(]\s*(?:完了予定\s*\d{1,2}:\d{2}|\d{1,2}:\d{2}\s*完了予定)\s*[）)]")
+# A-2a の開始計測行 `【見積：N分 | 開始:HH:MM | 終了:HH:MM | タスク数：n】` も完了時刻つきの見積として受ける。
+# 2026-11-10: 規約どおり「見積：8分」＋この計測行を本文に書いたのに、上の書式だけを見て
+# Read・Bash を 2 回連続 deny した（終了時刻＝完了予定は書かれていた）。終了の時刻が無い計測行は受けない。
+METER_START_RE = re.compile(
+    r"【\s*見積[:：]\s*\d+\s*分\s*[|｜]\s*開始[:：]\s*\d{1,2}:\d{2}\s*[|｜]\s*終了[:：]\s*\d{1,2}:\d{2}")
+
+
+def has_estimate(s: str) -> bool:
+    """完了予定（終了時刻）つきの見積があれば True。分だけの `見積：N分` は False。"""
+    return bool(ESTIMATE_RE.search(s or "") or METER_START_RE.search(s or ""))
 # 自分が選択肢・可否を問うたまま、答えを待たずに着手したことを検出する（保守者の傾向 #39）。
 # 2026-09-22: A か B かを尋ねた直後に A を実装し、「いつ作業をして良いと許可をした」と指摘された。
 # A-7 は設計文書の承認しか扱っておらず、「直せ」を実装の許可と解釈する余地が残っていた。
@@ -184,13 +198,28 @@ def judge(lines: list[str]) -> tuple[str, str] | None:
             return ("unanswered", inst)
         if has_ja(inst) and not has_ja(reply):
             return ("language", inst)
-        if not any(ESTIMATE_RE.search(r) for r in replies):
+        if not any(has_estimate(r) for r in replies):
             return ("estimate", inst)
         # 直近の自分の応答が問いで終わっており、保守者がそれに答えていないなら待つ
         if reply is not None and ASKED_RE.search(reply) and not RESOLVED_RE.search(reply):
             return ("awaiting", " ".join(reply.split())[-120:])
         return None
     return None
+
+
+def settled_judge(path: Path) -> tuple[str, str] | None:
+    """judge する。見積なし（estimate）と出たときだけ、本文の書き込み遅れを待って読み直す。
+
+    PreToolUse の時点では、同じメッセージで書いた本文がまだ transcript に無いことがある
+    （冒頭 docstring・2026-09-21）。見積を書いたのに deny しないよう、合計 SETTLE_S 秒まで
+    STEP_S 秒ごとに読み直し、それでも見積が無ければ estimate のまま返す（deny は維持。通す経路は増やさない）。
+    """
+    verdict = judge(tail_lines(path))
+    deadline = time.monotonic() + SETTLE_S
+    while verdict is not None and verdict[0] == "estimate" and time.monotonic() < deadline:
+        time.sleep(STEP_S)
+        verdict = judge(tail_lines(path))
+    return verdict
 
 
 def notify(context: str) -> int:
@@ -239,7 +268,7 @@ def main() -> int:
     if not tp or not Path(tp).is_file():
         return 0
     try:
-        verdict = judge(tail_lines(Path(tp)))
+        verdict = settled_judge(Path(tp))
     except OSError:
         return 0
     if verdict is None:
@@ -248,7 +277,8 @@ def main() -> int:
     if kind == "estimate":
         # 完了予定つきの見積を出すまで毎回止める（notify では守られなかった。2026-11-07）
         return deny(f"[instruction-guard] 指示「{' '.join(inst.split())[:80]}」への応答に完了予定つきの見積が無い。"
-                    "本文に `見積：N分（完了予定 HH:MM）` を出してから進む（A-2。例外なし）")
+                    "本文に `見積：N分（完了予定 HH:MM）` または "
+                    "`【見積：N分 | 開始:HH:MM | 終了:HH:MM | タスク数：n】` を出してから進む（A-2。例外なし）")
     if already_denied(data.get("session_id", ""), f"{kind}:{inst}"):
         return 0
     head = " ".join(inst.split())[:80]
