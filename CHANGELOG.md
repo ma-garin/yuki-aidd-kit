@@ -1,9 +1,18 @@
 # CHANGELOG — yuki-aidd-kit
 
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
-各版の作業台帳は `project/Roadmap.md`（マイルストーン M1〜）、残課題は `internal/spec/09-findings.md`。
+各版の作業台帳は `05_プロジェクト管理/ロードマップ.md`（マイルストーン M1〜）、残課題は `06_保守者向け/01_内部仕様/09_指摘事項.md`。
 
-## 未リリース
+## Ver.8.7.0（2026-11-10）— kit の自己強化（誤判定の解消と CI 全収録・M25）
+
+- **fix: instruction-guard の誤 deny を解消**（2026-11-10）: 主因は見積の正規表現が A-2a の開始計測行（`【見積：N分 | 開始:… | 終了:HH:MM | …】`）を受けなかったこと。計測行も見積として受ける。加えて、本文が PreToolUse 時点で transcript に未反映の競合に備え、estimate で deny する前に最大 1.5 秒の再読込をしてから判定する。分だけの見積・終了時刻の無い計測行・見積なしは従来どおり deny
+- **fix: constitution-gate の Bash 誤判定**（2026-11-10）: 保護名を含むコマンドは、既知の読み取り専用コマンドを `;` `&&` `||` `|` で並べただけと構文的に確定したときだけ許可（許可リスト方式）。リダイレクト全種（`>!` 等）・展開・`rg --pre`・`git --output`・`find -fprint*` 等は判別不能として deny。origin/main の判定と同じ入力群で突き合わせ、deny→allow の逆転は意図した誤検知 3 件のみ
+- **fix: macOS で赤だった既存回帰テスト**（2026-11-10）: bash 3.2 が `$VAR（` の全角文字を変数名に含める問題（security-scan.sh・テスト 2 本を `${VAR}` に）、pw-spec-lint.py の docstring の無効エスケープ警告、BSD sed の `-i`、plugin.json の版、Codex スキル生成物の更新漏れ
+- **ci: 回帰テストを `run-all.sh` 経由で全 29 本実行**（2026-11-10）: `06_保守者向け/03_回帰テスト/run-all.sh` が glob で全本を走らせ「実行本数／発見本数」を出力。check-docs に「CI 未収録の回帰テスト」検査を追加
+- **chore: 版を 8.7.0 に揃えた**（2026-11-10）: VERSION・CHANGELOG 見出し。CHANGELOG 冒頭の旧パスを現行に修正
+- **docs: `学んだこと.md` の Try 更新**（2026-11-10）: 2026-11-03 インシデントの Try を機械化済み／ロードマップ送りに仕分け
+- **docs: ロードマップに次マイルストーン M25 を追加**（2026-11-10）
+
 
 - **fix: 完了予定の無い見積を instruction-guard が deny**（2026-11-07）: `見積：N分` だけの応答では作業を止める。`見積：N分（完了予定 HH:MM）`／`見積: N分（HH:MM 完了予定）` のみ通す。従来の notify（注入のみ）では守られなかったため deny に変更
 - **fix: ステータスラインに他セッションの進捗が混入する**（2026-11-07）: `progress.json` が全セッション共有のため、`done` を呼ばずに終わった作業の ⏱ が無関係なセッションに出続けた。`progress.py start` が `session` を記録し、`statusline.py` は入力の `session_id` と一致するときだけ進捗を出す。speed-harness H-8・04_コマンドとフック.md を更新
@@ -349,7 +358,7 @@ RFD → 要件定義 → 基本設計 → 詳細設計 → 実装 → 単体テ�
 
 - `context-compression` スキルと `/compact-work` コマンドを追加（3層要約・grep/glob優先・決定論的作業のスクリプト化）
 - 全資産を監査し修正を適用（`internal/AUDIT-2026-07.md`）。特に **hooks が入力を受け取れず無言で機能停止していた不具合を修復**し、`ci/test-hooks.sh` で回帰テスト化
-- キット自体の自己文書化: `project/Vision.md` / `project/PRD.md` / `project/Roadmap.md`（前提知識ゼロのモデルが開発を継続できる作業台帳）
+- キット自体の自己文書化: `project/Vision.md` / `project/PRD.md` / `05_プロジェクト管理/ロードマップ.md`（前提知識ゼロのモデルが開発を継続できる作業台帳）
 - `templates/design-system.md`: コード無しで見た目を再現するための視覚的指示書（Webアプリ／HTMLスライド／管理画面）
 - `INDEX.md` を2層＋タグ＋参照コストで再構成。ECC 対応表の真実源を `docs/ECC-ASSET-MAP.md` に一本化
 - `verify.sh` のチェックリストをリポジトリ実体からの自動導出に変更（資産追加時の更新不要）

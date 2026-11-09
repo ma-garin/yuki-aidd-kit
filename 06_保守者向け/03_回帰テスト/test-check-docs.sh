@@ -16,8 +16,8 @@ expect_out()  { printf '%s' "$3" | grep -qF -- "$2" && ok "$1" || ng "$1" "出�
 expect_noout(){ printf '%s' "$3" | grep -qF -- "$2" && ng "$1" "出力に '$2' が出た" || ok "$1"; }
 
 # テスト実行の代替（各検査の突合に集中するため、実テストの再実行はしない）
-# 代替の総数は実測に合わせる（2026-11-03: hooks 918→856 は statusline 7 ケースの置換と B76 整理、install 210→206、agents 83→92）
-export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=861,test-trace-check.sh=94,test-quality-harness.sh=11,test-install.sh=206,test-agents.sh=92,test-git-gates.sh=27,test-skill-trigger-eval.sh=29"
+# 代替の総数は実測に合わせる（2026-11-03: hooks 918→856 は statusline 7 ケースの置換と B76 整理、install 210→206、agents 83→92。2026-11-10: hooks 861→871 は instruction-guard の回帰ケース追加）
+export CHECK_DOCS_TEST_TOTALS="test-hooks.sh=871,test-trace-check.sh=94,test-quality-harness.sh=11,test-install.sh=206,test-agents.sh=92,test-git-gates.sh=27,test-skill-trigger-eval.sh=29"
 
 fresh() { # 複製を作り直してパスを返す
   rm -rf "$TMP/copy"; mkdir -p "$TMP/copy"
@@ -241,6 +241,18 @@ PY
 )
 [ "$RESULT" = "3" ] && ok "test_totals が途中経過の PASS=10 でなく最後の PASS=3 を採る（fixture 文字列に惑わされない）" || ng "test_totals が fixture の途中経過に惑わされない" "得られた値=$RESULT（期待 3）"
 rm -rf "$ISO"
+
+echo "[検証: CI 未収録の回帰テスト]"
+C=$(fresh); CI="$C/.github/workflows/kit-ci.yml"
+OUT=$(run "$C" --skip-tests); RC=$?
+expect_exit "run-all.sh を呼ぶ kit-ci.yml は NG にならない" 0 "$RC"
+expect_noout "run-all.sh 呼び出し時は CI未収録を出さない" "CI未収録" "$(cat "$TMP/report.md")"
+sedi 's#run-all\.sh#all-runner#g' "$CI"
+printf '      - run: bash 06_保守者向け/03_回帰テスト/test-hooks.sh\n' >> "$CI"
+OUT=$(run "$C" --skip-tests); RC=$?
+expect_exit "run-all.sh が無く test-*.sh が漏れていれば exit 1" 1 "$RC"
+grep -q "| CI未収録 | 回帰テスト/test-agents.sh" "$TMP/report.md" && ok "種別「CI未収録」で漏れた test-agents.sh を検出" || ng "CI未収録の検出" "レポートに無い"
+grep -q "| CI未収録 | 回帰テスト/test-hooks.sh" "$TMP/report.md" && ng "載っている test-hooks.sh を誤検知" "レポートにある" || ok "載っている test-hooks.sh は誤検知しない"
 
 echo ""
 echo "結果: PASS=$PASS / FAIL=$FAIL"

@@ -92,7 +92,7 @@ try:
 except Exception:
     sp = None
 home = Path(os.environ.get("HOME", str(Path.home())))
-proj = Path(os.environ["AIDD_VERIFY_PROJECT"]).resolve()
+proj = Path(os.path.abspath(os.environ["AIDD_VERIFY_PROJECT"]))
 claude = home / ".claude"
 PIPE_SHELL = re.compile(
     r"\b(?:curl|wget)\s+[^|\s][^|\n]*\|\s*(?:sudo\s+(?:-\S+\s+)*)?(?:(?:ba|z|da|k)?sh|python[0-9.]*|node|perl)\b"
@@ -407,7 +407,7 @@ while IFS=$'\t' read -r kind msg; do
 done <<< "$CTX_OUT"
 
 echo ""
-echo "結果: OK=$OK / NG=$NG（うち設定の監査 $AUDIT_NG・文脈ファイル $CTX_NG）／ 警告=$AUDIT_WARN"
+echo "結果: OK=${OK} / NG=${NG}（うち設定の監査 ${AUDIT_NG}・文脈ファイル ${CTX_NG}）／ 警告=${AUDIT_WARN}"
 if [ "$NG" -eq 0 ]; then echo "✅ 全て正常"; exit 0; fi
 [ "$AUDIT_NG" -gt 0 ] && echo "⚠ 設定の監査で NG（bypassPermissions・Bash(*)・curl|sh の hook・平文の秘密値）。上の ❌ を直す（install.sh では直らない）"
 [ "$CTX_NG" -gt 0 ] && echo "⚠ 文脈ファイルの参照切れ。上の ❌ のパスを直す（install.sh では直らない）"

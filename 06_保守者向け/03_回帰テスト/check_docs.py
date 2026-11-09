@@ -18,6 +18,7 @@ manual の数値は手書きのままで、10 箇所以上が実体からズレ�
  10. 件数        README / INDEX / userguide / manual に書かれた「スキル N」「コマンド N」「hooks N」を実数と突合（WARN。直値を書かない）
   8. spec 同期    06_保守者向け/01_内部仕様/01_構成品目目録.md の行数 ↔ 実測、実ファイルが目録に載っているか
  11. 絶対パス     利用者向け文書・雛形に /Users/ /home/ /root/ が無いか（WARN）
+ 15. CI 未収録    回帰テスト test-*.sh が kit-ci.yml に載っているか（run-all.sh を呼んでいれば全本収録扱い。NG）
  14. 安全性       ゼロ幅・双方向制御文字、curl|sh 系、既知形式の秘密値（NG）／HTML コメント内の命令文（WARN）
 
 6・7 とも NG（M16 / M17 で昇格済み）。SIZE_STRICT / RULES_STRICT を False に戻すと WARN に降格できる（--strict で NG に戻る）。
@@ -185,6 +186,20 @@ def check_index_coverage(root: Path, r: Result) -> None:
     for f in sorted(list((root / "03_ClaudeCode/hooks").glob("*.sh")) + list((root / "03_ClaudeCode/hooks").glob("*.py"))):
         if not listed(f.name):
             r.add(True, "掲載漏れ", f"hooks/{f.name}", "INDEX.md に無い")
+
+
+def check_ci_coverage(root: Path, r: Result) -> None:
+    """15. CI 未収録: 回帰テスト test-*.sh が kit-ci.yml から呼ばれているか。run-all.sh を呼んでいれば全本収録扱い。"""
+    ci = root / ".github/workflows/kit-ci.yml"
+    tests = sorted((root / "06_保守者向け/03_回帰テスト").glob("test-*.sh"))
+    if not ci.is_file() or not tests:
+        return
+    text = read(ci)
+    if "run-all.sh" in text:
+        return
+    for f in tests:
+        if f.name not in text:
+            r.add(True, "CI未収録", f"回帰テスト/{f.name}", "kit-ci.yml に無い（run-all.sh に置き換えるか追記する）")
 
 
 def test_totals(root: Path, skip: bool) -> dict[str, int]:
@@ -619,6 +634,7 @@ def main() -> int:
 
     check_costs(root, r)
     check_index_coverage(root, r)
+    check_ci_coverage(root, r)
     check_case_counts(root, r, test_totals(root, a.skip_tests))
     check_references(root, r)
     check_frontmatter(root, r)

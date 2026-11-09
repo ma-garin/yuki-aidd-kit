@@ -5,7 +5,12 @@
   python3 constitution-gate.py pre     # PreToolUse（配列の先頭に置く）
   python3 constitution-gate.py stop    # Stop
   python3 constitution-gate.py report  # 停止状態・最後の報告・違反件数
-テスト専用: AIDD_NOW_EPOCH（現在時刻の偽装。使うと hook-decisions.log に残す）・AIDD_TRANSCRIPT_FLUSH_SEC"""
+テスト専用: AIDD_NOW_EPOCH（現在時刻の偽装。使うと hook-decisions.log に残す）・AIDD_TRANSCRIPT_FLUSH_SEC
+限界（Bash の改ざん判定。origin/main でも素通りで、本 hook の範囲外。ロードマップ M25）:
+  - 保護名の文字列を含まないコマンドは判定しない。.claude ごとの削除・glob（.cl* 等）・変数で組み立てた名前・
+    サブシェルや eval／インタプリタ内で名前を作る書き方・find -delete／rsync --delete・偽の .claude での上書きは通る
+  - 名前の照合は大小を区別する部分一致。ブレース展開・zsh の glob 選択・$'..' の 16 進表記で名前を割ると通る
+    （APFS 既定は大小無視なので大文字表記も同じ実体を指す）"""
 import hashlib, json, os, re, sys, time
 from collections import Counter
 from datetime import datetime, timezone
@@ -33,8 +38,17 @@ EST_RE = re.compile(r"^[ \t]*【?見積[:：][ \t]*\d+[ \t]*分(?![^\n】]*実�
 DONE_RE = re.compile(r"【見積[:：]\s*\d+\s*分[^】]*実測[:：][^】]*】|見積[:：]\s*\d+\s*分\s*/\s*実測[:：]")
 MID_RE = re.compile(r"【進捗[:：][^】]*経過時間[:：][^】]*】")
 ASYNC_RE = re.compile(r"(Async agent launched|running in (the )?background|バックグラウンド)", re.I)
-BASH_WRITE_RE = re.compile(r"\b(rm|mv|unlink|truncate|cp|tee|sed|ln|chmod|touch|python3?|perl|dd)\b|>")
 PROTECTED_WORDS = ("constitution-stop", "constitution-state", "constitution-violations")
+# Bash の改ざん判定（2026-11-10 誤検知の是正）: 保護名を含むコマンドは、全体が「既知の読み取り専用コマンドを
+# ; && || | で並べただけ」と構文的に確定できたときだけ許可する（許可リスト）。それ以外は判別不能として違反（A-14）
+SAFE_READ = frozenset("cat head tail grep egrep fgrep rg ls test stat wc diff cmp echo printf true false : md5 md5sum "
+                      "shasum sha256sum readlink realpath basename dirname nl od hexdump strings pwd cd find git".split())
+GIT_READ = frozenset("grep log show diff status blame ls-files commit add".split())
+# 読み取りコマンドでも書き込み・任意実行になる選択肢（前方一致）
+BAD_OPTS = {"rg": ("--pre",), "git": ("--output", "-O", "--open-files-in-pager", "--ext-diff", "-c"),
+            "find": ("-exec", "-ok", "-delete", "-fprint", "-fls")}
+SH_SPECIAL = frozenset("<>(){}*?[]!&|;~$`\\=")   # 引用符の外に出たら判別不能（リダイレクト全種・展開・サブシェル）
+SH_OPS = ("&&", "||", ";", "|", "\n")
 
 def now() -> float:
     return float(os.environ.get("AIDD_NOW_EPOCH") or time.time())
@@ -199,10 +213,60 @@ def violate(P: dict, kind: str, detail: str, tool: str, t: float, cwd: str) -> i
     return deny(f"憲法違反（{kind}）: {detail}。停止 file {P['stop']} を書いた。保守者が自分の端末で停止 file を消し、"
                 "停止時刻より新しいインシデント記録を書くまで再開不可。作業を止め、何を破ったかを保守者に報告する")
 
+def squash(s: str) -> str:   # 引用符・バックスラッシュで名前を分断する書き方も「名前あり」と数える
+    return s.replace("\\", "").replace("'", "").replace('"', "")
+
+def simple_commands(cmd: str) -> list[list[str]] | None:
+    """; && || | 改行で区切った単純コマンドの語の列。引用符の外に記号（リダイレクト・展開・サブシェル・
+    背景実行等）が 1 つでもあれば None（判別不能）。語頭の # から改行まではコメントとして捨てる。"""
+    segs, words, cur, i = [], [], None, 0
+    while i < len(cmd):
+        c = cmd[i]
+        if c in "'\"":
+            j = cmd.find(c, i + 1)
+            if j < 0:
+                return None
+            cur, i = (cur or "") + cmd[i + 1:j], j + 1
+            continue
+        op = next((o for o in SH_OPS if cmd.startswith(o, i)), None)
+        if c in " \t\r" or op:
+            if cur is not None:
+                words.append(cur)
+            cur, i = None, i + (len(op) if op else 1)
+            if op and words:
+                segs.append(words)
+                words = []
+            elif op and op != "\n":
+                return None   # 空の単純コマンド（;; や先頭の |）
+            continue
+        if c == "#" and cur is None:
+            j = cmd.find("\n", i)
+            i = len(cmd) if j < 0 else j
+            continue
+        if c in SH_SPECIAL:
+            return None
+        cur, i = (cur or "") + c, i + 1
+    if cur is not None:
+        words.append(cur)
+    return segs + ([words] if words else [])
+
+def read_only(words: list[str]) -> bool:
+    cmd, args = words[0], words[1:]
+    if cmd not in SAFE_READ or any(a.startswith(BAD_OPTS.get(cmd, ())) for a in args):
+        return False
+    return cmd != "git" or (bool(args) and args[0] in GIT_READ)
+
+def bash_tampers(cmd: str, P: dict) -> bool:
+    """保護名を含み、かつ読み取り専用と確定できないコマンドを改ざんとみなす。名前を含まないコマンドは判定しない
+    （origin/main と同じ範囲。限界はモジュール docstring）。"""
+    if not any(n in squash(cmd) for n in PROTECTED_WORDS + (P["stop"].name,)):
+        return False
+    segs = simple_commands(cmd)
+    return segs is None or not all(read_only(w) for w in segs)
+
 def tampers(tool: str, ti: dict, P: dict, root: Path) -> bool:
     if tool == "Bash":
-        cmd = str(ti.get("command") or "")
-        return any(w in cmd for w in PROTECTED_WORDS + (P["stop"].name,)) and bool(BASH_WRITE_RE.search(cmd))
+        return bash_tampers(str(ti.get("command") or ""), P)
     target = ti.get("file_path") or ti.get("notebook_path")
     if tool in ("Write", "Edit", "MultiEdit", "NotebookEdit") and target:
         p = Path(target) if Path(target).is_absolute() else root / target

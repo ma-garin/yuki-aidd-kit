@@ -12,7 +12,7 @@ eslint-plugin-playwright は入れない（対象プロジェクトに依存を�
 対象ファイル: *.spec.{ts,js,mjs,cjs,tsx,jsx}・*.test.{同}（JS/TS）と、Playwright を使う test_*.py・*_test.py・*.spec.py（Python）。
   node_modules・.git・venv・.venv・__pycache__・test-results・playwright-report は見ない。
   コメント（// ・/* */ ・#）・文字列リテラル・正規表現リテラル（= ( , : の直後の /…/flags）・Python の三重引用符の文字列は
-  照合しない（「使うな」と書いたコメントや /https?:\/\// の // で誤検知・見逃しをしない）。
+  照合しない（「使うな」と書いたコメントや /https?:\\/\\// の // で誤検知・見逃しをしない）。
 
 NG（exit 1）:
   固定待ち       page.waitForTimeout(（Python は wait_for_timeout(）。expect の自動待機か、状態を待つ waitFor に置き換える

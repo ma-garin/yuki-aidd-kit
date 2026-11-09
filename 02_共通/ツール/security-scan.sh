@@ -105,7 +105,7 @@ PY
       then
         cat "$TOOLOUT" >> "$ROWS"
       else
-        mark_parse_fail "pip-audit（$rf）"
+        mark_parse_fail "pip-audit（${rf}）"
       fi
     done <<< "$REQ_FILES"
   else
@@ -293,10 +293,10 @@ if [ -n "$BASELINE" ] && [ "$BASELINE_WRITE" -eq 1 ]; then
   WOUT=$(python3 "$BASELINE_PY" classify --baseline "$BASELINE" --rows "$ROWS" --root "$DIR" \
          --write --reason "$BL_REASON" --expires "$BL_EXPIRES" 2>&1); WRC=$?
   case "$WRC" in
-    0) echo "✅ 基準線を更新: $(printf '%s' "$WOUT" | sed -n 's/.*current=\([0-9]*\).*/\1/p') 件を記録（$BASELINE。$WOUT）" ;;
-    1) echo "❌ 基準線の更新を拒否: 件数が増える方向（$WOUT）。直すか、除外の理由を保守者が判断する" ;;
+    0) echo "✅ 基準線を更新: $(printf '%s' "$WOUT" | sed -n 's/.*current=\([0-9]*\).*/\1/p') 件を記録（${BASELINE}。${WOUT}）" ;;
+    1) echo "❌ 基準線の更新を拒否: 件数が増える方向（${WOUT}）。直すか、除外の理由を保守者が判断する" ;;
     *) case "$WOUT" in
-         *write=noreason*) echo "❌ 基準線を書かない: 新しく載せる指摘には理由が要る（--reason。$WOUT）" ;;
+         *write=noreason*) echo "❌ 基準線を書かない: 新しく載せる指摘には理由が要る（--reason。${WOUT}）" ;;
          *) echo "❌ 判定不能: $(printf '%s' "$WOUT" | sed -n 's/^error=//p' | head -1)（基準線は書き換えない）"; WRC=2 ;;
        esac ;;
   esac
@@ -307,7 +307,7 @@ BL_SUMMARY=""
 if [ -n "$BASELINE" ]; then
   BL_STATUS="$TMP/rows_classified.tsv"
   BL_SUMMARY=$(python3 "$BASELINE_PY" classify --baseline "$BASELINE" --rows "$ROWS" --root "$DIR" --out "$BL_STATUS" 2>/dev/null) || {
-    echo "❌ 判定不能: 基準線を読めない（$BASELINE）"
+    echo "❌ 判定不能: 基準線を読めない（${BASELINE}）"
     exit 2
   }
 fi
