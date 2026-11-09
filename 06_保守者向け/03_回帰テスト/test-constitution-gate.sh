@@ -19,6 +19,8 @@ unset AIDD_STOP_FILE CLAUDE_PROJECT_DIR AIDD_REPORT_INTERVAL_SEC
 export AIDD_HOOK_LOG="$TMP/hook-decisions.log" AIDD_TOOL_TIME="$TMP/tool-time.json" AIDD_TRANSCRIPT_FLUSH_SEC=0
 NOW=1790000000
 
+# setmtime <file> <epoch>: macOS の BSD touch は -d @epoch を受け付けないので python で設定する
+setmtime() { python3 -c 'import os,sys;os.utime(sys.argv[1],(int(sys.argv[2]),)*2)' "$1" "$2"; }
 js() { python3 -c 'import json,sys;print(json.dumps(sys.argv[1],ensure_ascii=False))' "$1"; }
 user() { echo "{\"type\":\"user\",\"uuid\":\"$1\",\"message\":{\"role\":\"user\",\"content\":$(js "$2")}}"; }
 asst() { echo "{\"type\":\"assistant\",\"uuid\":\"$1\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":$(js "$2")}]}}"; }
@@ -29,7 +31,7 @@ result() { echo "{\"type\":\"user\",\"uuid\":\"$1\",\"message\":{\"role\":\"user
 newproj() {
   P="$TMP/$1"; T="$P/transcript.jsonl"
   mkdir -p "$P/.claude" "$P/06_保守者向け"; : > "$T"
-  echo "# 学んだこと" > "$P/06_保守者向け/学んだこと.md"; touch -d "@$((NOW - 86400))" "$P/06_保守者向け/学んだこと.md"
+  echo "# 学んだこと" > "$P/06_保守者向け/学んだこと.md"; setmtime "$P/06_保守者向け/学んだこと.md" "$((NOW - 86400))"
 }
 # pre <tool> <tool_input JSON> <epoch> [追加フィールド]
 pre() {
@@ -111,15 +113,125 @@ expect_out "25. Edit で状態 file（相対 path）を deny" "停止 file の�
 newproj p4; user u1 "README を読んで" >> "$T"
 OUT=$(pre Bash '{"command":"cat .claude/constitution-stop.last"}' $NOW); expect_empty "26. 停止 file の読み取りは許可" "$OUT"
 
+echo "■ (C2) Bash の読み書き判別（保護名を含むコマンドは読み取り専用と確定したときだけ許可）"
+# 各ケースは mktemp 配下の偽プロジェクトで hook に判定させるだけで、コマンド自体は実行しない
+CASES=("rm -f .claude/constitution-stop" "cat .claude/constitution-stop.last"); FPS=()
+bash_case() {   # bash_case <番号> <allow|deny|fp> <command>（fp = origin/main の誤検知を今回許可にしたもの）
+  newproj "bc$1"; user u1 "README を読んで" >> "$T"
+  if [ "$2" = fp ]; then FPS+=("$3"); else CASES+=("$3"); fi
+  OUT=$(pre Bash "{\"command\":$(js "$3")}" $NOW)
+  if [ "$2" != deny ]; then
+    [ -z "$OUT" ] && [ ! -e "$P/.claude/constitution-stop" ] && ok "C$1. 許可: $3" || ng "C$1. 許可: $3" "${OUT:0:160}"
+  else
+    expect_out "C$1. deny: $3" "停止 file の改ざん" "$OUT"
+  fi
+}
+bash_case 1 deny 'echo "constitution-stop を確認した" > notes.txt'
+bash_case 2 allow 'grep -n constitution-state hooks/x.py | head -5'
+bash_case 3 allow 'ls -la .claude/ # constitution-stop は消さない'
+bash_case 4 deny 'head -3 .claude/constitution-stop.last 2>/dev/null'
+bash_case 5 deny 'test -f .claude/constitution-stop && echo yes >&2'
+bash_case 6 allow 'git commit -m "fix: constitution-stop の誤検知"'
+bash_case 7 deny 'printf "constitution-violations\n" | wc -l > /tmp/count.txt'
+bash_case 8 deny 'rm -f /tmp/x.tmp; cat .claude/constitution-state.json'
+bash_case 9 allow 'cp .claude/settings.json /tmp/settings.bak'
+bash_case 31 allow 'find .claude -name constitution-stop -print'
+bash_case 32 allow 'rg -n constitution-state 03_ClaudeCode && git log --oneline -3'
+bash_case 33 allow 'test -f .claude/constitution-stop || echo none'
+bash_case 34 deny 'cat x;</dev/null rm .claude/constitution-stop'
+bash_case 35 deny 'cat x;>/dev/null rm .claude/constitution-stop'
+bash_case 36 deny 'cat x&&</dev/null rm .claude/constitution-stop'
+bash_case 37 deny 'cat x
+</dev/null rm .claude/constitution-stop'
+bash_case 38 deny "echo '{}' >! .claude/constitution-state.json"
+bash_case 39 deny "echo '{}' >>! .claude/constitution-state.json"
+bash_case 40 deny 'echo x >| .claude/constitution-stop'
+bash_case 41 deny 'echo x &> .claude/constitution-stop'
+bash_case 42 deny 'cat <> .claude/constitution-stop'
+bash_case 43 deny 'rg --pre rm x .claude/constitution-stop'
+bash_case 44 deny 'git diff --output=.claude/constitution-state.json'
+bash_case 45 deny 'git log -0 --output=.claude/constitution-state.json'
+bash_case 46 deny 'find . -maxdepth 0 -fprint0 .claude/constitution-stop'
+bash_case 47 deny 'find . -name constitution-stop -fprintf x y'
+bash_case 48 deny 'cat .claude/constitution-stop & rm x'
+bash_case 49 deny 'sudo cat .claude/constitution-stop'
+bash_case 50 deny "rm \$'.claude/constitution-stop'"
+bash_case 51 deny 'rm .claude/constitution-stop{,}'
+bash_case 52 deny 'cat $(echo .claude/constitution-stop)'
+bash_case 53 deny 'git -c core.pager=rm log .claude/constitution-stop'
+bash_case 54 deny 'sed -n 1p .claude/constitution-stop.last'
+bash_case 55 deny 'awk 1 .claude/constitution-state.json'
+bash_case 56 fp 'ls -ln .claude/constitution-stop.last'
+bash_case 57 fp 'git commit -m "fix: constitution-stop を rm で消させない"'
+bash_case 58 fp 'grep -c cp .claude/constitution-violations.jsonl'
+bash_case 10 deny 'echo x > .claude/constitution-stop.last'
+bash_case 11 deny 'echo x >> .claude/constitution-violations.jsonl'
+bash_case 12 deny 'cat a | tee .claude/constitution-state.json'
+bash_case 13 deny "sed -i '' 1d .claude/constitution-stop.last"
+bash_case 14 deny 'truncate -s 0 .claude/constitution-stop'
+bash_case 15 deny 'cp /dev/null .claude/constitution-stop'
+bash_case 16 deny 'mv .claude/constitution-stop /tmp/x'
+bash_case 17 deny 'rm .claude/constitution-stop*'
+bash_case 19 deny 'F=.claude/constitution-stop; rm "$F"'
+bash_case 20 deny 'eval "rm .claude/constitution-stop"'
+bash_case 21 deny "bash -c 'rm .claude/constitution-stop'"
+bash_case 22 deny "python3 -c 'import os; os.remove(\".claude/constitution-stop\")'"
+bash_case 23 deny 'echo .claude/constitution-stop | xargs rm'
+bash_case 24 deny 'echo rm .claude/constitution-stop | sh'
+bash_case 25 deny 'rm .claude/constitution\-stop'
+bash_case 26 deny 'touch .claude/constitution-stop'
+bash_case 27 deny 'find .claude -name constitution-stop -delete'
+bash_case 28 deny 'cat <<EOF > x
+constitution-stop
+EOF'
+bash_case 29 deny 'ls # c
+rm .claude/constitution-stop'
+bash_case 30 deny 'cp /tmp/constitution-stop .claude/'
+
+echo "■ (C3) 差分検査: origin/main の判定で deny の入力は今回も deny（逆転 0 件）"
+# origin/main 版を一時ディレクトリに出して import し、両版の判定関数に同じ入力群を流す（判定のみ・実行しない）
+OLD="$TMP/old"; mkdir -p "$OLD" "$TMP/fakeroot"
+printf '%s\0' "${CASES[@]}" > "$TMP/cases.bin"; printf '%s\0' "${FPS[@]}" > "$TMP/fps.bin"
+if git -C "$KIT_DIR" show origin/main:03_ClaudeCode/hooks/constitution-gate.py > "$OLD/constitution-gate.py" 2>/dev/null; then
+  DIFF=$(python3 - "$OLD/constitution-gate.py" "$HOOK" "$TMP/cases.bin" "$TMP/fps.bin" "$TMP/fakeroot" <<'PY' 2>&1
+import importlib.util, sys
+from pathlib import Path
+def load(path, name):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+old, new = load(sys.argv[1], "gate_old"), load(sys.argv[2], "gate_new")
+root = Path(sys.argv[5])
+def denied(mod, c):
+    return bool(mod.tampers("Bash", {"command": c}, mod.paths(root), root))
+def items(p):
+    return [c for c in open(p, encoding="utf-8").read().split("\0") if c]
+cases, fps = items(sys.argv[3]), items(sys.argv[4])
+inv = [c for c in cases if denied(old, c) and not denied(new, c)]
+fixed = [c for c in fps if denied(old, c) and not denied(new, c)]
+print(f"inputs={len(cases)} inversions={len(inv)} fp_fixed={len(fixed)}/{len(fps)}")
+for c in inv:
+    print("INV", repr(c))
+PY
+)
+  echo "  $DIFF" | head -5
+  expect_out "D1. 差分検査: 逆転 0 件" "inversions=0" "$DIFF"
+  expect_out "D2. 入力数が登録数と一致（飛ばしていない）" "inputs=${#CASES[@]} " "$DIFF"
+  expect_out "D3. 意図した誤検知の解消は origin/main で deny・今回 allow" "fp_fixed=${#FPS[@]}/${#FPS[@]}" "$DIFF"
+else
+  ng "D1. 差分検査" "origin/main の constitution-gate.py が取れない（git fetch origin が要る）"
+fi
+
 echo "■ (b) 事後分析の必須化"
 newproj b; user u1 "README を読んで" >> "$T"
 printf '%s\t2026-11-03T10:00:00+09:00\t見積欠落\n' "$NOW" > "$P/.claude/constitution-stop.last"
 OUT=$(pre Read "$RD" $((NOW + 60)))
 expect_out "27. .last より古い学んだこと.md なら deny" "インシデント記録が無い" "$OUT"
 expect_nofile "28. 事後分析待ちでは停止 file を書かない" "$P/.claude/constitution-stop"
-touch -d "@$((NOW + 30))" "$P/06_保守者向け/学んだこと.md"
+setmtime "$P/06_保守者向け/学んだこと.md" "$((NOW + 30))"
 OUT=$(pre Read "$RD" $((NOW + 60))); expect_empty "29. 新しい学んだこと.md なら許可" "$OUT"
-rm "$P/06_保守者向け/学んだこと.md"; mkdir -p "$P/docs"; echo x > "$P/docs/lessons.md"; touch -d "@$((NOW + 30))" "$P/docs/lessons.md"
+rm "$P/06_保守者向け/学んだこと.md"; mkdir -p "$P/docs"; echo x > "$P/docs/lessons.md"; setmtime "$P/docs/lessons.md" "$((NOW + 30))"
 OUT=$(pre Read "$RD" $((NOW + 60))); expect_empty "30. docs/lessons.md へのフォールバック" "$OUT"
 
 echo "■ B. Stop"
