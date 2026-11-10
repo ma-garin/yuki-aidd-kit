@@ -18,7 +18,8 @@ for t in "$DIR"/test-*.sh; do
   if bash "$t" >"$log" 2>&1; then
     PASS=$((PASS+1)); echo "OK   $name"
   else
-    FAIL=$((FAIL+1)); echo "FAIL $name"; tail -n 20 "$log" | sed 's/^/     | /'
+    # 失敗したケースの行（❌）を先に出す。末尾 20 行だけでは、途中で落ちたケースの名前が見えない（2026-11-10）
+    FAIL=$((FAIL+1)); echo "FAIL $name"; grep -F '❌' "$log" | head -n 20 | sed 's/^/     ! /'; tail -n 20 "$log" | sed 's/^/     | /'
   fi
 done
 echo "RUN=$RUN FOUND=$FOUND PASS=$PASS FAIL=$FAIL"
