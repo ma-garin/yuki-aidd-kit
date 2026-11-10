@@ -188,11 +188,14 @@ bash_case 29 deny 'ls # c
 rm .claude/constitution-stop'
 bash_case 30 deny 'cp /tmp/constitution-stop .claude/'
 
-echo "■ (C3) 差分検査: origin/main の判定で deny の入力は今回も deny（逆転 0 件）"
-# origin/main 版を一時ディレクトリに出して import し、両版の判定関数に同じ入力群を流す（判定のみ・実行しない）
+echo "■ (C3) 差分検査: 読み書き判別を入れる前の版（55a855b）で deny の入力は今回も deny（逆転 0 件）"
+# 比較基準は fixtures に固定した 55a855b 版。origin/main から取ると、マージ後は基準が今回の版そのものになり
+# D3 が必ず落ちる（2026-11-10）。浅い clone の CI でも取れるよう、git の履歴にも頼らない。
+# 両版を import し、判定関数に同じ入力群を流す（判定のみ・実行しない）
 OLD="$TMP/old"; mkdir -p "$OLD" "$TMP/fakeroot"
+BASELINE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/fixtures/constitution-gate.baseline-55a855b.py"
 printf '%s\0' "${CASES[@]}" > "$TMP/cases.bin"; printf '%s\0' "${FPS[@]}" > "$TMP/fps.bin"
-if git -C "$KIT_DIR" show origin/main:03_ClaudeCode/hooks/constitution-gate.py > "$OLD/constitution-gate.py" 2>/dev/null; then
+if cp "$BASELINE" "$OLD/constitution-gate.py" 2>/dev/null; then
   DIFF=$(python3 - "$OLD/constitution-gate.py" "$HOOK" "$TMP/cases.bin" "$TMP/fps.bin" "$TMP/fakeroot" <<'PY' 2>&1
 import importlib.util, sys
 from pathlib import Path
@@ -218,9 +221,9 @@ PY
   echo "  $DIFF" | head -5
   expect_out "D1. 差分検査: 逆転 0 件" "inversions=0" "$DIFF"
   expect_out "D2. 入力数が登録数と一致（飛ばしていない）" "inputs=${#CASES[@]} " "$DIFF"
-  expect_out "D3. 意図した誤検知の解消は origin/main で deny・今回 allow" "fp_fixed=${#FPS[@]}/${#FPS[@]}" "$DIFF"
+  expect_out "D3. 意図した誤検知の解消は 55a855b 版で deny・今回 allow" "fp_fixed=${#FPS[@]}/${#FPS[@]}" "$DIFF"
 else
-  ng "D1. 差分検査" "origin/main の constitution-gate.py が取れない（git fetch origin が要る）"
+  ng "D1. 差分検査" "比較基準の fixtures/constitution-gate.baseline-55a855b.py が無い"
 fi
 
 echo "■ (b) 事後分析の必須化"
