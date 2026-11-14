@@ -107,6 +107,8 @@ check_case "JSON として読めない" "$U/bad.json" UNKNOWN U02 0
 check_case "シンボリックリンク" "$U/link.md" UNKNOWN U03 0
 check_case "パスが無い" "$U/nothing-here" UNKNOWN U04 0
 check_case "検査できるファイルが無いディレクトリ" "$U/emptydir" UNKNOWN U04 0
+mkdir -p "$U/dsstore"; printf '# 説明だけのスキル\n手順を読む。\n' > "$U/dsstore/SKILL.md"; printf '\x00\x00\x00\x01Bud1\xff\xfe\x80' > "$U/dsstore/.DS_Store"
+expect_noout "OS のメタファイル .DS_Store は走査せず UNKNOWN にしない" "UNKNOWN" "$(scan_json "$U/dsstore" | jverdict)"
 
 echo "[ディレクトリ単位: 同梱スクリプトの DANGEROUS で全体が DANGEROUS]"
 P="$TMP/plugin"; mkdir -p "$P/skills/good/scripts" "$P/.claude-plugin"
