@@ -1,5 +1,5 @@
 {
-  "count": 72,
+  "count": 71,
   "generator": "04_Codex/build_codex_skills.py",
   "skills": {
     "advisor": {
@@ -152,7 +152,7 @@
     },
     "code-doc-search": {
       "files": 2,
-      "sha256": "dd4b9e80233ae5dcdd97e5c3dd46b5dcc0fc9a5cb57e3089960ac5403db990ca"
+      "sha256": "a69c69959592e7601a7c7468e24d24a98c000ad0864af2efaf8d863968b38f1e"
     },
     "context-compression": {
       "files": 2,
@@ -168,19 +168,15 @@
     },
     "done-gate": {
       "files": 2,
-      "sha256": "91bd44c4af33389a0f55ff19814e9e405ca769ddbdfca3f68216d26372392b46"
+      "sha256": "2ea14382ff35f9653feb90bff720f22f08eaf551f08dabc7c50325cb867d20e0"
     },
     "e2e-cycle": {
       "files": 5,
-      "sha256": "8a2c9ed57b847c92366506849d195a6584d8b24aba90ec80bfae9f3f4a83f02b"
+      "sha256": "0a0d9833e6b7853da173094eb51d28313fbf6eb3cb6531bdbbef06faeed749b7"
     },
     "ecc-daily-router": {
       "files": 2,
       "sha256": "dd9f76be8c35319811123c20e701954655d3685e1ec1596d0867dd2278dd54a7"
-    },
-    "handoff": {
-      "files": 2,
-      "sha256": "bc11a401b386ed129ce885bdeac2c3bd3569dc796f5e1b10212f4e908aeda52c"
     },
     "nfr-standards": {
       "files": 3,
@@ -196,7 +192,7 @@
     },
     "qa-review-standards": {
       "files": 4,
-      "sha256": "6c8304640cab33a5cf8f57a57c4e4eca48381bceed2f2611f129543677b8b9c1"
+      "sha256": "3ccc70c90389fd69484fd8066b38e5fc109fee4bcfb12e5b0c6085ce4bdb690e"
     },
     "retro": {
       "files": 4,
@@ -272,11 +268,11 @@
     },
     "test-automation": {
       "files": 4,
-      "sha256": "3adaeaab20be2f8346edbef8922f74d56022e52f64470f37fd18b6eb48be356b"
+      "sha256": "53d05bf1e9bd968101440b1159e7f60777728b47263bc5d6d27d8c3f8b6796af"
     },
     "test-strategy": {
       "files": 4,
-      "sha256": "3e87b698c6ec329c9fe78945ab56330d096dd31d246254bb9e92120421e73e4e"
+      "sha256": "ee10faf75e021541efc2dd41278c71877ac9cbe84837ad6ac79cec9d51d7e53b"
     },
     "uiux_review": {
       "files": 3,

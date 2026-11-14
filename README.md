@@ -154,7 +154,7 @@ yuki-aidd-kit/
 │   └── hooks/                # hooks + settings.json（statusLine 含む）。見積の実測と校正は `tool-timer.py`、破壊操作の遮断は `block-destructive.py`
 ├── 04_Codex/                  # Codex 用の配布物
 │   ├── AGENTS.md.template     # 共通規約の本体（Codex は直接、Claude Code は CLAUDE.md の @AGENTS.md で読む）
-│   ├── build_codex_skills.py  # skills・commands から Codex 用スキル 40 本を生成
+│   ├── build_codex_skills.py  # skills・commands から Codex 用スキル 71 本を生成
 │   └── skills/                # 生成物（install で ~/.agents/skills/、export で <対象>/.agents/skills/ へ配る）
 ├── 02_共通/rules/              # 規律 4 本（absolute-rules / speed-harness / model-routing ＝常時、functional-integrity ＝コード/UI 編集時のみ）
 ├── 02_共通/ひな形/                # 雛形: design-system / tokens.css / ui / components / lifecycle / test / github（Issue・PR・workflows）ほか

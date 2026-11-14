@@ -81,7 +81,7 @@ hooks は Claude Code の設定ファイルに配線しておくと、決まっ�
 
 ### スキル(場面ごとの手順書)
 
-26 本のスキルを同梱しています。どのプロジェクトでも使う **DAILY** と、特定の種別でだけ使う **LIBRARY** の 2 層に分けています。全一覧は `INDEX.md` にあります。
+27 本のスキルを同梱しています。どのプロジェクトでも使う **DAILY** と、特定の種別でだけ使う **LIBRARY** の 2 層に分けています。全一覧は `INDEX.md` にあります。
 
 DAILY の代表的な 13 本を、1 行要約で並べます。
 
@@ -108,7 +108,7 @@ LIBRARY はプロジェクトの種別や場面に合わせて選ぶスキル群
 - `personal-pwa`: GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約
 - `streamlit-rag-app`: Streamlit+RAG業務アプリの開発規約
 - `security-audit`: セキュリティ監査の手順
-- `handoff`: 作業を別セッション・別ハーネス(Claude Code と Codex)へ渡す引き継ぎ文書を書く
+- `handoff`: 外部スキル handoff（mattpocock/skills）を使う（kit 版は配布停止）。引き継ぎ文書は外部版で書く
 
 ### agents(工程を自走させる役)
 

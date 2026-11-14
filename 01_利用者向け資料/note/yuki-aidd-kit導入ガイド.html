@@ -102,7 +102,7 @@ blockquote{margin:1em 0;padding-left:1em;border-left:4px solid var(--line);color
 <li><code>personal-pwa</code>: GitHub Pages PWA・localStorage・折りたたみ端末対応の開発規約</li>
 <li><code>streamlit-rag-app</code>: Streamlit+RAG業務アプリの開発規約</li>
 <li><code>security-audit</code>: セキュリティ監査の手順</li>
-<li><code>handoff</code>: 作業を別セッション・別ハーネス(Claude Code と Codex)へ渡す引き継ぎ文書を書く</li>
+<li><code>handoff</code>: 外部スキル handoff（mattpocock/skills）を使う（kit 版は配布停止）</li>
 </ul>
 <h3>agents(工程を自走させる役)</h3>
 <p><code>03_ClaudeCode/agents/</code> に 6 体のエージェントを置いています。「図書管理システムを作って」のように成果物ごと頼むと <code>aidd-lead</code> が受け、どのスキルを使うか・デザインをどうするか・次にどの工程へ進むかを人間に聞かずに進めます。人間が入るのは<strong>要件定義の合意</strong>と<strong>受け入れ判定</strong>の 2 点だけで、その間の工程は他のエージェントが回し、各工程の出口で <code>gate-agent</code> が差し戻します。AI は承認欄(<code>approver</code>)を埋めません。</p>
