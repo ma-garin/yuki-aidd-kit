@@ -298,3 +298,7 @@ CI は `02_共通/ひな形/github/workflows/lifecycle-check.yml`（手動起動
 - UI変更は `uiux_review` で全状態を実機で開いて確認する。実行経路の検証なしに「完了」と言わない（`rules/functional-integrity.md`）
 - AI出力品質は `agent-eval`、コード動作は `test-automation`、完了判定は `done-gate` で分ける
 - セッション終了時は `CURRENT_STATE.md` と `lessons.md` を更新する
+
+### 通知・確認の共通UIカタログ
+
+`02_共通/ひな形/components/ui_catalog.py` の `search / show / check` で5部品の用途・実API・使用例・参照元ハッシュを取得する。台帳は同じ場所の `ui-catalog.json`。

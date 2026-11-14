@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "components": [
+    {
+      "id": "success",
+      "title": "成功通知",
+      "keywords": [
+        "保存完了",
+        "成功",
+        "保存しました"
+      ],
+      "api": "Feedback.ok",
+      "arguments": "message: string, options?: {detail, action, autoHideMs}",
+      "returns": "手で通知を閉じる関数: () => void",
+      "example": "Feedback.ok('保存しました');",
+      "notes": [
+        "短い成功通知。約3.2秒で消える。重要な結果は画面にも残す。"
+      ],
+      "sources": [
+        "feedback.js",
+        "../tokens.css"
+      ],
+      "requires": [
+        "tokens.cssを先に読み込む",
+        "feedback.jsを読み込む",
+        "action: {label, onClick} または {label, href}。hrefはhttp/httpsのみ",
+        "ページの共通リセットで *, *::before, *::after { box-sizing: border-box; } を指定する"
+      ]
+    },
+    {
+      "id": "error",
+      "title": "失敗通知",
+      "keywords": [
+        "保存失敗",
+        "エラー",
+        "再試行"
+      ],
+      "api": "Feedback.error",
+      "arguments": "message: string, options?: {detail, action, autoHideMs}",
+      "returns": "手で通知を閉じる関数: () => void",
+      "example": "Feedback.error('保存できませんでした', {detail: '接続を確認してください', action: {label: '再試行', onClick: () => { window.retryRequested = true; }}});",
+      "notes": [
+        "自動で消えない。原因と次に取る行動を添える。"
+      ],
+      "sources": [
+        "feedback.js",
+        "../tokens.css"
+      ],
+      "requires": [
+        "tokens.cssを先に読み込む",
+        "feedback.jsを読み込む",
+        "action: {label, onClick} または {label, href}。hrefはhttp/httpsのみ",
+        "ページの共通リセットで *, *::before, *::after { box-sizing: border-box; } を指定する"
+      ]
+    },
+    {
+      "id": "busy",
+      "title": "処理中",
+      "keywords": [
+        "読み込み中",
+        "処理中",
+        "ローディング"
+      ],
+      "api": "Feedback.busy",
+      "arguments": "message: string",
+      "returns": "終了関数: ({ok?, error?, detail?, action?}) => void",
+      "example": "const done = Feedback.busy('読み込んでいます');\n// 実際の非同期処理の終了時に呼ぶ\ndone({ok: '読み込みました'});",
+      "notes": [
+        "成功・失敗の両方の終了経路で終了関数を呼ぶ。"
+      ],
+      "sources": [
+        "feedback.js",
+        "../tokens.css"
+      ],
+      "requires": [
+        "tokens.cssを先に読み込む",
+        "feedback.jsを読み込む",
+        "action: {label, onClick} または {label, href}。hrefはhttp/httpsのみ",
+        "ページの共通リセットで *, *::before, *::after { box-sizing: border-box; } を指定する"
+      ]
+    },
+    {
+      "id": "empty",
+      "title": "0件表示",
+      "keywords": [
+        "0件",
+        "空状態",
+        "検索結果なし"
+      ],
+      "api": "Feedback.emptyState",
+      "arguments": "options: {title, description?, icon?, action?}",
+      "returns": "挿入前のHTMLElement",
+      "example": "document.querySelector('#results').replaceChildren(Feedback.emptyState({title: '該当する項目がありません', description: '検索条件を変更してください', action: {label: '条件を変更', onClick: () => { window.editRequested = true; }}}));",
+      "notes": [
+        "返された要素を表示先へ挿入する。読み込み中と区別する。"
+      ],
+      "sources": [
+        "feedback.js",
+        "../tokens.css"
+      ],
+      "requires": [
+        "tokens.cssを先に読み込む",
+        "feedback.jsを読み込む",
+        "action: {label, onClick} または {label, href}。hrefはhttp/httpsのみ",
+        "ページの共通リセットで *, *::before, *::after { box-sizing: border-box; } を指定する"
+      ]
+    },
+    {
+      "id": "confirm",
+      "title": "確認ダイアログ",
+      "keywords": [
+        "削除確認",
+        "確認",
+        "取消",
+        "モーダル"
+      ],
+      "api": "Feedback.confirm",
+      "arguments": "options: {title, consequence?, actionLabel?, cancelLabel?, danger?}",
+      "returns": "Promise<boolean>: 実行=true、取消・Escape=false",
+      "example": "const confirmed = await Feedback.confirm({title: '選択した項目を削除しますか', consequence: '削除すると元に戻せません', actionLabel: '削除する', danger: true});\nif (confirmed) { window.deleteRequested = true; }",
+      "notes": [
+        "対象名を具体的に示す。trueのときだけ実処理を行う。"
+      ],
+      "sources": [
+        "feedback.js",
+        "../tokens.css"
+      ],
+      "requires": [
+        "tokens.cssを先に読み込む",
+        "feedback.jsを読み込む",
+        "action: {label, onClick} または {label, href}。hrefはhttp/httpsのみ",
+        "ページの共通リセットで *, *::before, *::after { box-sizing: border-box; } を指定する"
+      ]
+    }
+  ]
+}
