@@ -49,6 +49,13 @@ cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$CLAUDE_DIR/skills/"
 cp -r "$KIT_DIR/04_Codex/skills/"* "$HOME/.agents/skills/"
 echo "✅ スキル: Claude Code $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個（~/.claude/skills/）／Codex $(ls "$KIT_DIR/04_Codex/skills" | wc -l)個（~/.agents/skills/）"
 
+# 読み取り専用の共通UIカタログと、その参照元を同じ配置で配る
+mkdir -p "$CLAUDE_DIR/templates/components"
+cp "$KIT_DIR/02_共通/ひな形/tokens.css" "$CLAUDE_DIR/templates/"
+for f in ui_catalog.py ui-catalog.json feedback.js icons.js; do
+  cp "$KIT_DIR/02_共通/ひな形/components/$f" "$CLAUDE_DIR/templates/components/"
+done
+
 # コマンド
 cp "$KIT_DIR/03_ClaudeCode/commands/"*.md "$CLAUDE_DIR/commands/"
 echo "✅ コマンド: $(ls "$KIT_DIR/03_ClaudeCode/commands" | wc -l)個"

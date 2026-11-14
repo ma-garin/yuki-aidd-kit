@@ -50,3 +50,15 @@ kit 内では `INDEX.md` と `02_共通/` と `04_Codex/` がある階層をル�
 Codex 固有スキルは `04_Codex/native-skills/` を編集する。`04_Codex/skills/` を直接編集しない。
 `python3 04_Codex/build_codex_skills.py` で生成し、`--check` で原本・生成物・manifest の一致を確認する。
 導入は既存 install/export が生成スキルを配る。個人環境へ追加する場合は対象スキルだけを配置し、既存の同名スキルを無断上書きしない。
+
+## 用途から通知・確認を選ぶ
+
+共通UIカタログは成功・失敗・処理中・0件・確認の5部品を扱う。
+kit内では `python3 02_共通/ひな形/components/ui_catalog.py search "削除確認"`、
+導入先では `python3 .claude/templates/components/ui_catalog.py search "削除確認"` を使う。
+グローバル導入では `.claude/` を `~/.claude/` に読み替える。
+結果のIDを `show confirm` に渡すと、前提・実API・引数・戻り値・使用例・注意点を取得できる。
+`--detail compact` は短い説明、`--json` は機械取得用。`check --json` は指定数と検査数を返す。
+検索結果0件は既存部品がないという結果であり、独自実装の許可ではない。既存仕様を確認する。
+参照元SHA-256は識別情報であり、意味の精読や実動作検証の証明ではない。
+台帳を直すときは実装を読み、使用例を実ブラウザで検証する。台帳と表示用ドキュメントを二重管理しない。

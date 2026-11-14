@@ -44,7 +44,7 @@
     },
     "aidd-kit": {
       "files": 6,
-      "sha256": "bd702722dad88b6bd7e4bde1e95a4bff55cca06351ee7943b2d87b9dba1b4b38"
+      "sha256": "5b23a2c7f180466f3cbc623d24cf397b219582ed7a0816de9b9c730b75a3599c"
     },
     "atarimae-quality-audit": {
       "files": 3,
@@ -160,7 +160,7 @@
     },
     "design-system": {
       "files": 5,
-      "sha256": "b7d34893b3095d2636baf55760b6df0742716d56312766fc07b0e9d0751dc8e0"
+      "sha256": "edec060413d937c41d878443518ca2a19a44e30a05ea87f2546d998a4e932089"
     },
     "dev-lifecycle": {
       "files": 5,
