@@ -37,6 +37,8 @@ CODING_RE = re.compile(r"(実装|修正|直して|直す|作って|作成|追加
 EST_RE = re.compile(r"^[ \t]*【?見積[:：][ \t]*(\d+)[ \t]*分(?![^\n】]*実測)", re.M)
 # 中間報告の上限＝このターン最初の見積の分×60÷5 秒（2026-11-14 利用者指定。5分→60秒）。見積の分が取れなければ従来の 180 秒
 REPORT_FALLBACK_SEC = 180
+# 下限 60 秒（2026-11-14 利用者指定）。見積 1 分→12 秒のような、1 回のツール実行より短い上限で誤って止めない
+REPORT_MIN_SEC = 60
 DONE_RE = re.compile(r"【見積[:：]\s*\d+\s*分[^】]*実測[:：][^】]*】|見積[:：]\s*\d+\s*分\s*/\s*実測[:：]")
 MID_RE = re.compile(r"【進捗[:：][^】]*経過時間[:：][^】]*】")
 ASYNC_RE = re.compile(r"(Async agent launched|running in (the )?background|バックグラウンド)", re.I)
@@ -198,7 +200,7 @@ def evaluate(sc: dict, st: dict, tool: str, t: float) -> tuple[tuple[str, str] |
     if sc.get("est_min"):
         st["est_min"] = sc["est_min"]   # ターンが tail から外れても最初の見積の分を引き継ぐ
     est_min = st.get("est_min") or 0
-    interval = int(os.environ.get("AIDD_REPORT_INTERVAL_SEC") or (est_min * 60 // 5 if est_min else REPORT_FALLBACK_SEC))
+    interval = int(os.environ.get("AIDD_REPORT_INTERVAL_SEC") or (max(REPORT_MIN_SEC, est_min * 60 // 5) if est_min else REPORT_FALLBACK_SEC))
     if st["est"] and not st["closed"] and isinstance(st.get("last"), (int, float)) and t - st["last"] > interval:
         return ("無報告", f"最後の見積行／中間行から {int(t - st['last'])} 秒（上限 {interval} 秒）。"
                 "中間行【進捗:… | 経過時間：M分 | 終了:HH:MM | タスク数:k/n】を出してから再実行"), st

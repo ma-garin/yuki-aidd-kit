@@ -83,6 +83,13 @@ OUT=$(pre Bash '{"command":"ls"}' $((NOW + 121)))
 expect_out "15. 120 秒超は deny" "無報告" "$OUT"
 expect_out "16. 理由に中間行の書式" "中間行【進捗" "$OUT"
 expect_file "17. 120 秒超で停止 file 生成" "$P/.claude/constitution-stop"
+# 下限 60 秒（2026-11-14 利用者指定。見積 1 分は 12 秒でなく 60 秒が上限）
+newproj dmin; user u1 "テストを追加して" >> "$T"; asst a1 "見積：1分" >> "$T"
+OUT=$(pre Write "$WR" $NOW); expect_empty "17a. 見積 1 分の見積行を確認（起点）" "$OUT"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 50))); expect_empty "17b. 50 秒は許可（下限 60 秒）" "$OUT"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 61)))
+expect_out "17c. 60 秒超は deny" "無報告" "$OUT"
+expect_out "17d. 理由に上限 60 秒" "上限 60 秒" "$OUT"
 
 newproj d2; user u1 "テストを追加して" >> "$T"; asst a1 "見積：10分" >> "$T"
 pre Write "$WR" $NOW >/dev/null
