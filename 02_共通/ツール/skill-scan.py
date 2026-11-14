@@ -62,6 +62,8 @@ from pathlib import Path
 LEVELS = ("SAFE", "CAUTION", "UNKNOWN", "DANGEROUS")   # 後ろほど重い
 RANK = {lv: i for i, lv in enumerate(LEVELS)}
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv"}
+# OS が自動で作るメタファイル（Finder の .DS_Store）。中身はバイナリで U01 の UNKNOWN になるが資産ではないので走査しない
+SKIP_NAMES = {".DS_Store"}
 SKIP_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".bmp", ".woff", ".woff2", ".ttf", ".otf", ".eot"}
 MAX_BYTES = 2 * 1024 * 1024
 KNOWN_NPX_SCOPES = ("@modelcontextprotocol/", "@playwright/", "@anthropic-ai/")
@@ -480,7 +482,7 @@ def collect(arg: str) -> list[FileResult]:
             continue
         if f.is_symlink():
             out.append(scan_file(f, f.as_posix()))
-        elif f.is_file() and f.suffix.lower() not in SKIP_EXTS:
+        elif f.is_file() and f.suffix.lower() not in SKIP_EXTS and f.name not in SKIP_NAMES:
             out.append(scan_file(f, f.as_posix()))
     if not out:
         r = FileResult(arg)
