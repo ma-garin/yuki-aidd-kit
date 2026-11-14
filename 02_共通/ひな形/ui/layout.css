@@ -16,7 +16,7 @@
  */
 
 /* ── A) app 骨格 ── */
-.app { display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); min-height: 100dvh; }
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); height: 100dvh; overflow: hidden; }   /* 枠を表示領域に固定し、ページ全体のスクロールを出さない。長い中身は .app-content 等の要素内でスクロール */
 .app > * { min-width: 0; }   /* グリッド項目の min-width:auto を切る。globalbar の nowrap な中身が画面幅を押し広げない */
 .app-globalbar {
   display: flex; align-items: center; gap: var(--space-4);
@@ -29,7 +29,7 @@
 .app-globalbar .brand { font-weight: 700; color: var(--color-text); }
 .app-globalbar .spacer { flex: 1; }
 
-.app-body { display: flex; min-height: 0; }
+.app-body { display: flex; min-height: 0; overflow: hidden; }
 
 .sidebar {
   flex: 0 0 240px; width: 240px; min-height: 0;
@@ -65,16 +65,16 @@
 .app-topbar .btn { white-space: nowrap; }
 .app-topbar .breadcrumb a { color: inherit; }
 .app-topbar .spacer { flex: 1; }
-.app-content { flex: 1 1 auto; overflow: auto; padding: var(--space-6); background: var(--color-bg); }
+.app-content { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--space-6); background: var(--color-bg); }
 .app-content > .measure { max-width: var(--text-measure); }
 
 /* 表側（利用者の作業）と裏側（設定）で地の色を変える */
 .app.is-settings .app-content { background: var(--color-surface-3); }
 
 /* ── B) 2ペイン（軽量ツール） ── */
-.layout-2pane { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.layout-2pane { display: grid; grid-template-columns: 240px 1fr; height: 100dvh; overflow: hidden; }   /* ページ全体はスクロールさせない */
 .sidenav { background: var(--color-surface-2); border-right: 1px solid var(--color-border); padding: var(--space-4); position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
-.layout-2pane > main { padding: var(--space-6); min-width: 0; }
+.layout-2pane > main { padding: var(--space-6); min-width: 0; min-height: 0; overflow: auto; }   /* 本文だけ要素内スクロール */
 
 /* ── KPI 列・フィルタ行（管理画面の定型） ── */
 .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6); }
@@ -92,7 +92,8 @@
   .sidebar.open { transform: none; }
   .app-topbar { padding: var(--space-2) var(--space-4); }
   .app-globalbar .label-text { display: none; }   /* 狭幅ではアイコンだけ */
-  .layout-2pane { grid-template-columns: 1fr; }
+  .layout-2pane { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .layout-2pane > .sidenav { position: static; height: auto; max-height: 40dvh; }
   .sidenav { display: none; }   /* ハンバーガーで開閉 */
 }
 @media (max-width: 480px) {
