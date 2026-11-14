@@ -3,6 +3,8 @@
 import argparse
 import hashlib
 import json
+import os
+import shlex
 from pathlib import Path
 import sys
 
@@ -81,7 +83,7 @@ def main(argv=None):
             items = items[:args.limit]
             payload = {'match_count': count, 'display_count': len(items), 'results': [
                 {'id': i['id'], 'title': i['title'], 'api': i['api'],
-                 'next': 'python3 ui_catalog.py show ' + i['id']} for i in items]}
+                 'next': 'python3 ' + shlex.quote(os.path.relpath(__file__)) + ' show ' + shlex.quote(i['id'])} for i in items]}
         elif args.command == 'show':
             items = [i for i in all_items if args.id in (i['id'], i['api'])]
             if not items:
