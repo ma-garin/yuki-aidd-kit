@@ -3,6 +3,13 @@
 版の真実源は `VERSION`（git tag `vX.Y.Z` と対応）。新しい版が上。README には版歴を置かない（7.0.0 で分離）。
 各版の作業台帳は `05_プロジェクト管理/ロードマップ.md`（マイルストーン M1〜）、残課題は `06_保守者向け/01_内部仕様/09_指摘事項.md`。
 
+## 未リリース
+
+- **docs: スキル棚卸し（2026-11-14）**: done-gate・test-automation・e2e-cycle・qa-review-standards・test-strategy・code-doc-search の description に「どれをいつ使うか」を追記。sdd-ecc-workflow の description を YAML として正しく読める形（クォート）に修正
+- **chore: kit 版 handoff スキルの配布を停止**（外部版 mattpocock/skills の handoff を使う。install の cp で上書きされるのを防ぐ）。Codex 用スキルを再生成
+- **feat: kit 外のグローバルスキル 54 件を `00_導入/01_インストール/external-skills.json` に登録**（出所・導入コマンド・sha256・置き場・退役名）
+- **feat: `doctor.py` に D9「外部スキルの一致」を追加**（未登録・欠落・改変・退役名の残存・リンク切れを WARN。件数「検査 n／マニフェスト m」を表示。`--home` で差し替え可）
+
 ## Ver.8.7.0（2026-11-10）— kit の自己強化（誤判定の解消と CI 全収録・M25）
 
 - **fix: instruction-guard の誤 deny を解消**（2026-11-10）: 主因は見積の正規表現が A-2a の開始計測行（`【見積：N分 | 開始:… | 終了:HH:MM | …】`）を受けなかったこと。計測行も見積として受ける。加えて、本文が PreToolUse 時点で transcript に未反映の競合に備え、estimate で deny する前に最大 1.5 秒の再読込をしてから判定する。分だけの見積・終了時刻の無い計測行・見積なしは従来どおり deny

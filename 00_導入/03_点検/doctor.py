@@ -16,14 +16,20 @@ verify.sh は導入先の配置を見る。こちらは導入の前・Codex（Wi
   D6 部品の自己検査  `secret_patterns.py --self-test` を実行して exit 0 か（NG）
   D7 Codex 生成物   `04_Codex/build_codex_skills.py --check`（一時ディレクトリで生成して比較するだけ）が exit 0 か（NG）
   D8 外部コマンド   git・bash の有無（WARN。Codex の Windows 環境には無いのが前提なので止めない）
+  D9 外部スキル     00_導入/01_インストール/external-skills.json と ~/.agents/skills・~/.claude/skills・
+                   ~/.codex/skills の現物を突き合わせる。マニフェストが無い・読めない＝NG／置き場が 3 つとも無い＝SKIP／
+                   差分（未登録・欠落・sha256 不一致・retired の残存・リンク切れ）はすべて WARN（導入前の PC を NG にしない）。
+                   kit が配る名前（03_ClaudeCode/skills・04_Codex/skills・04_Codex/native-skills）は外部に数えない
+                   （ただしマニフェストにある名前は外部として検査する）。集計行に「検査 n 件／マニフェスト m 件」を必ず出す
 
-使い方: python3 00_導入/03_点検/doctor.py [--root DIR] [--json]
+使い方: python3 00_導入/03_点検/doctor.py [--root DIR] [--home DIR] [--json]
 終了コード: 0=NG なし / 1=NG あり
 """
 from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import hashlib
 import json
 import os
 import platform
@@ -97,7 +103,7 @@ def rel(f: Path, root: Path) -> str:
         return f.as_posix()
 
 
-def diagnose(root: Path) -> Report:
+def diagnose(root: Path, home: "str | Path | None" = None) -> Report:
     r = Report()
     bash = shutil.which("bash")
     # D1
@@ -161,16 +167,95 @@ def diagnose(root: Path) -> Report:
             r.add("D8 外部コマンド", "OK" if rc == 0 else "WARN", cmd, last.splitlines()[0] if last else f"exit {rc}")
         else:
             r.add("D8 外部コマンド", "WARN", cmd, "無い（Codex 環境では想定どおり。.sh の道具と git hook は使えない）")
+    check_external_skills(r, root, Path(home) if home else Path.home())
     return r
+
+
+SKILL_LOCS = (("agents", (".agents", "skills")), ("claude", (".claude", "skills")), ("codex", (".codex", "skills")))
+D9 = "D9 外部スキル"
+
+
+def tree_sha256(d: Path) -> str:
+    """04_Codex/build_codex_skills.py の skills-manifest と同じ算出法（相対パス＋NUL＋中身＋NUL を昇順に連結）。"""
+    h = hashlib.sha256()
+    files = sorted(f for f in d.rglob("*") if f.is_file() and f.name != ".DS_Store" and "__pycache__" not in f.parts)
+    for f in sorted(files, key=lambda f: f.relative_to(d).as_posix()):
+        h.update(f.relative_to(d).as_posix().encode("utf-8") + b"\0" + f.read_bytes() + b"\0")
+    return h.hexdigest()
+
+
+def kit_skill_names(root: Path) -> set:
+    names: set = set()
+    for parts in (("03_ClaudeCode", "skills"), ("04_Codex", "skills"), ("04_Codex", "native-skills")):
+        d = root.joinpath(*parts)
+        if d.is_dir():
+            names |= {c.name for c in d.iterdir() if c.is_dir()}
+    return names
+
+
+def check_external_skills(r: Report, root: Path, home: Path) -> None:
+    mpath = root / "00_導入" / "01_インストール" / "external-skills.json"
+    target = rel(mpath, root)
+    try:
+        doc = json.loads(mpath.read_text(encoding="utf-8"))
+        manifest = doc["skills"]
+        if not isinstance(manifest, dict):
+            raise ValueError("skills がオブジェクトでない")
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        r.add(D9, "NG", target, f"マニフェストが読めない（{type(e).__name__}: {e}）")
+        return
+    ignored = set(doc.get("ignored") or [])
+    retired = set(doc.get("retired") or [])
+    locs = [(k, home.joinpath(*p)) for k, p in SKILL_LOCS if home.joinpath(*p).is_dir()]
+    if not locs:
+        r.add(D9, "SKIP", target, f"置き場が無い（{home} 配下の .agents/.claude/.codex の skills）／マニフェスト {len(manifest)} 件")
+        return
+    kit = kit_skill_names(root) - set(manifest)
+    present: dict = {}   # 名前 → [(置き場, パス)]
+    for k, base in locs:
+        for c in base.iterdir():
+            if c.name.startswith(".") and c.name not in ignored or c.name in ignored or c.name in kit:
+                continue
+            if c.is_dir() or c.is_symlink():
+                present.setdefault(c.name, []).append((k, c))
+    diffs = []
+    for name in sorted(set(present) | set(manifest)):
+        where = present.get(name, [])
+        for k, c in where:
+            if c.is_symlink() and not c.exists():
+                diffs.append((f"{k}/{name}", "リンク切れ"))
+        live = [(k, c) for k, c in where if c.exists()]
+        if name in retired and live:
+            diffs.append((name, "退役済み（retired）の名前が環境に戻っている"))
+            continue
+        entry = manifest.get(name)
+        if entry is None:
+            if live:
+                diffs.append((name, "環境にあるがマニフェストに無い外部スキル"))
+            continue
+        have = {k for k, _ in live}
+        missing = [k for k in entry.get("locations", []) if k not in have]
+        if missing:
+            diffs.append((name, "マニフェストの置き場に無い: " + ", ".join(missing)))
+        if live and entry.get("sha256"):
+            order = {"agents": 0, "claude": 1, "codex": 2}
+            first = sorted(live, key=lambda x: order.get(x[0], 9))[0][1]
+            if tree_sha256(first) != entry["sha256"]:
+                diffs.append((name, "sha256 が一致しない（中身が変わった）"))
+    for t, why in diffs:
+        r.add(D9, "WARN", t, why)
+    r.add(D9, "WARN" if diffs else "OK", target,
+          f"検査 {len(set(present) | set(manifest))} 件／マニフェスト {len(manifest)} 件・差分 {len(diffs)} 件")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="キットの部品がこの環境で動くかを診る（読むだけのスナップショット）")
     ap.add_argument("--root", default=str(KIT))
+    ap.add_argument("--home", default=None, help="スキルの置き場を探すホーム（既定: このユーザーのホーム）")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
     root = Path(a.root).resolve()
-    r = diagnose(root)
+    r = diagnose(root, a.home)
     taken = _dt.datetime.now().astimezone().isoformat(timespec="seconds")
     summary = {s: r.count(s) for s in ("OK", "WARN", "NG", "SKIP")}
     if a.json:
@@ -183,7 +268,7 @@ def main() -> int:
     else:
         print(f"doctor: {root}（{taken} 時点のスナップショット。読むだけ・常駐しない）")
         for i in r.items:
-            if i["status"] != "OK":
+            if i["status"] != "OK" or i["check"] == D9:  # D9 は検査件数を必ず見せる
                 print(f"{i['status']:<4} {i['check']}  {i['target']}  {i['detail']}")
         print(f"{'NG' if summary['NG'] else 'OK'}: OK={summary['OK']} WARN={summary['WARN']} "
               f"NG={summary['NG']} SKIP={summary['SKIP']}（全件は --json）")

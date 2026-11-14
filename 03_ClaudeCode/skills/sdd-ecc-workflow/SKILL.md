@@ -1,6 +1,6 @@
 ---
 name: sdd-ecc-workflow
-description: 仕様駆動開発（SDD: Spec-Driven Development）でプロジェクトを進めるためのスキル。新規プロジェクト立ち上げ、spec.md/plan.md/tasks.mdの作成、Everything Claude Code（ECC）やcc-sdd（/kiroコマンド）の利用、Coordinator/Implementor/Verifierの役割分離、トークン最適化の相談があった場合は必ずこのスキルを使用すること。「仕様から作りたい」「要件定義から」「タスク分解して」という依頼にも適用する。
+description: "仕様駆動開発（SDD: Spec-Driven Development）でプロジェクトを進めるためのスキル。新規プロジェクト立ち上げ、spec.md/plan.md/tasks.mdの作成、Everything Claude Code（ECC）やcc-sdd（/kiroコマンド）の利用、Coordinator/Implementor/Verifierの役割分離、トークン最適化の相談があった場合は必ずこのスキルを使用すること。「仕様から作りたい」「要件定義から」「タスク分解して」という依頼にも適用する。"
 ---
 
 # SDD + ECC ワークフロー

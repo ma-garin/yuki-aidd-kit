@@ -46,6 +46,15 @@ python3 "$KIT_DIR/00_導入/01_インストール/sync-agent-rules.py" --home "$
 # スキル
 cp -r "$KIT_DIR/03_ClaudeCode/skills/"* "$CLAUDE_DIR/skills/"
 # Codex用のスキル（04_Codex/skills/。skills と commands から生成、agents/openai.yaml 付き）を ~/.agents/skills/ にも配る（出典: https://learn.chatgpt.com/codex/build-skills）
+# 同名のリンク（手で張った旧パスへのリンク等）が残っていると、cp -r がリンク先へ書き込むか失敗する。先に退避して実体を置く（削除しない）
+for d in "$KIT_DIR/04_Codex/skills/"*/; do
+  n=$(basename "$d"); t="$HOME/.agents/skills/$n"
+  if [ -L "$t" ]; then
+    mkdir -p "$HOME/.agents/_retired/install-links"
+    mv "$t" "$HOME/.agents/_retired/install-links/$n.$(date +%Y%m%d%H%M%S).link"
+    echo "⚠ ~/.agents/skills/$n は同名のリンクだったため ~/.agents/_retired/install-links/ へ退避し、実体を配置します"
+  fi
+done
 cp -r "$KIT_DIR/04_Codex/skills/"* "$HOME/.agents/skills/"
 echo "✅ スキル: Claude Code $(ls "$KIT_DIR/03_ClaudeCode/skills" | wc -l)個（~/.claude/skills/）／Codex $(ls "$KIT_DIR/04_Codex/skills" | wc -l)個（~/.agents/skills/）"
 

@@ -42,7 +42,6 @@
 - [03_ClaudeCode/skills/work-report-html/SKILL.md](03_ClaudeCode/skills/work-report-html/SKILL.md): 終えた作業を図・実物スクショ・時系列・確認結果つきの HTML レポートにして公開
 - [03_ClaudeCode/skills/uiux_review/SKILL.md](03_ClaudeCode/skills/uiux_review/SKILL.md): 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない
 - [03_ClaudeCode/skills/retro/SKILL.md](03_ClaudeCode/skills/retro/SKILL.md): AIDDの進め方の学びを lessons.md に蓄積しキットへ還流
-- [03_ClaudeCode/skills/handoff/SKILL.md](03_ClaudeCode/skills/handoff/SKILL.md): 作業を別セッション・別ハーネス（Claude ⇄ Codex）へ渡す引き継ぎ文書を 1 本書く。会話を読まずに続けられる形
 
 ## rules
 

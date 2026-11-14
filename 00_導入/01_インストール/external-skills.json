@@ -1,0 +1,787 @@
+{
+  "generated": "2026-11-14",
+  "note": "kit 外から入れたグローバルスキルの一覧（doctor.py D9 が実環境と突き合わせる）。kit が配るスキル（03_ClaudeCode/skills・04_Codex/skills・04_Codex/native-skills）は含めない。sha256 は ~/.agents → ~/.claude → ~/.codex の順で最初に実在する置き場の実体を、build_codex_skills.py の skills-manifest と同じ方法（相対パス＋NUL＋中身＋NUL を昇順連結）で算出。remoteHeadAtRegistration は登録時点のリモート HEAD であり、導入時点のコミットではない。tracked=false は ~/.agents/.skill-lock.json に記録が無いもので、出所は未確認（推測で埋めない）。install は `npx skills add --help`（-g・--skill）で書式を確認済み。再生成は手打ちせず現物から機械的に作る。",
+  "ignored": [
+    ".system",
+    "synced"
+  ],
+  "retired": [
+    "claude-handoff",
+    "diagnosing-bugs",
+    "implement",
+    "qa",
+    "to-issues",
+    "to-prd",
+    "diagnose",
+    "write-a-skill",
+    "zoom-out",
+    "review",
+    "banner-design",
+    "brand",
+    "design",
+    "slides",
+    "ui-styling",
+    "ui-ux-pro-max"
+  ],
+  "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceUrl": "https://github.com/vercel-labs/agent-browser.git",
+      "install": "npx skills add vercel-labs/agent-browser -g --skill agent-browser",
+      "skillFolderHash": "d75a393c9a371295c6d6be46c34938e76ef21184",
+      "remoteHeadAtRegistration": "2f533ec7d74cd9b1925cc86fb0c6872b03745be0",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "bb10760ef4a133f773d663dcf6085af2e4b45846822e8f1794daefe01efa1821"
+    },
+    "ask-matt": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "ccb1b050ad7e42241d32bd38d07d85aa583723d4531879e4626257ab673e583e"
+    },
+    "caveman": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "claude"
+      ],
+      "sha256": "7e2fa5f052ed8572bbe892d4c1baeea80ba8659d0b72e6432bfd7e8fb98abc0c"
+    },
+    "code-review": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "a0a6ea333e7fd617515f47613832e1f2decb3abf18ac313d7fd0ea5ddda04365"
+    },
+    "codebase-design": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "6af47ce35b6d06ce5a06201ab222c29d77fdd0211168526f30035a24e6873c7b"
+    },
+    "design-an-interface": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "6542fd942be3ece9155ef515d4326005e19c785145132ed428b0dc44a2d27698"
+    },
+    "domain-modeling": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "9c70797062c1017367293905782a5a3a6b8f3ea85148abc172996a8de3f60071"
+    },
+    "e2e-cycle-help": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "claude"
+      ],
+      "sha256": "d8fb99e939eda6b0039e320c8ab7a9f8d9a8d8c5d40c8dd334275fa6f4965b16"
+    },
+    "edit-article": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "be02c5ae0b89ca09c4cc4abc5f82e9bb0b739a73ec6ed4c45e01353e3be39274"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "install": "npx skills add vercel-labs/skills -g --skill find-skills",
+      "skillFolderHash": "76a98a285cb0434f3d39e1a873823556330e398b",
+      "remoteHeadAtRegistration": "b716f9dc2ba36b6aa8f0080615e5a3a6caeac63b",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
+    },
+    "frontend-design": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "claude"
+      ],
+      "sha256": "537c1df9d0c694ecf9139a911f9ad0bd111a7ebc173a55457568459e543fe75b"
+    },
+    "git-guardrails-claude-code": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "4b1e7a10a097a121c0aa3d311bb3f3ff64215c461ea7b3aa18fa802353349451"
+    },
+    "grill-me": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "25b02cbdacb3d7fcf0fdea243cb8358cc5ba1e85800d0974b028f6e8bacac94d"
+    },
+    "grill-with-docs": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "8683d99a2d347d358662c4d4744affd38212913b85a69158118b1f6735e5da7e"
+    },
+    "grilling": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "1468bb9078a95a6672a687cd37b97cbc25be2584ec327400b94613e69a1f5956"
+    },
+    "handoff": {
+      "source": "mattpocock/skills",
+      "sourceUrl": "https://github.com/mattpocock/skills.git",
+      "install": "npx skills add mattpocock/skills -g --skill handoff",
+      "skillFolderHash": "ce24892bd2d4b9e7fd5ac9b95c03175e18bef388",
+      "remoteHeadAtRegistration": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "tracked": true,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "77c2607c751b7c522e0208ab113ba4949f8267610d6061323c7ccd3ace21d7da"
+    },
+    "hatch-pet": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "codex"
+      ],
+      "sha256": "016a80e28f3e0a8fab7d28829513828a45f1b9aef8ef8885e4ac62dca1200b4a"
+    },
+    "hyperframes": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill hyperframes",
+      "skillFolderHash": "6814c25aaf2c713f00b9e0169a681d00bcd6a626",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "e77a36c488b4f80c1a19f41733cb282017359a1424e1bfc862aea7254ef200f8"
+    },
+    "hyperframes-animation": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill hyperframes-animation",
+      "skillFolderHash": "489bd1ceb93eb7f9a978ce59ea50f0375561d9cd",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "4252b08a4905b5ba9fca0e0b02eff17e36f003db6eeb819a800e4ec6ad87c395"
+    },
+    "hyperframes-audio": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill hyperframes-audio",
+      "skillFolderHash": "ed774105e038208292ffd12fad534df8d2cd2db7",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "b39bac771e873eaeac9e19ef7b1392b87f7bdeeda3644fd6f07f0c5d9e7a0513"
+    },
+    "hyperframes-cli": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill hyperframes-cli",
+      "skillFolderHash": "454dad4188d57c7df6bbfd4436f40c476ade5770",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "06b31056db460774839d6684e77eba77becf33e87413187214ab9340115888ae"
+    },
+    "hyperframes-core": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill hyperframes-core",
+      "skillFolderHash": "82a5dd67d03bcbeafa891e414813786f8492490e",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "e5b2b62d60995dbbc952990618705e5fb1e42e995d3a900eda75f87e6d487257"
+    },
+    "hyperframes-creative": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill hyperframes-creative",
+      "skillFolderHash": "5a4f0694b187381e2bd87635c4187e59871d06cb",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "f3b201ca29eae92af3538fe06052f269c963b8014b4b492ee2c34f340a6d8d32"
+    },
+    "hyperframes-keyframes": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill hyperframes-keyframes",
+      "skillFolderHash": "7388a32ad3c69ce46e2ffca4beb462139e1e885c",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "6bc62531ecea9a52b19e963ea22611a81000520a6a6a363ca7e0c38f002b1112"
+    },
+    "hyperframes-registry": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill hyperframes-registry",
+      "skillFolderHash": "92727db171404cf3cb21e998ef73602a0e78798e",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "51e6dba95a8dfb451edee54ba7eaa7d7ab9b4b4fe7c2eb9485b85034ae3bc267"
+    },
+    "improve-codebase-architecture": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "2823acbf7eb6674817713d21f449418c03dc4dbe33661760cff64255d40f8532"
+    },
+    "jp": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "claude"
+      ],
+      "sha256": "391558add23cb5e327a8bc82fcb9cfa40e97512f1a09b902ebc669947627570d"
+    },
+    "loop-me": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "c030957893b40c36fae5e6f3c0a3387567d36bae550b41095649f6cc12284147"
+    },
+    "media-use": {
+      "source": "heygen-com/hyperframes",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "install": "npx skills add heygen-com/hyperframes -g --skill media-use",
+      "skillFolderHash": "f5e16ef7553203eae7962a4b81bf819f03c24909",
+      "remoteHeadAtRegistration": "0f6ed7d57bc9c6d449ce89cbfc3a7948a7427157",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude",
+        "codex"
+      ],
+      "sha256": "28948e640a5d133a5b4ac31fe2b74222a89b12fb934272d7c01bef2164076cd8"
+    },
+    "merge-to-main": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "codex"
+      ],
+      "sha256": "fbe775d5d28591e647ce8b18afecf15df92445778394d1c361bf55e6ab9c191d"
+    },
+    "migrate-to-shoehorn": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "b41d9a3748a8bdb90ce3b91de8f56bc2b2354d2dd943571bf5ccecf81b28a762"
+    },
+    "obsidian-vault": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "1e34caaa182c3e70be80aad679952bd0850e76c257a3f24bd7118bebfbec6c72"
+    },
+    "playwright-cli": {
+      "source": "microsoft/playwright-cli",
+      "sourceUrl": "https://github.com/microsoft/playwright-cli.git",
+      "install": "npx skills add microsoft/playwright-cli -g --skill playwright-cli",
+      "skillFolderHash": "cc70f6e5f0cf42b82d3f72f6f1c3a4134694d518",
+      "remoteHeadAtRegistration": "b21724888b8100b05ef8dee3a92f2bb03bf4dcde",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "77b67df856cdea93e3e73836326c363ae0e1b9f50c2edac24171ec4741ba5ada"
+    },
+    "prototype": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "ad86139f1bde54fecb03dd6a31db374e59cfe999607a0e16609a43a0fe6564b6"
+    },
+    "request-refactor-plan": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "3087b88bf8124691c10bd2bc248114a89f991b2e039c15c90d179a234f02db58"
+    },
+    "research": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "6e70265f3f531ab6f3c77ee5ecbafaed4398cc2094ca04510a0048553f560c5e"
+    },
+    "resolving-merge-conflicts": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "0569ceadd02418da6a74ce0b8d549803e46838823f9585f8b169a6cf9da66ffc"
+    },
+    "scaffold-exercises": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "be30d12029fe1dbe2a6144f8542ef87d5bcd7fd68e9f04f5ae09a129387cc0ea"
+    },
+    "setup-matt-pocock-skills": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "e2c1c9a29e9d8be8b29f2e67bd6f845f40c7c645a0224d22a368c5be87f3d06c"
+    },
+    "setup-pre-commit": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "39df5538137477d3788152ef92ba1264b675157cd038794f82141edcebfddb96"
+    },
+    "systematic-debugging": {
+      "source": "obra/superpowers",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "install": "npx skills add obra/superpowers -g --skill systematic-debugging",
+      "skillFolderHash": "774f23e27e35cb0a89ede39156e7b079fbb84190",
+      "remoteHeadAtRegistration": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "0c8a24ab45376f6fccf5162380a8f782f2bbca7dad8e7e0ddcae19c8d7259933"
+    },
+    "tdd": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "e8ecf2e6373d026ec1926fcfb4bf61510e614754c6a9402cd8f33105f5c0d258"
+    },
+    "teach": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "63feafa166e24e8b85376accae0af357beb1874c61776acc32c1d39a6fce9bc4"
+    },
+    "to-spec": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "305911f9a65016bf31b209ade13da492042e3ebe1434db4161a777a4efc69dbb"
+    },
+    "to-tickets": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "ef4fb46c09ebdf2a21d89403bda233ad1bceeaa8b4e3e17b305dda91b8b725b3"
+    },
+    "triage": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "ac70de32fe89f8f08941e0baa3659954cb38d2a0de41a4050ded1456b81f5699"
+    },
+    "ubiquitous-language": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "675e0300ef2aaafb4ce16599f40cbbb8e1b6954bee2e73cc09df8799e9760c67"
+    },
+    "verification-before-completion": {
+      "source": "obra/superpowers",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "install": "npx skills add obra/superpowers -g --skill verification-before-completion",
+      "skillFolderHash": "a4cb0b69aaefeab540947a7f1642bdaad810e37a",
+      "remoteHeadAtRegistration": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "tracked": true,
+      "invocation": "auto",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "d8a53168f152b6163bd3447f7d4c20b6b4cddf6bd907f9aa5856b514c032db0e"
+    },
+    "wayfinder": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "b21256d42f6810e0a8e452dd7f2c273a32869823ce0ec68bda95d6378bfe7cd1"
+    },
+    "wizard": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "45ed32a48abb5a9a5baab64c395193c9a543b98f775cc066c18252edaaa60da4"
+    },
+    "writing-beats": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "4d2dd3de0f84748fa79cd1d108ba7a63ecc8ee80ef272f45a56fbf2be257941f"
+    },
+    "writing-fragments": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "e9d3ab4617be1fb7b0c5cf8ff4888475e88f4c2b973e6f9cdb326dd117512fc6"
+    },
+    "writing-great-skills": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "396fd1098e3f311f0f4373bab9c503b365f0ffcfe3c5bfbc74840a7e0b046c21"
+    },
+    "writing-shape": {
+      "source": null,
+      "sourceUrl": null,
+      "install": null,
+      "skillFolderHash": null,
+      "remoteHeadAtRegistration": null,
+      "tracked": false,
+      "invocation": "manual",
+      "locations": [
+        "agents",
+        "claude"
+      ],
+      "sha256": "7ccb8c77cb4f53c74f8580b1e49fa451e219525cca672c01a261c5716a1ff00c"
+    }
+  }
+}

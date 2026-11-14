@@ -1,6 +1,6 @@
 ---
 name: code-doc-search
-description: "技術ドキュメント・OSSコード・APIリファレンスの検索を最適化するスキル。「〜のドキュメントを調べて」「〜の使い方を探して」「最新バージョンの変更点」「〜のAPIリファレンス」「〜のインストール方法」「ECC/cc-sdd/Playwright/Streamlit/Claude Code の仕様を確認したい」など、技術情報の検索依頼があった場合は必ずこのスキルを使用すること。検索ツールを素で使うより精度が上がる。"
+description: "技術ドキュメント・OSSコード・APIリファレンスの検索を最適化するスキル。「〜のドキュメントを調べて」「〜の使い方を探して」「最新バージョンの変更点」「〜のAPIリファレンス」「〜のインストール方法」「ECC/cc-sdd/Playwright/Streamlit/Claude Code の仕様を確認したい」など、技術情報の検索依頼があった場合は必ずこのスキルを使用すること。検索ツールを素で使うより精度が上がる。調査結果をリポジトリに Markdown で残す調査は research、スキルを探す依頼は find-skills が担う。"
 ---
 <!-- 生成物: 04_Codex/build_codex_skills.py が 03_ClaudeCode/・02_共通/rules/ から生成する。直接編集しない -->
 # コードドキュメント特化検索

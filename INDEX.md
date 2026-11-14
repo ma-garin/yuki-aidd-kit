@@ -112,7 +112,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 | `work-report-html` | 終えた作業を図・実物スクショ・時系列・確認結果つきの HTML レポートにして公開 | #report #artifact | 68行 |
 | `uiux_review` | 画面を実際に開いて全状態（通常/実行中/失敗/0件/狭い画面/モーダル）を確認。「作った」を「効いている」と報告しない | #ui #qa #review | 200行 |
 | `retro` | AIDDの進め方の学びを lessons.md に蓄積しキットへ還流 | #process #improve | 66行 |
-| `handoff`（8.7.0〜） | 作業を別セッション・別ハーネス（Claude ⇄ Codex）へ渡す引き継ぎ文書を 1 本書く。会話を読まずに続けられる形 | #process #handoff | 82行 |
+| `handoff`（外部） | 外部スキル handoff（mattpocock/skills）を使う（kit 版は配布停止）。kit 版は 8.7.0 で追加後に配布停止 | #process #handoff | 外部 |
 | `advisor`（8.7.0〜） | 節目（大きな判断の前・詰まった・完了の前）に別の強いモデルへ相談。助言は参考で最終判断は自分と利用者 | #process #review | 46行 |
 
 ## LIBRARY スキル（種別・場面で選ぶ）
