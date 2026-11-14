@@ -974,20 +974,21 @@ expect_absent "1 応答あたり出力は出さない" "出力" "$OUT"
 OUT=$(python3 "$KIT_DIR/00_導入/03_点検/token_report.py" "$TJ")
 expect_contains "token_report.py が区分別の表を出す" "| cache_read | 3,000 |" "$OUT"
 
-echo "[statusline.sh bash 3.2・作業フォルダ名なし]"
-# 2026-11-14: printf '%(%s)T' が macOS 標準の bash 3.2 で落ちて 1 行目が空になった。作業フォルダ名は出さない（利用者の指定）
+echo "[statusline.sh bash 3.2・作業フォルダ名は statusline.py が出す]"
+# 2026-11-14: printf '%(%s)T' が macOS 標準の bash 3.2 で落ちて 1 行目が空になった。作業フォルダ名は statusline.py が 2 項目目に出す（利用者の指定。#121 で消した表示を戻した）
 SL32="$TMP/sl32"; mkdir -p "$SL32/hooks"; cp "$HOOKS/statusline.sh" "$HOOKS/statusline.py" "$SL32/hooks/"
 date +%s > "$SL32/claude-fable-usage.json.ts"  # 取得済みにして検査中の通信・鍵束の参照を止める
-SLIN='{"session_id":"x","model":{"display_name":"Fable 5.2"},"workspace":{"current_dir":"/tmp/zz-sl-dirname-9"}}'
+SLIN='{"session_id":"x","model":{"display_name":"Fable 5.2"},"effort":{"level":"high"},"prompt_cache":{"warm":false},"workspace":{"current_dir":"/tmp/zz-sl-dirname-9"}}'
 OUT=$(printf '%s' "$SLIN" | TMPDIR="$SL32" /bin/bash "$SL32/hooks/statusline.sh" 2>&1); RC=$?
 expect_eq "statusline.sh は /bin/bash で exit 0" "0" "$RC"
 expect_contains "statusline.sh の 1 行目が空でない（モデル名を出す）" "Fable 5.2" "$(printf '%s\n' "$OUT" | head -1)"
 expect_absent "statusline.sh は bash 3.2 で書式エラーを出さない" "invalid format" "$OUT"
-expect_absent "statusline.sh は作業フォルダ名を出さない" "zz-sl-dirname-9" "$OUT"
+expect_absent "statusline.sh は作業フォルダ名を出さない（statusline.py が足す）" "zz-sl-dirname-9" "$OUT"
+expect_absent "statusline.sh は cache を出さない" "cache" "$OUT"
 OUT=$(printf '%s' "$SLIN" | TMPDIR="$SL32" HOME="$TMP" python3 "$SL32/hooks/statusline.py" 2>&1); RC=$?
 expect_eq "statusline.py（従来表示つき）は exit 0" "0" "$RC"
 expect_contains "statusline.py の 1 行目が空でない（モデル名を出す）" "Fable 5.2" "$(printf '%s\n' "$OUT" | head -1)"
-expect_absent "statusline.py は作業フォルダ名を出さない" "zz-sl-dirname-9" "$OUT"
+expect_eq "statusline.py の 1 行目: モデル effort ｜ 作業フォルダ名（cache なし）" "Fable 5.2 high ｜ zz-sl-dirname-9" "$(printf '%s\n' "$OUT" | head -1)"
 expect_absent "statusline.py は Σ を出さない" "Σ" "$OUT"
 expect_absent "statusline.py は出力/t を出さない" "/t" "$OUT"
 
@@ -1012,7 +1013,8 @@ G = "PreToolUse:Bash hook error: [python3 /h/instruction-guard.py]: 見積なし
 w(f"{d}/p/S1.jsonl", [u("最初"), a("m1", "見積：5分（09:00）"), u("次の依頼"),
   a("m2", "見積：5分（10:20）\n目的: x", cr=260000), r(G), r(G), r("PreToolUse:Bash hook error: [other-check]: x")])
 for name, model, age in (("a1", "claude-sonnet-5", 30), ("a2", "claude-sonnet-5", 60), ("a3", "claude-opus-5-5", 600)):
-    w(f"{d}/p/S1/subagents/{name}.jsonl", [a(name, "x", model=model)], now - age)
+    w(f"{d}/p/S1/subagents/{name}.jsonl", [dict(u("依頼"), timestamp=datetime.datetime.fromtimestamp(now - 300, datetime.timezone.utc).isoformat()),
+      a(name, "x", model=model)], now - age)
 w(f"{d}/p/N1.jsonl", [u("依頼"), a("n1", "見積：5分（10:20）"), r(G),
   a("n2", "【見積:5分 | 実測:4分 | 開始:09:55 | 終了:09:59 | 作業時間記録:成功】")])
 w(f"{d}/p/N2.jsonl", [u("依頼"), a("k1", "了解", model="claude-unknown-9")])
@@ -1026,13 +1028,13 @@ OUT=$(sg S1 "$SGNOW"); RC=$?
 expect_eq "信号: exit 0" "0" "$RC"
 expect_contains "完了予定: 最後の利用者発言より後の見積を 〜HH:MM で出す" "〜10:20" "$OUT"
 expect_absent "完了予定: 利用者発言より前の見積は使わない" "09:00" "$OUT"
-expect_contains "担当: 120 秒以内のサブエージェントをモデル別に数える" "担当 sonnet2" "$OUT"
-expect_absent "担当: 120 秒より古い記録は数えない" "opus" "$OUT"
+expect_absent "担当: 1 行目にモデル別の集計（担当 sonnet2）を出さない" "担当 " "$(printf '%s\n' "$OUT" | sed -n 1p)"
+expect_eq "担当: 120 秒以内の 2 本を 2 行目以降に 1 本 1 行（120 秒より古い opus は出さない）" "担当 sonnet 09:55〜 経過5分|担当 sonnet 09:55〜 経過5分" "$(printf '%s\n' "$OUT" | sed -n '2,$p' | paste -sd '|' -)"
 expect_contains "hook 停止: 同じ hook が 2 回で guard×2" "guard×2" "$OUT"
-expect_contains "文脈: 25 万以上で /clear を促す（万単位・切り捨て）" "文脈 26万 → /clear" "$OUT"
+expect_contains "文脈: 25 万以上は ☆ と /clear を付ける（万単位・切り捨て）" "☆文脈 26万 → /clear" "$OUT"
 expect_contains "料金: 今日 ¥｜本件 ¥ の形" "｜本件 ¥" "$OUT"
 expect_absent "料金: $ を出さない" '$' "$OUT"
-expect_contains "並び: 完了予定 ｜ 担当 ｜ guard ｜ 文脈 ｜ 料金" "〜10:20 ｜ 担当 sonnet2 ｜ guard×2 ｜ 文脈 26万 → /clear ｜ 今日 ¥" "$OUT"
+expect_eq "並び: 完了予定 ｜ 文脈 ｜ 料金 ｜ guard（guard は金額の後ろ）" "1" "$(printf '%s\n' "$OUT" | sed -n 1p | grep -cE '^〜10:20 ｜ ☆文脈 26万 → /clear ｜ 今日 ¥[0-9,]+｜本件 ¥[0-9,]+ ｜ guard×2$')"
 TODAY=$(printf '%s' "$OUT" | grep -o '今日 ¥[0-9,]*' | tr -dc 0-9); HONKEN=$(printf '%s' "$OUT" | grep -o '本件 ¥[0-9,]*' | tr -dc 0-9)
 expect_eq "料金: 今日＝本件＋同日の他セッション（3 日前の記録は外す）" "$((HONKEN + 160))" "$TODAY"
 OUT=$(sg S1 "$((SGNOW + 1800))")
@@ -1043,12 +1045,69 @@ expect_eq "信号なし: exit 0" "0" "$RC"
 expect_absent "完了予定: 終了の計測行の後は出さない" "〜" "$OUT"
 expect_absent "担当: 稼働中 0 本は出さない" "担当" "$OUT"
 expect_absent "hook 停止: 1 回では出さない" "×" "$OUT"
-expect_absent "文脈: 25 万未満は出さない" "文脈" "$OUT"
+expect_contains "文脈: 25 万未満も常時 文脈 N万 で出す" "文脈 0万 ｜" "$OUT"
+expect_absent "文脈: 25 万未満は ☆ と /clear を付けない" "☆" "$OUT"
+expect_absent "文脈: 25 万未満は /clear を促さない" "/clear" "$OUT"
 OUT=$(sg N2 "$SGNOW")
 expect_absent "完了予定: 見積が無ければ出さない" "〜" "$OUT"
 expect_contains "料金: 単価不明の応答があれば ※" "※" "$OUT"
 OUT=$(printf '{"transcript_path":"%s"}' "$SG/p/none.jsonl" | HOME="$SG/home" python3 "$SG/hooks/statusline.py" 2>&1); RC=$?
 expect_eq "会話記録が無くても exit 0・何も出さない" "0:" "$RC:$OUT"
+
+echo "[statusline.py 5 行目以降の担当行（1 本 1 行）]"
+# 2026-11-14 利用者指定。隣に 4 行を出す statusline.sh の代役を置く。時刻は今日の 10:00（Asia/Tokyo）に固定
+SA="$TMP/sa"; mkdir -p "$SA/hooks" "$SA/home/.claude/.statusline-tokens" "$SA/p/A1/subagents"; cp "$HOOKS/statusline.py" "$SA/hooks/"
+printf '#!/usr/bin/env bash\nprintf "Opus 5.5 high | cache 3m\\nL2\\nL3\\nL4\\n"\n' > "$SA/hooks/statusline.sh"
+python3 - "$SA" <<'FIX'
+import datetime, json, os, sys, zoneinfo
+d = sys.argv[1]
+now = datetime.datetime.now(zoneinfo.ZoneInfo("Asia/Tokyo")).replace(hour=10, minute=0, second=0, microsecond=0).timestamp()
+open(f"{d}/now", "w").write(str(int(now)))
+ts = lambda sec: datetime.datetime.fromtimestamp(now - sec, datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+u = lambda t, ago: {"type": "user", "timestamp": ts(ago), "message": {"role": "user", "content": t}}
+a = lambda t, m: {"type": "assistant", "message": {"id": t[:8], "model": m, "content": [{"type": "text", "text": t}]}}
+def w(name, rows, age, bad=""):
+    p = f"{d}/p/A1/subagents/{name}.jsonl"
+    open(p, "w").write(bad + "".join(json.dumps(x, ensure_ascii=False) + "\n" for x in rows))
+    os.utime(p, (now - age, now - age))
+main = lambda rows: "".join(json.dumps(x, ensure_ascii=False) + "\n" for x in rows)
+said = {"type": "assistant", "message": {"id": "m1", "model": "claude-opus-5-5", "content": [{"type": "text", "text": "見積：5分（10:20）"}],
+        "usage": {"input_tokens": 120000, "output_tokens": 100}}}
+open(f"{d}/p/A1.jsonl", "w").write(main([{"type": "summary"}, u("依頼", 1800), said]))
+tu = lambda m: {"type": "assistant", "message": {"model": m, "content": [{"type": "tool_use", "id": "tu1", "name": "Bash", "input": {}}]}}
+w("b1", [u("[担当票 name=回帰全体 effort=medium 見積=6分]\n本文", 130), a("【担当進捗 1/5 準備】", "claude-opus-5-5"),
+         a("途中\n【担当進捗 2/5 テスト追加】", "claude-opus-5-5")], 5)
+w("b2", [u("票なしの依頼", 600), {"broken": 1}, a("作業中", "claude-sonnet-5")], 10)
+with open(f"{d}/p/A1/subagents/b2.jsonl", "a") as f: f.write("not json {{{\n")
+os.utime(f"{d}/p/A1/subagents/b2.jsonl", (now - 10, now - 10))
+w("b3", [u("[担当票 effort=low 見積=3分] 依頼", 480), a("【担当進捗 1/2 x】", "claude-haiku-4-5")], 20)
+w("b4", [u("[担当票 name=古い担当 effort=high 見積=5分]", 900), a("x", "claude-opus-5-5")], 600)
+w("b5", [], 5, bad="これは JSON ではない\n{壊れ\n")
+w("b6", [u("[担当票 name=長いコマンド effort=high 見積=5分]", 250), tu("claude-opus-5-5")], 200)
+w("b7", [u("[担当票 name=放置の担当 effort=high 見積=5分]", 2000), tu("claude-opus-5-5")], 31 * 60)
+FIX
+SANOW=$(cat "$SA/now")
+# 第 3 引数で作業ディレクトリの部分を差し替える（"" で作業ディレクトリなし）。${3-…} は中の } で展開が閉じるので変数で持つ
+sa() { local ws=',"workspace":{"current_dir":"/tmp/zz-wd-active/"}'; [ $# -ge 3 ] && ws=$3
+  printf '{"session_id":"x","transcript_path":"%s"%s}' "$SA/p/$1.jsonl" "$ws" | HOME="$SA/home" AIDD_STATUSLINE_NOW="$2" python3 "$SA/hooks/statusline.py" 2>&1; }
+OUT=$(sa A1 "$SANOW"); RC=$?
+expect_eq "担当行: 壊れた記録があっても exit 0" "0" "$RC"
+expect_eq "1 行目: モデル effort ｜ フォルダ ｜ 終了見込み ｜ 文脈 ｜ 金額（cache・担当・起動なし）" "1" "$(printf '%s\n' "$OUT" | sed -n 1p | grep -cE '^Opus 5.5 high ｜ zz-wd-active ｜ 〜10:20 ｜ 文脈 12万 ｜ 今日 ¥[0-9,]+｜本件 ¥[0-9,]+$')"
+expect_absent "1 行目: 起動 を出さない" "起動" "$OUT"
+expect_eq "担当行: 4 行＋稼働中 4 本で 8 行（1 本 1 行・古い担当と読めない担当は出さない）" "8" "$(printf '%s\n' "$OUT" | wc -l | tr -dc 0-9)"
+expect_absent "担当行: 1 行目に 担当 を出さない" "担当 " "$(printf '%s\n' "$OUT" | sed -n 1p)"
+expect_eq "担当行: 2〜4 行目は従来表示のまま" "L2|L3|L4" "$(printf '%s\n' "$OUT" | sed -n 2,4p | paste -sd '|' -)"
+expect_eq "担当行: 票なし→モデル・起動時刻・経過だけ（起動の早い順で 5 行目。壊れた行は飛ばす）" "担当 sonnet 09:50〜 経過10分" "$(printf '%s\n' "$OUT" | sed -n 5p)"
+expect_eq "担当行: 見積超過→超過+N分（名前なし・種別なしは出さない）" "担当 haiku·low 09:52〜 見積3分 経過8分 超過+5分 1/2" "$(printf '%s\n' "$OUT" | sed -n 6p)"
+expect_eq "担当行: 票あり→モデル·effort 名前 起動 見積 経過 最後の進捗" "担当 opus·medium 回帰全体 09:57〜 見積6分 経過2分 2/5" "$(printf '%s\n' "$OUT" | sed -n 8p)"
+expect_eq "担当行: 最後が未完了の tool_use なら最終更新 200 秒前でも出す" "担当 opus·high 長いコマンド 09:55〜 見積5分 経過4分" "$(printf '%s\n' "$OUT" | sed -n 7p)"
+expect_absent "担当行: 未完了の tool_use でも最終更新 31 分前なら出さない" "放置の担当" "$OUT"
+expect_absent "担当行: 最終更新が 120 秒より前の担当は出さない" "古い担当" "$OUT"
+OUT=$(sa A0 "$SANOW"); RC=$?
+expect_eq "担当行: 0 本なら 4 行のまま（空行も出さない）" "0:4" "$RC:$(printf '%s\n' "$OUT" | wc -l | tr -dc 0-9)"
+expect_absent "1 行目: 文脈の値が取れなければ項目を出さない" "文脈" "$OUT"
+OUT=$(sa A1 "$SANOW" ""); RC=$?
+expect_eq "1 行目: 作業ディレクトリが取れなければフォルダ名だけ出さない（区切りも詰める）" "0:1" "$RC:$(printf '%s\n' "$OUT" | sed -n 1p | grep -cE '^Opus 5.5 high ｜ 〜10:20 ｜ 文脈 12万 ｜ 今日 ¥')"
 
 echo "[injection-guard.py]"
 # 取得内容（WebFetch・WebSearch・mcp__*・プロジェクト外の Read）の注入句を additionalContext で警告する PostToolUse（B-23 A16。止めない）
