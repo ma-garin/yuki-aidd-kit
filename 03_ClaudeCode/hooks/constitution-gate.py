@@ -34,7 +34,9 @@ TAG_BLOCK_RE = re.compile(r"<([a-zA-Z][\w-]*)(?:\s[^>]*)?>.*?</\1>", re.S)
 CODING_RE = re.compile(r"(実装|修正|直して|直す|作って|作成|追加|削除して|リファクタ|テスト|hook|フック|スクリプト|コード|"
                        r"バグ|不具合|変更して|書き換え|やって|進めて|続けて|対応して)|"
                        r"\.(py|sh|js|mjs|ts|tsx|jsx|json|ya?ml|toml|html|css|go|rs|java|rb|sql|ipynb)\b", re.I)
-EST_RE = re.compile(r"^[ \t]*【?見積[:：][ \t]*\d+[ \t]*分(?![^\n】]*実測)", re.M)
+EST_RE = re.compile(r"^[ \t]*【?見積[:：][ \t]*(\d+)[ \t]*分(?![^\n】]*実測)", re.M)
+# 中間報告の上限＝このターン最初の見積の分×60÷5 秒（2026-11-14 利用者指定。5分→60秒）。見積の分が取れなければ従来の 180 秒
+REPORT_FALLBACK_SEC = 180
 DONE_RE = re.compile(r"【見積[:：]\s*\d+\s*分[^】]*実測[:：][^】]*】|見積[:：]\s*\d+\s*分\s*/\s*実測[:：]")
 MID_RE = re.compile(r"【進捗[:：][^】]*経過時間[:：][^】]*】")
 ASYNC_RE = re.compile(r"(Async agent launched|running in (the )?background|バックグラウンド)", re.I)
@@ -137,7 +139,7 @@ def scan(entries: list) -> dict:
         s = instruction_of(e)
         if s is not None and not e.get("isSidechain"):
             start, inst, turn = i + 1, s, k
-    events, agents, results, notes = [], [], {}, []
+    events, agents, results, notes, est_min = [], [], {}, [], None
     for k, e in entries[start:]:
         c = (e.get("message") or {}).get("content")
         if e.get("type") == "assistant":
@@ -145,6 +147,8 @@ def scan(entries: list) -> dict:
             hits = sorted((m.start(), kd) for kd, rx in (("done", DONE_RE), ("est", EST_RE), ("mid", MID_RE))
                           for m in rx.finditer(t))
             events += [(k, kind) for _, kind in hits]
+            m0 = EST_RE.search(t) if est_min is None else None
+            est_min = int(m0.group(1)) if m0 else est_min
             for b in c if isinstance(c, list) else []:
                 if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") in ("Agent", "Task"):
                     agents.append((b.get("id", ""), bool((b.get("input") or {}).get("run_in_background"))))
@@ -154,7 +158,8 @@ def scan(entries: list) -> dict:
                     results[b.get("tool_use_id", "")] = text_of(b.get("content"))
             if "<task-notification>" in text_of(c):
                 notes.append(text_of(c))
-    return {"turn": turn, "inst": inst, "events": events, "agents": agents, "results": results, "notes": notes}
+    return {"turn": turn, "inst": inst, "events": events, "agents": agents, "results": results, "notes": notes,
+            "est_min": est_min}
 
 def section(sc: dict, st: dict) -> tuple[bool, bool]:   # (見積あり, 完了行で閉じた)。ターンが tail に無ければ状態 file を引き継ぐ
     marks = [kind for _, kind in sc["events"] if kind != "mid"]
@@ -190,7 +195,10 @@ def evaluate(sc: dict, st: dict, tool: str, t: float) -> tuple[tuple[str, str] |
             return None, st
         return ("見積欠落", f"コーディングを含む指示に `見積：N分` 行が無いまま {tool} を呼んだ"
                 f"（読み取りは {READ_FREE} 回まで）"), st
-    interval = int(os.environ.get("AIDD_REPORT_INTERVAL_SEC") or 180)
+    if sc.get("est_min"):
+        st["est_min"] = sc["est_min"]   # ターンが tail から外れても最初の見積の分を引き継ぐ
+    est_min = st.get("est_min") or 0
+    interval = int(os.environ.get("AIDD_REPORT_INTERVAL_SEC") or (est_min * 60 // 5 if est_min else REPORT_FALLBACK_SEC))
     if st["est"] and not st["closed"] and isinstance(st.get("last"), (int, float)) and t - st["last"] > interval:
         return ("無報告", f"最後の見積行／中間行から {int(t - st['last'])} 秒（上限 {interval} 秒）。"
                 "中間行【進捗:… | 経過時間：M分 | 終了:HH:MM | タスク数:k/n】を出してから再実行"), st

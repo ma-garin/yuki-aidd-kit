@@ -46,7 +46,7 @@ _TAIL_BYTES = 256 * 1024   # 会話記録は末尾だけ読む（5 秒ごとに�
 _CTX_WARN = 250_000        # 本線の入力側トークンがこれ以上なら /clear を促す
 _ACTIVE_SEC = 120          # サブエージェントを「稼働中」とみなす最終更新からの秒数
 _MODEL_NAMES = {"O": "opus", "S": "sonnet", "F": "fable", "H": "haiku", "M": "mythos", "?": "other"}
-_ETA_RES = (re.compile(r"見積[：:]\s*\d+\s*分（(?:完了予定\s*)?(\d{1,2}):(\d{2})）"),
+_ETA_RES = (re.compile(r"見積[：:]\s*\d+\s*分\s*[（(]\s*(?:完了予定\s*)?(\d{1,2})[:：](\d{2})(?:\s*完了予定)?\s*[）)]"),
             re.compile(r"【見積[：:]\s*\d+\s*分\s*\|\s*開始:\s*\d{1,2}:\d{2}\s*\|\s*終了:\s*(\d{1,2}):(\d{2})"))
 _END_RE = re.compile(r"【見積[:：][^】\n]*実測[:：]")
 _HOOK_RE = re.compile(r"hook error:\s*\[([^\]]*)\]")

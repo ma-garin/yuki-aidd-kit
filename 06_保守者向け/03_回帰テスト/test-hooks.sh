@@ -634,7 +634,11 @@ OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進�
 # weaken-ok: 2026-11-03 保守者指示で見積書式を A-2（B）に統一。注入文は `見積：N分`（全角コロン）と対象の線引きを含む
 expect_contains "UserPromptSubmit: 通常の発言にも見積もりの提示を注入（A-2。書式は B）" "見積：N分" "$(cg_ctx "$OUT")"
 expect_contains "UserPromptSubmit: 注入文に対象の線引き（コーディングを含む作業）" "コーディングを含む作業" "$(cg_ctx "$OUT")"
-expect_absent "UserPromptSubmit: 旧書式（完了予定）を注入しない" "完了予定" "$(cg_ctx "$OUT")"
+# 2026-11-14 利用者指定で新書式 `見積：N分（HH:MM）`（括弧内は完了予定時刻）。旧書式の文字列だけを不在で見る
+expect_absent "UserPromptSubmit: 旧書式（完了予定 HH:MM）を注入しない" "見積：N分（完了予定" "$(cg_ctx "$OUT")"
+expect_contains "UserPromptSubmit: 新書式 見積：N分（HH:MM） を注入する（2026-11-14）" "見積：N分（HH:MM）" "$(cg_ctx "$OUT")"
+expect_contains "UserPromptSubmit: 中間報告の間隔は見積分数×60÷5 秒（2026-11-14）" "見積分数×60÷5 秒ごと" "$(cg_ctx "$OUT")"
+expect_absent "UserPromptSubmit: 固定「1分経過ごと」を注入しない" "1分経過ごと" "$(cg_ctx "$OUT")"
 expect_contains "UserPromptSubmit: 見積もりの注入は保守者の時計（既定 Asia/Tokyo）で現在時刻を同梱する" "現在 $(TZ=Asia/Tokyo date '+%H:%M')（Asia/Tokyo）" "$(cg_ctx "$OUT")"
 OUT=$(printf '{"hook_event_name":"UserPromptSubmit","prompt":"次は S3 を進めて"}' | AIDD_TZ=Bad/Zone python3 "$HOOKS/prompt-priority.py")
 # weaken-ok: 2026-11-03 B 書式では完了予定を書かないため、時刻の注意は「date の出力を転記」に統一
@@ -666,6 +670,20 @@ expect_contains "分だけの見積（完了予定なし）は依然 deny" "完�
 { u_text "アイデアを複数出して"; ig_msg "【見積：8分 | 開始:07:39 | タスク数：3】\\n\\n調べる。" m4; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "終了時刻の無い計測行は見積として受けず deny" "完了予定つきの見積が無い" "$(deny_reason "$OUT")"
+# 2026-11-14 誤 deny の回帰: 新書式 `見積：3分（16:54）` を書いたのに Edit・Write・Bash が拒否された
+{ u_text "構成を直して"; ig_msg "見積：3分（16:54）\\n\\n直す。" m5; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "新書式 見積：3分（16:54） で通す（2026-11-14）" "$OUT" "$RC"
+{ u_text "構成を直して"; ig_msg "見積: 3分(16:54)\\n\\n直す。" m6; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "半角の括弧・コロンの 見積: 3分(16:54) も通す" "$OUT" "$RC"
+{ u_text "構成を直して"; ig_msg "見積：3分（完了予定 16:54）\\n\\n直す。" m7; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py"); RC=$?
+expect_empty "従来書式 見積：3分（完了予定 16:54） も通す（後方互換）" "$OUT" "$RC"
+{ u_text "構成を直して"; ig_msg "見積：3分\\n\\n直す。" m8; } > "$TRJ"
+OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
+expect_contains "時刻の無い 見積：3分 だけでは止める" "完了予定つきの見積が無い" "$(deny_reason "$OUT")"
+expect_contains "deny 理由に新書式を示す" "見積：N分（HH:MM）" "$(deny_reason "$OUT")"
 { u_text "アイデアを複数出して"; ig_msg "調べる。" m5; } > "$TRJ"
 OUT=$(igj "$TRJ" | python3 "$HOOKS/instruction-guard.py")
 expect_contains "見積の無い本文は依然 deny" "完了予定つきの見積が無い" "$(deny_reason "$OUT")"
