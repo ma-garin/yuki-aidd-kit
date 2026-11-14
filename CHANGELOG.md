@@ -5,6 +5,7 @@
 
 ## 未リリース
 
+- **feat: ステータスライン 1 行目に信号を追加（2026-11-14 利用者の指定）**: 完了予定 `〜HH:MM`（超過時 `超過+N分`）・稼働中の担当のモデル内訳・同じ hook の停止 2 回以上・文脈 25 万以上の `/clear` 促し。料金は `今日 ¥x｜本件 ¥y` に変更（$・直近を廃止）。会話記録は末尾 256KB だけ読む
 - **fix: ステータスラインから作業フォルダ名を外し、statusline.sh を bash 3.2 で動くようにした（2026-11-14 利用者の指定）**: `printf '%(%s)T'`（bash 4.2 以降専用）を `date +%s` に置き換え、macOS 標準の bash で 1 行目が空になる不具合を解消。statusline.py の代替表示もフォルダ名を出さない。回帰テストを追加
 - **docs: スキル棚卸し（2026-11-14）**: done-gate・test-automation・e2e-cycle・qa-review-standards・test-strategy・code-doc-search の description に「どれをいつ使うか」を追記。sdd-ecc-workflow の description を YAML として正しく読める形（クォート）に修正
 - **chore: kit 版 handoff スキルの配布を停止**（外部版 mattpocock/skills の handoff を使う。install の cp で上書きされるのを防ぐ）。Codex 用スキルを再生成
