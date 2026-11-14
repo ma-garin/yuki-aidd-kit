@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -26,6 +27,8 @@ class CatalogAcceptance(unittest.TestCase):
             with self.subTest(query=query):
                 found = self.run_cli('search', query)['data']['results']
                 self.assertIn(identifier, [item['id'] for item in found])
+                next_result = subprocess.run(shlex.split(found[0]['next']) + ['--json'], capture_output=True, text=True)
+                self.assertEqual(next_result.returncode, 0, next_result.stderr)
                 item = self.run_cli('show', identifier)['data']
                 self.assertIn(item['api'] + '(', item['example'])
                 self.assertTrue(item['requires'] and item['returns'])
