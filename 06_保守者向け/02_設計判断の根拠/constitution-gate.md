@@ -10,7 +10,7 @@
 | 停止 file | 違反 1 回で `.claude/constitution-stop` を書く。存在する間は PreToolUse が全ツール deny。猶予・回数の閾値は設けない |
 | 解除は保守者のみ | file の rm/mv/上書き・Write/Edit を本 hook が deny。解除の環境変数は作らない。保守者が自分の端末で消す |
 | 事後分析の必須化 | `.claude/constitution-stop.last` の時刻より `06_保守者向け/学んだこと.md` が古ければ deny。振り返りを書くまで再開できない |
-| 見積ゲート | コーディング指示の後、このターンに `見積：N分` 行が無ければ deny（読み取り専用ツールは 3 回まで許可） |
+| 見積ゲート | コーディング指示の後、このターンに `見積：N分` 行（新書式 `見積：N分（HH:MM）` を含む）が無ければ deny（読み取り専用ツールは 3 回まで許可） |
 | 報告ゲート | 最後の見積行／中間行／完了行から 180 秒超（`AIDD_REPORT_INTERVAL_SEC`）で deny。時刻は hook の壁時計 |
 | 離席ゲート（Stop） | 委譲先の走行中・計測区間が未了なら block |
 | fail-closed | 入力不正・例外・transcript 不読は deny（A-14） |

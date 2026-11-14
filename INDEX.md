@@ -294,7 +294,7 @@ CI は `02_共通/ひな形/github/workflows/lifecycle-check.yml`（手動起動
 - 工程分割が要る案件（他者へ納品/引き継ぐ・要件合意が要る・保守が続く）は `dev-lifecycle`、個人PWA/単一HTML/PoC は軽量な `sdd-ecc-workflow`。判断表は `skills/dev-lifecycle/SKILL.md` 冒頭
 - 全量導入より、対象プロジェクトに合う DAILY だけを読む。LIBRARY は削除せず必要時に検索・参照
 - ファイルを読む前に grep/glob で絞る（`context-compression` 参照）
-- 着手前にコーディングを含む作業なら 1 行目 `見積：N分`（A-2）、続けて `目的:` `終了条件:` `検証:` を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒
+- 着手前にコーディングを含む作業なら 1 行目 `見積：N分（HH:MM）`（A-2）、続けて `目的:` `終了条件:` `検証:` を出す（`rules/speed-harness.md` H-1）。所要時間 ≒ 往復回数 × 12秒
 - UI変更は `uiux_review` で全状態を実機で開いて確認する。実行経路の検証なしに「完了」と言わない（`rules/functional-integrity.md`）
 - AI出力品質は `agent-eval`、コード動作は `test-automation`、完了判定は `done-gate` で分ける
 - セッション終了時は `CURRENT_STATE.md` と `lessons.md` を更新する

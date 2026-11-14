@@ -77,17 +77,18 @@ OUT=$(pre Write "$WR" $NOW); expect_empty "12. コーディングを含まない
 echo "■ (d) 報告ゲート"
 newproj d; user u1 "テストを追加して" >> "$T"; asst a1 "見積：10分" >> "$T"
 OUT=$(pre Write "$WR" $NOW); expect_empty "13. 見積行を確認（起点）" "$OUT"
-OUT=$(pre Bash '{"command":"ls"}' $((NOW + 170))); expect_empty "14. 170 秒は許可" "$OUT"
-OUT=$(pre Bash '{"command":"ls"}' $((NOW + 181)))
-expect_out "15. 180 秒超は deny" "無報告" "$OUT"
+# 上限＝最初の見積の分×60÷5 秒（2026-11-14 利用者指定。見積 10 分なら 120 秒。旧: 固定 180 秒）
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 110))); expect_empty "14. 110 秒は許可（見積 10 分→上限 120 秒）" "$OUT"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 121)))
+expect_out "15. 120 秒超は deny" "無報告" "$OUT"
 expect_out "16. 理由に中間行の書式" "中間行【進捗" "$OUT"
-expect_file "17. 180 秒超で停止 file 生成" "$P/.claude/constitution-stop"
+expect_file "17. 120 秒超で停止 file 生成" "$P/.claude/constitution-stop"
 
 newproj d2; user u1 "テストを追加して" >> "$T"; asst a1 "見積：10分" >> "$T"
 pre Write "$WR" $NOW >/dev/null
 asst a2 "【進捗:順調 | 経過時間：2分 | 終了:10:10 | タスク数:1/3】" >> "$T"
 OUT=$(pre Bash '{"command":"ls"}' $((NOW + 120))); expect_empty "18. 中間行を出した時点で許可" "$OUT"
-OUT=$(pre Bash '{"command":"ls"}' $((NOW + 250))); expect_empty "19. 中間行から 130 秒なので許可（見積行からは 250 秒）" "$OUT"
+OUT=$(pre Bash '{"command":"ls"}' $((NOW + 230))); expect_empty "19. 中間行から 110 秒なので許可（見積行からは 230 秒）" "$OUT"
 expect_nofile "20. 停止 file は無い" "$P/.claude/constitution-stop"
 
 newproj d3; user u1 "テストを追加して" >> "$T"; asst a1 "見積：10分" >> "$T"

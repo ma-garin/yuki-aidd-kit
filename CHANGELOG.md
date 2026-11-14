@@ -5,6 +5,7 @@
 
 ## 未リリース
 
+- **fix: 見積の書式「見積：N分（HH:MM）」と中間報告の間隔（見積の分×60÷5 秒）に hook と規約を合わせた（2026-11-14 利用者の指定）**: instruction-guard が新書式を完了予定つきとして受ける（全角半角・従来2書式も可。時刻なしは従来どおり deny）。prompt-priority の注入文、constitution-gate の無報告上限（見積なしは従来の 180 秒）、A-2・A-2a・H-0・CLAUDE.md・配布用 AGENTS.md を更新
 - **feat: ステータスライン 1 行目に信号を追加（2026-11-14 利用者の指定）**: 完了予定 `〜HH:MM`（超過時 `超過+N分`）・稼働中の担当のモデル内訳・同じ hook の停止 2 回以上・文脈 25 万以上の `/clear` 促し。料金は `今日 ¥x｜本件 ¥y` に変更（$・直近を廃止）。会話記録は末尾 256KB だけ読む
 - **fix: ステータスラインから作業フォルダ名を外し、statusline.sh を bash 3.2 で動くようにした（2026-11-14 利用者の指定）**: `printf '%(%s)T'`（bash 4.2 以降専用）を `date +%s` に置き換え、macOS 標準の bash で 1 行目が空になる不具合を解消。statusline.py の代替表示もフォルダ名を出さない。回帰テストを追加
 - **docs: スキル棚卸し（2026-11-14）**: done-gate・test-automation・e2e-cycle・qa-review-standards・test-strategy・code-doc-search の description に「どれをいつ使うか」を追記。sdd-ecc-workflow の description を YAML として正しく読める形（クォート）に修正
