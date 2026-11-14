@@ -115,6 +115,12 @@ OUT=$(CHECK_DOCS_TEST_TOTALS= run "$C" --skip-tests); RC=$?
 expect_exit "件数のズレは WARN なので exit 0" 0 "$RC"
 grep -q "| 件数 | 01_利用者向け資料/01_利用ガイド.html" "$TMP/report.md" && ok "種別「件数」で skills 20 / 実数 21 を検出（レポート）" || ng "種別「件数」で検出" "レポートに無い"
 
+echo "[ケース11b: git 管理外の作業用ディレクトリは走査しない]"
+C=$(fresh); mkdir -p "$C/.claude/worktrees/old/docs" "$C/.claude/state"
+printf '# 古い複製\n`02_共通/存在しない.md` を見る\n' > "$C/.claude/worktrees/old/docs/stale.md"; echo '{}' > "$C/.claude/state/x.json"
+run "$C" --skip-tests >/dev/null 2>&1
+grep -qE "\.claude/(worktrees|state)/" "$TMP/report.md" && ng ".claude/worktrees・.claude/state を走査しない" "レポートに出た" || ok ".claude/worktrees・.claude/state を走査しない"
+
 echo "[ケース12: 絶対パス（検査11・WARN）]"
 C=$(fresh); sedi 's|^- 1. <作業>.*|- 1. /Users/you/work/app を開く|' "$C/02_共通/ひな形/CURRENT_STATE.md"   # 行数を変えない（spec 同期を崩さない）
 OUT=$(CHECK_DOCS_TEST_TOTALS= run "$C" --skip-tests); RC=$?
