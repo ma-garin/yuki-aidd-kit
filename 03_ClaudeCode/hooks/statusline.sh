@@ -48,13 +48,8 @@ def rate($label; $w): if ($w.used_percentage // null) == null then "\($label) (n
 | ($fc | try fromjson catch null) as $fcj
 | ([$fcj.limits[]? | select(.scope.model.display_name == "Fable")] | first) as $fb
 | (.effort.level // "") as $effort
-| (if .prompt_cache.warm == true then
-     ((.prompt_cache.expires_at | toe?) // null) as $e
-     | if $e != null and $e > $now then "cache \(($e - $now) / 60 | floor)m" else "cache on" end
-   elif .prompt_cache.warm == false then "cache -"
-   else "" end) as $cache
-# 作業フォルダ名は出さない（2026-11-14 利用者の指定）
-| "\(.model.display_name // "unknown") \(if $effort == "" then "?" else $effort end)\(if $cache != "" then " | \($cache)" else "" end)",
+# 作業フォルダ名・起動時刻は statusline.py が足す。cache は出さない（2026-11-14 利用者の指定）
+| "\(.model.display_name // "unknown") \(if $effort == "" then "?" else $effort end)",
   rate("current"; .rate_limits.five_hour // {}),
   rate("weekly "; .rate_limits.seven_day // {}),
   (if $fb.percent != null

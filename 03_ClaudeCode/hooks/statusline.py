@@ -9,10 +9,15 @@
   円は _JPY_PER_USD の固定レート。単価表に無い model があれば末尾に ※。本件＝このセッションの合計。
   今日＝_TOKEN_CACHE_DIR のセッション別記録のうち最終更新が今日（AIDD_TZ）のものの合計。
   限界: 日をまたぐセッションは全額が今日に入る（日別の内訳を持たない近似）。
-1 行目の信号（2026-11-14 利用者指定。条件を満たさない項目は区切りごと出さない。会話記録は末尾 256KB だけ読む）:
+1 行目の並び（2026-11-14 利用者指定で固定）: モデル effort ｜ 作業フォルダ名 ｜ 〜HH:MM ｜ 文脈 12万 ｜ 今日 ¥x｜本件 ¥y ｜ guard×n
+  作業フォルダ名は入力の workspace.current_dir（無ければ cwd）の basename。文脈は常時（25 万以上は `☆文脈 26万 → /clear`）。
+  cache の項目は出さない（旧 statusline.sh が出しても外す）。条件を満たさない項目は区切りごと出さない。会話記録は末尾 256KB だけ読む。
   〜HH:MM（最後の利用者発言より後の見積の完了予定。過ぎたら 超過+N分。終了の計測行があれば出さない）／
-  担当 opus1 sonnet2（最終更新 120 秒以内のサブエージェント記録をモデル別に数える）／
-  guard×n（同じ hook の停止が 2 回以上）／文脈 26万 → /clear（最後の本線応答の入力側が 25 万以上）。
+  guard×n（同じ hook の停止が 2 回以上）／文脈 N万（最後の本線応答の入力側。25 万以上は ☆ と → /clear を付ける）。
+5 行目以降（2026-11-14 利用者指定）: 稼働中の担当（最終更新 120 秒以内、または最後が未完了の tool_use で最終更新 30 分以内）を 1 本 1 行・起動の早い順に
+  `担当 opus·medium 回帰全体 19:09〜 見積6分 経過2分 2/5`。effort・名前・見積は最初の user 本文の担当票
+  `[担当票 name=.. effort=.. 見積=N分]`、進捗は assistant 本文の最後の `【担当進捗 k/n`。欠けた項目は出さない。
+  記録の先頭は 64KB だけ読む。読めない担当の行だけ出さない（起動時刻が取れない記録も出さない）。
   現在時刻は環境変数 AIDD_STATUSLINE_NOW（epoch 秒）で差し替えられる（回帰テスト用）。
 末尾（B76。2026-10-06 保守者指定で現在は表示しない。_limits_part は残すが main から呼ばない）: 入力 JSON に Claude Code が渡す `context_window`・`rate_limits` が**あれば**、今の文脈の使用率と
   5 時間枠・週次枠の使用率と戻る時刻を足す（ctx 38% 5h 72%（14:20） 7d 40%（9/28 09:00））。5h が 80% 以上なら ⚠ を付ける
@@ -44,6 +49,10 @@ _RATE_WARN = 80   # 5 時間枠の使用率がこれ以上なら ⚠（model-rou
 _WINDOWS = (("5h", ("five_hour", "5h", "fiveHour")), ("7d", ("seven_day", "7d", "sevenDay")))
 _TAIL_BYTES = 256 * 1024   # 会話記録は末尾だけ読む（5 秒ごとに呼ばれるため全量を読まない）
 _CTX_WARN = 250_000        # 本線の入力側トークンがこれ以上なら /clear を促す
+_HEAD_BYTES = 64 * 1024    # 担当の記録は先頭（最初の user 本文・起動時刻）をこれだけ読む
+_TICKET_RE = re.compile(r"\[担当票([^\]\n]*)\]")
+_PROG_RE = re.compile(r"【担当進捗\s*(\d+)\s*/\s*(\d+)")
+_PENDING_SEC = 30 * 60     # 最後が未完了の tool_use なら、この秒数まで稼働中とみなす（長いコマンドの担当を落とさない）
 _ACTIVE_SEC = 120          # サブエージェントを「稼働中」とみなす最終更新からの秒数
 _MODEL_NAMES = {"O": "opus", "S": "sonnet", "F": "fable", "H": "haiku", "M": "mythos", "?": "other"}
 _ETA_RES = (re.compile(r"見積[：:]\s*\d+\s*分\s*[（(]\s*(?:完了予定\s*)?(\d{1,2})[:：](\d{2})(?:\s*完了予定)?\s*[）)]"),
@@ -332,6 +341,18 @@ def _tail(path: pathlib.Path, limit: int = _TAIL_BYTES) -> list:
         raw = f.read().split(b"\n")
     if size > limit:
         raw = raw[1:]
+    return _rows(raw)
+
+
+def _head(path: pathlib.Path, limit: int = _HEAD_BYTES) -> list:
+    """先頭 limit バイトの JSONL を dict の列で返す。途中で切れた末尾行と壊れた行は捨てる。"""
+    with path.open("rb") as f:
+        data = f.read(limit)
+    raw = data.split(b"\n")
+    return _rows(raw[:-1] if len(data) >= limit else raw)
+
+
+def _rows(raw: list) -> list:
     out = []
     for line in raw:
         try:
@@ -389,20 +410,93 @@ def _eta_part(after: list) -> str:
     return f"超過+{int(over // 60)}分" if over > 0 else f"〜{due:%H:%M}"
 
 
-def _agents_part(path: pathlib.Path) -> str:
-    """最終更新が _ACTIVE_SEC 秒以内のサブエージェントをモデル別に `担当 opus1 sonnet2`。"""
-    now, n = _now().timestamp(), {}
-    for sp in _sub_dir(path).glob("*.jsonl"):
+def _ticket(head: list) -> dict:
+    """最初の user 本文の先頭付近（1000 字）にある担当票の name・effort・見積（分の数字）。無ければ空。"""
+    first = next((e for e in head if e.get("type") == "user" and isinstance(e.get("message"), dict)), None)
+    text = "\n".join(_texts(first["message"].get("content"), "text"))[:1000] if first else ""
+    hit = _TICKET_RE.search(text)
+    kv = dict(t.split("=", 1) for t in (hit.group(1).split() if hit else ()) if "=" in t)
+    est = re.match(r"(\d+)", kv.get("見積", ""))
+    return {"name": kv.get("name", ""), "effort": kv.get("effort", ""), "est": int(est.group(1)) if est else None}
+
+
+def _agent_type(sp: pathlib.Path, head: list) -> str:
+    """エージェント種別。記録の agentType か隣の <名前>.meta.json の agentType（どちらも無ければ空）。"""
+    for e in head:
+        if isinstance(e.get("agentType"), str) and e["agentType"]:
+            return e["agentType"]
+    meta = sp.with_suffix(".meta.json")
+    try:
+        v = json.loads(meta.read_text(encoding="utf-8")).get("agentType") if meta.is_file() else ""
+    except (OSError, ValueError, AttributeError):
+        v = ""
+    return v if isinstance(v, str) else ""
+
+
+def _agent_line(sp: pathlib.Path, now: datetime.datetime) -> tuple:
+    """担当 1 本の (起動時刻, 行)。起動時刻が取れなければ ValueError（その担当の行は出さない）。"""
+    head, tail = _head(sp), _tail(sp, 64 * 1024)
+    start = _reset_at(head[0].get("timestamp")) if head else None
+    if start is None:
+        raise ValueError("no start")
+    said = [e["message"] for e in tail if e.get("type") == "assistant" and isinstance(e.get("message"), dict)]
+    model = _MODEL_NAMES[_abbr(next((m.get("model") for m in reversed(said) if m.get("model")), ""))]
+    t = _ticket(head)
+    words = ["担当", f"{model}·{t['effort']}" if t["effort"] else model]
+    name = t["name"] or _agent_type(sp, head)
+    words += ([name] if name else []) + [f"{_local(start):%H:%M}〜"]
+    el = int(max(0.0, (now - start).total_seconds()) // 60)
+    words += ([f"見積{t['est']}分"] if t["est"] is not None else []) + [f"経過{el}分"]
+    if t["est"] is not None and el > t["est"]:
+        words.append(f"超過+{el - t['est']}分")
+    prog = [m for x in said for b in _texts(x.get("content"), "text") for m in _PROG_RE.finditer(b)]
+    if prog:
+        words.append(f"{prog[-1].group(1)}/{prog[-1].group(2)}")
+    return start, " ".join(words)
+
+
+def _running(sp: pathlib.Path, now_ts: float) -> bool:
+    """最終更新 _ACTIVE_SEC 秒以内、または最後のエントリが tool_use の assistant で最終更新 _PENDING_SEC 秒以内。"""
+    age = now_ts - sp.stat().st_mtime
+    if age <= _ACTIVE_SEC:
+        return True
+    if age > _PENDING_SEC:
+        return False
+    try:
+        rows = _tail(sp)
+        m = rows[-1].get("message") if rows and rows[-1].get("type") == "assistant" else None
+        blocks = m.get("content") if isinstance(m, dict) else None
+        return any(isinstance(b, dict) and b.get("type") == "tool_use" for b in blocks or ())
+    except Exception:   # 判定できなければ 120 秒の条件だけで判断する
+        return False
+
+
+def _folder_part(stdin_raw: str) -> str:
+    """入力の workspace.current_dir（無ければ cwd）の basename。取れなければ空。"""
+    try:
+        d = json.loads(stdin_raw or "{}")
+        ws = d.get("workspace") if isinstance(d, dict) else None
+        cur = (ws.get("current_dir") if isinstance(ws, dict) else None) or (d.get("cwd") if isinstance(d, dict) else None)
+        return os.path.basename(cur.rstrip("/")) if isinstance(cur, str) else ""
+    except (ValueError, AttributeError):
+        return ""
+
+
+def _agent_lines(stdin_raw: str) -> list:
+    """稼働中（最終更新 _ACTIVE_SEC 秒以内）の担当を 1 本 1 行、起動の早い順に。読めない担当は外す。"""
+    try:
+        path = _transcript(stdin_raw)
+        subs = sorted(_sub_dir(path).glob("*.jsonl")) if path else []
+    except (OSError, ValueError, TypeError, AttributeError):
+        return []
+    now, rows = _now(), []
+    for sp in subs:
         try:
-            if now - sp.stat().st_mtime > _ACTIVE_SEC:
-                continue
-            models = [e["message"].get("model") for e in _tail(sp, 64 * 1024)
-                      if e.get("type") == "assistant" and isinstance(e.get("message"), dict)]
-            k = _MODEL_NAMES[_abbr(next((x for x in reversed(models) if x), ""))]
-            n[k] = n.get(k, 0) + 1
-        except (OSError, ValueError, KeyError, TypeError):
+            if _running(sp, now.timestamp()):
+                rows.append(_agent_line(sp, now))
+        except Exception:   # 1 本の失敗で他の担当・ステータスラインを消さない
             continue
-    return ("担当 " + " ".join(f"{k}{v}" for k, v in sorted(n.items(), key=lambda kv: -kv[1]))) if n else ""
+    return [line for _, line in sorted(rows, key=lambda r: r[0])]
 
 
 def _hook_name(inner: str) -> str:
@@ -428,18 +522,18 @@ def _guard_part(after: list) -> str:
 
 
 def _ctx_part(entries: list) -> str:
-    """最後の本線応答の入力側（input＋cache_creation＋cache_read）が _CTX_WARN 以上なら `文脈 26万 → /clear`。"""
+    """最後の本線応答の入力側（input＋cache_creation＋cache_read）を `文脈 12万`。_CTX_WARN 以上は `☆文脈 26万 → /clear`。"""
     for e in reversed(entries):
         m = e.get("message")
         if e.get("type") == "assistant" and not e.get("isSidechain") and isinstance(m, dict) and isinstance(m.get("usage"), dict):
             u = m["usage"]
             tok = sum(int(u.get(k) or 0) for k in _USAGE_KEYS[:3])
-            return f"文脈 {tok // 10000}万 → /clear" if tok >= _CTX_WARN else ""
+            return f"☆文脈 {tok // 10000}万 → /clear" if tok >= _CTX_WARN else f"文脈 {tok // 10000}万"
     return ""
 
 
 def _signals(stdin_raw: str) -> list:
-    """1 行目の信号を仕様の順（完了予定・担当・hook 停止・文脈）で返す。項目ごとに失敗を閉じ込める。"""
+    """1 行目の信号を仕様の順（完了予定・hook 停止・文脈）で返す。項目ごとに失敗を閉じ込める。"""
     try:
         path = _transcript(stdin_raw)
         entries = _tail(path) if path else []
@@ -447,7 +541,7 @@ def _signals(stdin_raw: str) -> list:
         return []
     after = _since_user(entries)
     out = []
-    for fn, arg in ((_eta_part, after), (_agents_part, path), (_guard_part, after), (_ctx_part, entries)):
+    for fn, arg in ((_eta_part, after), (_guard_part, after), (_ctx_part, entries)):
         try:
             out.append(fn(arg) if arg is not None else "")
         except Exception:   # 1 項目の失敗で他の表示を消さない
@@ -466,9 +560,11 @@ def main() -> int:
         sid = str(json.loads(stdin_raw or "{}").get("session_id") or "")
     except (ValueError, AttributeError):
         sid = ""
-    parts = (_progress_part(sid), lines[0].replace(" | ", " ｜ "), *_signals(stdin_raw), _token_part(stdin_raw))
+    model = " ｜ ".join(p for p in lines[0].split(" | ") if p and not re.match(r"cache\b", p))
+    eta, guard, ctx = (_signals(stdin_raw) + ["", "", ""])[:3]
+    parts = (_progress_part(sid), model, _folder_part(stdin_raw), eta, ctx, _token_part(stdin_raw), guard)
     head = [p for p in parts if p]
-    print("\n".join([" ｜ ".join(head)] + lines[1:]))
+    print("\n".join([" ｜ ".join(head)] + lines[1:] + _agent_lines(stdin_raw)))
     return 0
 
 
