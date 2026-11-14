@@ -956,6 +956,23 @@ expect_absent "1 応答あたり出力は出さない" "出力" "$OUT"
 OUT=$(python3 "$KIT_DIR/00_導入/03_点検/token_report.py" "$TJ")
 expect_contains "token_report.py が区分別の表を出す" "| cache_read | 3,000 |" "$OUT"
 
+echo "[statusline.sh bash 3.2・作業フォルダ名なし]"
+# 2026-11-14: printf '%(%s)T' が macOS 標準の bash 3.2 で落ちて 1 行目が空になった。作業フォルダ名は出さない（利用者の指定）
+SL32="$TMP/sl32"; mkdir -p "$SL32/hooks"; cp "$HOOKS/statusline.sh" "$HOOKS/statusline.py" "$SL32/hooks/"
+date +%s > "$SL32/claude-fable-usage.json.ts"  # 取得済みにして検査中の通信・鍵束の参照を止める
+SLIN='{"session_id":"x","model":{"display_name":"Fable 5.2"},"workspace":{"current_dir":"/tmp/zz-sl-dirname-9"}}'
+OUT=$(printf '%s' "$SLIN" | TMPDIR="$SL32" /bin/bash "$SL32/hooks/statusline.sh" 2>&1); RC=$?
+expect_eq "statusline.sh は /bin/bash で exit 0" "0" "$RC"
+expect_contains "statusline.sh の 1 行目が空でない（モデル名を出す）" "Fable 5.2" "$(printf '%s\n' "$OUT" | head -1)"
+expect_absent "statusline.sh は bash 3.2 で書式エラーを出さない" "invalid format" "$OUT"
+expect_absent "statusline.sh は作業フォルダ名を出さない" "zz-sl-dirname-9" "$OUT"
+OUT=$(printf '%s' "$SLIN" | TMPDIR="$SL32" HOME="$TMP" python3 "$SL32/hooks/statusline.py" 2>&1); RC=$?
+expect_eq "statusline.py（従来表示つき）は exit 0" "0" "$RC"
+expect_contains "statusline.py の 1 行目が空でない（モデル名を出す）" "Fable 5.2" "$(printf '%s\n' "$OUT" | head -1)"
+expect_absent "statusline.py は作業フォルダ名を出さない" "zz-sl-dirname-9" "$OUT"
+expect_absent "statusline.py は Σ を出さない" "Σ" "$OUT"
+expect_absent "statusline.py は出力/t を出さない" "/t" "$OUT"
+
 echo "[injection-guard.py]"
 # 取得内容（WebFetch・WebSearch・mcp__*・プロジェクト外の Read）の注入句を additionalContext で警告する PostToolUse（B-23 A16。止めない）
 IGP="$TMP/proj-ig"; IGO="$TMP/ig-outside"; mkdir -p "$IGP/.claude" "$IGP/docs" "$IGO"
@@ -1645,9 +1662,10 @@ expect_absent "フィールドなし: ctx を合成しない" "ctx" "$OUT"
 expect_absent "フィールドなし: 5h を合成しない" "5h" "$OUT"
 expect_absent "フィールドなし: 区切りも足さない" "｜" "$OUT"
 OUT=$(printf '%s' '{"context_window":{"used_percentage":NaN}}' | HOME="$SLH" python3 "$SLP" 2>&1); RC=$?
-expect_eq "nan の使用率は何も足さない（exit 0）" "0:$(basename "$PWD")" "$RC:$OUT"
+# 作業フォルダ名は出さない（2026-11-14 利用者の指定）ため、従来表示が無いときの出力は空
+expect_eq "nan の使用率は何も足さない（exit 0）" "0:" "$RC:$OUT"
 OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":-5,"resets_at":Infinity},"seven_day":{"used_percentage":130}}}' | HOME="$SLH" python3 "$SLP" 2>&1); RC=$?
-expect_eq "負値・100 超の使用率は何も足さない（exit 0）" "0:$(basename "$PWD")" "$RC:$OUT"
+expect_eq "負値・100 超の使用率は何も足さない（exit 0）" "0:" "$RC:$OUT"
 OUT=$(printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":90,"resets_at":1e400}}}' | HOME="$SLH" python3 "$SLP" 2>&1)
 # weaken-ok: 2026-10-06 保守者指定により非表示へ変更。B76 の期待値を反転
 expect_absent "戻る時刻が inf でも使用率は出さない" "⚠ 5h 90%" "$OUT"

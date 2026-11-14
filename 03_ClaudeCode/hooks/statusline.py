@@ -96,7 +96,7 @@ def _fallback_part(stdin_raw: str) -> str:
             return out.stdout.strip()
         except (subprocess.TimeoutExpired, OSError):
             pass
-    return os.path.basename(os.getcwd())
+    return ""  # 作業フォルダ名は出さない（2026-11-14 利用者の指定）
 
 
 def _human(n: int) -> str:
@@ -281,7 +281,7 @@ def _limits_part(stdin_raw: str) -> str:
 def main() -> int:
     stdin_raw = sys.stdin.read()
     lines = _fallback_part(stdin_raw).splitlines() or [""]
-    # 1 行目: 進捗 ｜ model effort | dir ｜ トークン合計 ｜ API 換算料金 $（¥）直近（2 行目以降の従来表示はそのまま）
+    # 1 行目: 進捗 ｜ model effort ｜ API 換算料金（作業フォルダ名は出さない。2026-11-14 利用者の指定） $（¥）直近（2 行目以降の従来表示はそのまま）
     # 区切りは「｜」に統一する（従来表示は半角「|」で出すため置き換える）。末尾に文脈・5h・7d の使用率（B76）
     # 1 行目は改行せず 1 行で出す（保守者の指定）。区切りは「｜」に統一、末尾に文脈・5h・7d の使用率（B76）
     # ctx・5h・7d は出さない（2026-10-06 保守者の指定）
