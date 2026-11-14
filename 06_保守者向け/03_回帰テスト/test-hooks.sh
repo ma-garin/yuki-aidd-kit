@@ -973,6 +973,65 @@ expect_absent "statusline.py は作業フォルダ名を出さない" "zz-sl-dir
 expect_absent "statusline.py は Σ を出さない" "Σ" "$OUT"
 expect_absent "statusline.py は出力/t を出さない" "/t" "$OUT"
 
+echo "[statusline.py 1 行目の信号（完了予定・担当・hook 停止・文脈・料金）]"
+# 2026-11-14 利用者指定。隣に statusline.sh を置かず信号だけを見る。時刻は AIDD_STATUSLINE_NOW で今日の 10:00（Asia/Tokyo）に固定
+SG="$TMP/sg"; mkdir -p "$SG/hooks" "$SG/home/.claude/.statusline-tokens" "$SG/p/S1/subagents"; cp "$HOOKS/statusline.py" "$SG/hooks/"
+python3 - "$SG" <<'FIX'
+import datetime, json, os, sys, time, zoneinfo
+d = sys.argv[1]
+tz = zoneinfo.ZoneInfo("Asia/Tokyo")
+now = datetime.datetime.now(tz).replace(hour=10, minute=0, second=0, microsecond=0).timestamp()
+open(f"{d}/now", "w").write(str(int(now)))
+u = lambda t: {"type": "user", "message": {"role": "user", "content": t}}
+r = lambda t: {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "x", "content": t}]}}
+def a(i, text, cr=1000, model="claude-opus-5-5"):
+    return {"type": "assistant", "message": {"id": i, "model": model, "content": [{"type": "text", "text": text}],
+            "usage": {"input_tokens": 5000, "cache_read_input_tokens": cr, "output_tokens": 100}}}
+def w(path, rows, mtime=None):
+    open(path, "w").write("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in rows))
+    if mtime: os.utime(path, (mtime, mtime))
+G = "PreToolUse:Bash hook error: [python3 /h/instruction-guard.py]: 見積なし"
+w(f"{d}/p/S1.jsonl", [u("最初"), a("m1", "見積：5分（09:00）"), u("次の依頼"),
+  a("m2", "見積：5分（10:20）\n目的: x", cr=260000), r(G), r(G), r("PreToolUse:Bash hook error: [other-check]: x")])
+for name, model, age in (("a1", "claude-sonnet-5", 30), ("a2", "claude-sonnet-5", 60), ("a3", "claude-opus-5-5", 600)):
+    w(f"{d}/p/S1/subagents/{name}.jsonl", [a(name, "x", model=model)], now - age)
+w(f"{d}/p/N1.jsonl", [u("依頼"), a("n1", "見積：5分（10:20）"), r(G),
+  a("n2", "【見積:5分 | 実測:4分 | 開始:09:55 | 終了:09:59 | 作業時間記録:成功】")])
+w(f"{d}/p/N2.jsonl", [u("依頼"), a("k1", "了解", model="claude-unknown-9")])
+open(f"{d}/home/.claude/.statusline-tokens/other.json", "w").write(json.dumps({"usd": 1.0}))
+open(f"{d}/home/.claude/.statusline-tokens/old.json", "w").write(json.dumps({"usd": 100.0}))
+os.utime(f"{d}/home/.claude/.statusline-tokens/old.json", (time.time() - 3 * 86400,) * 2)
+FIX
+SGNOW=$(cat "$SG/now")
+sg() { printf '{"session_id":"x","transcript_path":"%s"}' "$SG/p/$1.jsonl" | HOME="$SG/home" AIDD_STATUSLINE_NOW="$2" python3 "$SG/hooks/statusline.py" 2>&1; }
+OUT=$(sg S1 "$SGNOW"); RC=$?
+expect_eq "信号: exit 0" "0" "$RC"
+expect_contains "完了予定: 最後の利用者発言より後の見積を 〜HH:MM で出す" "〜10:20" "$OUT"
+expect_absent "完了予定: 利用者発言より前の見積は使わない" "09:00" "$OUT"
+expect_contains "担当: 120 秒以内のサブエージェントをモデル別に数える" "担当 sonnet2" "$OUT"
+expect_absent "担当: 120 秒より古い記録は数えない" "opus" "$OUT"
+expect_contains "hook 停止: 同じ hook が 2 回で guard×2" "guard×2" "$OUT"
+expect_contains "文脈: 25 万以上で /clear を促す（万単位・切り捨て）" "文脈 26万 → /clear" "$OUT"
+expect_contains "料金: 今日 ¥｜本件 ¥ の形" "｜本件 ¥" "$OUT"
+expect_absent "料金: $ を出さない" '$' "$OUT"
+expect_contains "並び: 完了予定 ｜ 担当 ｜ guard ｜ 文脈 ｜ 料金" "〜10:20 ｜ 担当 sonnet2 ｜ guard×2 ｜ 文脈 26万 → /clear ｜ 今日 ¥" "$OUT"
+TODAY=$(printf '%s' "$OUT" | grep -o '今日 ¥[0-9,]*' | tr -dc 0-9); HONKEN=$(printf '%s' "$OUT" | grep -o '本件 ¥[0-9,]*' | tr -dc 0-9)
+expect_eq "料金: 今日＝本件＋同日の他セッション（3 日前の記録は外す）" "$((HONKEN + 160))" "$TODAY"
+OUT=$(sg S1 "$((SGNOW + 1800))")
+expect_contains "完了予定: 過ぎたら 超過+N分" "超過+10分" "$OUT"
+expect_absent "完了予定: 超過時は 〜HH:MM を出さない" "〜10:20" "$OUT"
+OUT=$(sg N1 "$SGNOW"); RC=$?
+expect_eq "信号なし: exit 0" "0" "$RC"
+expect_absent "完了予定: 終了の計測行の後は出さない" "〜" "$OUT"
+expect_absent "担当: 稼働中 0 本は出さない" "担当" "$OUT"
+expect_absent "hook 停止: 1 回では出さない" "×" "$OUT"
+expect_absent "文脈: 25 万未満は出さない" "文脈" "$OUT"
+OUT=$(sg N2 "$SGNOW")
+expect_absent "完了予定: 見積が無ければ出さない" "〜" "$OUT"
+expect_contains "料金: 単価不明の応答があれば ※" "※" "$OUT"
+OUT=$(printf '{"transcript_path":"%s"}' "$SG/p/none.jsonl" | HOME="$SG/home" python3 "$SG/hooks/statusline.py" 2>&1); RC=$?
+expect_eq "会話記録が無くても exit 0・何も出さない" "0:" "$RC:$OUT"
+
 echo "[injection-guard.py]"
 # 取得内容（WebFetch・WebSearch・mcp__*・プロジェクト外の Read）の注入句を additionalContext で警告する PostToolUse（B-23 A16。止めない）
 IGP="$TMP/proj-ig"; IGO="$TMP/ig-outside"; mkdir -p "$IGP/.claude" "$IGP/docs" "$IGO"
