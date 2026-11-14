@@ -3,7 +3,8 @@
 # 外部コマンドは jq 1 回（＋60 秒に 1 回の curl）に絞る。Windows はプロセス起動が 1 回 100〜300ms かかり、
 # 項目ごとに jq を呼ぶ旧版は 7 秒を超えて statusline.py の 5 秒制限で 2〜4 行目が消えた（2026-11-03 実測）
 input=$(cat)
-printf -v now '%(%s)T' -1
+# printf '%(%s)T' は bash 4.2 以降専用。macOS 標準の bash 3.2 で落ちて 1 行目が空になったため date を使う（2026-11-14）
+now=$(date +%s)
 T="${TMPDIR:-/tmp}"
 EMPTY="$T/claude-sl-empty"; [ -f "$EMPTY" ] || : > "$EMPTY"
 
@@ -52,8 +53,8 @@ def rate($label; $w): if ($w.used_percentage // null) == null then "\($label) (n
      | if $e != null and $e > $now then "cache \(($e - $now) / 60 | floor)m" else "cache on" end
    elif .prompt_cache.warm == false then "cache -"
    else "" end) as $cache
-| ((.workspace.current_dir // .cwd // "") | gsub("\\\\"; "/") | split("/") | last // "") as $dirname
-| "\(.model.display_name // "unknown") \(if $effort == "" then "?" else $effort end) | \($dirname)\(if $cache != "" then " | \($cache)" else "" end)",
+# 作業フォルダ名は出さない（2026-11-14 利用者の指定）
+| "\(.model.display_name // "unknown") \(if $effort == "" then "?" else $effort end)\(if $cache != "" then " | \($cache)" else "" end)",
   rate("current"; .rate_limits.five_hour // {}),
   rate("weekly "; .rate_limits.seven_day // {}),
   (if $fb.percent != null
