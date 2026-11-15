@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>型: ダッシュボード（KPI・推移・内訳・要対応・活動ログ）</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../ui/components.css">
+<link rel="stylesheet" href="../../ui/layout.css">
+<style>
+  /* 型固有: 共有 CSS は編集しない。行は minmax(0,1fr) で表示領域に収め、スクロールは一覧・ログの要素内だけ */
+  .dash { display: grid; grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); overflow: hidden; }
+  .dash .kpi-row { margin-bottom: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dash-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-4); min-height: 0; }
+  .dash-row.is-lists { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .dash-card { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .dash-card > h3 { flex: none; display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+  .dash-card > h3 .meta { font-size: var(--text-sm); font-weight: 400; color: var(--color-text-secondary); }
+  .dash-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .dash-scroll .table thead th { position: sticky; top: 0; background: var(--color-surface); z-index: var(--z-base); }
+
+  /* 推移グラフ: 描画領域は枠いっぱいに伸ばし、目盛りは HTML で持つ（歪まない） */
+  .chart { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-1); }
+  .chart svg { width: 100%; height: 100%; display: block; }
+  .chart .grid { stroke: var(--color-divider); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .chart .line { fill: none; stroke: var(--color-primary); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .chart .line-sub { fill: none; stroke: var(--color-high); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .chart .area { fill: var(--color-primary-light); stroke: none; }
+  .chart-axis { display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--color-text-secondary); }
+  .legend { display: flex; gap: var(--space-4); font-size: var(--text-xs); color: var(--color-text-secondary); margin-bottom: var(--space-2); }
+  .legend i { display: inline-block; width: var(--space-3); height: var(--space-1); margin-right: var(--space-1); vertical-align: middle; }
+  .legend .a { background: var(--color-primary); }
+  .legend .b { background: var(--color-high); }
+
+  /* 内訳: 横棒（幅は %） */
+  .breakdown { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; flex-direction: column; justify-content: space-around; gap: var(--space-2); }
+  .bar-row { display: grid; grid-template-columns: 6em minmax(0, 1fr) 3em; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+  .bar-track { height: var(--space-3); background: var(--color-surface-2); border-radius: var(--radius-sm); overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--color-primary); }
+  .bar-fill.critical { background: var(--color-critical); }
+  .bar-fill.high { background: var(--color-high); }
+  .bar-fill.medium { background: var(--color-medium); }
+  .bar-fill.low { background: var(--color-low); }
+
+  /* 活動ログ */
+  .log { list-style: none; margin: 0; padding: 0; }
+  .log li { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-divider); font-size: var(--text-sm); }
+  .log time { font-family: var(--font-mono); color: var(--color-text-secondary); }
+  .log .who { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="app-globalbar">
+    <span class="brand">レビュー管理コンソール</span>
+    <span class="spacer"></span>
+    <span class="muted">テナント: 東京第二営業部</span>
+    <span class="muted">田中 健一</span>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head"><span class="brand">メニュー</span></div>
+      <nav aria-label="主要">
+        <a href="#" aria-current="page"><span class="icon" data-icon="home" data-icon-size="18"></span><span class="label-text">ダッシュボード</span></a>
+        <a href="#"><span class="icon" data-icon="table-view" data-icon-size="18"></span><span class="label-text">レビュー結果</span></a>
+        <a href="#"><span class="icon" data-icon="settings" data-icon-size="18"></span><span class="label-text">設定</span></a>
+      </nav>
+    </aside>
+    <div class="maincol">
+      <header class="app-topbar">
+        <div><div class="breadcrumb"><a href="#">ホーム</a><span>/</span><span>ダッシュボード</span></div><h1>ダッシュボード</h1></div>
+        <span class="spacer"></span>
+        <button class="btn btn--primary" type="button"><span data-icon="add" data-icon-size="16"></span>レビューを実行する</button>
+      </header>
+      <main class="app-content dash">
+        <div class="kpi-row">
+          <div class="card kpi"><span class="kpi-label">今月のレビュー件数</span><span class="kpi-value">1,284</span><span class="kpi-delta up">+96 前月比</span></div>
+          <div class="card kpi"><span class="kpi-label">未対応の指摘</span><span class="kpi-value">47</span><span class="kpi-delta down">+8 前週比</span></div>
+          <div class="card kpi"><span class="kpi-label">平均スコア</span><span class="kpi-value">82.4</span><span class="kpi-delta up">+1.6 前月比</span></div>
+          <div class="card kpi"><span class="kpi-label">平均対応日数</span><span class="kpi-value">3.2 日</span><span class="kpi-delta">±0 前月比</span></div>
+        </div>
+
+        <div class="dash-row">
+          <section class="card dash-card" aria-label="レビュー件数の推移">
+            <h3>レビュー件数の推移<span class="meta">直近 12 週</span></h3>
+            <div class="legend"><span><i class="a"></i>実施件数</span><span><i class="b"></i>指摘件数</span></div>
+            <div class="chart">
+              <svg viewBox="0 0 120 40" preserveAspectRatio="none" role="img" aria-label="12 週の実施件数と指摘件数の推移。実施件数は 82 件から 128 件へ増加">
+                <line class="grid" x1="0" y1="0" x2="120" y2="0"/><line class="grid" x1="0" y1="10" x2="120" y2="10"/>
+                <line class="grid" x1="0" y1="20" x2="120" y2="20"/><line class="grid" x1="0" y1="30" x2="120" y2="30"/>
+                <line class="grid" x1="0" y1="40" x2="120" y2="40"/>
+                <polygon class="area" points="0,40 0,28 11,26 22,24 33,25 44,20 55,18 66,19 77,14 88,12 99,9 110,8 120,5 120,40"/>
+                <polyline class="line" points="0,28 11,26 22,24 33,25 44,20 55,18 66,19 77,14 88,12 99,9 110,8 120,5"/>
+                <polyline class="line-sub" points="0,37 11,36 22,34 33,35 44,33 55,32 66,33 77,30 88,31 99,28 110,29 120,26"/>
+              </svg>
+              <div class="chart-axis"><span>9/1 週</span><span>9/22 週</span><span>10/13 週</span><span>11/3 週</span></div>
+            </div>
+          </section>
+          <section class="card dash-card" aria-label="severity 別の内訳">
+            <h3>指摘の内訳<span class="meta">severity 別・未対応</span></h3>
+            <div class="breakdown">
+              <div class="bar-row"><span><span class="badge badge-critical">Critical</span></span><span class="bar-track"><span class="bar-fill critical" style="display:block;width:14%"></span></span><span class="num">7</span></div>
+              <div class="bar-row"><span><span class="badge badge-high">High</span></span><span class="bar-track"><span class="bar-fill high" style="display:block;width:38%"></span></span><span class="num">18</span></div>
+              <div class="bar-row"><span><span class="badge badge-medium">Medium</span></span><span class="bar-track"><span class="bar-fill medium" style="display:block;width:26%"></span></span><span class="num">12</span></div>
+              <div class="bar-row"><span><span class="badge badge-low">Low</span></span><span class="bar-track"><span class="bar-fill low" style="display:block;width:20%"></span></span><span class="num">10</span></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="dash-row is-lists">
+          <section class="card dash-card" aria-label="要対応の指摘">
+            <h3>要対応<span class="meta">20 件・期限が近い順</span></h3>
+            <div class="dash-scroll"><div class="table-wrap"><table class="table">
+              <thead><tr><th>画面</th><th>指摘</th><th>severity</th><th>担当</th><th class="num">期限まで</th></tr></thead>
+              <tbody id="todo"></tbody>
+            </table></div></div>
+          </section>
+          <section class="card dash-card" aria-label="最近の活動">
+            <h3>最近の活動<span class="meta">30 件</span></h3>
+            <div class="dash-scroll"><ol class="log" id="log"></ol></div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+<script src="../feedback.js"></script>
+<script src="../icons.js"></script>
+<script>
+  const sev = { C: ['badge-critical', 'Critical'], H: ['badge-high', 'High'], M: ['badge-medium', 'Medium'], L: ['badge-low', 'Low'] };
+  const todo = [
+    ['ログイン', 'エラー文が原因を言わない', 'C', '佐藤', '1 日'], ['請求書一覧', '0 件表示で枠だけ残る', 'H', '鈴木', '1 日'],
+    ['受注登録', '必須項目の表示が色だけ', 'H', '高橋', '2 日'], ['在庫検索', '検索中の状態表示がない', 'M', '伊藤', '2 日'],
+    ['顧客詳細', '削除ボタンが主操作と同じ色', 'C', '渡辺', '2 日'], ['出荷指示', '確認ダイアログが「はい／いいえ」', 'M', '山本', '3 日'],
+    ['売上集計', '期間未指定で全件取得', 'H', '中村', '3 日'], ['権限設定', '保存失敗時に理由が出ない', 'H', '小林', '3 日'],
+    ['発注一覧', '行の高さが画面で不揃い', 'L', '加藤', '4 日'], ['見積作成', '単価の桁区切りがない', 'L', '吉田', '4 日'],
+    ['取引先登録', '住所の入力順が不自然', 'M', '山田', '4 日'], ['通知設定', '切替の結果が即時に見えない', 'M', '佐々木', '5 日'],
+    ['ダッシュボード', '更新日時の表記が揺れる', 'L', '山口', '5 日'], ['レポート出力', '出力中に操作できてしまう', 'H', '松本', '5 日'],
+    ['ユーザー管理', '無効化の取り消し手段がない', 'C', '井上', '6 日'], ['監査ログ', '絞り込み解除が見つからない', 'M', '木村', '6 日'],
+    ['請求設定', '締め日の単位が不明', 'M', '林', '7 日'], ['商品マスタ', '画像の代替テキストがない', 'L', '清水', '7 日'],
+    ['配送先一覧', '並べ替えの現在列が分からない', 'L', '斎藤', '8 日'], ['問い合わせ', '送信後の完了表示が消える', 'H', '森', '9 日']
+  ];
+  document.getElementById('todo').innerHTML = todo.map(r =>
+    `<tr><td>${r[0]}</td><td>${r[1]}</td><td><span class="badge ${sev[r[2]][0]}">${sev[r[2]][1]}</span></td><td>${r[3]}</td><td class="num">${r[4]}</td></tr>`).join('');
+
+  const acts = [
+    ['佐藤', '「ログイン」の指摘を対応中にした'], ['鈴木', '「請求書一覧」にコメントを追加した'], ['システム', '「受注登録」のレビューが完了した'],
+    ['高橋', '「受注登録」の指摘を 2 件登録した'], ['伊藤', '「在庫検索」の指摘を再確認に回した'], ['渡辺', '「顧客詳細」の指摘を承認した'],
+    ['システム', '週次レポートを作成した'], ['山本', '「出荷指示」の指摘を対応中にした'], ['中村', '「売上集計」にコメントを追加した'],
+    ['小林', '「権限設定」の指摘を 1 件完了にした'], ['システム', '「発注一覧」のレビューを開始した'], ['加藤', '「発注一覧」の指摘を登録した'],
+    ['吉田', '「見積作成」の指摘を完了にした'], ['山田', '「取引先登録」にコメントを追加した'], ['佐々木', '「通知設定」の指摘を対応中にした'],
+    ['システム', '「ダッシュボード」のレビューが完了した'], ['山口', '「ダッシュボード」の指摘を登録した'], ['松本', '「レポート出力」の指摘を承認した'],
+    ['井上', '「ユーザー管理」の指摘を対応中にした'], ['木村', '「監査ログ」にコメントを追加した'], ['システム', 'スコアを再計算した'],
+    ['林', '「請求設定」の指摘を登録した'], ['清水', '「商品マスタ」の指摘を完了にした'], ['斎藤', '「配送先一覧」にコメントを追加した'],
+    ['森', '「問い合わせ」の指摘を対応中にした'], ['田中', 'レビュー基準を更新した'], ['システム', '「ログイン」のレビューが完了した'],
+    ['佐藤', '「ログイン」の指摘を 3 件登録した'], ['鈴木', '「請求書一覧」の指摘を承認した'], ['システム', '前日分の集計を取り込んだ']
+  ];
+  document.getElementById('log').innerHTML = acts.map((a, i) => {
+    const m = 1005 - i * 17, hh = String(Math.floor(m / 60)).padStart(2, '0'), mm = String(m % 60).padStart(2, '0');
+    return `<li><time>${hh}:${mm}</time><span><span class="who">${a[0]}</span> が${a[1]}</span></li>`;
+  }).join('');
+</script>
+</body>
+</html>
