@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>型の見本: 設定画面</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../ui/components.css">
+<link rel="stylesheet" href="../../ui/layout.css">
+<style>
+  /* 設定画面固有: 左にカテゴリ縦ナビ、右に内容。ページは動かさず、一覧・ログだけ要素内スクロール */
+  .app.is-settings .app-content { overflow: hidden; display: flex; }
+  .set-wrap { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--space-4); flex: 1; min-height: 0; }
+  .set-nav { display: flex; flex-direction: column; gap: var(--space-1); align-self: start; }
+  .set-nav button { text-align: left; font: inherit; font-size: var(--text-sm); color: var(--color-text-secondary); background: transparent; border: 0; border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); min-height: var(--tap-min); cursor: pointer; }
+  .set-nav button:hover { background: var(--color-surface-2); }
+  .set-nav button[aria-current="page"] { background: var(--color-surface); color: var(--color-primary-dark); font-weight: 700; box-shadow: var(--shadow-sm); }
+  .set-panel { display: none; min-height: 0; min-width: 0; flex-direction: column; gap: var(--space-4); }
+  .set-panel.is-active { display: flex; }
+  .set-panel > .card { margin: 0; }
+  .set-panel h2 { margin: 0 0 var(--space-1); font-size: var(--text-lg); }
+  .set-hint { margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); }
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-divider); }
+  .set-row:last-child { border-bottom: 0; }
+  .set-row .field { flex: 0 0 240px; }
+  .set-row-text { display: flex; flex-direction: column; gap: var(--space-1); }
+  .set-grow { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .set-scroll { flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+  .set-scroll .table th { position: sticky; top: 0; z-index: var(--z-base); }
+  .set-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-3); }
+  .set-danger { border-color: var(--color-critical-border); }
+  .set-log-time { font-family: var(--font-mono); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="app is-settings" id="app">
+  <header class="app-globalbar">
+    <span class="brand">Review Console</span>
+    <span class="spacer"></span>
+    <span class="muted">組織: 株式会社みらい工業</span>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head"><span class="brand">メニュー</span></div>
+      <nav aria-label="主要">
+        <a href="#"><span class="icon" data-icon="home" data-icon-size="18"></span><span class="label-text">ダッシュボード</span></a>
+        <a href="#"><span class="icon" data-icon="table-view" data-icon-size="18"></span><span class="label-text">レビュー結果</span></a>
+        <a href="#" aria-current="page"><span class="icon" data-icon="settings" data-icon-size="18"></span><span class="label-text">設定</span></a>
+      </nav>
+    </aside>
+    <div class="maincol">
+      <header class="app-topbar">
+        <div><div class="breadcrumb"><a href="#">ホーム</a><span>/</span><span>設定</span></div><h1>設定</h1></div>
+        <span class="spacer"></span>
+        <span class="muted">変更は選んだ時点で自動保存されます</span>
+      </header>
+      <main class="app-content">
+        <div class="set-wrap">
+          <nav class="set-nav" aria-label="設定カテゴリ" id="setnav">
+            <button type="button" data-cat="general" aria-current="page">一般</button>
+            <button type="button" data-cat="notify">通知</button>
+            <button type="button" data-cat="members">権限・メンバー</button>
+            <button type="button" data-cat="integrations">連携</button>
+            <button type="button" data-cat="audit">監査ログ</button>
+          </nav>
+
+          <section class="set-panel is-active" id="p-general" aria-label="一般">
+            <div class="card">
+              <h2>一般</h2>
+              <p class="set-hint">組織全体の表示と動作の既定を決めます。</p>
+              <div class="set-row"><div class="field"><label for="org">組織名</label><input class="input" id="org" value="株式会社みらい工業" data-save="組織名"></div></div>
+              <div class="set-row"><div class="field"><label for="tz">タイムゾーン</label><select class="select" id="tz" data-save="タイムゾーン"><option>Asia/Tokyo（日本標準時）</option><option>Asia/Singapore</option><option>UTC</option></select></div></div>
+              <div class="set-row"><div class="set-row-text"><strong>レビュー結果の既定の並び順</strong><span class="set-hint">一覧を開いたときの並び順です。</span></div><div class="seg" data-save="並び順"><button type="button" class="active">新しい順</button><button type="button">重要度順</button><button type="button">スコア順</button></div></div>
+              <div class="set-row"><div class="set-row-text"><strong>週次レポートを自動で作成する</strong><span class="set-hint">毎週月曜 9:00 に前週分をまとめます。</span></div><span class="toggle on" role="switch" tabindex="0" aria-checked="true" aria-label="週次レポート" data-save="週次レポート"><i></i></span></div>
+            </div>
+            <div class="card set-danger">
+              <div class="set-row"><div class="set-row-text"><strong>組織を削除する</strong><span class="set-hint">レビュー結果・メンバー・連携がすべて失われ、元に戻せません。</span></div><button class="btn btn--danger" type="button" id="del">組織を削除する</button></div>
+            </div>
+          </section>
+
+          <section class="set-panel" id="p-notify" aria-label="通知">
+            <div class="card">
+              <h2>通知</h2>
+              <p class="set-hint">どの出来事を誰に知らせるかを決めます。</p>
+              <div class="set-row"><div class="set-row-text"><strong>Critical の指摘が出たらメールで知らせる</strong><span class="set-hint">管理者全員に即時送信します。</span></div><span class="toggle on" role="switch" tabindex="0" aria-checked="true" aria-label="Critical メール" data-save="Critical 通知"><i></i></span></div>
+              <div class="set-row"><div class="set-row-text"><strong>レビュー完了を知らせる</strong><span class="set-hint">実行者本人にだけ送ります。</span></div><span class="toggle" role="switch" tabindex="0" aria-checked="false" aria-label="完了通知" data-save="完了通知"><i></i></span></div>
+              <div class="set-row"><div class="set-row-text"><strong>ダイジェストの頻度</strong><span class="set-hint">未対応の指摘をまとめて送る間隔です。</span></div><div class="seg" data-save="ダイジェスト頻度"><button type="button">毎日</button><button type="button" class="active">毎週</button><button type="button">送らない</button></div></div>
+              <div class="set-row"><div class="field"><label for="ch">通知先チャンネル</label><select class="select" id="ch" data-save="通知先"><option>#品質レビュー</option><option>#開発全体</option><option>#リリース判定</option></select></div></div>
+            </div>
+          </section>
+
+          <section class="set-panel" id="p-members" aria-label="権限・メンバー">
+            <div class="set-head"><div><h2>権限・メンバー</h2><p class="set-hint" id="mcount"></p></div><button class="btn btn--primary" type="button" id="invite"><span data-icon="add" data-icon-size="16"></span>メンバーを招待する</button></div>
+            <div class="set-scroll"><table class="table"><thead><tr><th>氏名</th><th>メール</th><th>権限</th><th>状態</th></tr></thead><tbody id="mbody"></tbody></table></div>
+          </section>
+
+          <section class="set-panel" id="p-integrations" aria-label="連携">
+            <div class="card">
+              <h2>連携</h2>
+              <p class="set-hint">外部サービスとの接続を切り替えます。</p>
+              <div class="set-row"><div class="set-row-text"><strong>GitHub</strong><span class="set-hint">プルリクエストへ指摘をコメントします。</span></div><span class="toggle on" role="switch" tabindex="0" aria-checked="true" aria-label="GitHub" data-save="GitHub 連携"><i></i></span></div>
+              <div class="set-row"><div class="set-row-text"><strong>Slack</strong><span class="set-hint">#品質レビュー に結果を投稿します。</span></div><span class="toggle on" role="switch" tabindex="0" aria-checked="true" aria-label="Slack" data-save="Slack 連携"><i></i></span></div>
+              <div class="set-row"><div class="set-row-text"><strong>Jira</strong><span class="set-hint">指摘を課題として起票します。</span></div><span class="toggle" role="switch" tabindex="0" aria-checked="false" aria-label="Jira" data-save="Jira 連携"><i></i></span></div>
+              <div class="set-row"><div class="field"><label for="jp">Jira プロジェクト</label><select class="select" id="jp" data-save="Jira プロジェクト"><option>QA（品質保証）</option><option>DEV（開発）</option></select></div></div>
+              <div class="set-row"><div class="set-row-text"><strong>Webhook の署名検証</strong><span class="set-hint">受信時に署名を確認します。</span></div><div class="seg" data-save="署名検証"><button type="button" class="active">必須</button><button type="button">警告のみ</button><button type="button">無効</button></div></div>
+            </div>
+          </section>
+
+          <section class="set-panel" id="p-audit" aria-label="監査ログ">
+            <div class="set-head"><div><h2>監査ログ</h2><p class="set-hint">直近 60 件の操作記録です。新しい順に表示します。</p></div></div>
+            <div class="set-scroll"><table class="table"><thead><tr><th>日時</th><th>操作者</th><th>操作</th><th>結果</th></tr></thead><tbody id="abody"></tbody></table></div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+<script src="../feedback.js"></script>
+<script src="../icons.js"></script>
+<script>
+  const names = ['佐藤 健一','鈴木 美咲','高橋 直樹','田中 優子','伊藤 翔太','渡辺 結衣','山本 大輔','中村 彩香','小林 拓也','加藤 真理'];
+  const roles = ['管理者','編集者','閲覧者'];
+  const mail = ['sato','suzuki','takahashi','tanaka','ito','watanabe','yamamoto','nakamura','kobayashi','kato'];
+  const mb = document.getElementById('mbody'); let h = '';
+  for (let i = 0; i < 40; i++) {
+    const n = names[i % 10], st = i % 7 === 6 ? '招待中' : '有効';
+    h += '<tr><td>' + n + '</td><td>' + mail[i % 10] + (i + 1) + '@mirai-kogyo.example</td><td>' + roles[i % 3 === 0 ? 0 : i % 3] + '</td><td><span class="badge ' + (st === '有効' ? 'badge-low' : 'badge-medium') + '">' + st + '</span></td></tr>';
+  }
+  mb.innerHTML = h;
+  document.getElementById('mcount').textContent = '40 名が参加しています。';
+  const acts = ['レビューを実行','権限を変更','連携を有効化','メンバーを招待','レポートを出力','通知設定を変更'];
+  let a = '';
+  for (let i = 0; i < 60; i++) {
+    const m = 59 - i, t = '2026-11-14 ' + String(18 - Math.floor(i / 6)).padStart(2, '0') + ':' + String(59 - (i * 7) % 60).padStart(2, '0');
+    a += '<tr><td class="set-log-time">' + t + '</td><td>' + names[i % 10] + '</td><td>' + acts[i % 6] + '</td><td><span class="badge ' + (i % 9 === 4 ? 'badge-high' : 'badge-low') + '">' + (i % 9 === 4 ? '失敗' : '成功') + '</span></td></tr>';
+  }
+  document.getElementById('abody').innerHTML = a;
+
+  const saved = (what) => Feedback.ok('保存しました: ' + what);
+  document.querySelectorAll('.toggle').forEach((t) => {
+    const flip = () => { const on = t.classList.toggle('on'); t.setAttribute('aria-checked', String(on)); saved(t.dataset.save); };
+    t.addEventListener('click', flip);
+    t.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); } });
+  });
+  document.querySelectorAll('.seg').forEach((s) => s.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    s.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b)); saved(s.dataset.save);
+  }));
+  document.querySelectorAll('select[data-save]').forEach((s) => s.addEventListener('change', () => saved(s.dataset.save)));
+  document.querySelectorAll('input[data-save]').forEach((s) => s.addEventListener('change', () => saved(s.dataset.save)));
+
+  const nav = document.getElementById('setnav');
+  nav.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    nav.querySelectorAll('button').forEach((x) => x.removeAttribute('aria-current'));
+    b.setAttribute('aria-current', 'page');
+    document.querySelectorAll('.set-panel').forEach((p) => p.classList.toggle('is-active', p.id === 'p-' + b.dataset.cat));
+  });
+  document.getElementById('invite').addEventListener('click', () => Feedback.info('招待メールを送る画面は見本では省略しています'));
+  document.getElementById('del').addEventListener('click', async () => {
+    const ok = await Feedback.confirm({ title: '組織「株式会社みらい工業」を削除しますか', consequence: 'レビュー結果・メンバー・連携がすべて失われ、元に戻せません。', actionLabel: '組織を削除する', cancelLabel: 'やめる', danger: true });
+    if (ok) Feedback.ok('組織を削除しました');
+  });
+</script>
+</body>
+</html>

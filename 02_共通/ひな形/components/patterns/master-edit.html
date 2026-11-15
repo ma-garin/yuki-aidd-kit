@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>型: マスタ編集フォーム（タブ分割）</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../ui/components.css">
+<link rel="stylesheet" href="../../ui/layout.css">
+<style>
+  /* 型: 30 項目超のマスタ編集をタブで分ける。各タブは 1366x768 でスクロール無しに収める */
+  .app-content { display: flex; flex-direction: column; overflow: hidden; }
+  .form-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+  .tablist { display: flex; gap: var(--space-1); padding: 0 var(--space-4); border-bottom: 1px solid var(--color-border); background: var(--color-surface-3); }
+  .tab { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); font: inherit; font-size: var(--text-sm); font-weight: 600; color: var(--color-text-secondary); background: transparent; border: 0; border-bottom: 3px solid transparent; cursor: pointer; }
+  .tab:hover { color: var(--color-text); }
+  .tab:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+  .tab[aria-selected="true"] { color: var(--color-primary-dark); border-bottom-color: var(--color-primary); }
+  .tab-count[hidden] { display: none; }
+  .tabpanel { padding: var(--space-5) var(--space-6); }
+  .tabpanel[hidden] { display: none; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3) var(--space-6); }
+  .span2 { grid-column: span 2; }
+  .req { color: var(--color-critical); }
+  .err-slot { min-height: var(--space-5); }   /* エラー文の行を常に確保し、表示で段が動かないようにする */
+  .err-slot .field-err-text { margin-top: 0; }
+  .dirty-flag { white-space: nowrap; }
+  .dirty-flag[hidden] { display: none; }
+  .textarea { resize: none; }
+  .field .select { box-sizing: border-box; height: 3.125rem; }   /* 入力欄と高さを揃える（select はブラウザ既定で低くなる） */
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="app-globalbar">
+    <span class="brand">基幹業務システム</span>
+    <span class="spacer"></span>
+    <span class="muted">購買部 / 村上 美咲</span>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head"><span class="brand">マスタ管理</span></div>
+      <nav aria-label="主要">
+        <a href="#"><span class="icon" data-icon="home" data-icon-size="18"></span><span class="label-text">ホーム</span></a>
+        <a href="#" aria-current="page"><span class="icon" data-icon="dataset" data-icon-size="18"></span><span class="label-text">取引先マスタ</span></a>
+        <a href="#"><span class="icon" data-icon="table-view" data-icon-size="18"></span><span class="label-text">品目マスタ</span></a>
+        <a href="#"><span class="icon" data-icon="settings" data-icon-size="18"></span><span class="label-text">設定</span></a>
+      </nav>
+    </aside>
+    <div class="maincol">
+      <header class="app-topbar">
+        <div><div class="breadcrumb"><a href="#">マスタ管理</a><span>/</span><a href="#">取引先マスタ</a><span>/</span><span>C-00482</span></div><h1>取引先マスタを編集する</h1></div>
+        <span class="spacer"></span>
+        <span class="badge badge-medium dirty-flag" id="dirty" hidden>未保存の変更があります</span>
+        <button class="btn" id="cancel" type="button">取り消す</button>
+        <button class="btn btn--primary" id="save" type="button"><span data-icon="save" data-icon-size="16"></span>保存する</button>
+      </header>
+      <main class="app-content">
+        <form class="card form-card" id="form" novalidate>
+          <div class="tablist" role="tablist" aria-label="取引先マスタの項目"><button class="tab" role="tab" id="tab-basic" type="button" aria-selected="true" aria-controls="panel-basic" tabindex="0">基本情報<span class="badge badge-critical tab-count" hidden></span></button><button class="tab" role="tab" id="tab-contact" type="button" aria-selected="false" aria-controls="panel-contact" tabindex="-1">連絡先<span class="badge badge-critical tab-count" hidden></span></button><button class="tab" role="tab" id="tab-billing" type="button" aria-selected="false" aria-controls="panel-billing" tabindex="-1">請求・支払<span class="badge badge-critical tab-count" hidden></span></button><button class="tab" role="tab" id="tab-terms" type="button" aria-selected="false" aria-controls="panel-terms" tabindex="-1">取引条件<span class="badge badge-critical tab-count" hidden></span></button><button class="tab" role="tab" id="tab-memo" type="button" aria-selected="false" aria-controls="panel-memo" tabindex="-1">備考<span class="badge badge-critical tab-count" hidden></span></button></div>
+<div class="tabpanel" role="tabpanel" id="panel-basic" aria-labelledby="tab-basic" tabindex="0"><div class="grid3"><div class="field"><label for="code">取引先コード <span class="req" aria-hidden="true">*</span></label><input class="input" id="code" name="code" type="text" value="C-00482" placeholder="" aria-required="true" aria-describedby="code-err"><div class="err-slot" id="code-err"></div></div><div class="field"><label for="name">取引先名 <span class="req" aria-hidden="true">*</span></label><input class="input" id="name" name="name" type="text" value="" placeholder="例: 株式会社 北斗精機" aria-required="true" aria-describedby="name-err"><div class="err-slot" id="name-err"></div></div><div class="field"><label for="kana">フリガナ</label><input class="input" id="kana" name="kana" type="text" value="ホクトセイキ" placeholder="" aria-describedby="kana-err"><div class="err-slot" id="kana-err"></div></div><div class="field"><label for="short">略称</label><input class="input" id="short" name="short" type="text" value="北斗精機" placeholder="" aria-describedby="short-err"><div class="err-slot" id="short-err"></div></div><div class="field"><label for="corp">法人番号</label><input class="input" id="corp" name="corp" type="text" value="7010001234567" placeholder="" aria-describedby="corp-err"><div class="err-slot" id="corp-err"></div></div><div class="field"><label for="kind">取引先区分</label><select class="select" id="kind" name="kind"><option selected>仕入先</option><option>得意先</option><option>仕入先・得意先</option></select><div class="err-slot" id="kind-err"></div></div><div class="field"><label for="industry">業種</label><select class="select" id="industry" name="industry"><option selected>製造業</option><option>卸売業</option><option>小売業</option><option>建設業</option><option>運輸業</option></select><div class="err-slot" id="industry-err"></div></div><div class="field"><label for="founded">設立年月日</label><input class="input" id="founded" name="founded" type="date" value="1987-04-01" placeholder="" aria-describedby="founded-err"><div class="err-slot" id="founded-err"></div></div><div class="field"><label for="rep">代表者名</label><input class="input" id="rep" name="rep" type="text" value="高橋 恒一" placeholder="" aria-describedby="rep-err"><div class="err-slot" id="rep-err"></div></div></div></div>
+<div class="tabpanel" role="tabpanel" id="panel-contact" aria-labelledby="tab-contact" hidden tabindex="0"><div class="grid3"><div class="field"><label for="zip">郵便番号</label><input class="input" id="zip" name="zip" type="text" value="452-0961" placeholder="" aria-describedby="zip-err"><div class="err-slot" id="zip-err"></div></div><div class="field"><label for="pref">都道府県</label><select class="select" id="pref" name="pref"><option>北海道</option><option>宮城県</option><option>東京都</option><option selected>愛知県</option><option>大阪府</option><option>福岡県</option></select><div class="err-slot" id="pref-err"></div></div><div class="field"><label for="city">市区町村</label><input class="input" id="city" name="city" type="text" value="清須市" placeholder="" aria-describedby="city-err"><div class="err-slot" id="city-err"></div></div><div class="field"><label for="addr">番地・建物名</label><input class="input" id="addr" name="addr" type="text" value="朝日西町 3-12 北斗ビル 2F" placeholder="" aria-describedby="addr-err"><div class="err-slot" id="addr-err"></div></div><div class="field"><label for="tel">電話番号</label><input class="input" id="tel" name="tel" type="tel" value="052-401-5530" placeholder="" aria-describedby="tel-err"><div class="err-slot" id="tel-err"></div></div><div class="field"><label for="fax">FAX 番号</label><input class="input" id="fax" name="fax" type="tel" value="052-401-5531" placeholder="" aria-describedby="fax-err"><div class="err-slot" id="fax-err"></div></div><div class="field"><label for="contact">担当者名</label><input class="input" id="contact" name="contact" type="text" value="村上 美咲" placeholder="" aria-describedby="contact-err"><div class="err-slot" id="contact-err"></div></div><div class="field"><label for="dept">担当部署</label><input class="input" id="dept" name="dept" type="text" value="資材調達部" placeholder="" aria-describedby="dept-err"><div class="err-slot" id="dept-err"></div></div><div class="field"><label for="mail">メールアドレス</label><input class="input" id="mail" name="mail" type="email" value="murakami.hokuto-seiki.example" placeholder="" aria-describedby="mail-err"><div class="err-slot" id="mail-err"></div></div></div></div>
+<div class="tabpanel" role="tabpanel" id="panel-billing" aria-labelledby="tab-billing" hidden tabindex="0"><div class="grid3"><div class="field"><label for="close">締日</label><select class="select" id="close" name="close"><option selected>月末</option><option>20日</option><option>15日</option><option>10日</option></select><div class="err-slot" id="close-err"></div></div><div class="field"><label for="payday">支払日</label><select class="select" id="payday" name="payday"><option selected>翌月末</option><option>翌月25日</option><option>翌々月10日</option></select><div class="err-slot" id="payday-err"></div></div><div class="field"><label for="method">支払方法</label><select class="select" id="method" name="method"><option selected>銀行振込</option><option>手形</option><option>口座振替</option></select><div class="err-slot" id="method-err"></div></div><div class="field"><label for="bank">銀行名</label><input class="input" id="bank" name="bank" type="text" value="東海中央銀行" placeholder="" aria-describedby="bank-err"><div class="err-slot" id="bank-err"></div></div><div class="field"><label for="branch">支店名</label><input class="input" id="branch" name="branch" type="text" value="名古屋駅前支店" placeholder="" aria-describedby="branch-err"><div class="err-slot" id="branch-err"></div></div><div class="field"><label for="acct-type">口座種別</label><select class="select" id="acct-type" name="acct-type"><option selected>普通</option><option>当座</option></select><div class="err-slot" id="acct-type-err"></div></div><div class="field"><label for="acct">口座番号</label><input class="input" id="acct" name="acct" type="text" value="12AB567" placeholder="" aria-describedby="acct-err" inputmode="numeric"><div class="err-slot" id="acct-err"></div></div><div class="field"><label for="invoice">請求書の送付方法</label><select class="select" id="invoice" name="invoice"><option>郵送</option><option>メール</option><option selected>電子請求システム</option></select><div class="err-slot" id="invoice-err"></div></div><div class="field"><label for="invno">適格請求書発行事業者番号</label><input class="input" id="invno" name="invno" type="text" value="T7010001234567" placeholder="" aria-describedby="invno-err"><div class="err-slot" id="invno-err"></div></div></div></div>
+<div class="tabpanel" role="tabpanel" id="panel-terms" aria-labelledby="tab-terms" hidden tabindex="0"><div class="grid3"><div class="field"><label for="credit">与信限度額（円）</label><input class="input" id="credit" name="credit" type="number" value="5000000" placeholder="" aria-describedby="credit-err"><div class="err-slot" id="credit-err"></div></div><div class="field"><label for="cur">通貨</label><select class="select" id="cur" name="cur"><option selected>JPY（円）</option><option>USD（米ドル）</option><option>EUR（ユーロ）</option></select><div class="err-slot" id="cur-err"></div></div><div class="field"><label for="tax">消費税区分</label><select class="select" id="tax" name="tax"><option selected>課税（10%）</option><option>課税（軽減8%）</option><option>非課税</option><option>免税</option></select><div class="err-slot" id="tax-err"></div></div><div class="field"><label for="start">取引開始日</label><input class="input" id="start" name="start" type="date" value="2019-06-01" placeholder="" aria-describedby="start-err"><div class="err-slot" id="start-err"></div></div><div class="field"><label for="lead">標準納期（営業日）</label><input class="input" id="lead" name="lead" type="number" value="5" placeholder="" aria-describedby="lead-err"><div class="err-slot" id="lead-err"></div></div><div class="field"><label for="minord">最低発注金額（円）</label><input class="input" id="minord" name="minord" type="number" value="30000" placeholder="" aria-describedby="minord-err"><div class="err-slot" id="minord-err"></div></div><div class="field"><label for="carrier">運送会社</label><input class="input" id="carrier" name="carrier" type="text" value="東海ロジスティクス" placeholder="" aria-describedby="carrier-err"><div class="err-slot" id="carrier-err"></div></div><div class="field"><label for="delivery">納品条件</label><select class="select" id="delivery" name="delivery"><option selected>自社倉庫渡し</option><option>現場渡し</option><option>先方持込</option></select><div class="err-slot" id="delivery-err"></div></div></div></div>
+<div class="tabpanel" role="tabpanel" id="panel-memo" aria-labelledby="tab-memo" hidden tabindex="0"><div class="grid3">
+<div class="field span2"><label for="memo">社内メモ</label><textarea class="textarea" id="memo" name="memo" rows="4">品質監査は年 1 回（10 月）。納品書は検収印付きで返送する。</textarea><div class="err-slot"></div></div>
+<div class="field"><label for="status">取引状態</label><div class="seg" id="status" role="group" aria-label="取引状態"><button type="button" class="active" aria-pressed="true">取引中</button><button type="button" aria-pressed="false">保留</button><button type="button" aria-pressed="false">停止</button></div><div class="err-slot"></div></div>
+<div class="field span2"><label for="special">特記事項</label><textarea class="textarea" id="special" name="special" rows="3">繁忙期（3 月・9 月）は納期に 2 営業日の余裕を見る。</textarea><div class="err-slot"></div></div>
+<div class="field"><label for="reason">停止理由</label><input class="input" id="reason" name="reason" placeholder="取引停止にしたときだけ入力"><div class="err-slot"></div></div>
+</div></div>
+        </form>
+      </main>
+    </div>
+  </div>
+</div>
+<script src="../icons.js"></script>
+<script src="../feedback.js"></script>
+<script>
+  const tabs = [...document.querySelectorAll('[role=tab]')];
+  const form = document.getElementById('form');
+  const dirty = document.getElementById('dirty');
+  const initial = new Map();
+  form.querySelectorAll('input,select,textarea').forEach(e => initial.set(e, e.value));
+
+  function select(i, focus) {
+    tabs.forEach((t, n) => {
+      const on = n === i;
+      t.setAttribute('aria-selected', on);
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tabs[i].focus();
+  }
+  tabs.forEach((t, n) => {
+    t.addEventListener('click', () => select(n, false));
+    t.addEventListener('keydown', e => {
+      const k = { ArrowRight: n + 1, ArrowLeft: n - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (k === undefined) return;
+      e.preventDefault();
+      select((k + tabs.length) % tabs.length, true);
+    });
+  });
+
+  const rules = [
+    ['name', v => v.trim() === '', '取引先名を入力してください。登記上の名称を入力します。'],
+    ['mail', v => v !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), 'メールアドレスの形式が正しくありません。@ を含めて入力してください。'],
+    ['acct', v => v !== '' && !/^\d{7}$/.test(v), '口座番号は半角数字 7 桁で入力してください。'],
+  ];
+  function validate() {
+    form.querySelectorAll('.input.err').forEach(e => { e.classList.remove('err'); e.removeAttribute('aria-invalid'); });
+    form.querySelectorAll('.err-slot').forEach(e => e.replaceChildren());
+    rules.forEach(([id, bad, msg]) => {
+      const el = document.getElementById(id);
+      if (!bad(el.value)) return;
+      el.classList.add('err'); el.setAttribute('aria-invalid', 'true');
+      const p = document.createElement('div'); p.className = 'field-err-text'; p.textContent = msg;
+      document.getElementById(id + '-err').append(p);
+    });
+    let total = 0;
+    tabs.forEach(t => {
+      const n = document.getElementById(t.getAttribute('aria-controls')).querySelectorAll('.input.err').length;
+      const b = t.querySelector('.tab-count');
+      b.hidden = n === 0; b.textContent = n + ' 件';
+      total += n;
+    });
+    return total;
+  }
+  function refreshDirty() {
+    dirty.hidden = ![...initial].some(([e, v]) => e.value !== v);
+  }
+  form.addEventListener('input', refreshDirty);
+  form.addEventListener('change', refreshDirty);
+  document.getElementById('status').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    [...b.parentNode.children].forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', x === b); });
+    dirty.hidden = false;
+  });
+
+  document.getElementById('save').addEventListener('click', () => {
+    const n = validate();
+    if (n > 0) {
+      const first = form.querySelector('.input.err');
+      const idx = tabs.findIndex(t => document.getElementById(t.getAttribute('aria-controls')).contains(first));
+      select(idx, false); first.focus();
+      Feedback.error('保存できませんでした', { detail: '入力エラーが ' + n + ' 件あります。', action: { label: 'エラーの項目へ移動する', onClick: () => first.focus() } });
+      return;
+    }
+    form.querySelectorAll('input,select,textarea').forEach(e => initial.set(e, e.value));
+    dirty.hidden = true;
+    Feedback.ok('取引先マスタを保存しました');
+  });
+  document.getElementById('cancel').addEventListener('click', async () => {
+    if (dirty.hidden) return Feedback.info('変更はありません');
+    const yes = await Feedback.confirm({ title: '変更を取り消しますか', consequence: '入力した内容は元に戻り、復元できません。', actionLabel: '取り消す', danger: true });
+    if (!yes) return;
+    initial.forEach((v, e) => { e.value = v; });
+    validate(); refreshDirty();
+    Feedback.info('変更を取り消しました');
+  });
+  validate();   /* 初期表示は保存失敗後の状態（取引先名が空・メール形式不正）を見せる */
+</script>
+</body>
+</html>

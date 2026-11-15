@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>型の見本 — 一覧＋詳細の分割表示</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../ui/components.css">
+<link rel="stylesheet" href="../../ui/layout.css">
+<style>
+  /* 型固有: ページ全体は動かさず、表と詳細本文だけが要素内でスクロールする */
+  .app-content.is-split { display: flex; flex-direction: column; gap: var(--space-4); overflow: hidden; }
+  .split { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); gap: var(--space-4); }
+  .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0; overflow: hidden; }
+  .pane-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+  .pane-head h2 { margin: 0; font-size: var(--text-md); }
+  .pane-head .spacer { flex: 1 1 auto; }
+  .filters { display: flex; align-items: flex-end; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+  .filters .field.grow { flex: 1 1 auto; }
+  .list-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .list-scroll .table thead th { position: sticky; top: 0; z-index: var(--z-sticky); }
+  .table tbody tr { cursor: pointer; }
+  .table tbody tr.selected { background: var(--color-primary-light); }
+  .table tbody tr.selected td:first-child { box-shadow: inset 3px 0 0 var(--color-primary); }
+  .detail-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+  .detail-grid { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--space-2) var(--space-3); margin: 0; font-size: var(--text-sm); }
+  .detail-grid dt { color: var(--color-text-secondary); }
+  .detail-grid dd { margin: 0; }
+  .detail-long { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; }
+  .detail-long h3 { margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); }
+  .long-box { max-height: 220px; overflow: auto; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-3); font-size: var(--text-sm); line-height: 1.7; white-space: pre-wrap; }
+  .detail-foot { display: flex; gap: var(--space-2); justify-content: flex-end; padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-border); }
+  .empty { margin: auto; text-align: center; color: var(--color-text-secondary); font-size: var(--text-sm); }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="app-globalbar">
+    <span class="brand">受注管理</span>
+    <span class="spacer"></span>
+    <span class="muted">営業部 / 田中 美咲</span>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head"><span class="brand">メニュー</span></div>
+      <nav aria-label="主要">
+        <a href="#"><span class="icon" data-icon="home" data-icon-size="18"></span><span class="label-text">ダッシュボード</span></a>
+        <a href="#" aria-current="page"><span class="icon" data-icon="table-view" data-icon-size="18"></span><span class="label-text">受注一覧</span></a>
+        <a href="#"><span class="icon" data-icon="settings" data-icon-size="18"></span><span class="label-text">設定</span></a>
+      </nav>
+    </aside>
+    <div class="maincol">
+      <header class="app-topbar">
+        <div><div class="breadcrumb"><a href="#">ホーム</a><span>/</span><span>受注一覧</span></div><h1>受注一覧</h1></div>
+        <span class="spacer"></span>
+        <button class="btn btn--primary" type="button" id="new"><span data-icon="add" data-icon-size="16"></span>受注を登録する</button>
+      </header>
+      <main class="app-content is-split">
+        <div class="split">
+          <section class="card pane" aria-label="受注の一覧">
+            <div class="filters">
+              <div class="field grow"><label for="q">検索</label><input class="input" id="q" type="search" placeholder="受注番号・顧客名・件名で探す"></div>
+              <div class="field"><label for="st">状態</label>
+                <select class="select" id="st"><option value="">すべて</option><option>見積中</option><option>受注確定</option><option>出荷済</option><option>保留</option></select></div>
+              <span class="muted" id="count" aria-live="polite"></span>
+            </div>
+            <div class="list-scroll" id="scroll">
+              <table class="table">
+                <thead><tr><th>受注番号</th><th>顧客</th><th>件名</th><th>状態</th><th class="num">金額（円）</th></tr></thead>
+                <tbody id="rows"></tbody>
+              </table>
+            </div>
+            <div class="pagebar"><span class="muted">行を選ぶと右に詳細を表示します</span><span class="muted" id="total"></span></div>
+          </section>
+          <section class="card pane" aria-label="受注の詳細" id="detail"></section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+<script src="../icons.js"></script>
+<script src="../feedback.js"></script>
+<script>
+  const customers = ['東洋精機', '北辰電機', '大和物産', '三浦製作所', '青葉メディカル', '日の出食品', '西日本ロジス', '丸山建設', '白鳥化学', '桜井商事'];
+  const items = ['制御盤の追加発注', '年間保守契約の更新', '検査装置の部品供給', '倉庫棚の増設工事', '包装資材の定期購入', '業務端末 20 台の入替', '空調設備の点検', '試薬の定期納入', '搬送ラインの改修', '現場用安全備品の一括購入'];
+  const states = ['見積中', '受注確定', '出荷済', '保留'];
+  const badge = { '見積中': 'badge-info', '受注確定': 'badge-new', '出荷済': 'badge-low', '保留': 'badge-medium' };
+  const data = Array.from({ length: 50 }, (_, i) => ({
+    id: 'SO-2026-' + String(1001 + i),
+    customer: customers[(i * 3) % customers.length],
+    title: items[(i * 7) % items.length],
+    state: states[(i * 5 + (i >> 2)) % states.length],
+    amount: 180000 + ((i * 7919) % 90) * 25000,
+    due: '2026-' + String(11 + (i % 2)).padStart(2, '0') + '-' + String(1 + (i * 3) % 28).padStart(2, '0'),
+    owner: ['田中 美咲', '佐藤 健', '鈴木 陽子', '高橋 拓也'][i % 4],
+  }));
+  const rowsEl = document.getElementById('rows');
+  const detailEl = document.getElementById('detail');
+  let selected = null;
+
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function yen(n) { return n.toLocaleString('ja-JP'); }
+
+  function renderRows() {
+    const q = document.getElementById('q').value.trim();
+    const st = document.getElementById('st').value;
+    const list = data.filter(d => (!st || d.state === st) && (!q || (d.id + d.customer + d.title).includes(q)));
+    rowsEl.replaceChildren();
+    list.forEach(d => {
+      const tr = el('tr', d.id === selected ? 'selected' : '');
+      tr.tabIndex = 0;
+      [el('td', '', d.id), el('td', '', d.customer), el('td', '', d.title)].forEach(td => tr.append(td));
+      const tdState = el('td'); tdState.append(el('span', 'badge ' + badge[d.state], d.state)); tr.append(tdState);
+      tr.append(el('td', 'num', yen(d.amount)));
+      const pick = () => { selected = d.id; renderRows(); renderDetail(); };
+      tr.addEventListener('click', pick);
+      tr.addEventListener('keydown', e => { if (e.key === 'Enter') pick(); });
+      rowsEl.append(tr);
+    });
+    document.getElementById('count').textContent = list.length + ' 件を表示';
+    document.getElementById('total').textContent = '全 ' + data.length + ' 件';
+    if (!list.length) {
+      const tr = el('tr'); const td = el('td', 'muted', '条件に合う受注がありません。検索語か状態を変えてください。'); td.colSpan = 5; tr.append(td); rowsEl.append(tr);
+    }
+  }
+
+  function renderDetail() {
+    detailEl.replaceChildren();
+    const d = data.find(x => x.id === selected);
+    if (!d) { detailEl.append(el('p', 'empty', '左の一覧から受注を選ぶと、ここに詳細を表示します。')); return; }
+    const head = el('div', 'pane-head');
+    head.append(el('h2', '', d.id), el('span', 'badge ' + badge[d.state], d.state));
+    const body = el('div', 'detail-body');
+    const dl = el('dl', 'detail-grid');
+    [['顧客', d.customer], ['件名', d.title], ['金額', yen(d.amount) + ' 円'], ['納期', d.due], ['担当', d.owner]].forEach(([k, v]) => dl.append(el('dt', '', k), el('dd', '', v)));
+    const memo = el('div', 'detail-long'); memo.append(el('h3', '', '対応履歴'));
+    const log = Array.from({ length: 14 }, (_, n) => '2026-11-' + String(14 - n).padStart(2, '0') + '  ' + d.owner + '  ' + ['納期を顧客へ確認し、回答待ち。', '見積条件を更新して再送した。', '在庫引当を完了した。', '支払条件の確認を経理へ依頼した。'][n % 4]).join('\n');
+    memo.append(el('div', 'long-box', log));
+    body.append(dl, memo);
+    const foot = el('div', 'detail-foot');
+    const edit = el('button', 'btn btn--ghost', '内容を編集する'); edit.type = 'button';
+    const ship = el('button', 'btn btn--primary', '出荷を指示する'); ship.type = 'button';
+    edit.addEventListener('click', () => Feedback.info(d.id + ' の編集画面を開きます'));
+    ship.addEventListener('click', () => { if (d.state === '見積中' || d.state === '保留') Feedback.error(d.id + ' は出荷を指示できません', { detail: '状態が「' + d.state + '」です。' }); else Feedback.ok(d.id + ' の出荷を指示しました'); });
+    foot.append(edit, ship);
+    detailEl.append(head, body, foot);
+  }
+
+  document.getElementById('q').addEventListener('input', renderRows);
+  document.getElementById('st').addEventListener('change', renderRows);
+  document.getElementById('new').addEventListener('click', () => Feedback.info('受注の登録画面を開きます'));
+  selected = data[2].id;
+  renderRows(); renderDetail();
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>パターン: ステップ形式の登録（ウィザード）</title>
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="../../ui/components.css">
+<link rel="stylesheet" href="../../ui/layout.css">
+<style>
+  /* ウィザード固有。値は token のみ。ページ全体も本文もスクロールさせず、ステップで分ける */
+  .app-content.wz-host { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .wz-steps { flex: 0 0 auto; display: flex; gap: var(--space-2); margin: 0; padding: var(--space-4) var(--space-6); list-style: none; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .wz-step { flex: 1 1 0; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border-bottom: 3px solid var(--color-border); color: var(--color-text-secondary); font-size: var(--text-sm); }
+  .wz-step .dot { flex: none; display: inline-flex; align-items: center; justify-content: center; width: var(--space-6); height: var(--space-6); border-radius: 50%; border: 2px dashed var(--color-border-strong); font-weight: 700; }
+  .wz-step.done { border-bottom-color: var(--color-primary); color: var(--color-text); }
+  .wz-step.done .dot { border: 2px solid var(--color-primary); background: var(--color-primary); color: var(--color-on-primary); }
+  .wz-step.current { border-bottom-color: var(--color-primary); color: var(--color-primary-dark); font-weight: 700; background: var(--color-primary-light); }
+  .wz-step.current .dot { border: 2px solid var(--color-primary); color: var(--color-primary-dark); }
+  .wz-step .state { font-size: var(--text-xs); color: var(--color-text-secondary); font-weight: 400; }
+  .wz-body { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: var(--space-4) var(--space-6); }
+  .wz-panel { max-width: 960px; margin: 0 auto; }
+  .wz-panel h2 { margin: 0 0 var(--space-1); font-size: var(--text-lg); }
+  .wz-panel > p { margin: 0 0 var(--space-3); color: var(--color-text-secondary); font-size: var(--text-sm); }
+  .wz-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); }
+  .wz-grid .wide { grid-column: 1 / -1; }
+  .wz-req { color: var(--color-critical); margin-left: var(--space-1); }
+  .wz-foot { flex: 0 0 auto; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-6); background: var(--color-surface); border-top: 1px solid var(--color-border); }
+  .wz-foot .spacer { flex: 1; }
+  .wz-foot .banner-err { margin: 0; padding: var(--space-2) var(--space-3); }
+  .wz-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+  .wz-sum .card { padding: var(--space-3) var(--space-4); }
+  .wz-sum h3 { display: flex; align-items: center; justify-content: space-between; margin: 0 0 var(--space-2); font-size: var(--text-base); }
+  .wz-sum dl { margin: 0; display: grid; grid-template-columns: 5em 1fr; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+  .wz-sum dt { color: var(--color-text-secondary); }
+  .wz-sum dd { margin: 0; overflow-wrap: anywhere; }
+  .wz-link { background: none; border: 0; padding: 0; color: var(--color-primary-dark); text-decoration: underline; cursor: pointer; font: inherit; font-size: var(--text-sm); }
+  .wz-check { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="app-globalbar">
+    <span class="brand">Review Console</span>
+    <span class="spacer"></span>
+    <span class="muted">テナント: 東都システム開発</span>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head"><span class="brand">メニュー</span></div>
+      <nav aria-label="主要">
+        <a href="#"><span class="icon" data-icon="home" data-icon-size="18"></span><span class="label-text">ダッシュボード</span></a>
+        <a href="#" aria-current="page"><span class="icon" data-icon="table-view" data-icon-size="18"></span><span class="label-text">案件</span></a>
+        <a href="#"><span class="icon" data-icon="settings" data-icon-size="18"></span><span class="label-text">設定</span></a>
+      </nav>
+    </aside>
+    <div class="maincol">
+      <header class="app-topbar">
+        <div><div class="breadcrumb"><a href="#">ホーム</a><span>/</span><a href="#">案件</a><span>/</span><span>新規登録</span></div><h1>新規案件登録</h1></div>
+      </header>
+      <main class="app-content wz-host">
+        <ol class="wz-steps" id="steps" aria-label="登録の進行"></ol>
+        <div class="wz-body">
+          <form class="wz-panel" id="form" novalidate>
+
+            <section data-step="0">
+              <h2>基本情報</h2><p>案件の名前と顧客を入力します。<span class="wz-req">*</span> は必須です。</p>
+              <div class="wz-grid">
+                <div class="field"><label for="name">案件名<span class="wz-req">*</span></label><input class="input" id="name" name="name" data-label="案件名" data-req placeholder="例: 受発注システム刷新"><span class="field-err-text" hidden></span></div>
+                <div class="field"><label for="code">案件コード<span class="wz-req">*</span></label><input class="input" id="code" name="code" data-label="案件コード" data-req placeholder="例: PJ-2026-014"><span class="field-err-text" hidden></span></div>
+                <div class="field"><label for="client">顧客名<span class="wz-req">*</span></label><input class="input" id="client" name="client" data-label="顧客名" data-req placeholder="例: 北陸物流株式会社"><span class="field-err-text" hidden></span></div>
+                <div class="field"><label for="kind">区分<span class="wz-req">*</span></label><select class="select" id="kind" name="kind" data-label="区分" data-req><option value="">選択してください</option><option>新規開発</option><option>保守運用</option><option>改修</option></select><span class="field-err-text" hidden></span></div>
+                <div class="field wide"><label for="summary">概要</label><textarea class="textarea" id="summary" name="summary" rows="2" placeholder="例: 基幹の受発注を新システムへ移行する"></textarea></div>
+              </div>
+            </section>
+
+            <section data-step="1" hidden>
+              <h2>担当と期間</h2><p>責任者と実施期間を決めます。</p>
+              <div class="wz-grid">
+                <div class="field"><label for="owner">責任者<span class="wz-req">*</span></label><select class="select" id="owner" name="owner" data-label="責任者" data-req><option value="">選択してください</option><option>佐藤 健一</option><option>鈴木 美咲</option><option>高橋 直樹</option></select><span class="field-err-text" hidden></span></div>
+                <div class="field"><label for="sub">副担当</label><select class="select" id="sub" name="sub"><option value="">なし</option><option>田中 裕子</option><option>伊藤 大輔</option></select></div>
+                <div class="field"><label for="start">開始日<span class="wz-req">*</span></label><input class="input" type="date" id="start" name="start" data-label="開始日" data-req><span class="field-err-text" hidden></span></div>
+                <div class="field"><label for="end">終了日<span class="wz-req">*</span></label><input class="input" type="date" id="end" name="end" data-label="終了日" data-req><span class="field-err-text" hidden></span></div>
+                <div class="field"><label for="budget">予算（万円）<span class="wz-req">*</span></label><input class="input" type="number" min="0" id="budget" name="budget" data-label="予算" data-req placeholder="例: 1200"><span class="field-err-text" hidden></span></div>
+              </div>
+            </section>
+
+            <section data-step="2" hidden>
+              <h2>添付・条件</h2><p>契約書と支払条件を登録します。</p>
+              <div class="wz-grid">
+                <div class="field"><label for="file">契約書の添付<span class="wz-req">*</span></label><input class="input" type="file" id="file" name="file" data-label="契約書" data-req><span class="field-err-text" hidden></span></div>
+                <div class="field"><label for="pay">支払条件<span class="wz-req">*</span></label><select class="select" id="pay" name="pay" data-label="支払条件" data-req><option value="">選択してください</option><option>月末締め翌月末払い</option><option>検収後 30 日</option><option>前払い 50%</option></select><span class="field-err-text" hidden></span></div>
+                <div class="field wide"><label for="memo">特記事項</label><textarea class="textarea" id="memo" name="memo" rows="2" placeholder="例: 検収は顧客の情報システム部が行う"></textarea></div>
+                <label class="wz-check wide"><input type="checkbox" id="secret" name="secret"> 機密情報を含む案件として扱う</label>
+              </div>
+            </section>
+
+            <section data-step="3" hidden>
+              <h2>確認</h2><p>内容を確かめて「登録する」を押してください。直す項目は「修正」から戻れます。</p>
+              <div class="wz-sum" id="summary-list"></div>
+            </section>
+          </form>
+        </div>
+        <footer class="wz-foot">
+          <button class="btn btn--ghost" type="button" id="back">戻る</button>
+          <div id="err-summary" class="banner-err" role="alert" hidden></div>
+          <span class="spacer"></span>
+          <span class="muted" id="pos"></span>
+          <button class="btn btn--primary" type="button" id="next">次へ</button>
+        </footer>
+      </main>
+    </div>
+  </div>
+</div>
+<script src="../icons.js"></script>
+<script src="../feedback.js"></script>
+<script>
+  const NAMES = ['基本情報', '担当と期間', '添付・条件', '確認'];
+  const GROUPS = [
+    { title: '基本情報', step: 0, rows: [['案件名', 'name'], ['案件コード', 'code'], ['顧客名', 'client'], ['区分', 'kind'], ['概要', 'summary']] },
+    { title: '担当と期間', step: 1, rows: [['責任者', 'owner'], ['副担当', 'sub'], ['開始日', 'start'], ['終了日', 'end'], ['予算', 'budget']] },
+    { title: '添付・条件', step: 2, rows: [['契約書', 'file'], ['支払条件', 'pay'], ['特記事項', 'memo'], ['機密', 'secret']] }
+  ];
+  const form = document.getElementById('form');
+  const stepsEl = document.getElementById('steps');
+  const sections = [...form.querySelectorAll('section')];
+  const summary = document.getElementById('err-summary');
+  let cur = 0;
+
+  function val(id) {
+    const el = document.getElementById(id);
+    if (el.type === 'checkbox') return el.checked ? '機密として扱う' : '通常';
+    if (el.type === 'file') return el.files[0] ? el.files[0].name : '';
+    if (el.name === 'budget' && el.value) return Number(el.value).toLocaleString('ja-JP') + ' 万円';
+    return el.value;
+  }
+
+  function renderSteps() {
+    stepsEl.innerHTML = NAMES.map((n, i) => {
+      const cls = i < cur ? 'done' : i === cur ? 'current' : '';
+      const st = i < cur ? '完了' : i === cur ? '入力中' : '未着手';
+      const mark = i < cur ? '✓' : String(i + 1);
+      return `<li class="wz-step ${cls}"${i === cur ? ' aria-current="step"' : ''}><span class="dot" aria-hidden="true">${mark}</span><span>${n}<br><span class="state">${st}</span></span></li>`;
+    }).join('');
+  }
+
+  function renderSummary() {
+    document.getElementById('summary-list').innerHTML = GROUPS.map(g =>
+      `<div class="card"><h3>${g.title}<button type="button" class="wz-link" data-goto="${g.step}">修正</button></h3><dl>` +
+      g.rows.map(([l, id]) => `<dt>${l}</dt><dd>${val(id).replace(/</g, '&lt;') || '（未入力）'}</dd>`).join('') + '</dl></div>').join('');
+  }
+
+  function show(i) {
+    cur = i;
+    sections.forEach((s, k) => { s.hidden = k !== i; });
+    summary.hidden = true;
+    document.getElementById('back').disabled = i === 0;
+    document.getElementById('next').textContent = i === 3 ? '登録する' : '次へ';
+    document.getElementById('pos').textContent = `${i + 1} / ${NAMES.length}`;
+    if (i === 3) renderSummary();
+    renderSteps();
+  }
+
+  function validate() {
+    const bad = [];
+    sections[cur].querySelectorAll('[data-req]').forEach(el => {
+      const err = el.parentElement.querySelector('.field-err-text');
+      const empty = !val(el.id);
+      el.classList.toggle('err', empty);
+      el.setAttribute('aria-invalid', empty ? 'true' : 'false');
+      err.hidden = !empty;
+      if (empty) { err.textContent = `${el.dataset.label}を${el.tagName === 'SELECT' || el.type === 'file' ? '選択' : '入力'}してください`; bad.push(el); }
+    });
+    const s = document.getElementById('start'), e = document.getElementById('end');
+    if (cur === 1 && s.value && e.value && e.value < s.value) {
+      const err = e.parentElement.querySelector('.field-err-text');
+      e.classList.add('err'); err.hidden = false; err.textContent = '終了日は開始日より後にしてください'; bad.push(e);
+    }
+    summary.hidden = bad.length === 0;
+    if (bad.length) { summary.textContent = `${bad.length} 件の入力を直してから「次へ」を押してください`; bad[0].focus(); }
+    return bad.length === 0;
+  }
+
+  document.getElementById('next').addEventListener('click', () => {
+    if (!validate()) return;
+    if (cur < 3) { show(cur + 1); return; }
+    Feedback.ok(`案件「${val('name')}」を登録しました`);
+    form.reset(); show(0);
+  });
+  document.getElementById('back').addEventListener('click', () => { if (cur > 0) show(cur - 1); });
+  form.addEventListener('click', ev => { const t = ev.target.closest('[data-goto]'); if (t) show(Number(t.dataset.goto)); });
+  show(0);
+</script>
+</body>
+</html>
