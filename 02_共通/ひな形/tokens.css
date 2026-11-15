@@ -78,22 +78,7 @@
   --z-toast:    1000; /* トースト（最前面） */
 }
 
-/* ── ダーク: 変数名は変えず値だけ上書き（メディアクエリと data-theme の両対応が必須） ── */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --color-primary: #6FB1EC; --color-primary-light: rgba(111,177,236,.14); --color-primary-dark: #9CCBF3; --color-on-primary: #0B1620;
-    --color-bg: #10141B; --color-surface: #1A212B; --color-surface-2: #212A34; --color-surface-3: #1E2630;
-    --color-border: #2A323D; --color-border-strong: #3B4552; --color-divider: #232B35;
-    --color-text: #E7EAEE; --color-text-secondary: #9AA5B1; --color-text-disabled: #6B7684;
-    --color-critical: #F17171; --color-critical-bg: rgba(211,47,47,.18); --color-critical-border: rgba(241,113,113,.45);
-    --color-high:     #F5A25A; --color-high-bg:     rgba(239,108,0,.18); --color-high-border:     rgba(245,162,90,.45);
-    --color-medium:   #F0C24D; --color-medium-bg:   rgba(201,134,10,.20); --color-medium-border:  rgba(240,194,77,.45);
-    --color-low:      #6FCB7F; --color-low-bg:      rgba(56,142,60,.20); --color-low-border:      rgba(111,203,127,.45);
-    --color-info:     #6FB1EC; --color-info-bg:     rgba(2,119,189,.20); --color-info-border:     rgba(111,177,236,.45);
-    --color-medium-text: #F0C24D; --color-scrim: rgba(0,0,0,.6); --color-tooltip-bg: #20242B; --color-tooltip-text: #F2F4F7; --color-knob: #E7EAEE;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,.35); --shadow-md: 0 2px 8px rgba(0,0,0,.4); --shadow-lg: 0 8px 28px rgba(0,0,0,.5); --shadow-pop: 0 12px 32px rgba(0,0,0,.55);
-  }
-}
+/* ── ダーク: 既定では使わない（ライトが基本。OS の設定には追従しない）。<html data-theme="dark"> を付けたときだけ有効 ── */
 :root[data-theme="dark"] {
   --color-primary: #6FB1EC; --color-primary-light: rgba(111,177,236,.14); --color-primary-dark: #9CCBF3; --color-on-primary: #0B1620;
   --color-bg: #10141B; --color-surface: #1A212B; --color-surface-2: #212A34; --color-surface-3: #1E2630;
@@ -109,7 +94,8 @@
 }
 
 /* ── 基本適用（トークンを実際に効かせる最小セット） ── */
-html { color-scheme: light dark; }
+html { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-main); font-size: var(--text-base); line-height: var(--leading-normal); }
 code, pre, kbd, .mono { font-family: var(--font-mono); }
 button, a, [role="button"] { min-height: var(--tap-min); min-width: var(--tap-min); }

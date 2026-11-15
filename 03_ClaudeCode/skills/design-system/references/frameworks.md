@@ -26,7 +26,7 @@
 | HTML/JS/CSS・React の実装規約 | ECC `frontend-patterns` / `react-patterns` / `vite-patterns` | 規約。デザイン値は持たない |
 | 独創的な UI を新規生成したい | `frontend-design`（第三者製・グローバル） | **起動時に本キットのトークンを渡す**。渡さないと汎用 AI 風の配色になる |
 | ブランド・ロゴ・三層トークン設計 | `ckm:design` / `ckm:design-system`（第三者製） | 新規ブランドを起こす時だけ。既存 AIDD ツール群には使わない |
-| 作った画面の検証 | `uiux_review` ＋ `00_導入/03_点検/check-design.sh` | 全状態を実機で開く（360 / 768 / 1366×768 / 1920×1080、ライト＋ダーク） |
+| 作った画面の検証 | `uiux_review` ＋ `00_導入/03_点検/check-design.sh` | 全状態を実機で開く（1366×768 / 1920×1080、ライト。狭幅・ダークは指示時のみ） |
 
 ## 共通の落とし穴
 
