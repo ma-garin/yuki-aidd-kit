@@ -119,7 +119,7 @@ AI は `approver` 欄を埋めない（`skills/phase-approval` の越えない�
 
 | スキル | 1行要約 | タグ | コスト |
 |---|---|---|---|
-| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/ に tokens.md（値の理由）・components.md（部品の使い分けと落とし穴）・frameworks.md（分担）。実物は templates/tokens.css・templates/ui/ | #ui #design | 121行 |
+| `design-system` | AIDDツール群のトークン（CSS変数の真実源・ダーク対応）＋画面の作り方（骨格・操作フィードバック・アイコン・文言・直値禁止）。references/ に tokens.md（値の理由）・components.md（部品の使い分けと落とし穴）・frameworks.md（分担）。実物は templates/tokens.css・templates/ui/ | #ui #design | 137行 |
 | `nfr-standards` | PWA/単一HTML/Streamlit別の非機能要件デフォルト値。references/ に LLM・Agentic Top10 の点検表 | #nfr #spec | 101行 |
 | `security-audit`（8.5.0〜） | 走査器の結果＋スタック別 OWASP/ASVS 観点表でセキュリティ監査。明示の依頼だけ（`ecc-daily-router` からは自動で振らない） | #qa #security | 82行 |
 | `agent-eval` | LLM/RAG/エージェント出力の品質をデータセット＋スコアラーで回帰評価 | #ai #eval | 72行 |

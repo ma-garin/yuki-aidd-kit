@@ -65,7 +65,9 @@ TARGET_SIDE_PREFIXES = (
 GENERATED_REPORTS = ("check-docs-report.md", "trace-check-report.md", "check-design-report.md",
                      "check-approval-report.md", "token-audit-report.md", "test-metrics-report.md")
 # git 管理外の手元の生成物（.gitignore 対象・ツールの作業ファイル）。目録の網羅性検査に含めない
-LOCAL_JUNK_PREFIXES = (".playwright-mcp/", ".claude/settings.local.json")
+# .claude/worktrees/ と .claude/state/ は git 管理外の作業用ディレクトリ（別 worktree の複製・hook の状態）。走査すると複製の古い文書を本体の NG に数える（2026-11-14 NG=667）
+WORK_DIR_PREFIXES = (".claude/worktrees/", ".claude/state/")
+LOCAL_JUNK_PREFIXES = (".playwright-mcp/", ".claude/settings.local.json") + WORK_DIR_PREFIXES
 # `.git` は git worktree で作業しているときだけ、リポジトリ本体を指すポインタファイル（`gitdir: ...`）として
 # 実体を持つ（通常のチェックアウトではディレクトリで is_file() が False になり、そもそも対象に入らない）
 LOCAL_JUNK_PARTS = (".DS_Store", "__pycache__", "tool-time.json", "progress.json", ".git",
@@ -76,7 +78,7 @@ def is_local_junk(rel: str) -> bool:
     return rel.startswith(LOCAL_JUNK_PREFIXES) or any(p in LOCAL_JUNK_PARTS for p in rel.split("/"))
 
 
-REF_SCAN_EXCLUDE_PREFIXES = ("06_保守者向け/01_内部仕様/", ".git/", "CHANGELOG.md", "04_Codex/skills/") + GENERATED_REPORTS  # CHANGELOG は過去の版の旧パスを記録として残す
+REF_SCAN_EXCLUDE_PREFIXES = ("06_保守者向け/01_内部仕様/", ".git/", "CHANGELOG.md", "04_Codex/skills/") + GENERATED_REPORTS + WORK_DIR_PREFIXES  # CHANGELOG は過去の版の旧パスを記録として残す
 # 履歴文書（当時の事実を記録しているので数値の突合対象にしない）
 HISTORY_DOCS = {"05_プロジェクト管理/ロードマップ.md", "06_保守者向け/04_監査記録/AUDIT-2026-07.md"}
 
