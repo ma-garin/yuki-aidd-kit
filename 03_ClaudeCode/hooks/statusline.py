@@ -105,7 +105,7 @@ def _progress_part(session_id: str = "") -> str:
         remain = est - elapsed
         tail = (f"残り {_fmt(remain)}" if remain >= 0
                 else f"残り 0:00（超過 +{_fmt(-remain)}）")
-        return f"⏱ {d['task']} [{d['step']}] {_fmt(elapsed)}/{_fmt(est)} {tail}"
+        return ""  # 進捗行（⏱ タスク [段] 経過/見積 残り）は表示しない。2026-11-22 利用者指示「未来永劫不要」。再追加禁止
     except (json.JSONDecodeError, KeyError, OSError):
         return ""  # 壊れた進捗ファイルは無視して従来表示のみ
 
