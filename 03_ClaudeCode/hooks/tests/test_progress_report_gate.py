@@ -34,7 +34,7 @@ def test_denies_after_interval_from_estimate():
 
 def test_progress_line_resets_the_clock():
     lines = [user(T0, "直して"), asst(T0 + 5, "見積もり：10分（12:00）"),
-             asst(T0 + 100, "【進捗:順調 | 経過時間：2分（11:37） | 終了:12:00 | タスク数:1/3】")]
+             asst(T0 + 100, f"【進捗:順調 | 経過時間：2分（{_jst(T0 + 100)}） | 終了:12:00 | タスク数:1/3】")]
     assert g.check(EDIT, lines, now=T0 + 215) is None
     assert g.check(EDIT, lines, now=T0 + 225) is not None
 
@@ -46,7 +46,7 @@ def test_plain_text_without_report_line_does_not_reset():
 
 def test_end_line_closes_estimate_and_falls_back_to_default():
     lines = [user(T0, "直して"), asst(T0 + 5, "見積もり：10分（12:00）"),
-             asst(T0 + 60, "【見積:10分 | 実測:1分 | 開始:11:00 | 終了:11:01 | 作業時間記録:成功】")]
+             asst(T0 + 60, f"【見積:10分 | 実測:1分 | 開始:11:00 | 終了:{_jst(T0 + 60)} | 作業時間記録:成功】")]
     assert g.check(EDIT, lines, now=T0 + 60 + 299) is None         # 見積なしの既定 300 秒
     assert g.check(EDIT, lines, now=T0 + 60 + 301) is not None
 
@@ -100,3 +100,29 @@ def test_hook_entry_emits_deny_json(tmp_path):
                          env={"HOME": str(tmp_path), "PATH": "/usr/bin:/bin"}, timeout=20)
     d = json.loads(out.stdout)
     assert d["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+
+def _jst(t):
+    return datetime.fromtimestamp(t, timezone.utc).astimezone(g.JST).strftime("%H:%M")
+
+
+def test_fabricated_clock_in_progress_line_is_denied_until_corrected():
+    wrong = _jst(T0 + 100 + 180)                       # 実際より 3 分先の時刻を書いた
+    lines = [user(T0, "直して"), asst(T0 + 5, "見積もり：10分（12:00）"),
+             asst(T0 + 100, f"【進捗:順調 | 経過時間：2分（{wrong}） | 終了:12:00 | タスク数:1/3】")]
+    assert "ずれている" in g.check(EDIT, lines, now=T0 + 110)
+    right = _jst(T0 + 120)
+    lines.append(asst(T0 + 120, f"【進捗:順調 | 経過時間：2分（{right}） | 終了:12:00 | タスク数:1/3】"))
+    assert g.check(EDIT, lines, now=T0 + 125) is None
+
+
+def test_projected_times_are_not_checked():
+    lines = [user(T0, "直して"), asst(T0 + 5, "見積もり：30分（23:59）"),
+             asst(T0 + 6, f"【見積：30分 | 開始:{_jst(T0 + 6)} | 終了:23:59 | タスク数：3】")]
+    assert g.check(EDIT, lines, now=T0 + 10) is None
+
+
+def test_wrong_end_time_is_denied():
+    lines = [user(T0, "直して"), asst(T0 + 5, "見積もり：10分（12:00）"),
+             asst(T0 + 60, f"【見積:10分 | 実測:1分（{_jst(T0 + 60 + 300)}） | 開始:11:00 | 終了:{_jst(T0 + 60 + 300)} | 作業時間記録:成功】")]
+    assert "ずれている" in g.check(EDIT, lines, now=T0 + 70)
