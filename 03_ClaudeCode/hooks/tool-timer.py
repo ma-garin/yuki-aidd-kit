@@ -123,12 +123,25 @@ def main() -> int:
     # 並列実行を二重に数えないため、積算するのは「1本以上が走っている区間」の実時間。
     # 各ツールの所要時間を足すと、H-4 の並列委譲で実際の 30 倍が出る
     if cmd == "pre":
+        payload = read_payload()
+        # 中間報告の強制（2026-11-25。全ツールで動くこの pre から呼ぶ。progress_report_gate.py）
+        try:
+            sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+            import progress_report_gate
+            why = progress_report_gate.gate(payload)
+        except Exception:  # noqa: BLE001  判定の不具合で作業を止めない
+            why = None
+        if why:
+            print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse",
+                                                     "permissionDecision": "deny",
+                                                     "permissionDecisionReason": why}}, ensure_ascii=False))
+            return 0
         data = load()
         if data["since"] is None:
             data["since"] = time.time()
         if not data["inflight"]:
             data["window_start"] = time.time()
-        data["inflight"][key_of(read_payload())] = time.time()
+        data["inflight"][key_of(payload)] = time.time()
         save(data)
     elif cmd == "post":
         data = load()
