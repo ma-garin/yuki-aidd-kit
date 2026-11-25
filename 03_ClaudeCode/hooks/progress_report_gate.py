@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 TAIL_KB = 4096
@@ -64,10 +64,39 @@ def _is_prompt(e: dict) -> bool:
     return False
 
 
+JST = timezone(timedelta(hours=9))
+CLOCK_TOL_MIN = 1
+PAREN_TIME = re.compile(r"[（(](\d{1,2}):(\d{2})[）)]")
+START_TIME = re.compile(r"開始:(\d{1,2}):(\d{2})")
+END_TIME = re.compile(r"終了:(\d{1,2}):(\d{2})")
+
+
+def clock_error(line: str, ts: float) -> str | None:
+    """報告の行に書いた「いまの時刻」が、記録された時刻と CLOCK_TOL_MIN 分を超えてずれていれば理由を返す。
+    見るのは: 進捗行の（HH:MM）・開始行の 開始:・終了行の（HH:MM）と 終了:。見積の行の（HH:MM）は予定なので見ない。"""
+    if "【" not in line:
+        return None
+    found = []
+    if PROGRESS_MARK in line or END_MARK in line:
+        found += PAREN_TIME.findall(line)
+    if END_MARK in line:
+        found += END_TIME.findall(line)
+    if re.search(r"【\s*見積[：:]", line) and END_MARK not in line:
+        found += START_TIME.findall(line)
+    now = datetime.fromtimestamp(ts, JST)
+    for h, m in found:
+        diff = abs((now.hour * 60 + now.minute) - (int(h) * 60 + int(m)))
+        diff = min(diff, 1440 - diff)
+        if diff > CLOCK_TOL_MIN:
+            return f"報告の時刻 {int(h):02d}:{m} が実際の {now:%H:%M} と {diff} 分ずれている"
+    return None
+
+
 def scan(lines: list[str]) -> dict:
-    """{est: 進行中の見積分 or None, last: 基準時刻 or None}"""
+    """{est: 進行中の見積分 or None, last: 基準時刻 or None, clock: 最後の報告の時刻の誤り or None}"""
     est: float | None = None
     last: float | None = None
+    clock: str | None = None
     for line in lines:
         if '"assistant"' not in line and '"user"' not in line:
             continue
@@ -90,6 +119,8 @@ def scan(lines: list[str]) -> dict:
         for t in texts:
             reported = False
             for ln in t.splitlines():
+                if PROGRESS_MARK in ln or (END_MARK in ln and "【" in ln) or re.search(r"【\s*見積[：:]", ln):
+                    clock = clock_error(ln, ts)
                 if END_MARK in ln and "【" in ln:
                     est, reported = None, True
                     continue
@@ -100,7 +131,7 @@ def scan(lines: list[str]) -> dict:
                     reported = True
             if reported:
                 last = max(last or 0.0, ts)
-    return {"est": est, "last": last}
+    return {"est": est, "last": last, "clock": clock}
 
 
 def interval_of(est: float | None) -> float:
@@ -113,6 +144,9 @@ def check(data: dict, lines: list[str], now: float | None = None) -> str | None:
     if data.get("tool_name") == "Bash" and METERING_ONLY.fullmatch(cmd):
         return None
     s = scan(lines)
+    if s["clock"]:
+        return (f"[progress-report] {s['clock']}。時刻を自分で書かない。`python3 ~/.agents/skills/work-metering/scripts/metering.py mid <k>`"
+                "（または now）を実行し、その出力どおりの行で本文に訂正を書いてから次のツールを使う")
     interval = interval_of(s["est"])
     if data.get("tool_name") == "Bash":
         try:
